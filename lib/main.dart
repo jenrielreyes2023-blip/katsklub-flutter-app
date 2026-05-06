@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_screen.dart';
+import 'models/user.dart';
+import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
 
@@ -25,14 +26,14 @@ class KatsKlubApp extends StatefulWidget {
   });
 
   final AuthService authService;
-  final Map<String, dynamic>? initialUser;
+  final User? initialUser;
 
   @override
   State<KatsKlubApp> createState() => _KatsKlubAppState();
 }
 
 class _KatsKlubAppState extends State<KatsKlubApp> {
-  Map<String, dynamic>? _currentUser;
+  User? _currentUser;
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
     _currentUser = widget.initialUser;
   }
 
-  void _handleLogin(Map<String, dynamic> user) {
+  void _handleLogin(User user) {
     setState(() {
       _currentUser = user;
     });
@@ -69,7 +70,7 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
               authService: widget.authService,
               onLoginSuccess: _handleLogin,
             )
-          : HomeScreen(
+          : AppShell(
               user: _currentUser!,
               onLogout: _handleLogout,
             ),

@@ -5,6 +5,7 @@ class ApiConfig {
   );
 
   static const String loginPath = '/api/auth/login';
+  static const String logoutPath = '/api/auth/logout';
   static const String mePath = '/api/me';
 
   static Uri uri(String path) {

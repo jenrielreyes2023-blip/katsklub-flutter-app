@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
+import '../models/user.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,7 +12,7 @@ class LoginScreen extends StatefulWidget {
   });
 
   final AuthService authService;
-  final ValueChanged<Map<String, dynamic>> onLoginSuccess;
+  final ValueChanged<User> onLoginSuccess;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();

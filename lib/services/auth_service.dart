@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
+import '../models/user.dart';
 
 class AuthResult {
   const AuthResult({
@@ -13,7 +14,7 @@ class AuthResult {
   });
 
   final bool ok;
-  final Map<String, dynamic>? user;
+  final User? user;
   final String? error;
 }
 
@@ -59,11 +60,18 @@ class AuthService {
         );
       }
 
-      await _saveAuthData(
+      final savedCookie = await _saveAuthData(
         response: response,
         responseData: data,
         user: user,
       );
+
+      final verifiedUser =
+          savedCookie == null ? null : await _fetchMe(savedCookie);
+      if (verifiedUser != null) {
+        await _saveUser(verifiedUser);
+        return AuthResult(ok: true, user: verifiedUser);
+      }
 
       return AuthResult(ok: true, user: user);
     } catch (_) {
@@ -74,7 +82,7 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>?> getCurrentUser() async {
+  Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final savedUser = prefs.getString(_userKey);
     final savedCookie = prefs.getString(_sessionCookieKey);
@@ -85,7 +93,7 @@ class AuthService {
 
     final verifiedUser = await _fetchMe(savedCookie);
     if (verifiedUser != null) {
-      await prefs.setString(_userKey, jsonEncode(verifiedUser));
+      await prefs.setString(_userKey, jsonEncode(verifiedUser.toJson()));
       return verifiedUser;
     }
 
@@ -95,12 +103,28 @@ class AuthService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedCookie = prefs.getString(_sessionCookieKey);
+
+    if (savedCookie != null && savedCookie.isNotEmpty) {
+      try {
+        await _client.post(
+          ApiConfig.uri(ApiConfig.logoutPath),
+          headers: {
+            'Accept': 'application/json',
+            'Cookie': savedCookie,
+          },
+        );
+      } catch (_) {
+        // Local logout must still work even if the network request fails.
+      }
+    }
+
     await prefs.remove(_sessionCookieKey);
     await prefs.remove(_authTokenKey);
     await prefs.remove(_userKey);
   }
 
-  Future<Map<String, dynamic>?> _fetchMe(String cookie) async {
+  Future<User?> _fetchMe(String cookie) async {
     try {
       final response = await _client.get(
         ApiConfig.uri(ApiConfig.mePath),
@@ -120,10 +144,10 @@ class AuthService {
     }
   }
 
-  Future<void> _saveAuthData({
+  Future<String?> _saveAuthData({
     required http.Response response,
     required Map<String, dynamic> responseData,
-    required Map<String, dynamic> user,
+    required User user,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final cookie = _extractCookieHeader(response.headers['set-cookie']);
@@ -137,7 +161,13 @@ class AuthService {
       await prefs.setString(_authTokenKey, token);
     }
 
-    await prefs.setString(_userKey, jsonEncode(user));
+    await _saveUser(user);
+    return cookie;
+  }
+
+  Future<void> _saveUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
   }
 
   Map<String, dynamic> _decodeJsonObject(String body) {
@@ -149,10 +179,10 @@ class AuthService {
     return <String, dynamic>{};
   }
 
-  Map<String, dynamic>? _readUser(Map<String, dynamic> data) {
+  User? _readUser(Map<String, dynamic> data) {
     final user = data['user'];
     if (user is Map<String, dynamic>) {
-      return user;
+      return User.fromJson(user);
     }
 
     return null;
