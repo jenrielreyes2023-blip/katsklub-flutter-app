@@ -25,6 +25,14 @@ jobs:
 
       - name: Generate Flutter Android files
         run: flutter create . --platforms=android --org com.katsklub --project-name katsklub_flutter
+
+      - name: Add Android internet permission
+        run: |
+          manifest="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q 'android.permission.INTERNET' "$manifest"; then
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
+          fi
+          grep -q 'android.permission.INTERNET' "$manifest"
       
       - name: Install dependencies
         run: flutter pub get
