@@ -80,7 +80,7 @@ class User {
       return null;
     }
 
-    final stringValue = String(value).trim();
+    final stringValue = value.toString().trim();
     return stringValue.isEmpty ? null : stringValue;
   }
 
