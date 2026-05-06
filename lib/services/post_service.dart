@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
@@ -148,30 +149,67 @@ class PostService {
       final socketHeaders = <String, String>{
         'Cookie': cookie,
       };
+      final uploadBytes = request.images.fold<int>(
+        0,
+        (total, image) => total + image.uploadByteCount,
+      );
+      _socketLog(
+        'creating socket; hasCookie=${cookie.startsWith('katsklub_session=')}; '
+        'images=${request.images.length}; uploadBytes=$uploadBytes; '
+        'textLength=${text.length}',
+      );
 
-      socket = io.io(
-        ApiConfig.apiBaseUrl,
-        <String, dynamic>{
-          'autoConnect': false,
-          'forceNew': true,
-          'reconnection': true,
-          'reconnectionAttempts': 2,
-          'reconnectionDelay': 500,
-          'transports': ['polling', 'websocket'],
-          'withCredentials': true,
-          'extraHeaders': socketHeaders,
-          'transportOptions': {
+      final socketOptions = io.OptionBuilder()
+          .setPath('/socket.io/')
+          .setTransports(['websocket', 'polling'])
+          .disableAutoConnect()
+          .enableForceNew()
+          .disableMultiplex()
+          .enableReconnection()
+          .setReconnectionAttempts(2)
+          .setReconnectionDelay(500)
+          .setTimeout(20000)
+          .setAckTimeout(hasImages ? 120000 : 65000)
+          .enableWithCredentials()
+          .setExtraHeaders(socketHeaders)
+          .setTransportOptions({
             'polling': {'extraHeaders': socketHeaders},
             'websocket': {'extraHeaders': socketHeaders},
-          },
-          'auth': {
-            'cookie': cookie,
-          },
-        },
+          })
+          .build();
+      socket = io.io(
+        ApiConfig.apiBaseUrl,
+        socketOptions,
       );
+      socket.io.options['extraHeaders'] = socketHeaders;
+      socket.io.options['transportOptions'] = {
+        'polling': {'extraHeaders': socketHeaders},
+        'websocket': {'extraHeaders': socketHeaders},
+      };
+
+      void finishWithPostEvent(dynamic data, String eventName) {
+        if (completer.isCompleted) return;
+        final post = _readPostFromSocketEvent(data);
+        if (post == null || !_looksLikeCreatedPost(post, text, request.images.length)) {
+          return;
+        }
+
+        _socketLog('$eventName received before ACK; treating matching created post as success');
+        request.onProgress?.call(
+          const CreatePostProgress(
+            message: 'Post created.',
+            progress: 1,
+          ),
+        );
+        completer.complete(CreatePostResult(ok: true, post: post));
+      }
 
       timeout = Timer(Duration(seconds: hasImages ? 120 : 65), () {
         if (!completer.isCompleted) {
+          _socketLog(
+            'timeout waiting for post:create ACK; connected=${socket?.connected == true}; '
+            'images=${request.images.length}; uploadBytes=$uploadBytes',
+          );
           completer.complete(
             CreatePostResult(
               ok: false,
@@ -185,6 +223,9 @@ class PostService {
       });
 
       socket.onConnect((_) {
+        _socketLog(
+          'connected before emit; connected=${socket?.connected == true}; id=${socket?.id ?? 'unknown'}',
+        );
         request.onProgress?.call(
           CreatePostProgress(
             message: hasImages
@@ -198,6 +239,10 @@ class PostService {
           'post:create',
           payload,
           ack: (response) {
+            _socketLog(
+              'post:create ACK received; ok=${response is Map ? response['ok'] == true : false}; '
+              'type=${response.runtimeType}',
+            );
             if (completer.isCompleted) return;
 
             if (response is Map && response['ok'] == true) {
@@ -230,9 +275,18 @@ class PostService {
             );
           },
         );
+        _socketLog('post:create emitted; waiting for ACK');
       });
 
+      socket.onDisconnect((reason) {
+        _socketLog('disconnect; reason=$reason');
+      });
+
+      socket.on('post:new', (data) => finishWithPostEvent(data, 'post:new'));
+      socket.on('new_post', (data) => finishWithPostEvent(data, 'new_post'));
+
       socket.onConnectError((error) {
+        _socketLog('connect_error; error=$error');
         if (!completer.isCompleted) {
           completer.complete(
             CreatePostResult(
@@ -244,6 +298,7 @@ class PostService {
       });
 
       socket.onError((error) {
+        _socketLog('socket error event; error=$error');
         if (!completer.isCompleted) {
           completer.complete(
             CreatePostResult(
@@ -254,6 +309,17 @@ class PostService {
         }
       });
 
+      socket.on('reconnect', (attempt) {
+        _socketLog('reconnect; attempt=$attempt');
+        socket?.io.options['extraHeaders'] = socketHeaders;
+      });
+
+      socket.on('reconnect_attempt', (attempt) {
+        _socketLog('reconnect_attempt; attempt=$attempt');
+        socket?.io.options['extraHeaders'] = socketHeaders;
+      });
+
+      _socketLog('connecting socket');
       socket.connect();
       return await completer.future;
     } catch (error) {
@@ -414,40 +480,47 @@ class PostService {
       return 'katsklub_session=${Uri.encodeComponent(cookie)}';
     }
 
-    const ignoredCookieAttributes = {
-      'domain',
-      'expires',
-      'httponly',
-      'max-age',
-      'path',
-      'samesite',
-      'secure',
-    };
-
-    final validCookies = cookie
-        .split(RegExp(r';\s*'))
-        .map((part) => part.trim())
-        .where((part) {
-          if (part.isEmpty || !part.contains('=')) {
-            return false;
-          }
-
-          final name = part.split('=').first.trim().toLowerCase();
-          return !ignoredCookieAttributes.contains(name);
-        })
-        .toList();
-
-    if (validCookies.isEmpty) {
-      return null;
+    String? sessionCookie;
+    for (final part in cookie.split(RegExp(r';\s*'))) {
+      final trimmed = part.trim();
+      if (trimmed.toLowerCase().startsWith('katsklub_session=')) {
+        sessionCookie = trimmed;
+        break;
+      }
     }
 
-    return validCookies.join('; ');
+    if (sessionCookie != null && sessionCookie.length > 'katsklub_session='.length) {
+      return sessionCookie;
+    }
+
+    return null;
   }
 
   String _normalizeVisibility(String visibility) {
     return const {'public', 'friends', 'only_me'}.contains(visibility)
         ? visibility
         : 'public';
+  }
+
+  Post? _readPostFromSocketEvent(dynamic data) {
+    if (data is Map) {
+      return Post.fromJson(Map<String, dynamic>.from(data));
+    }
+    return null;
+  }
+
+  bool _looksLikeCreatedPost(Post post, String text, int imageCount) {
+    if (post.text.trim() != text.trim()) {
+      return false;
+    }
+    if (imageCount > 0 && post.imageUrls.length != imageCount) {
+      return false;
+    }
+    return true;
+  }
+
+  void _socketLog(String message) {
+    developer.log(message, name: 'KatsKlubCreatePost');
   }
 }
 
