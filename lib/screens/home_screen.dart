@@ -227,6 +227,15 @@ class _HomeScreenState extends State<HomeScreen> {
         visibility: 'public',
         text:
             'KatsKlub Flutter home is connected. Real posts from the API will appear here when your feed returns content.',
+        isReel: false,
+        isAlbum: false,
+        isDiscussion: false,
+        albumTitle: '',
+        discussionTitle: '',
+        discussionCoverUrl: '',
+        videoUrl: '',
+        videoPosterUrl: '',
+        videoTitle: '',
         createdAt: DateTime.now().subtract(const Duration(minutes: 12)),
         imageUrls: const [
           'sample://blue',

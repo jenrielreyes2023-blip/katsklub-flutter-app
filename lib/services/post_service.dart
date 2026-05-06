@@ -87,8 +87,8 @@ typedef SelectedPostImageCallback = void Function(SelectedPostImage image);
 class CreatePostRequest {
   const CreatePostRequest({
     required this.text,
-    required this.visibility,
     required this.images,
+    this.visibility = 'public',
     this.onProgress,
     this.albumTitle,
     this.isDiscussion = false,
@@ -191,9 +191,17 @@ class PostService {
     final hasVideo = request.videoDataUrl?.trim().isNotEmpty == true;
     final hasReelImage = request.reelImage?.isReady == true;
     final hasDiscussionCover = request.discussionCoverDataUrl?.trim().isNotEmpty == true;
+    final normalizedVisibility = _normalizeVisibility(request.visibility);
     final uploadImageCount =
         readyImages.length + (hasReelImage ? 1 : 0) + (hasDiscussionCover ? 1 : 0);
     final hasMediaUpload = uploadImageCount > 0 || hasVideo;
+    final mode = request.isDiscussion
+        ? 'discussion'
+        : request.isReel
+            ? 'reel'
+            : albumTitle.isNotEmpty
+                ? 'album'
+                : 'post';
     final uploadTargetLabel = hasVideo
         ? uploadImageCount > 0
             ? '$uploadImageCount image${uploadImageCount == 1 ? '' : 's'} and video'
@@ -248,9 +256,9 @@ class PostService {
       );
     }
 
-    final payload = {
+    final payload = <String, dynamic>{
       'text': text,
-      'visibility': _normalizeVisibility(request.visibility),
+      if (!request.isDiscussion && !request.isReel) 'visibility': normalizedVisibility,
       if (hasImages)
         'imageDataUrls': readyImages.map((image) => image.dataUrl).toList(),
       if (albumTitle.isNotEmpty) 'albumTitle': albumTitle,
@@ -262,7 +270,7 @@ class PostService {
       if (request.isReel) 'isReel': true,
       if (request.isReel && hasReelImage) 'imageDataUrl': request.reelImage!.dataUrl,
       if (hasVideo) 'videoDataUrl': request.videoDataUrl!.trim(),
-      if (request.videoTitle?.trim().isNotEmpty == true)
+      if (!request.isReel && request.videoTitle?.trim().isNotEmpty == true)
         'videoTitle': request.videoTitle!.trim(),
     };
 
@@ -293,8 +301,22 @@ class PostService {
           ((request.videoDataUrl?.length ?? 0) * 0.75).round();
       _socketLog(
         'creating socket; hasCookie=${cookie.startsWith('katsklub_session=')}; '
-        'images=${readyImages.length}; uploadBytes=$uploadBytes; '
+        'mode=$mode; images=${readyImages.length}; uploadBytes=$uploadBytes; '
         'textLength=${text.length}',
+      );
+      _socketLog(
+        'emit payload summary; '
+        'mode=$mode; '
+        'keys=${payload.keys.toList()}; '
+        'textLength=${text.length}; '
+        'imageCount=${hasImages ? readyImages.length : (hasReelImage ? 1 : 0)}; '
+        'hasVideo=$hasVideo; '
+        'videoMime=${request.videoDataUrl != null ? _extractDataUrlMime(request.videoDataUrl!) : ''}; '
+        'videoSize=${((request.videoDataUrl?.length ?? 0) * 0.75).round()}; '
+        'hasAlbumTitle=${albumTitle.isNotEmpty}; '
+        'hasDiscussionTitle=${discussionTitle.isNotEmpty}; '
+        'hasDiscussionCover=$hasDiscussionCover; '
+        'visibility=${payload['visibility'] ?? 'n/a'}',
       );
 
       final socketOptions = io.OptionBuilder()
@@ -392,6 +414,7 @@ class PostService {
               if (rawPost is Map) {
                 totalPostWatch.stop();
                 _socketLog('total post duration=${totalPostWatch.elapsedMilliseconds}ms via ACK');
+                _socketLog('ACK success; payloadKeys=${payload.keys.toList()}');
                 request.onProgress?.call(
                   const CreatePostProgress(
                     message: 'Post created.',
@@ -411,6 +434,7 @@ class PostService {
             final error = response is Map
                 ? response['error']?.toString()
                 : 'Failed to create post.';
+            _socketLog('ACK error; error=$error; payloadKeys=${payload.keys.toList()}');
             completer.complete(
               CreatePostResult(
                 ok: false,
@@ -522,6 +546,7 @@ class PostService {
       name: picked.name,
       dataUrl: 'data:$mime;base64,$encoded',
       byteCount: bytes.length,
+      mimeType: mime,
     );
   }
 
@@ -662,6 +687,11 @@ class PostService {
         : 'public';
   }
 
+  String _extractDataUrlMime(String dataUrl) {
+    final match = RegExp(r'^data:([^;]+);base64,', caseSensitive: false).firstMatch(dataUrl);
+    return match?.group(1) ?? '';
+  }
+
   Post? _readPostFromSocketEvent(dynamic data) {
     if (data is Map) {
       return Post.fromJson(Map<String, dynamic>.from(data));
@@ -705,9 +735,11 @@ class PreparedVideo {
     required this.name,
     required this.dataUrl,
     required this.byteCount,
+    required this.mimeType,
   });
 
   final String name;
   final String dataUrl;
   final int byteCount;
+  final String mimeType;
 }

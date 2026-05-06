@@ -90,6 +90,8 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final displayTitle = _post.displayTitle;
+
     return GestureDetector(
       onTap: () => widget.onOpenPost?.call(_post),
       child: Container(
@@ -113,6 +115,17 @@ class _PostCardState extends State<PostCard> {
               post: _post,
               onOpenAuthor: () => widget.onOpenAuthor?.call(_post),
             ),
+            if (displayTitle.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                displayTitle,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ],
             if (_post.text.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
@@ -131,6 +144,10 @@ class _PostCardState extends State<PostCard> {
                 onImageTap: (index) => widget.onOpenImages?.call(_post, index),
               ),
             ],
+            if (_post.hasVideo) ...[
+              const SizedBox(height: 12),
+              _VideoPreviewCard(post: _post),
+            ],
             const SizedBox(height: 12),
           _ReactionRow(
             post: _post,
@@ -141,6 +158,87 @@ class _PostCardState extends State<PostCard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _VideoPreviewCard extends StatelessWidget {
+  const _VideoPreviewCard({
+    required this.post,
+  });
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    final posterUrl = post.primaryVideoPosterUrl;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (posterUrl.isNotEmpty)
+              Image.network(
+                ApiConfig.assetUrl(posterUrl),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _videoFallback(),
+              )
+            else
+              _videoFallback(),
+            Container(
+              color: Colors.black.withOpacity(0.18),
+            ),
+            Center(
+              child: Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.55),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.62),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  post.videoTitle.trim().isNotEmpty ? post.videoTitle : 'Video',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _videoFallback() {
+    return Container(
+      color: const Color(0xFFE5E7EB),
+      child: const Icon(
+        Icons.videocam_outlined,
+        color: Color(0xFF6B7280),
+        size: 42,
       ),
     );
   }
