@@ -5,10 +5,12 @@ import '../config/api_config.dart';
 class PostImageGrid extends StatelessWidget {
   const PostImageGrid({
     required this.imageUrls,
+    this.onImageTap,
     super.key,
   });
 
   final List<String> imageUrls;
+  final ValueChanged<int>? onImageTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,24 +37,27 @@ class PostImageGrid extends StatelessWidget {
             final extraCount = imageUrls.length - 4;
             final showExtraCount = index == 3 && extraCount > 0;
 
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                _GridImage(url: visibleImages[index], index: index),
-                if (showExtraCount)
-                  Container(
-                    color: Colors.black.withOpacity(0.45),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '+$extraCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
+            return GestureDetector(
+              onTap: () => onImageTap?.call(index),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _GridImage(url: visibleImages[index], index: index),
+                  if (showExtraCount)
+                    Container(
+                      color: Colors.black.withOpacity(0.45),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '+$extraCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             );
           },
         ),

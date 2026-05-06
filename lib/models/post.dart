@@ -5,11 +5,15 @@ class Post {
     required this.authorUsername,
     required this.authorAvatarUrl,
     required this.authorIsVerified,
+    required this.authorIsAdmin,
+    required this.authorIsAuthor,
+    required this.ownedByMe,
     required this.visibility,
     required this.text,
     required this.createdAt,
     required this.imageUrls,
     required this.likeCount,
+    required this.likedByMe,
     required this.commentCount,
   });
 
@@ -18,11 +22,15 @@ class Post {
   final String authorUsername;
   final String authorAvatarUrl;
   final bool authorIsVerified;
+  final bool authorIsAdmin;
+  final bool authorIsAuthor;
+  final bool ownedByMe;
   final String visibility;
   final String text;
   final DateTime? createdAt;
   final List<String> imageUrls;
   final int likeCount;
+  final bool likedByMe;
   final int commentCount;
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -40,12 +48,39 @@ class Post {
           _readString(json['authorAvatarUrl']) ?? _readString(json['avatarUrl']) ?? '',
       authorIsVerified:
           json['authorIsVerified'] == true || json['authorIsAdmin'] == true,
+      authorIsAdmin: json['authorIsAdmin'] == true,
+      authorIsAuthor: json['authorIsAuthor'] == true,
+      ownedByMe: json['ownedByMe'] == true,
       visibility: _readString(json['visibility']) ?? 'public',
       text: _readString(json['text']) ?? _readString(json['content']) ?? '',
       createdAt: DateTime.tryParse(_readString(json['createdAt']) ?? ''),
       imageUrls: _readImageUrls(json),
       likeCount: _readInt(json['likeCount']),
+      likedByMe: json['likedByMe'] == true,
       commentCount: _readInt(json['commentCount']),
+    );
+  }
+
+  Post copyWith({
+    int? likeCount,
+    bool? likedByMe,
+  }) {
+    return Post(
+      id: id,
+      authorFullName: authorFullName,
+      authorUsername: authorUsername,
+      authorAvatarUrl: authorAvatarUrl,
+      authorIsVerified: authorIsVerified,
+      authorIsAdmin: authorIsAdmin,
+      authorIsAuthor: authorIsAuthor,
+      ownedByMe: ownedByMe,
+      visibility: visibility,
+      text: text,
+      createdAt: createdAt,
+      imageUrls: imageUrls,
+      likeCount: likeCount ?? this.likeCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+      commentCount: commentCount,
     );
   }
 

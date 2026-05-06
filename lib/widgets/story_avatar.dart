@@ -9,6 +9,7 @@ class StoryAvatar extends StatelessWidget {
     this.avatarUrl = '',
     this.isOwnStory = false,
     this.showPlus = false,
+    this.onTap,
     super.key,
   });
 
@@ -17,12 +18,16 @@ class StoryAvatar extends StatelessWidget {
   final String avatarUrl;
   final bool isOwnStory;
   final bool showPlus;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 76,
-      child: Column(
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: SizedBox(
+        width: 76,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Stack(
@@ -96,6 +101,7 @@ class StoryAvatar extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

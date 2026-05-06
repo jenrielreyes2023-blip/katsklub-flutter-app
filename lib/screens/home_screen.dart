@@ -7,6 +7,11 @@ import '../services/feed_service.dart';
 import '../widgets/kats_top_bar.dart';
 import '../widgets/post_card.dart';
 import '../widgets/story_avatar.dart';
+import 'image_viewer_screen.dart';
+import 'notifications_screen.dart';
+import 'post_detail_screen.dart';
+import 'search_screen.dart';
+import 'user_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -43,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, snapshot) {
         final data = snapshot.data;
         final posts = data?.posts.isNotEmpty == true
-            ? data!.posts
+            ? _homePosts(data!.posts)
             : _samplePosts(widget.user);
         final stories = _storyGroups(data?.stories ?? []);
 
@@ -54,7 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                KatsTopBar(unreadNotifications: data?.unreadNotifications ?? 0),
+                KatsTopBar(
+                  unreadNotifications: data?.unreadNotifications ?? 0,
+                  onSearchTap: _openSearch,
+                  onNotificationsTap: _openNotifications,
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Text(
@@ -69,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _StoriesRow(
                   user: widget.user,
                   stories: stories,
+                  onStoryTap: _showStoryPlaceholder,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
@@ -79,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting &&
                           data == null)
                         const _LoadingCard(),
-                      ...posts.map((post) => PostCard(post: post)),
+                      ...posts.map(_postCard),
                     ],
                   ),
                 ),
@@ -114,6 +124,85 @@ class _HomeScreenState extends State<HomeScreen> {
     return grouped;
   }
 
+  List<Post> _homePosts(List<Post> posts) {
+    return posts
+        .where(
+          (post) => post.authorIsAdmin || post.authorIsAuthor || post.ownedByMe,
+        )
+        .toList();
+  }
+
+  Widget _postCard(Post post) {
+    return PostCard(
+      post: post,
+      onOpenPost: _openPost,
+      onOpenImages: _openImages,
+      onOpenAuthor: _openAuthor,
+      onLike: FeedService().toggleLike,
+      onComment: _openPost,
+      onShare: _showSharePlaceholder,
+      onBookmark: _showBookmarkPlaceholder,
+    );
+  }
+
+  void _openPost(Post post) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostDetailScreen(postId: post.id, initialPost: post),
+      ),
+    );
+  }
+
+  void _openImages(Post post, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ImageViewerScreen(
+          imageUrls: post.imageUrls,
+          initialIndex: index,
+        ),
+      ),
+    );
+  }
+
+  void _openAuthor(Post post) {
+    if (post.authorUsername.trim().isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(username: post.authorUsername),
+      ),
+    );
+  }
+
+  void _openSearch() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SearchScreen()),
+    );
+  }
+
+  void _openNotifications() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+  }
+
+  void _showSharePlaceholder(Post post) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Share placeholder: ${post.id}')),
+    );
+  }
+
+  void _showBookmarkPlaceholder(Post post) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Save/bookmark is not available yet.')),
+    );
+  }
+
+  void _showStoryPlaceholder(String label) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Story viewer coming soon: $label')),
+    );
+  }
+
   List<Post> _samplePosts(User user) {
     return [
       Post(
@@ -122,6 +211,9 @@ class _HomeScreenState extends State<HomeScreen> {
         authorUsername: user.username ?? '',
         authorAvatarUrl: user.avatarUrl ?? '',
         authorIsVerified: false,
+        authorIsAdmin: false,
+        authorIsAuthor: false,
+        ownedByMe: true,
         visibility: 'public',
         text:
             'KatsKlub Flutter home is connected. Real posts from the API will appear here when your feed returns content.',
@@ -133,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'sample://pink',
         ],
         likeCount: 12,
+        likedByMe: false,
         commentCount: 3,
       ),
     ];
@@ -143,10 +236,12 @@ class _StoriesRow extends StatelessWidget {
   const _StoriesRow({
     required this.user,
     required this.stories,
+    required this.onStoryTap,
   });
 
   final User user;
   final List<Story> stories;
+  final ValueChanged<String> onStoryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +260,7 @@ class _StoriesRow extends StatelessWidget {
               avatarUrl: user.avatarUrl ?? '',
               isOwnStory: true,
               showPlus: true,
+              onTap: () => onStoryTap('Your Story'),
             );
           }
 
@@ -173,6 +269,7 @@ class _StoriesRow extends StatelessWidget {
             label: story.authorFullName,
             initials: story.initials,
             avatarUrl: story.authorAvatarUrl,
+            onTap: () => onStoryTap(story.authorFullName),
           );
         },
       ),
