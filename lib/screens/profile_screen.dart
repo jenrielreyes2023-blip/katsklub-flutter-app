@@ -5,10 +5,12 @@ import '../models/user.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     required this.user,
+    required this.onLogout,
     super.key,
   });
 
   final User user;
+  final Future<void> Function() onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +57,79 @@ class ProfileScreen extends StatelessWidget {
           label: 'User ID',
           value: user.id ?? '-',
         ),
+        const SizedBox(height: 16),
+        _ProfileSettingsCard(
+          user: user,
+          onLogout: onLogout,
+        ),
       ],
+    );
+  }
+}
+
+class _ProfileSettingsCard extends StatefulWidget {
+  const _ProfileSettingsCard({
+    required this.user,
+    required this.onLogout,
+  });
+
+  final User user;
+  final Future<void> Function() onLogout;
+
+  @override
+  State<_ProfileSettingsCard> createState() => _ProfileSettingsCardState();
+}
+
+class _ProfileSettingsCardState extends State<_ProfileSettingsCard> {
+  bool _isLoggingOut = false;
+
+  Future<void> _logout() async {
+    setState(() {
+      _isLoggingOut = true;
+    });
+
+    await widget.onLogout();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoggingOut = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: _isLoggingOut ? null : _logout,
+                icon: _isLoggingOut
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.logout),
+                label: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

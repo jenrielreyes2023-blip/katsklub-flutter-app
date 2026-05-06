@@ -19,7 +19,7 @@ class AuthResult {
 }
 
 class AuthService {
-  static const String _sessionCookieKey = 'katsklub_session_cookie';
+  static const String sessionCookieKey = 'katsklub_session_cookie';
   static const String _authTokenKey = 'katsklub_auth_token';
   static const String _userKey = 'katsklub_user';
 
@@ -85,7 +85,7 @@ class AuthService {
   Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final savedUser = prefs.getString(_userKey);
-    final savedCookie = prefs.getString(_sessionCookieKey);
+    final savedCookie = prefs.getString(sessionCookieKey);
 
     if (savedUser == null || savedCookie == null || savedCookie.isEmpty) {
       return null;
@@ -103,7 +103,7 @@ class AuthService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedCookie = prefs.getString(_sessionCookieKey);
+    final savedCookie = prefs.getString(sessionCookieKey);
 
     if (savedCookie != null && savedCookie.isNotEmpty) {
       try {
@@ -119,7 +119,7 @@ class AuthService {
       }
     }
 
-    await prefs.remove(_sessionCookieKey);
+    await prefs.remove(sessionCookieKey);
     await prefs.remove(_authTokenKey);
     await prefs.remove(_userKey);
   }
@@ -154,7 +154,7 @@ class AuthService {
     final token = responseData['token'];
 
     if (cookie != null && cookie.isNotEmpty) {
-      await prefs.setString(_sessionCookieKey, cookie);
+      await prefs.setString(sessionCookieKey, cookie);
     }
 
     if (token is String && token.isNotEmpty) {
