@@ -27,6 +27,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   bool _isPickingImages = false;
   bool _isPosting = false;
   String? _errorMessage;
+  String? _progressMessage;
+  double? _progressValue;
 
   static const _audienceOptions = [
     _AudienceOption(
@@ -70,14 +72,26 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     }
   }
 
+  void _handleProgress(CreatePostProgress progress) {
+    if (!mounted) return;
+    setState(() {
+      _progressMessage = progress.message;
+      _progressValue = progress.progress;
+    });
+  }
+
   Future<void> _pickImages() async {
     setState(() {
       _isPickingImages = true;
       _errorMessage = null;
+      _progressMessage = 'Preparing selected images...';
+      _progressValue = null;
     });
 
     try {
-      final pickedImages = await _postService.pickImages();
+      final pickedImages = await _postService.pickImages(
+        onProgress: _handleProgress,
+      );
       if (!mounted) return;
       setState(() {
         _images = [..._images, ...pickedImages].take(10).toList();
@@ -92,6 +106,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       if (!mounted) return;
       setState(() {
         _isPickingImages = false;
+        _progressMessage = null;
+        _progressValue = null;
       });
     }
   }
@@ -108,6 +124,10 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     setState(() {
       _isPosting = true;
       _errorMessage = null;
+      _progressMessage = _images.isEmpty
+          ? 'Posting...'
+          : 'Preparing upload for ${_images.length} image${_images.length == 1 ? '' : 's'}...';
+      _progressValue = _images.isEmpty ? null : 0;
     });
 
     final result = await _postService.createPost(
@@ -115,6 +135,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         text: text,
         visibility: _visibility,
         images: _images,
+        onProgress: _handleProgress,
       ),
     );
 
@@ -123,6 +144,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     setState(() {
       _isPosting = false;
       _errorMessage = result.error;
+      _progressMessage = null;
+      _progressValue = null;
     });
 
     if (result.ok) {
@@ -156,7 +179,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
             valueListenable: _canPostNotifier,
             builder: (context, canPost, _) {
               return _ComposerHeader(
-                isPosting: _isPosting,
+                isPosting: _isPosting || _isPickingImages,
                 canPost: canPost,
                 onPost: _submit,
               );
@@ -174,6 +197,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                   onChanged: (value) {
                     setState(() {
                       _visibility = value;
+                      _errorMessage = null;
                     });
                   },
                 ),
@@ -200,6 +224,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                   _SelectedImageGrid(
                     images: _images,
                     onRemove: _isPosting ? null : _removeImage,
+                  ),
+                ],
+                if (_progressMessage != null) ...[
+                  const SizedBox(height: 12),
+                  _ComposerProgress(
+                    message: _progressMessage!,
+                    value: _progressValue,
                   ),
                 ],
                 if (_errorMessage != null) ...[
@@ -436,9 +467,72 @@ class _SelectedImageGrid extends StatelessWidget {
                   ),
                 ),
               ),
+            Positioned(
+              left: 4,
+              bottom: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _formatImageSize(images[index]),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },
+    );
+  }
+
+  String _formatImageSize(SelectedPostImage image) {
+    final sizeMb = image.uploadByteCount / (1024 * 1024);
+    final label = sizeMb >= 1
+        ? '${sizeMb.toStringAsFixed(1)} MB'
+        : '${(image.uploadByteCount / 1024).round()} KB';
+    return image.optimized ? '$label ready' : label;
+  }
+}
+
+class _ComposerProgress extends StatelessWidget {
+  const _ComposerProgress({
+    required this.message,
+    required this.value,
+  });
+
+  final String message;
+  final double? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LinearProgressIndicator(value: value),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
