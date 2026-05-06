@@ -1,50 +1,42 @@
 import 'package:flutter/material.dart';
 
-class CreatePostScreen extends StatelessWidget {
-  const CreatePostScreen({super.key});
+import '../models/user.dart';
+import '../widgets/create_post_composer.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    return const _PlaceholderScaffold(
-      title: 'Create Post',
-      icon: Icons.add_circle_outline,
-      message: 'Create Post coming soon.',
-    );
-  }
-}
-
-class _PlaceholderScaffold extends StatelessWidget {
-  const _PlaceholderScaffold({
-    required this.title,
-    required this.icon,
-    required this.message,
+class CreatePostScreen extends StatefulWidget {
+  const CreatePostScreen({
+    required this.user,
+    required this.onPostCreated,
+    super.key,
   });
 
-  final String title;
-  final IconData icon;
-  final String message;
+  final User user;
+  final VoidCallback onPostCreated;
+
+  @override
+  State<CreatePostScreen> createState() => _CreatePostScreenState();
+}
+
+class _CreatePostScreenState extends State<CreatePostScreen> {
+  int _composerKey = 0;
+
+  void _handlePostCreated() {
+    setState(() {
+      _composerKey++;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Post created.')),
+    );
+    widget.onPostCreated();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 56, color: const Color(0xFF2563EB)),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
-      ),
+    return CreatePostComposer(
+      key: ValueKey(_composerKey),
+      user: widget.user,
+      onPostCreated: _handlePostCreated,
     );
   }
 }

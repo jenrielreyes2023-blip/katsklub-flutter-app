@@ -11,10 +11,12 @@ import 'user_profile_screen.dart';
 class FeedScreen extends StatefulWidget {
   const FeedScreen({
     required this.user,
+    required this.refreshToken,
     super.key,
   });
 
   final User user;
+  final int refreshToken;
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -30,6 +32,15 @@ class _FeedScreenState extends State<FeedScreen> {
     super.initState();
     _feedFuture = FeedService().loadFeed();
     _loadFriends();
+  }
+
+  @override
+  void didUpdateWidget(FeedScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      _feedFuture = FeedService().loadFeed();
+      _loadFriends();
+    }
   }
 
   Future<void> _refresh() async {

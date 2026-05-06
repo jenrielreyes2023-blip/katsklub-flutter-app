@@ -16,10 +16,12 @@ import 'user_profile_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     required this.user,
+    required this.refreshToken,
     super.key,
   });
 
   final User user;
+  final int refreshToken;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -32,6 +34,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _feedFuture = FeedService().loadHomeFeed();
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      _feedFuture = FeedService().loadHomeFeed();
+    }
   }
 
   Future<void> _refresh() async {

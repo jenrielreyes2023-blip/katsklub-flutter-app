@@ -23,6 +23,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
+  int _feedRefreshToken = 0;
 
   void _selectTab(int index) {
     setState(() {
@@ -33,9 +34,23 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(user: widget.user),
-      FeedScreen(user: widget.user),
-      const CreatePostScreen(),
+      HomeScreen(
+        user: widget.user,
+        refreshToken: _feedRefreshToken,
+      ),
+      FeedScreen(
+        user: widget.user,
+        refreshToken: _feedRefreshToken,
+      ),
+      CreatePostScreen(
+        user: widget.user,
+        onPostCreated: () {
+          setState(() {
+            _selectedIndex = 0;
+            _feedRefreshToken++;
+          });
+        },
+      ),
       const MessagesScreen(),
       ProfileScreen(
         user: widget.user,
