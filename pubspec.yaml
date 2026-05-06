@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_image_compress: ^2.4.0
   http: ^1.2.2
-  image: ^4.8.0
   image_picker: ^1.1.2
   provider: ^6.1.2
   shared_preferences: ^2.2.3

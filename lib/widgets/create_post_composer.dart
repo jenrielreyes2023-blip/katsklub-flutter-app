@@ -66,7 +66,10 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   }
 
   void _syncCanPostState() {
-    final canPost = _controller.text.trim().isNotEmpty || _images.isNotEmpty;
+    final imagesReady = _images.every((image) => image.isReady);
+    final hasContent =
+        _controller.text.trim().isNotEmpty || _images.any((image) => image.isReady);
+    final canPost = hasContent && imagesReady;
     if (_canPostNotifier.value != canPost) {
       _canPostNotifier.value = canPost;
     }
@@ -89,13 +92,26 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     });
 
     try {
-      final pickedImages = await _postService.pickImages(
+      await _postService.pickImages(
         onProgress: _handleProgress,
+        onImageSelected: (image) {
+          if (!mounted) return;
+          setState(() {
+            _images = [..._images, image].take(10).toList();
+          });
+          _syncCanPostState();
+        },
+        onImageUpdated: (image) {
+          if (!mounted) return;
+          setState(() {
+            _images = _images
+                .map((current) => current.id == image.id ? image : current)
+                .toList();
+          });
+          _syncCanPostState();
+        },
       );
       if (!mounted) return;
-      setState(() {
-        _images = [..._images, ...pickedImages].take(10).toList();
-      });
       _syncCanPostState();
     } catch (error) {
       if (!mounted) return;
@@ -117,6 +133,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     if (text.isEmpty && _images.isEmpty) {
       setState(() {
         _errorMessage = 'Write something or attach an image before posting.';
+      });
+      return;
+    }
+
+    if (_images.any((image) => !image.isReady)) {
+      setState(() {
+        _errorMessage = 'Please remove failed images or wait until all images are ready.';
       });
       return;
     }
@@ -493,11 +516,18 @@ class _SelectedImageGrid extends StatelessWidget {
   }
 
   String _formatImageSize(SelectedPostImage image) {
+    if (image.isPreparing) {
+      return 'Preparing...';
+    }
+    if (image.isFailed) {
+      return 'Failed';
+    }
+
     final sizeMb = image.uploadByteCount / (1024 * 1024);
     final label = sizeMb >= 1
         ? '${sizeMb.toStringAsFixed(1)} MB'
         : '${(image.uploadByteCount / 1024).round()} KB';
-    return image.optimized ? '$label ready' : label;
+    return image.optimized ? '$label WebP' : '$label ready';
   }
 }
 

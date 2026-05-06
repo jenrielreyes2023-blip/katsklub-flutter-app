@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:image/image.dart' as img;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -11,6 +12,12 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../config/api_config.dart';
 import '../models/post.dart';
 import 'auth_service.dart';
+
+enum SelectedPostImageStatus {
+  preparing,
+  ready,
+  failed,
+}
 
 class SelectedPostImage {
   const SelectedPostImage({
@@ -22,6 +29,8 @@ class SelectedPostImage {
     required this.originalByteCount,
     required this.uploadByteCount,
     required this.optimized,
+    required this.status,
+    this.errorMessage,
   });
 
   final String id;
@@ -32,6 +41,34 @@ class SelectedPostImage {
   final int originalByteCount;
   final int uploadByteCount;
   final bool optimized;
+  final SelectedPostImageStatus status;
+  final String? errorMessage;
+
+  bool get isReady => status == SelectedPostImageStatus.ready;
+  bool get isPreparing => status == SelectedPostImageStatus.preparing;
+  bool get isFailed => status == SelectedPostImageStatus.failed;
+
+  SelectedPostImage copyWith({
+    String? dataUrl,
+    String? mimeType,
+    int? uploadByteCount,
+    bool? optimized,
+    SelectedPostImageStatus? status,
+    String? errorMessage,
+  }) {
+    return SelectedPostImage(
+      id: id,
+      file: file,
+      dataUrl: dataUrl ?? this.dataUrl,
+      previewBytes: previewBytes,
+      mimeType: mimeType ?? this.mimeType,
+      originalByteCount: originalByteCount,
+      uploadByteCount: uploadByteCount ?? this.uploadByteCount,
+      optimized: optimized ?? this.optimized,
+      status: status ?? this.status,
+      errorMessage: errorMessage,
+    );
+  }
 }
 
 class CreatePostProgress {
@@ -45,6 +82,7 @@ class CreatePostProgress {
 }
 
 typedef CreatePostProgressCallback = void Function(CreatePostProgress progress);
+typedef SelectedPostImageCallback = void Function(SelectedPostImage image);
 
 class CreatePostRequest {
   const CreatePostRequest({
@@ -75,17 +113,22 @@ class CreatePostResult {
 class PostService {
   static const int _maxImageDimension = 1600;
   static const int _maxServerImageBytes = 6 * 1024 * 1024;
-  static const int _targetImageBytes = 5 * 1024 * 1024;
+  static const int _webpQuality = 85;
 
   Future<List<SelectedPostImage>> pickImages({
     CreatePostProgressCallback? onProgress,
+    SelectedPostImageCallback? onImageSelected,
+    SelectedPostImageCallback? onImageUpdated,
   }) async {
+    final pickWatch = Stopwatch()..start();
     final picker = ImagePicker();
     final images = await picker.pickMultiImage(
-      imageQuality: 85,
-      maxWidth: 1600,
-      maxHeight: 1600,
+      imageQuality: _webpQuality,
+      maxWidth: _maxImageDimension.toDouble(),
+      maxHeight: _maxImageDimension.toDouble(),
     );
+    pickWatch.stop();
+    _imageLog('image picker duration=${pickWatch.elapsedMilliseconds}ms; count=${images.length}');
 
     final selected = <SelectedPostImage>[];
     var index = 0;
@@ -98,7 +141,24 @@ class PostService {
           progress: limitedImages.isEmpty ? null : index / limitedImages.length,
         ),
       );
-      selected.add(await _prepareSelectedImage(image, batchId, index));
+      final originalBytes = await image.readAsBytes();
+      final originalMime = _inferImageMime(image);
+      final placeholder = SelectedPostImage(
+        id: '$batchId-$index-${image.name}',
+        file: image,
+        dataUrl: '',
+        previewBytes: originalBytes,
+        mimeType: originalMime,
+        originalByteCount: originalBytes.length,
+        uploadByteCount: 0,
+        optimized: false,
+        status: SelectedPostImageStatus.preparing,
+      );
+      onImageSelected?.call(placeholder);
+
+      final prepared = await _prepareSelectedImage(placeholder, originalBytes, originalMime);
+      selected.add(prepared);
+      onImageUpdated?.call(prepared);
       index++;
     }
 
@@ -108,9 +168,17 @@ class PostService {
 
   Future<CreatePostResult> createPost(CreatePostRequest request) async {
     final text = request.text.trim();
-    final hasImages = request.images.isNotEmpty;
+    final readyImages = request.images.where((image) => image.isReady).toList();
+    final hasImages = readyImages.isNotEmpty;
 
-    if (text.isEmpty && !hasImages) {
+    if (request.images.any((image) => !image.isReady)) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Please wait until all selected images are ready.',
+      );
+    }
+
+    if (text.isEmpty && readyImages.isEmpty) {
       return const CreatePostResult(
         ok: false,
         error: 'Write something or attach an image before posting.',
@@ -129,7 +197,7 @@ class PostService {
       'text': text,
       'visibility': _normalizeVisibility(request.visibility),
       if (hasImages)
-        'imageDataUrls': request.images.map((image) => image.dataUrl).toList(),
+        'imageDataUrls': readyImages.map((image) => image.dataUrl).toList(),
     };
 
     io.Socket? socket;
@@ -149,13 +217,14 @@ class PostService {
       final socketHeaders = <String, String>{
         'Cookie': cookie,
       };
-      final uploadBytes = request.images.fold<int>(
+      final totalPostWatch = Stopwatch()..start();
+      final uploadBytes = readyImages.fold<int>(
         0,
         (total, image) => total + image.uploadByteCount,
       );
       _socketLog(
         'creating socket; hasCookie=${cookie.startsWith('katsklub_session=')}; '
-        'images=${request.images.length}; uploadBytes=$uploadBytes; '
+        'images=${readyImages.length}; uploadBytes=$uploadBytes; '
         'textLength=${text.length}',
       );
 
@@ -185,11 +254,13 @@ class PostService {
       void finishWithPostEvent(dynamic data, String eventName) {
         if (completer.isCompleted) return;
         final post = _readPostFromSocketEvent(data);
-        if (post == null || !_looksLikeCreatedPost(post, text, request.images.length)) {
+        if (post == null || !_looksLikeCreatedPost(post, text, readyImages.length)) {
           return;
         }
 
         _socketLog('$eventName received before ACK; treating matching created post as success');
+        totalPostWatch.stop();
+        _socketLog('total post duration=${totalPostWatch.elapsedMilliseconds}ms via $eventName');
         request.onProgress?.call(
           const CreatePostProgress(
             message: 'Post created.',
@@ -203,7 +274,7 @@ class PostService {
         if (!completer.isCompleted) {
           _socketLog(
             'timeout waiting for post:create ACK; connected=${socket?.connected == true}; '
-            'images=${request.images.length}; uploadBytes=$uploadBytes',
+            'images=${readyImages.length}; uploadBytes=$uploadBytes',
           );
           completer.complete(
             CreatePostResult(
@@ -217,14 +288,19 @@ class PostService {
         socket?.dispose();
       });
 
+      final connectWatch = Stopwatch();
+
       socket.onConnect((_) {
+        connectWatch.stop();
+        _socketLog('socket connect duration=${connectWatch.elapsedMilliseconds}ms');
+        final ackWatch = Stopwatch()..start();
         _socketLog(
           'connected before emit; connected=${socket?.connected == true}; id=${socket?.id ?? 'unknown'}',
         );
         request.onProgress?.call(
           CreatePostProgress(
             message: hasImages
-                ? 'Uploading ${request.images.length} prepared image${request.images.length == 1 ? '' : 's'}...'
+                ? 'Uploading ${readyImages.length} prepared image${readyImages.length == 1 ? '' : 's'}...'
                 : 'Posting...',
             progress: hasImages ? 0.35 : null,
           ),
@@ -234,6 +310,8 @@ class PostService {
           'post:create',
           payload,
           ack: (response) {
+            ackWatch.stop();
+            _socketLog('ACK wait duration=${ackWatch.elapsedMilliseconds}ms');
             _socketLog(
               'post:create ACK received; ok=${response is Map ? response['ok'] == true : false}; '
               'type=${response.runtimeType}',
@@ -243,6 +321,8 @@ class PostService {
             if (response is Map && response['ok'] == true) {
               final rawPost = response['post'];
               if (rawPost is Map) {
+                totalPostWatch.stop();
+                _socketLog('total post duration=${totalPostWatch.elapsedMilliseconds}ms via ACK');
                 request.onProgress?.call(
                   const CreatePostProgress(
                     message: 'Post created.',
@@ -313,6 +393,7 @@ class PostService {
       });
 
       _socketLog('connecting socket');
+      connectWatch.start();
       socket.connect();
       return await completer.future;
     } catch (error) {
@@ -332,28 +413,48 @@ class PostService {
   }
 
   Future<SelectedPostImage> _prepareSelectedImage(
-    XFile file,
-    int batchId,
-    int index,
+    SelectedPostImage image,
+    Uint8List originalBytes,
+    String originalMime,
   ) async {
-    final originalBytes = await file.readAsBytes();
-    final originalMime = _inferImageMime(file);
-    final upload = _optimizeImageForPost(originalBytes, originalMime);
+    try {
+      final upload = await _optimizeImageForPost(originalBytes, originalMime);
+      if (upload.bytes.length > _maxServerImageBytes) {
+        return image.copyWith(
+          status: SelectedPostImageStatus.failed,
+          errorMessage: 'Image is larger than 6 MB after preparation.',
+        );
+      }
 
-    return SelectedPostImage(
-      id: '$batchId-$index-${file.name}',
-      file: file,
-      dataUrl: 'data:${upload.mimeType};base64,${base64Encode(upload.bytes)}',
-      previewBytes: originalBytes,
-      mimeType: upload.mimeType,
-      originalByteCount: originalBytes.length,
-      uploadByteCount: upload.bytes.length,
-      optimized: upload.optimized,
-    );
+      final base64Watch = Stopwatch()..start();
+      final encoded = await Isolate.run(() => base64Encode(upload.bytes));
+      base64Watch.stop();
+      _imageLog(
+        'base64/dataUrl duration=${base64Watch.elapsedMilliseconds}ms; bytes=${upload.bytes.length}; mime=${upload.mimeType}',
+      );
+
+      return image.copyWith(
+        dataUrl: 'data:${upload.mimeType};base64,$encoded',
+        mimeType: upload.mimeType,
+        uploadByteCount: upload.bytes.length,
+        optimized: upload.optimized,
+        status: SelectedPostImageStatus.ready,
+      );
+    } catch (error) {
+      _imageLog('image preparation failed; error=$error');
+      return image.copyWith(
+        status: SelectedPostImageStatus.failed,
+        errorMessage: 'Image preparation failed.',
+      );
+    }
   }
 
-  _PreparedImage _optimizeImageForPost(Uint8List originalBytes, String originalMime) {
-    if (originalBytes.length <= _targetImageBytes && originalMime == 'image/gif') {
+  Future<_PreparedImage> _optimizeImageForPost(
+    Uint8List originalBytes,
+    String originalMime,
+  ) async {
+    if (originalMime == 'image/gif') {
+      _imageLog('GIF selected; preserving original bytes=${originalBytes.length}');
       return _PreparedImage(
         bytes: originalBytes,
         mimeType: originalMime,
@@ -361,93 +462,34 @@ class PostService {
       );
     }
 
-    final decoded = img.decodeImage(originalBytes);
-    if (decoded == null) {
-      if (originalBytes.length <= _maxServerImageBytes) {
-        return _PreparedImage(
-          bytes: originalBytes,
-          mimeType: originalMime,
-          optimized: false,
-        );
-      }
+    final convertWatch = Stopwatch()..start();
+    final webpBytes = await FlutterImageCompress.compressWithList(
+      originalBytes,
+      minWidth: _maxImageDimension,
+      minHeight: _maxImageDimension,
+      quality: _webpQuality,
+      format: CompressFormat.webp,
+      keepExif: false,
+    );
+    convertWatch.stop();
+    _imageLog(
+      'WebP conversion duration=${convertWatch.elapsedMilliseconds}ms; '
+      'originalBytes=${originalBytes.length}; webpBytes=${webpBytes.length}; quality=$_webpQuality',
+    );
 
-      throw StateError(
-        'One selected image is too large and could not be optimized. Try a smaller image.',
-      );
-    }
-
-    final candidates = <Uint8List>[];
-    for (final maxDimension in const [_maxImageDimension, 1280, 1024]) {
-      final resized = _resizeImage(decoded, maxDimension);
-      for (final quality in const [85, 76, 68, 60]) {
-        candidates.add(Uint8List.fromList(img.encodeJpg(resized, quality: quality)));
-      }
-    }
-
-    final serverSafeCandidate = _bestCandidateUnder(candidates, _targetImageBytes);
-    final fallbackCandidate = _bestCandidateUnder(candidates, _maxServerImageBytes);
-    final smallestCandidate = _smallestCandidate(candidates);
-
-    Uint8List chosenBytes;
-    var optimized = false;
-    var mimeType = originalMime;
-
-    if (originalBytes.length <= _maxServerImageBytes &&
-        fallbackCandidate != null &&
-        fallbackCandidate.length >= originalBytes.length * 0.95) {
-      chosenBytes = originalBytes;
-    } else {
-      chosenBytes = serverSafeCandidate ?? fallbackCandidate ?? smallestCandidate ?? originalBytes;
-      optimized = !identical(chosenBytes, originalBytes);
-      mimeType = optimized ? 'image/jpeg' : originalMime;
-    }
-
-    if (chosenBytes.length > _maxServerImageBytes) {
-      throw StateError(
-        'One selected image is still larger than 6 MB after optimization. Try a smaller image.',
+    if (webpBytes.isNotEmpty && webpBytes.length < originalBytes.length * 0.95) {
+      return _PreparedImage(
+        bytes: webpBytes,
+        mimeType: 'image/webp',
+        optimized: true,
       );
     }
 
     return _PreparedImage(
-      bytes: chosenBytes,
-      mimeType: mimeType,
-      optimized: optimized,
+      bytes: originalBytes,
+      mimeType: originalMime,
+      optimized: false,
     );
-  }
-
-  img.Image _resizeImage(img.Image source, int maxDimension) {
-    if (source.width <= maxDimension && source.height <= maxDimension) {
-      return source;
-    }
-
-    if (source.width >= source.height) {
-      return img.copyResize(source, width: maxDimension);
-    }
-
-    return img.copyResize(source, height: maxDimension);
-  }
-
-  Uint8List? _bestCandidateUnder(List<Uint8List> candidates, int maxBytes) {
-    Uint8List? best;
-    for (final candidate in candidates) {
-      if (candidate.length > maxBytes) {
-        continue;
-      }
-      if (best == null || candidate.length > best.length) {
-        best = candidate;
-      }
-    }
-    return best;
-  }
-
-  Uint8List? _smallestCandidate(List<Uint8List> candidates) {
-    Uint8List? smallest;
-    for (final candidate in candidates) {
-      if (smallest == null || candidate.length < smallest.length) {
-        smallest = candidate;
-      }
-    }
-    return smallest;
   }
 
   String _inferImageMime(XFile file) {
@@ -514,6 +556,10 @@ class PostService {
 
   void _socketLog(String message) {
     developer.log(message, name: 'KatsKlubCreatePost');
+  }
+
+  void _imageLog(String message) {
+    developer.log(message, name: 'KatsKlubImagePrepare');
   }
 }
 
