@@ -24,8 +24,8 @@ jobs:
         run: flutter --version
 
       - name: Generate Flutter Android files
-        run: flutter create . --platforms=android --org com.katsklub
-
+        run: flutter create . --platforms=android --org com.katsklub --project-name katsklub_flutter
+      
       - name: Install dependencies
         run: flutter pub get
 
