@@ -181,11 +181,6 @@ class PostService {
         ApiConfig.apiBaseUrl,
         socketOptions,
       );
-      socket.io.options['extraHeaders'] = socketHeaders;
-      socket.io.options['transportOptions'] = {
-        'polling': {'extraHeaders': socketHeaders},
-        'websocket': {'extraHeaders': socketHeaders},
-      };
 
       void finishWithPostEvent(dynamic data, String eventName) {
         if (completer.isCompleted) return;
@@ -311,12 +306,10 @@ class PostService {
 
       socket.on('reconnect', (attempt) {
         _socketLog('reconnect; attempt=$attempt');
-        socket?.io.options['extraHeaders'] = socketHeaders;
       });
 
       socket.on('reconnect_attempt', (attempt) {
         _socketLog('reconnect_attempt; attempt=$attempt');
-        socket?.io.options['extraHeaders'] = socketHeaders;
       });
 
       _socketLog('connecting socket');
