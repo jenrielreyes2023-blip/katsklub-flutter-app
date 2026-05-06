@@ -26,7 +26,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Post created.')),
+      const SnackBar(content: Text('Created.')),
     );
     widget.onPostCreated();
   }

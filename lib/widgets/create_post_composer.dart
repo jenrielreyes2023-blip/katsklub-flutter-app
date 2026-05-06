@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/post_service.dart';
 
+enum _CreateMode {
+  post,
+  discussion,
+  album,
+  reel,
+}
+
 class CreatePostComposer extends StatefulWidget {
   const CreatePostComposer({
     required this.user,
@@ -19,12 +26,18 @@ class CreatePostComposer extends StatefulWidget {
 
 class _CreatePostComposerState extends State<CreatePostComposer> {
   final _controller = TextEditingController();
+  final _titleController = TextEditingController();
   final _canPostNotifier = ValueNotifier<bool>(false);
   final _postService = PostService();
 
+  _CreateMode _mode = _CreateMode.post;
   String _visibility = 'public';
   List<SelectedPostImage> _images = [];
+  SelectedPostImage? _discussionCover;
+  SelectedPostImage? _reelImage;
+  PreparedVideo? _selectedVideo;
   bool _isPickingImages = false;
+  bool _isPickingVideo = false;
   bool _isPosting = false;
   String? _errorMessage;
   String? _progressMessage;
@@ -55,24 +68,98 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   void initState() {
     super.initState();
     _controller.addListener(_syncCanPostState);
+    _titleController.addListener(_syncCanPostState);
   }
 
   @override
   void dispose() {
     _controller.removeListener(_syncCanPostState);
+    _titleController.removeListener(_syncCanPostState);
     _controller.dispose();
+    _titleController.dispose();
     _canPostNotifier.dispose();
     super.dispose();
   }
 
   void _syncCanPostState() {
     final imagesReady = _images.every((image) => image.isReady);
-    final hasContent =
-        _controller.text.trim().isNotEmpty || _images.any((image) => image.isReady);
-    final canPost = hasContent && imagesReady;
+    final body = _controller.text.trim();
+    final title = _titleController.text.trim();
+    final canPost = switch (_mode) {
+      _CreateMode.post =>
+        (body.isNotEmpty || _images.any((image) => image.isReady)) && imagesReady,
+      _CreateMode.discussion =>
+        title.isNotEmpty &&
+            body.isNotEmpty &&
+            (_discussionCover == null || _discussionCover!.isReady),
+      _CreateMode.album =>
+        title.isNotEmpty &&
+            imagesReady &&
+            (_images.any((image) => image.isReady) || _selectedVideo != null),
+      _CreateMode.reel =>
+        (_reelImage == null || _reelImage!.isReady) &&
+            (body.isNotEmpty || _reelImage?.isReady == true || _selectedVideo != null),
+    };
     if (_canPostNotifier.value != canPost) {
       _canPostNotifier.value = canPost;
     }
+  }
+
+  String get _bodyPlaceholder {
+    return switch (_mode) {
+      _CreateMode.post => 'Share your thoughts...',
+      _CreateMode.discussion => 'Write your topic, blog, or announcement...',
+      _CreateMode.album => 'Add a caption for your album...',
+      _CreateMode.reel => 'Add a caption for your reel...',
+    };
+  }
+
+  String get _headerTitle {
+    return switch (_mode) {
+      _CreateMode.post => 'Create a post',
+      _CreateMode.discussion => 'Create Discussion',
+      _CreateMode.album => 'Upload album',
+      _CreateMode.reel => 'Add Reels',
+    };
+  }
+
+  String get _submitLabel {
+    if (_isPickingImages) {
+      return 'Preparing images...';
+    }
+    if (_isPickingVideo) {
+      return 'Preparing video...';
+    }
+    if (_isPosting) {
+      return 'Posting...';
+    }
+
+    return switch (_mode) {
+      _CreateMode.post => 'Post',
+      _CreateMode.discussion => 'Publish',
+      _CreateMode.album => 'Post album',
+      _CreateMode.reel => 'Post Reel',
+    };
+  }
+
+  void _setMode(_CreateMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      _errorMessage = null;
+      _progressMessage = null;
+      _progressValue = null;
+      _controller.clear();
+      _titleController.clear();
+      _images = [];
+      _discussionCover = null;
+      _reelImage = null;
+      _selectedVideo = null;
+      if (mode == _CreateMode.discussion || mode == _CreateMode.reel) {
+        _visibility = 'public';
+      }
+    });
+    _syncCanPostState();
   }
 
   void _handleProgress(CreatePostProgress progress) {
@@ -128,18 +215,133 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     }
   }
 
+  Future<void> _pickDiscussionCover() async {
+    setState(() {
+      _isPickingImages = true;
+      _errorMessage = null;
+      _progressMessage = 'Preparing cover image...';
+      _progressValue = null;
+    });
+
+    try {
+      await _postService.pickSinglePreparedImage(
+        onProgress: _handleProgress,
+        onImageSelected: (image) {
+          if (!mounted) return;
+          setState(() {
+            _discussionCover = image;
+          });
+          _syncCanPostState();
+        },
+        onImageUpdated: (image) {
+          if (!mounted) return;
+          setState(() {
+            _discussionCover = image;
+          });
+          _syncCanPostState();
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Unable to select cover image: $error';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isPickingImages = false;
+        _progressMessage = null;
+        _progressValue = null;
+      });
+    }
+  }
+
+  Future<void> _pickReelImage() async {
+    setState(() {
+      _isPickingImages = true;
+      _errorMessage = null;
+      _progressMessage = 'Preparing reel image...';
+      _progressValue = null;
+    });
+
+    try {
+      await _postService.pickSinglePreparedImage(
+        onProgress: _handleProgress,
+        onImageSelected: (image) {
+          if (!mounted) return;
+          setState(() {
+            _reelImage = image;
+            _selectedVideo = null;
+          });
+          _syncCanPostState();
+        },
+        onImageUpdated: (image) {
+          if (!mounted) return;
+          setState(() {
+            _reelImage = image;
+          });
+          _syncCanPostState();
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Unable to select reel image: $error';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isPickingImages = false;
+        _progressMessage = null;
+        _progressValue = null;
+      });
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    setState(() {
+      _isPickingVideo = true;
+      _errorMessage = null;
+      _progressMessage = 'Preparing video...';
+      _progressValue = null;
+    });
+
+    try {
+      final video = await _postService.pickVideo(onProgress: _handleProgress);
+      if (!mounted) return;
+      if (video != null) {
+        setState(() {
+          _selectedVideo = video;
+          if (_mode == _CreateMode.reel) {
+            _reelImage = null;
+          }
+        });
+      }
+      _syncCanPostState();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Unable to select video: $error';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isPickingVideo = false;
+        _progressMessage = null;
+        _progressValue = null;
+      });
+    }
+  }
+
   Future<void> _submit() async {
     final text = _controller.text.trim();
-    if (text.isEmpty && _images.isEmpty) {
-      setState(() {
-        _errorMessage = 'Write something or attach an image before posting.';
-      });
-      return;
-    }
+    final title = _titleController.text.trim();
 
-    if (_images.any((image) => !image.isReady)) {
+    if (_images.any((image) => !image.isReady) ||
+        (_discussionCover != null && !_discussionCover!.isReady) ||
+        (_reelImage != null && !_reelImage!.isReady)) {
       setState(() {
-        _errorMessage = 'Please remove failed images or wait until all images are ready.';
+        _errorMessage = 'Please remove failed images or wait until all media is ready.';
       });
       return;
     }
@@ -147,10 +349,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     setState(() {
       _isPosting = true;
       _errorMessage = null;
-      _progressMessage = _images.isEmpty
-          ? 'Posting...'
-          : 'Preparing upload for ${_images.length} image${_images.length == 1 ? '' : 's'}...';
-      _progressValue = _images.isEmpty ? null : 0;
+      _progressMessage = 'Posting...';
+      _progressValue = null;
     });
 
     final result = await _postService.createPost(
@@ -159,6 +359,17 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         visibility: _visibility,
         images: _images,
         onProgress: _handleProgress,
+        albumTitle: _mode == _CreateMode.album ? title : null,
+        isDiscussion: _mode == _CreateMode.discussion,
+        discussionTitle: _mode == _CreateMode.discussion ? title : null,
+        discussionCoverDataUrl:
+            _mode == _CreateMode.discussion && _discussionCover?.isReady == true
+                ? _discussionCover!.dataUrl
+                : null,
+        isReel: _mode == _CreateMode.reel,
+        reelImage: _mode == _CreateMode.reel ? _reelImage : null,
+        videoDataUrl: _selectedVideo?.dataUrl,
+        videoTitle: _selectedVideo?.name,
       ),
     );
 
@@ -174,7 +385,11 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     if (result.ok) {
       _controller.clear();
       setState(() {
+        _titleController.clear();
         _images = [];
+        _discussionCover = null;
+        _reelImage = null;
+        _selectedVideo = null;
         _visibility = 'public';
       });
       _syncCanPostState();
@@ -194,6 +409,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final showAudience = _mode == _CreateMode.post || _mode == _CreateMode.album;
+
     return Container(
       color: const Color(0xFFF7F8FA),
       child: Column(
@@ -202,9 +419,11 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
             valueListenable: _canPostNotifier,
             builder: (context, canPost, _) {
               return _ComposerHeader(
-                isPosting: _isPosting || _isPickingImages,
+                title: _headerTitle,
+                isPosting: _isPosting || _isPickingImages || _isPickingVideo,
                 canPost: canPost,
                 onPost: _submit,
+                submitLabel: _submitLabel,
               );
             },
           ),
@@ -212,28 +431,54 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _UserRow(user: widget.user),
-                const SizedBox(height: 14),
-                _AudienceSelector(
-                  value: _visibility,
-                  options: _audienceOptions,
-                  onChanged: (value) {
-                    setState(() {
-                      _visibility = value;
-                      _errorMessage = null;
-                    });
-                  },
+                _ModeSelector(
+                  value: _mode,
+                  onChanged: _isPosting || _isPickingImages || _isPickingVideo
+                      ? null
+                      : _setMode,
                 ),
                 const SizedBox(height: 14),
+                _UserRow(user: widget.user),
+                if (showAudience) ...[
+                  const SizedBox(height: 14),
+                  _AudienceSelector(
+                    value: _visibility,
+                    options: _audienceOptions,
+                    onChanged: (value) {
+                      setState(() {
+                        _visibility = value;
+                        _errorMessage = null;
+                      });
+                    },
+                  ),
+                ],
+                const SizedBox(height: 14),
+                if (_mode == _CreateMode.discussion || _mode == _CreateMode.album)
+                  TextField(
+                    controller: _titleController,
+                    enabled: !_isPosting,
+                    maxLength: _mode == _CreateMode.discussion ? 200 : 120,
+                    decoration: InputDecoration(
+                      hintText: _mode == _CreateMode.discussion
+                          ? 'Discussion title'
+                          : 'Album title',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 TextField(
                   controller: _controller,
                   enabled: !_isPosting,
-                  maxLines: 8,
-                  minLines: 5,
+                  maxLines: _mode == _CreateMode.reel ? 5 : 8,
+                  minLines: _mode == _CreateMode.reel ? 3 : 5,
                   maxLength: 10000,
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
-                    hintText: 'Share your thoughts...',
+                    hintText: _bodyPlaceholder,
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -242,11 +487,55 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                     ),
                   ),
                 ),
-                if (_images.isNotEmpty) ...[
+                if (_mode == _CreateMode.discussion && _discussionCover != null) ...[
+                  const SizedBox(height: 8),
+                  _SingleImageCard(
+                    image: _discussionCover!,
+                    onRemove: _isPosting
+                        ? null
+                        : () {
+                            setState(() {
+                              _discussionCover = null;
+                            });
+                            _syncCanPostState();
+                          },
+                  ),
+                ],
+                if ((_mode == _CreateMode.post || _mode == _CreateMode.album) &&
+                    _images.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _SelectedImageGrid(
                     images: _images,
                     onRemove: _isPosting ? null : _removeImage,
+                  ),
+                ],
+                if (_mode == _CreateMode.reel && _reelImage != null) ...[
+                  const SizedBox(height: 8),
+                  _SingleImageCard(
+                    image: _reelImage!,
+                    onRemove: _isPosting
+                        ? null
+                        : () {
+                            setState(() {
+                              _reelImage = null;
+                            });
+                            _syncCanPostState();
+                          },
+                  ),
+                ],
+                if ((_mode == _CreateMode.album || _mode == _CreateMode.reel) &&
+                    _selectedVideo != null) ...[
+                  const SizedBox(height: 8),
+                  _VideoCard(
+                    video: _selectedVideo!,
+                    onRemove: _isPosting
+                        ? null
+                        : () {
+                            setState(() {
+                              _selectedVideo = null;
+                            });
+                            _syncCanPostState();
+                          },
                   ),
                 ],
                 if (_progressMessage != null) ...[
@@ -269,8 +558,16 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 const SizedBox(height: 14),
                 _AttachmentBar(
                   isPickingImages: _isPickingImages,
-                  isPosting: _isPosting,
-                  onPickImages: _pickImages,
+                  isPosting: _isPosting || _isPickingVideo,
+                  mode: _mode,
+                  onPickImages: (_mode == _CreateMode.post || _mode == _CreateMode.album)
+                      ? _pickImages
+                      : _mode == _CreateMode.discussion
+                          ? _pickDiscussionCover
+                          : _pickReelImage,
+                  onPickVideo: (_mode == _CreateMode.album || _mode == _CreateMode.reel)
+                      ? _pickVideo
+                      : null,
                 ),
               ],
             ),
@@ -283,14 +580,18 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
 
 class _ComposerHeader extends StatelessWidget {
   const _ComposerHeader({
+    required this.title,
     required this.isPosting,
     required this.canPost,
     required this.onPost,
+    required this.submitLabel,
   });
 
+  final String title;
   final bool isPosting;
   final bool canPost;
   final VoidCallback onPost;
+  final String submitLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -298,9 +599,9 @@ class _ComposerHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'Create a post',
+              title,
               style: TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.w900,
@@ -313,13 +614,70 @@ class _ComposerHeader extends StatelessWidget {
                 ? const SizedBox(
                     height: 18,
                     width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Post'),
+                : Text(submitLabel),
           ),
         ],
       ),
     );
+  }
+}
+
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final _CreateMode value;
+  final ValueChanged<_CreateMode>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: _CreateMode.values
+            .map(
+              (mode) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: FilledButton.tonal(
+                    onPressed: onChanged == null ? null : () => onChanged!(mode),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: value == mode
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFFF3F4F6),
+                      foregroundColor: value == mode
+                          ? Colors.white
+                          : const Color(0xFF111827),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(_labelForMode(mode)),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  String _labelForMode(_CreateMode mode) {
+    return switch (mode) {
+      _CreateMode.post => 'Post',
+      _CreateMode.discussion => 'Discussion',
+      _CreateMode.album => 'Album',
+      _CreateMode.reel => 'Reels',
+    };
   }
 }
 
@@ -531,6 +889,135 @@ class _SelectedImageGrid extends StatelessWidget {
   }
 }
 
+class _SingleImageCard extends StatelessWidget {
+  const _SingleImageCard({
+    required this.image,
+    required this.onRemove,
+  });
+
+  final SelectedPostImage image;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.memory(
+            image.previewBytes,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+          ),
+        ),
+        Positioned(
+          left: 8,
+          bottom: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              _statusLabel(image),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+        if (onRemove != null)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: InkWell(
+              onTap: onRemove,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _statusLabel(SelectedPostImage image) {
+    if (image.isPreparing) return 'Preparing...';
+    if (image.isFailed) return 'Failed';
+    return image.optimized ? 'Ready / WebP' : 'Ready';
+  }
+}
+
+class _VideoCard extends StatelessWidget {
+  const _VideoCard({
+    required this.video,
+    required this.onRemove,
+  });
+
+  final PreparedVideo video;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final sizeMb = video.byteCount / (1024 * 1024);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFDBEAFE),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF2563EB)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  video.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${sizeMb.toStringAsFixed(1)} MB ready',
+                  style: const TextStyle(color: Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ),
+          if (onRemove != null)
+            IconButton(
+              onPressed: onRemove,
+              icon: const Icon(Icons.close),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ComposerProgress extends StatelessWidget {
   const _ComposerProgress({
     required this.message,
@@ -571,12 +1058,16 @@ class _AttachmentBar extends StatelessWidget {
   const _AttachmentBar({
     required this.isPickingImages,
     required this.isPosting,
+    required this.mode,
     required this.onPickImages,
+    required this.onPickVideo,
   });
 
   final bool isPickingImages;
   final bool isPosting;
+  final _CreateMode mode;
   final VoidCallback onPickImages;
+  final VoidCallback? onPickVideo;
 
   @override
   Widget build(BuildContext context) {
@@ -598,28 +1089,41 @@ class _AttachmentBar extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.image_outlined),
-              label: Text(isPickingImages ? 'Preparing...' : 'Image'),
+              label: Text(_imageLabel),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: null,
+              onPressed:
+                  onPickVideo == null || isPickingImages || isPosting ? null : onPickVideo,
               icon: const Icon(Icons.videocam_outlined),
-              label: const Text('Video'),
+              label: Text(mode == _CreateMode.album ? 'Add video' : 'Video'),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: OutlinedButton.icon(
               onPressed: null,
-              icon: const Icon(Icons.music_note_outlined),
-              label: const Text('Audio'),
+              icon: const Icon(Icons.queue_music_outlined),
+              label: const Text('Music'),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String get _imageLabel {
+    if (isPickingImages) {
+      return 'Preparing...';
+    }
+    return switch (mode) {
+      _CreateMode.post => 'Image',
+      _CreateMode.discussion => 'Cover',
+      _CreateMode.album => 'Add photos',
+      _CreateMode.reel => 'Image reel',
+    };
   }
 }
 

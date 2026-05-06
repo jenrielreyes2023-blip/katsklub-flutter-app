@@ -90,12 +90,28 @@ class CreatePostRequest {
     required this.visibility,
     required this.images,
     this.onProgress,
+    this.albumTitle,
+    this.isDiscussion = false,
+    this.discussionTitle,
+    this.discussionCoverDataUrl,
+    this.isReel = false,
+    this.reelImage,
+    this.videoDataUrl,
+    this.videoTitle,
   });
 
   final String text;
   final String visibility;
   final List<SelectedPostImage> images;
   final CreatePostProgressCallback? onProgress;
+  final String? albumTitle;
+  final bool isDiscussion;
+  final String? discussionTitle;
+  final String? discussionCoverDataUrl;
+  final bool isReel;
+  final SelectedPostImage? reelImage;
+  final String? videoDataUrl;
+  final String? videoTitle;
 }
 
 class CreatePostResult {
@@ -170,6 +186,19 @@ class PostService {
     final text = request.text.trim();
     final readyImages = request.images.where((image) => image.isReady).toList();
     final hasImages = readyImages.isNotEmpty;
+    final albumTitle = request.albumTitle?.trim() ?? '';
+    final discussionTitle = request.discussionTitle?.trim() ?? '';
+    final hasVideo = request.videoDataUrl?.trim().isNotEmpty == true;
+    final hasReelImage = request.reelImage?.isReady == true;
+    final hasDiscussionCover = request.discussionCoverDataUrl?.trim().isNotEmpty == true;
+    final uploadImageCount =
+        readyImages.length + (hasReelImage ? 1 : 0) + (hasDiscussionCover ? 1 : 0);
+    final hasMediaUpload = uploadImageCount > 0 || hasVideo;
+    final uploadTargetLabel = hasVideo
+        ? uploadImageCount > 0
+            ? '$uploadImageCount image${uploadImageCount == 1 ? '' : 's'} and video'
+            : 'video'
+        : '$uploadImageCount image${uploadImageCount == 1 ? '' : 's'}';
 
     if (request.images.any((image) => !image.isReady)) {
       return const CreatePostResult(
@@ -178,7 +207,33 @@ class PostService {
       );
     }
 
-    if (text.isEmpty && readyImages.isEmpty) {
+    if (request.isDiscussion && (discussionTitle.isEmpty || text.isEmpty)) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Discussion title and body are required.',
+      );
+    }
+
+    if (request.isReel && text.isEmpty && !hasReelImage && !hasVideo) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Add a caption, image, or video before posting a reel.',
+      );
+    }
+
+    if (albumTitle.isNotEmpty && readyImages.isEmpty && !hasVideo) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Add photos before posting an album.',
+      );
+    }
+
+    if (text.isEmpty &&
+        readyImages.isEmpty &&
+        albumTitle.isEmpty &&
+        !request.isDiscussion &&
+        !request.isReel &&
+        !hasVideo) {
       return const CreatePostResult(
         ok: false,
         error: 'Write something or attach an image before posting.',
@@ -198,6 +253,17 @@ class PostService {
       'visibility': _normalizeVisibility(request.visibility),
       if (hasImages)
         'imageDataUrls': readyImages.map((image) => image.dataUrl).toList(),
+      if (albumTitle.isNotEmpty) 'albumTitle': albumTitle,
+      if (request.isDiscussion) 'isDiscussion': true,
+      if (request.isDiscussion && discussionTitle.isNotEmpty)
+        'discussionTitle': discussionTitle,
+      if (request.discussionCoverDataUrl?.trim().isNotEmpty == true)
+        'discussionCoverDataUrl': request.discussionCoverDataUrl!.trim(),
+      if (request.isReel) 'isReel': true,
+      if (request.isReel && hasReelImage) 'imageDataUrl': request.reelImage!.dataUrl,
+      if (hasVideo) 'videoDataUrl': request.videoDataUrl!.trim(),
+      if (request.videoTitle?.trim().isNotEmpty == true)
+        'videoTitle': request.videoTitle!.trim(),
     };
 
     io.Socket? socket;
@@ -207,10 +273,10 @@ class PostService {
     try {
       request.onProgress?.call(
         CreatePostProgress(
-          message: hasImages
-              ? 'Connecting to upload ${request.images.length} image${request.images.length == 1 ? '' : 's'}...'
+          message: hasMediaUpload
+              ? 'Connecting to upload $uploadTargetLabel...'
               : 'Connecting to KatsKlub...',
-          progress: hasImages ? 0.05 : null,
+          progress: hasMediaUpload ? 0.05 : null,
         ),
       );
 
@@ -221,7 +287,10 @@ class PostService {
       final uploadBytes = readyImages.fold<int>(
         0,
         (total, image) => total + image.uploadByteCount,
-      );
+      ) +
+          (request.reelImage?.uploadByteCount ?? 0) +
+          ((request.discussionCoverDataUrl?.length ?? 0) * 0.75).round() +
+          ((request.videoDataUrl?.length ?? 0) * 0.75).round();
       _socketLog(
         'creating socket; hasCookie=${cookie.startsWith('katsklub_session=')}; '
         'images=${readyImages.length}; uploadBytes=$uploadBytes; '
@@ -238,7 +307,7 @@ class PostService {
           .setReconnectionAttempts(2)
           .setReconnectionDelay(500)
           .setTimeout(20000)
-          .setAckTimeout(hasImages ? 120000 : 65000)
+          .setAckTimeout(hasMediaUpload ? 120000 : 65000)
           .enableWithCredentials()
           .setExtraHeaders(socketHeaders)
           .setTransportOptions({
@@ -270,17 +339,17 @@ class PostService {
         completer.complete(CreatePostResult(ok: true, post: post));
       }
 
-      timeout = Timer(Duration(seconds: hasImages ? 120 : 65), () {
+      timeout = Timer(Duration(seconds: hasMediaUpload ? 120 : 65), () {
         if (!completer.isCompleted) {
           _socketLog(
             'timeout waiting for post:create ACK; connected=${socket?.connected == true}; '
-            'images=${readyImages.length}; uploadBytes=$uploadBytes',
+            'images=$uploadImageCount; video=$hasVideo; uploadBytes=$uploadBytes',
           );
           completer.complete(
             CreatePostResult(
               ok: false,
-              error: hasImages
-                  ? 'Image upload timed out. Try fewer or smaller images.'
+              error: hasMediaUpload
+                  ? 'Media upload timed out. Please try again.'
                   : 'Post creation timeout. Please try again.',
             ),
           );
@@ -299,10 +368,10 @@ class PostService {
         );
         request.onProgress?.call(
           CreatePostProgress(
-            message: hasImages
-                ? 'Uploading ${readyImages.length} prepared image${readyImages.length == 1 ? '' : 's'}...'
+            message: hasMediaUpload
+                ? 'Uploading prepared media...'
                 : 'Posting...',
-            progress: hasImages ? 0.35 : null,
+            progress: hasMediaUpload ? 0.35 : null,
           ),
         );
 
@@ -412,6 +481,50 @@ class PostService {
     return _normalizeCookieHeader(prefs.getString(AuthService.sessionCookieKey));
   }
 
+  Future<SelectedPostImage?> pickSinglePreparedImage({
+    CreatePostProgressCallback? onProgress,
+    SelectedPostImageCallback? onImageSelected,
+    SelectedPostImageCallback? onImageUpdated,
+  }) async {
+    final images = await pickImages(
+      onProgress: onProgress,
+      onImageSelected: onImageSelected,
+      onImageUpdated: onImageUpdated,
+    );
+    return images.isEmpty ? null : images.first;
+  }
+
+  Future<PreparedVideo?> pickVideo({
+    int maxBytes = 250 * 1024 * 1024,
+    CreatePostProgressCallback? onProgress,
+  }) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickVideo(source: ImageSource.gallery);
+    if (picked == null) {
+      return null;
+    }
+
+    onProgress?.call(const CreatePostProgress(message: 'Preparing video...', progress: null));
+    final bytes = await picked.readAsBytes();
+    if (bytes.length > maxBytes) {
+      throw StateError('Video file is too large. Maximum is 250MB.');
+    }
+
+    final mime = _inferVideoMime(picked);
+    final watch = Stopwatch()..start();
+    final encoded = await Isolate.run(() => base64Encode(bytes));
+    watch.stop();
+    _imageLog(
+      'video base64/dataUrl duration=${watch.elapsedMilliseconds}ms; bytes=${bytes.length}; mime=$mime',
+    );
+
+    return PreparedVideo(
+      name: picked.name,
+      dataUrl: 'data:$mime;base64,$encoded',
+      byteCount: bytes.length,
+    );
+  }
+
   Future<SelectedPostImage> _prepareSelectedImage(
     SelectedPostImage image,
     Uint8List originalBytes,
@@ -505,6 +618,18 @@ class PostService {
     return 'image/jpeg';
   }
 
+  String _inferVideoMime(XFile file) {
+    final mimeType = file.mimeType?.trim();
+    if (mimeType != null && mimeType.startsWith('video/')) {
+      return mimeType;
+    }
+
+    final name = file.name.toLowerCase();
+    if (name.endsWith('.webm')) return 'video/webm';
+    if (name.endsWith('.mov')) return 'video/quicktime';
+    return 'video/mp4';
+  }
+
   String? _normalizeCookieHeader(String? savedCookie) {
     final cookie = savedCookie?.trim();
     if (cookie == null || cookie.isEmpty) {
@@ -573,4 +698,16 @@ class _PreparedImage {
   final Uint8List bytes;
   final String mimeType;
   final bool optimized;
+}
+
+class PreparedVideo {
+  const PreparedVideo({
+    required this.name,
+    required this.dataUrl,
+    required this.byteCount,
+  });
+
+  final String name;
+  final String dataUrl;
+  final int byteCount;
 }
