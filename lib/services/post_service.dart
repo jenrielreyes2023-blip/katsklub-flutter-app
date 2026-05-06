@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,12 +12,16 @@ import 'auth_service.dart';
 
 class SelectedPostImage {
   const SelectedPostImage({
+    required this.id,
     required this.file,
     required this.dataUrl,
+    required this.previewBytes,
   });
 
+  final String id;
   final XFile file;
   final String dataUrl;
+  final Uint8List previewBytes;
 }
 
 class CreatePostRequest {
@@ -53,9 +58,19 @@ class PostService {
     );
 
     final selected = <SelectedPostImage>[];
+    var index = 0;
+    final batchId = DateTime.now().microsecondsSinceEpoch;
     for (final image in images.take(10)) {
-      final dataUrl = await _toImageDataUrl(image);
-      selected.add(SelectedPostImage(file: image, dataUrl: dataUrl));
+      final bytes = await image.readAsBytes();
+      final mime = _inferImageMime(image);
+      selected.add(
+        SelectedPostImage(
+          id: '$batchId-${index++}-${image.name}',
+          file: image,
+          dataUrl: 'data:$mime;base64,${base64Encode(bytes)}',
+          previewBytes: bytes,
+        ),
+      );
     }
 
     return selected;
@@ -73,7 +88,7 @@ class PostService {
     }
 
     final cookie = await _readSessionCookie();
-    if (cookie == null || cookie.isEmpty) {
+    if (cookie == null) {
       return const CreatePostResult(
         ok: false,
         error: 'Not authenticated. Please log in again.',
@@ -83,7 +98,8 @@ class PostService {
     final payload = {
       'text': text,
       'visibility': _normalizeVisibility(request.visibility),
-      if (hasImages) 'imageDataUrls': request.images.map((image) => image.dataUrl).toList(),
+      if (hasImages)
+        'imageDataUrls': request.images.map((image) => image.dataUrl).toList(),
     };
 
     io.Socket? socket;
@@ -91,13 +107,29 @@ class PostService {
     Timer? timeout;
 
     try {
+      final socketHeaders = <String, String>{
+        'Cookie': cookie,
+      };
+
       socket = io.io(
         ApiConfig.apiBaseUrl,
-        io.OptionBuilder()
-            .setTransports(['websocket'])
-            .setExtraHeaders({'Cookie': cookie})
-            .disableAutoConnect()
-            .build(),
+        <String, dynamic>{
+          'autoConnect': false,
+          'forceNew': true,
+          'reconnection': true,
+          'reconnectionAttempts': 2,
+          'reconnectionDelay': 500,
+          'transports': ['polling', 'websocket'],
+          'withCredentials': true,
+          'extraHeaders': socketHeaders,
+          'transportOptions': {
+            'polling': {'extraHeaders': socketHeaders},
+            'websocket': {'extraHeaders': socketHeaders},
+          },
+          'auth': {
+            'cookie': cookie,
+          },
+        },
       );
 
       timeout = Timer(const Duration(seconds: 65), () {
@@ -182,13 +214,7 @@ class PostService {
 
   Future<String?> _readSessionCookie() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(AuthService.sessionCookieKey);
-  }
-
-  Future<String> _toImageDataUrl(XFile file) async {
-    final bytes = await file.readAsBytes();
-    final mime = _inferImageMime(file);
-    return 'data:$mime;base64,${base64Encode(bytes)}';
+    return _normalizeCookieHeader(prefs.getString(AuthService.sessionCookieKey));
   }
 
   String _inferImageMime(XFile file) {
@@ -202,6 +228,46 @@ class PostService {
     if (name.endsWith('.webp')) return 'image/webp';
     if (name.endsWith('.gif')) return 'image/gif';
     return 'image/jpeg';
+  }
+
+  String? _normalizeCookieHeader(String? savedCookie) {
+    final cookie = savedCookie?.trim();
+    if (cookie == null || cookie.isEmpty) {
+      return null;
+    }
+
+    if (!cookie.contains('=')) {
+      return 'katsklub_session=${Uri.encodeComponent(cookie)}';
+    }
+
+    const ignoredCookieAttributes = {
+      'domain',
+      'expires',
+      'httponly',
+      'max-age',
+      'path',
+      'samesite',
+      'secure',
+    };
+
+    final validCookies = cookie
+        .split(RegExp(r';\s*'))
+        .map((part) => part.trim())
+        .where((part) {
+          if (part.isEmpty || !part.contains('=')) {
+            return false;
+          }
+
+          final name = part.split('=').first.trim().toLowerCase();
+          return !ignoredCookieAttributes.contains(name);
+        })
+        .toList();
+
+    if (validCookies.isEmpty) {
+      return null;
+    }
+
+    return validCookies.join('; ');
   }
 
   String _normalizeVisibility(String visibility) {

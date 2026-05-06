@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../models/user.dart';
@@ -21,6 +19,7 @@ class CreatePostComposer extends StatefulWidget {
 
 class _CreatePostComposerState extends State<CreatePostComposer> {
   final _controller = TextEditingController();
+  final _canPostNotifier = ValueNotifier<bool>(false);
   final _postService = PostService();
 
   String _visibility = 'public';
@@ -51,9 +50,24 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_syncCanPostState);
+  }
+
+  @override
   void dispose() {
+    _controller.removeListener(_syncCanPostState);
     _controller.dispose();
+    _canPostNotifier.dispose();
     super.dispose();
+  }
+
+  void _syncCanPostState() {
+    final canPost = _controller.text.trim().isNotEmpty || _images.isNotEmpty;
+    if (_canPostNotifier.value != canPost) {
+      _canPostNotifier.value = canPost;
+    }
   }
 
   Future<void> _pickImages() async {
@@ -68,6 +82,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       setState(() {
         _images = [..._images, ...pickedImages].take(10).toList();
       });
+      _syncCanPostState();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -116,6 +131,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _images = [];
         _visibility = 'public';
       });
+      _syncCanPostState();
       widget.onPostCreated();
     }
   }
@@ -127,6 +143,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
           if (i != index) _images[i],
       ];
     });
+    _syncCanPostState();
   }
 
   @override
@@ -135,10 +152,15 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       color: const Color(0xFFF7F8FA),
       child: Column(
         children: [
-          _ComposerHeader(
-            isPosting: _isPosting,
-            canPost: _controller.text.trim().isNotEmpty || _images.isNotEmpty,
-            onPost: _submit,
+          ValueListenableBuilder<bool>(
+            valueListenable: _canPostNotifier,
+            builder: (context, canPost, _) {
+              return _ComposerHeader(
+                isPosting: _isPosting,
+                canPost: canPost,
+                onPost: _submit,
+              );
+            },
           ),
           Expanded(
             child: ListView(
@@ -163,7 +185,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                   minLines: 5,
                   maxLength: 10000,
                   textInputAction: TextInputAction.newline,
-                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'Share your thoughts...',
                     filled: true,
@@ -382,13 +403,16 @@ class _SelectedImageGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         return Stack(
+          key: ValueKey(images[index].id),
           fit: StackFit.expand,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.memory(
-                base64Decode(images[index].dataUrl.split(',').last),
+                images[index].previewBytes,
+                key: ValueKey('preview-${images[index].id}'),
                 fit: BoxFit.cover,
+                gaplessPlayback: true,
               ),
             ),
             if (onRemove != null)
