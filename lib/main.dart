@@ -1,11 +1,59 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const KatsKlubApp());
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/auth_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final authService = AuthService();
+  final currentUser = await authService.getCurrentUser();
+
+  runApp(
+    KatsKlubApp(
+      authService: authService,
+      initialUser: currentUser,
+    ),
+  );
 }
 
-class KatsKlubApp extends StatelessWidget {
-  const KatsKlubApp({super.key});
+class KatsKlubApp extends StatefulWidget {
+  const KatsKlubApp({
+    required this.authService,
+    required this.initialUser,
+    super.key,
+  });
+
+  final AuthService authService;
+  final Map<String, dynamic>? initialUser;
+
+  @override
+  State<KatsKlubApp> createState() => _KatsKlubAppState();
+}
+
+class _KatsKlubAppState extends State<KatsKlubApp> {
+  Map<String, dynamic>? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentUser = widget.initialUser;
+  }
+
+  void _handleLogin(Map<String, dynamic> user) {
+    setState(() {
+      _currentUser = user;
+    });
+  }
+
+  Future<void> _handleLogout() async {
+    await widget.authService.logout();
+    if (!mounted) return;
+
+    setState(() {
+      _currentUser = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,82 +64,15 @@ class KatsKlubApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.deepPurple,
       ),
-      home: const LoginScreen(),
-    );
-  }
-}
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  static const String apiBaseUrl = 'https://api.yourdomain.com';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('KatsKlub'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to KatsKlub',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+      home: _currentUser == null
+          ? LoginScreen(
+              authService: widget.authService,
+              onLoginSuccess: _handleLogin,
+            )
+          : HomeScreen(
+              user: _currentUser!,
+              onLogout: _handleLogout,
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Flutter app setup is working.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Email or username',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Login API ikakabit natin next.'),
-                    ),
-                  );
-                },
-                child: const Text('Login'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'API: $apiBaseUrl',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
