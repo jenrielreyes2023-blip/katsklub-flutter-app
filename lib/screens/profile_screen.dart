@@ -1,136 +1,708 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../config/api_config.dart';
+import '../models/post.dart';
 import '../models/user.dart';
+import '../services/feed_service.dart';
+import '../widgets/comments_modal.dart';
+import '../widgets/loading_skeletons.dart';
+import '../widgets/post_card.dart';
+import 'image_viewer_screen.dart';
+import 'post_detail_screen.dart';
+import 'reels_viewer_screen.dart';
+import 'user_profile_screen.dart';
+import 'vertical_gallery_screen.dart';
+import 'notifications_screen.dart';
+import 'messages_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     required this.user,
-    required this.onLogout,
+    required this.refreshToken,
+    this.onLogout,
+    this.onOpenCurrentUserProfile,
+    this.onOpenUserProfile,
+    this.onOpenNotifications,
+    this.onBack,
     super.key,
   });
 
   final User user;
-  final Future<void> Function() onLogout;
+  final int refreshToken;
+  final Future<void> Function()? onLogout;
+  final VoidCallback? onOpenCurrentUserProfile;
+  final ValueChanged<String>? onOpenUserProfile;
+  final VoidCallback? onOpenNotifications;
+  final VoidCallback? onBack;
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  final FeedService _feedService = FeedService();
+  late TabController _tabController;
+  List<Post> _profilePosts = [];
+  bool _isLoadingProfilePosts = true;
+  late User _profileUser;
+  bool _isUpdatingFollow = false;
+  bool _isOpeningMessage = false;
+  int? _profilePostCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileUser = widget.user;
+    _profilePostCount =
+        widget.user.postCount > 0 ? widget.user.postCount : null;
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabChanged);
+    _loadProfilePosts();
+  }
+
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken ||
+        oldWidget.user.username != widget.user.username) {
+      _profileUser = widget.user;
+      _profilePostCount =
+          widget.user.postCount > 0 ? widget.user.postCount : null;
+      _loadProfilePosts();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabChanged() {
+    if (_tabController.indexIsChanging) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Center(
-          child: _ProfileAvatar(user: user),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          user.displayName,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+    final isOwnProfile = widget.onLogout != null;
+    final profilePosts = _profilePosts
+        .where((post) => !post.isReel && !post.isDiscussion)
+        .toList();
+    final profileReels = _profilePosts.where((post) => post.isReel).toList();
+    final discussionPosts =
+        _profilePosts.where((post) => post.isDiscussion).toList();
+    final displayedPostCount = _profilePostCount ??
+        (_isLoadingProfilePosts && _profilePosts.isEmpty
+            ? null
+            : _profilePosts.length);
+    final canGoBack = widget.onBack != null || Navigator.of(context).canPop();
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: CustomScrollView(
+          cacheExtent: 0,
+          slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            pinned: false,
+            automaticallyImplyLeading: false,
+            title: Row(
+              children: [
+                if (canGoBack) ...[
+                  InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _goBack,
+                    child: SizedBox(
+                      width: 38,
+                      height: 38,
+                      child: Center(
+                        child: SvgPicture.string(
+                          '<svg width="800" height="800" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M13.2602 15.5302l-3.51997-3.53L13.2602 8.47021" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                          width: 28,
+                          height: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                ],
+                Expanded(
+                  child: Text(
+                    _profileUser.username ?? _profileUser.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              IconButton(
+                icon: SvgPicture.string(
+                  '<svg width="800" height="800" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.0196 2.91016c-3.31.0-6 2.69-6 6V11.8002C6.0196 12.4102 5.7596 13.3402 5.4496 13.8602l-1.15 1.91c-.71 1.18-.22 2.49 1.08 2.93 4.31 1.44 8.96 1.44 13.27.0 1.21-.399999999999999 1.74-1.83 1.08-2.93l-1.15-1.91C18.2796 13.3402 18.0196 12.4102 18.0196 11.8002V8.91016c0-3.3-2.7-6-6-6z" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"/><path d="M13.8699 3.19994C13.5599 3.10994 13.2399 3.03994 12.9099 2.99994 11.9499 2.87994 11.0299 2.94994 10.1699 3.19994c.289999999999999-.74 1.01-1.26 1.85-1.26s1.56.52 1.85 1.26z" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M15.0195 19.0601c0 1.65-1.35 3-3 3-.82.0-1.58-.34-2.11997-.879999999999999C9.35953 20.6401 9.01953 19.8801 9.01953 19.0601" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10"/></svg>',
+                  width: 29,
+                  height: 29,
+                ),
+                onPressed: _openNotifications,
               ),
-        ),
-        if (user.handle != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            user.handle!,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
+              if (widget.onLogout != null)
+                IconButton(
+                  icon: const Icon(Icons.menu, color: Color(0xFF111827)),
+                  onPressed: () => _showMenu(context),
+                ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ProfileHeader(
+                  user: _profileUser,
+                  postCount: displayedPostCount,
+                ),
+                const SizedBox(height: 12),
+                _ProfileBio(
+                  user: _profileUser,
+                  isOwnProfile: isOwnProfile,
+                ),
+                const SizedBox(height: 14),
+                _ProfileActionRow(
+                  user: _profileUser,
+                  isOwnProfile: isOwnProfile,
+                  isUpdatingFollow: _isUpdatingFollow,
+                  onToggleFollow: _toggleFollow,
+                  isOpeningMessage: _isOpeningMessage,
+                  onMessage: _openMessage,
+                ),
+                const SizedBox(height: 28),
+              ],
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _ProfileTabBarHeaderDelegate(
+              child: _ProfileTabBar(controller: _tabController),
+            ),
+          ),
+          _buildSelectedTabSliver(
+            profilePosts: profilePosts,
+            profileReels: profileReels,
+            discussionPosts: discussionPosts,
           ),
         ],
-        const SizedBox(height: 24),
-        _ProfileInfoTile(
-          icon: Icons.badge_outlined,
-          label: 'Display name',
-          value: user.displayName,
-        ),
-        _ProfileInfoTile(
-          icon: Icons.alternate_email,
-          label: 'Username',
-          value: user.username ?? '-',
-        ),
-        _ProfileInfoTile(
-          icon: Icons.email_outlined,
-          label: 'Email',
-          value: user.email ?? '-',
-        ),
-        _ProfileInfoTile(
-          icon: Icons.fingerprint,
-          label: 'User ID',
-          value: user.id ?? '-',
-        ),
-        const SizedBox(height: 16),
-        _ProfileSettingsCard(
-          user: user,
-          onLogout: onLogout,
-        ),
-      ],
+      ),
+      ),
     );
   }
-}
 
-class _ProfileSettingsCard extends StatefulWidget {
-  const _ProfileSettingsCard({
-    required this.user,
-    required this.onLogout,
-  });
+  void _goBack() {
+    final onBack = widget.onBack;
+    if (onBack != null) {
+      onBack();
+      return;
+    }
 
-  final User user;
-  final Future<void> Function() onLogout;
-
-  @override
-  State<_ProfileSettingsCard> createState() => _ProfileSettingsCardState();
-}
-
-class _ProfileSettingsCardState extends State<_ProfileSettingsCard> {
-  bool _isLoggingOut = false;
-
-  Future<void> _logout() async {
-    setState(() {
-      _isLoggingOut = true;
-    });
-
-    await widget.onLogout();
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoggingOut = false;
-    });
+    Navigator.of(context).maybePop();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: _isLoggingOut ? null : _logout,
-                icon: _isLoggingOut
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.logout),
-                label: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
-              ),
-            ),
+  Widget _buildSelectedTabSliver({
+    required List<Post> profilePosts,
+    required List<Post> profileReels,
+    required List<Post> discussionPosts,
+  }) {
+    if (_isLoadingProfilePosts) {
+      return SliverList(
+        delegate: SliverChildListDelegate.fixed(
+          const [
+            PostSkeletonCard(),
+            PostSkeletonCard(),
           ],
+        ),
+      );
+    }
+
+    switch (_tabController.index) {
+      case 1:
+        return _buildReelsGridSliver(profileReels);
+      case 2:
+        return _emptySliver('No music yet');
+      case 3:
+        return _buildPostListSliver(
+          posts: discussionPosts,
+          emptyMessage: 'No discussions yet',
+        );
+      default:
+        return _buildPostListSliver(
+          posts: profilePosts,
+          emptyMessage: 'No posts yet',
+        );
+    }
+  }
+
+  Widget _buildPostListSliver({
+    required List<Post> posts,
+    required String emptyMessage,
+  }) {
+    if (posts.isEmpty) {
+      return _emptySliver(emptyMessage);
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => _postCard(posts[index]),
+        childCount: posts.length,
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: false,
+      ),
+    );
+  }
+
+  Widget _buildReelsGridSliver(List<Post> posts) {
+    final reels = posts
+        .where((post) => post.isReel && post.videoUrl.trim().isNotEmpty)
+        .toList();
+    if (reels.isEmpty) {
+      return _emptySliver('No reels yet');
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(2),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
+          childAspectRatio: 0.62,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final reel = reels[index];
+            return _ReelCoverTile(
+              reel: reel,
+              onTap: () => _openProfileReel(reel),
+            );
+          },
+          childCount: reels.length,
+          addAutomaticKeepAlives: false,
+          addRepaintBoundaries: false,
         ),
       ),
     );
+  }
+
+  Widget _emptySliver(String message) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: _EmptyTab(message: message),
+    );
+  }
+
+  Future<void> _loadProfilePosts() async {
+    final username = _profileUser.username?.trim() ?? '';
+    if (username.isEmpty) {
+      setState(() {
+        _profilePosts = [];
+        _isLoadingProfilePosts = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingProfilePosts = true;
+    });
+
+    try {
+      final page = await _feedService.loadUserPosts(username, limit: 20);
+      if (!mounted) return;
+      setState(() {
+        _profilePosts = page.posts;
+        _profilePostCount =
+            page.totalCount > 0 ? page.totalCount : page.posts.length;
+        _isLoadingProfilePosts = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _profilePosts = [];
+        _isLoadingProfilePosts = false;
+      });
+    }
+  }
+
+  Widget _postCard(Post post) {
+    return PostCard(
+      post: post,
+      onOpenPost: _openPost,
+      onOpenImages: _openImages,
+      onOpenAuthor: _openAuthor,
+      onLike: _feedService.toggleLike,
+      onDelete: _deletePost,
+      onComment: _openComments,
+      onShare: _showSharePlaceholder,
+      onBookmark: _showBookmarkPlaceholder,
+    );
+  }
+
+  Future<void> _openComments(Post post) async {
+    final commentCount = await showCommentsModal(context: context, post: post);
+    if (!mounted || commentCount == null) {
+      return;
+    }
+
+    setState(() {
+      _profilePosts = _profilePosts
+          .map(
+            (item) => item.id == post.id
+                ? item.copyWith(commentCount: commentCount)
+                : item,
+          )
+          .toList();
+    });
+  }
+
+  Future<void> _deletePost(Post post) async {
+    await _feedService.deletePost(post.id);
+    if (!mounted) return;
+    setState(() {
+      _profilePosts =
+          _profilePosts.where((item) => item.id != post.id).toList();
+      if (_profilePostCount != null && _profilePostCount! > 0) {
+        _profilePostCount = _profilePostCount! - 1;
+      }
+    });
+  }
+
+  void _openPost(Post post) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostDetailScreen(
+          postId: post.id,
+          initialPost: post,
+          currentUser: widget.onLogout == null ? null : _profileUser,
+          onOpenCurrentUserProfile: widget.onOpenCurrentUserProfile,
+          onOpenUserProfile: widget.onOpenUserProfile,
+        ),
+      ),
+    );
+  }
+
+  void _openProfileReel(Post reel) {
+    final profileReels = _profilePosts
+        .where((post) => post.isReel && post.videoUrl.trim().isNotEmpty)
+        .toList();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReelsViewerScreen(
+          initialReel: reel,
+          initialReelId: reel.id,
+          initialPlaylist: profileReels,
+          loadMoreFromFeed: false,
+        ),
+      ),
+    );
+  }
+
+  void _openImages(Post post, int index) {
+    if (post.imageUrls.length == 1) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              ImageViewerScreen(
+            imageUrls: post.imageUrls,
+            initialIndex: index,
+            postId: post.id,
+            uploaderName: post.authorFullName,
+            createdAt: post.createdAt,
+            privacyLabel: post.privacyLabel,
+            caption: post.text,
+            likeCount: post.likeCount,
+            commentCount: post.commentCount,
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 250),
+          opaque: false,
+          barrierColor: Colors.black.withValues(alpha: 0.5),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VerticalGalleryScreen(
+          imageUrls: post.imageUrls,
+          initialIndex: index,
+          postId: post.id,
+          uploaderName: post.authorFullName,
+          createdAt: post.createdAt,
+          privacyLabel: post.privacyLabel,
+          caption: post.text,
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+        ),
+      ),
+    );
+  }
+
+  void _openAuthor(Post post) {
+    final authorUsername = post.authorUsername.trim();
+    if (authorUsername.isEmpty) return;
+
+    if (_isCurrentUser(authorUsername)) {
+      widget.onOpenCurrentUserProfile?.call();
+      return;
+    }
+
+    final onOpenUserProfile = widget.onOpenUserProfile;
+    if (onOpenUserProfile != null) {
+      onOpenUserProfile(authorUsername);
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(username: authorUsername),
+      ),
+    );
+  }
+
+  void _openNotifications() {
+    final onOpenNotifications = widget.onOpenNotifications;
+    if (onOpenNotifications != null) {
+      onOpenNotifications();
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+  }
+
+  bool _isCurrentUser(String username) {
+    if (widget.onLogout == null) {
+      return false;
+    }
+
+    final currentUsername = _profileUser.username?.trim().toLowerCase() ?? '';
+    return currentUsername.isNotEmpty &&
+        username.trim().toLowerCase() == currentUsername;
+  }
+
+  void _showSharePlaceholder(Post post) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Share placeholder: ${post.id}')),
+    );
+  }
+
+  void _showBookmarkPlaceholder(Post post) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Save/bookmark is not available yet.')),
+    );
+  }
+
+  void _showMenu(BuildContext context) {
+    final onLogout = widget.onLogout;
+    if (onLogout == null) {
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.52),
+      isScrollControlled: true,
+      builder: (context) => _MenuSheet(user: _profileUser),
+    );
+  }
+
+  Future<void> _toggleFollow() async {
+    final username = _profileUser.username?.trim() ?? '';
+    if (username.isEmpty || _isUpdatingFollow || widget.onLogout != null) {
+      return;
+    }
+
+    setState(() {
+      _isUpdatingFollow = true;
+    });
+
+    try {
+      final updatedUser = _profileUser.isFollowing
+          ? await _feedService.unfollowUser(username)
+          : await _feedService.followUser(username);
+      if (!mounted) return;
+      if (updatedUser != null) {
+        setState(() {
+          _profileUser = updatedUser;
+          _isUpdatingFollow = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _isUpdatingFollow = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isUpdatingFollow = false;
+      });
+    }
+  }
+
+  Future<void> _openMessage() async {
+    final username = _profileUser.username?.trim() ?? '';
+    if (username.isEmpty || widget.onLogout != null || _isOpeningMessage) {
+      return;
+    }
+
+    setState(() {
+      _isOpeningMessage = true;
+    });
+
+    final thread = await _feedService.startMessageThread(username);
+    if (!mounted) return;
+
+    setState(() {
+      _isOpeningMessage = false;
+    });
+
+    if (thread == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open messages.')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MessagesScreen(initialThread: thread),
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.user,
+    required this.postCount,
+  });
+
+  final User user;
+  final int? postCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          _ProfileAvatar(user: user),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatColumn(
+                  label: 'Posts',
+                  count: postCount == null ? '...' : _formatCount(postCount!),
+                ),
+                _StatColumn(
+                  label: 'Followers',
+                  count: _formatCount(user.followersCount),
+                ),
+                _StatColumn(
+                  label: 'Following',
+                  count: _formatCount(user.followingCount),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCount(int value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return value.toString();
+  }
+}
+
+class _ProfileTabBar extends StatelessWidget {
+  const _ProfileTabBar({required this.controller});
+
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: TabBar(
+        controller: controller,
+        indicatorColor: const Color(0xFF111827),
+        indicatorWeight: 1,
+        labelColor: const Color(0xFF111827),
+        unselectedLabelColor: const Color(0xFF9CA3AF),
+        tabs: const [
+          Tab(icon: Icon(Icons.grid_on_outlined), text: 'Posts'),
+          Tab(
+            icon: Icon(Icons.video_collection_outlined),
+            text: 'Reels',
+          ),
+          Tab(icon: Icon(Icons.music_note_outlined), text: 'Music'),
+          Tab(icon: Icon(Icons.more_horiz), text: 'Others'),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _ProfileTabBarHeaderDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  double get minExtent => 72;
+
+  @override
+  double get maxExtent => 72;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(_ProfileTabBarHeaderDelegate oldDelegate) {
+    return child != oldDelegate.child;
   }
 }
 
@@ -143,45 +715,487 @@ class _ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = user.avatarUrl;
 
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 46,
-        backgroundImage: NetworkImage(avatarUrl),
-        onBackgroundImageError: (_, __) {},
-        child: const SizedBox.shrink(),
-      );
-    }
-
-    return CircleAvatar(
-      radius: 46,
-      child: Text(
-        user.initials,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+    return Container(
+      width: 86,
+      height: 86,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFEC4899)],
+        ),
+      ),
+      padding: const EdgeInsets.all(2),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+        ),
+        padding: const EdgeInsets.all(2),
+        child: CircleAvatar(
+          radius: 40,
+          backgroundColor: const Color(0xFFE5E7EB),
+          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+              ? CachedNetworkImageProvider(
+                  ApiConfig.assetUrl(avatarUrl),
+                  maxWidth: 200,
+                )
+              : null,
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Text(
+                  user.initials,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 28,
+                    color: Color(0xFF111827),
+                  ),
+                )
+              : null,
+        ),
       ),
     );
   }
 }
 
-class _ProfileInfoTile extends StatelessWidget {
-  const _ProfileInfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+class _StatColumn extends StatelessWidget {
+  const _StatColumn({required this.label, required this.count});
 
-  final IconData icon;
   final String label;
-  final String value;
+  final String count;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(label),
-        subtitle: Text(value),
+    return Column(
+      children: [
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileBio extends StatelessWidget {
+  const _ProfileBio({
+    required this.user,
+    required this.isOwnProfile,
+  });
+
+  final User user;
+  final bool isOwnProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryLines = [
+      if (user.roleTitle != null && user.roleTitle!.trim().isNotEmpty)
+        user.roleTitle!.trim(),
+      if (user.bio != null && user.bio!.trim().isNotEmpty) user.bio!.trim(),
+      if (isOwnProfile &&
+          user.bio == null &&
+          user.email != null &&
+          user.email!.trim().isNotEmpty)
+        user.email!.trim(),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  user.displayName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              if (user.isVerified) ...[
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.verified,
+                  size: 15,
+                  color: Color(0xFF2563EB),
+                ),
+              ],
+            ],
+          ),
+          for (final line in secondaryLines) ...[
+            const SizedBox(height: 4),
+            Text(
+              line,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileActionRow extends StatelessWidget {
+  const _ProfileActionRow({
+    required this.user,
+    required this.isOwnProfile,
+    required this.isUpdatingFollow,
+    required this.onToggleFollow,
+    required this.isOpeningMessage,
+    required this.onMessage,
+  });
+
+  final User user;
+  final bool isOwnProfile;
+  final bool isUpdatingFollow;
+  final VoidCallback onToggleFollow;
+  final bool isOpeningMessage;
+  final VoidCallback onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final username = user.username?.trim() ?? '';
+    if (isOwnProfile || username.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final isFollowing = user.isFollowing;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 38,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: isFollowing
+                      ? const Color(0xFFF3F4F6)
+                      : const Color(0xFF111827),
+                  foregroundColor:
+                      isFollowing ? const Color(0xFF111827) : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: isUpdatingFollow ? null : onToggleFollow,
+                child: isUpdatingFollow
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(isFollowing ? 'Following' : 'Follow'),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SizedBox(
+              height: 38,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF111827),
+                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: isOpeningMessage ? null : onMessage,
+                icon: isOpeningMessage
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                label: const Text('Message'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReelCoverTile extends StatelessWidget {
+  const _ReelCoverTile({
+    required this.reel,
+    required this.onTap,
+  });
+
+  final Post reel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final posterUrl = reel.videoPosterUrl.trim().isNotEmpty
+        ? reel.videoPosterUrl.trim()
+        : reel.thumbnailUrls.isNotEmpty
+            ? reel.thumbnailUrls.first.trim()
+            : reel.imageUrls.isNotEmpty
+                ? reel.imageUrls.first.trim()
+                : '';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ColoredBox(
+        color: const Color(0xFF111827),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (posterUrl.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: ApiConfig.assetUrl(posterUrl),
+                fit: BoxFit.contain,
+                useOldImageOnUrlChange: true,
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
+                placeholderFadeInDuration: Duration.zero,
+                memCacheWidth: 400,
+                maxWidthDiskCache: 400,
+                placeholder: (context, url) =>
+                    const ColoredBox(color: Color(0xFF111827)),
+                errorWidget: (context, url, error) => const Icon(
+                  Icons.video_library_outlined,
+                  color: Colors.white70,
+                ),
+              )
+            else
+              const Icon(
+                Icons.video_library_outlined,
+                color: Colors.white70,
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.55),
+                  ],
+                ),
+              ),
+            ),
+            const Center(
+              child: Icon(
+                Icons.play_circle_outline_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyTab extends StatelessWidget {
+  const _EmptyTab({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Color(0xFF9CA3AF),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuSheet extends StatelessWidget {
+  const _MenuSheet({required this.user});
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(14, 10, 14, 18 + bottomPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 42,
+            height: 5,
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF9CA3AF),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          _MoreOptionsCard(
+            children: [
+              _MoreOptionsRow(
+                label: 'Copy profile link',
+                icon: Icons.link_rounded,
+                onTap: () => _copyProfileLink(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _MoreOptionsCard(
+            children: [
+              _MoreOptionsRow(
+                label: 'About account',
+                icon: Icons.info_outline_rounded,
+                onTap: () => _showPlaceholder(context, 'About account'),
+              ),
+              const _MoreOptionsDivider(),
+              _MoreOptionsRow(
+                label: 'Edit profile',
+                icon: Icons.edit_outlined,
+                onTap: () => _showPlaceholder(context, 'Edit profile'),
+              ),
+              const _MoreOptionsDivider(),
+              _MoreOptionsRow(
+                label: 'Account settings',
+                icon: Icons.tune_rounded,
+                onTap: () => _showPlaceholder(context, 'Account settings'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _copyProfileLink(BuildContext context) async {
+    final username = user.username?.trim() ?? '';
+    final path = username.isEmpty ? 'profile' : 'profile/$username';
+    await Clipboard.setData(ClipboardData(text: 'https://katsklub.top/$path'));
+    if (!context.mounted) {
+      return;
+    }
+
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile link copied.')),
+    );
+  }
+
+  void _showPlaceholder(BuildContext context, String label) {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$label is not available yet.')),
+    );
+  }
+}
+
+class _MoreOptionsCard extends StatelessWidget {
+  const _MoreOptionsCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: Colors.white),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreOptionsRow extends StatelessWidget {
+  const _MoreOptionsRow({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: const Color(0xFFE5E7EB),
+        highlightColor: const Color(0xFFF3F4F6),
+        child: SizedBox(
+          height: 58,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                Icon(
+                  icon,
+                  color: const Color(0xFF111827),
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreOptionsDivider extends StatelessWidget {
+  const _MoreOptionsDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(left: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: Color(0xFFE5E7EB),
       ),
     );
   }

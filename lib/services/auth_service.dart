@@ -60,14 +60,14 @@ class AuthService {
         );
       }
 
-      final savedCookie = await _saveAuthData(
+      final savedToken = await _saveAuthData(
         response: response,
         responseData: data,
         user: user,
       );
 
       final verifiedUser =
-          savedCookie == null ? null : await _fetchMe(savedCookie);
+          savedToken == null ? null : await _fetchMe(token: savedToken);
       if (verifiedUser != null) {
         await _saveUser(verifiedUser);
         return AuthResult(ok: true, user: verifiedUser);
@@ -85,13 +85,13 @@ class AuthService {
   Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final savedUser = prefs.getString(_userKey);
-    final savedCookie = prefs.getString(sessionCookieKey);
+    final savedToken = await getToken();
 
-    if (savedUser == null || savedCookie == null || savedCookie.isEmpty) {
+    if (savedUser == null || savedToken == null || savedToken.isEmpty) {
       return null;
     }
 
-    final verifiedUser = await _fetchMe(savedCookie);
+    final verifiedUser = await _fetchMe(token: savedToken);
     if (verifiedUser != null) {
       await prefs.setString(_userKey, jsonEncode(verifiedUser.toJson()));
       return verifiedUser;
@@ -104,15 +104,17 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     final savedCookie = prefs.getString(sessionCookieKey);
+    final savedToken = prefs.getString(_authTokenKey);
 
-    if (savedCookie != null && savedCookie.isNotEmpty) {
+    if ((savedCookie != null && savedCookie.isNotEmpty) ||
+        (savedToken != null && savedToken.isNotEmpty)) {
       try {
         await _client.post(
           ApiConfig.uri(ApiConfig.logoutPath),
-          headers: {
-            'Accept': 'application/json',
-            'Cookie': savedCookie,
-          },
+          headers: _buildAuthHeaders(
+            token: savedToken,
+            cookie: savedCookie,
+          ),
         );
       } catch (_) {
         // Local logout must still work even if the network request fails.
@@ -124,14 +126,34 @@ class AuthService {
     await prefs.remove(_userKey);
   }
 
-  Future<User?> _fetchMe(String cookie) async {
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedToken = prefs.getString(_authTokenKey)?.trim();
+    if (savedToken != null && savedToken.isNotEmpty) {
+      return savedToken;
+    }
+
+    final savedCookie = prefs.getString(sessionCookieKey);
+    final cookieToken = _extractSessionToken(savedCookie);
+    if (cookieToken != null && cookieToken.isNotEmpty) {
+      await prefs.setString(_authTokenKey, cookieToken);
+      return cookieToken;
+    }
+
+    return null;
+  }
+
+  Future<User?> _fetchMe({
+    required String token,
+    String? cookie,
+  }) async {
     try {
       final response = await _client.get(
         ApiConfig.uri(ApiConfig.mePath),
-        headers: {
-          'Accept': 'application/json',
-          'Cookie': cookie,
-        },
+        headers: _buildAuthHeaders(
+          token: token,
+          cookie: cookie,
+        ),
       );
 
       if (response.statusCode != 200) {
@@ -151,18 +173,22 @@ class AuthService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final cookie = _extractCookieHeader(response.headers['set-cookie']);
-    final token = responseData['token'];
+    final responseToken = responseData['token'];
+    final cookieToken = _extractSessionToken(cookie);
+    final token = responseToken is String && responseToken.isNotEmpty
+        ? responseToken
+        : cookieToken;
 
     if (cookie != null && cookie.isNotEmpty) {
       await prefs.setString(sessionCookieKey, cookie);
     }
 
-    if (token is String && token.isNotEmpty) {
+    if (token != null && token.isNotEmpty) {
       await prefs.setString(_authTokenKey, token);
     }
 
     await _saveUser(user);
-    return cookie;
+    return token;
   }
 
   Future<void> _saveUser(User user) async {
@@ -213,5 +239,52 @@ class AuthService {
     }
 
     return cookies.join('; ');
+  }
+
+  String? _extractSessionToken(String? cookieHeader) {
+    final cookie = cookieHeader?.trim();
+    if (cookie == null || cookie.isEmpty) {
+      return null;
+    }
+
+    for (final part in cookie.split(RegExp(r';\s*'))) {
+      final trimmed = part.trim();
+      if (!trimmed.toLowerCase().startsWith('katsklub_session=')) {
+        continue;
+      }
+      final rawValue = trimmed.substring('katsklub_session='.length).trim();
+      if (rawValue.isEmpty) {
+        return null;
+      }
+      return Uri.decodeComponent(rawValue);
+    }
+
+    return null;
+  }
+
+  Map<String, String> _buildAuthHeaders({
+    String? token,
+    String? cookie,
+    bool includeJsonContentType = false,
+  }) {
+    final headers = <String, String>{
+      'Accept': 'application/json',
+    };
+
+    final cleanToken = token?.trim();
+    if (cleanToken != null && cleanToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $cleanToken';
+    } else {
+      final cleanCookie = cookie?.trim();
+      if (cleanCookie != null && cleanCookie.isNotEmpty) {
+        headers['Cookie'] = cleanCookie;
+      }
+    }
+
+    if (includeJsonContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return headers;
   }
 }

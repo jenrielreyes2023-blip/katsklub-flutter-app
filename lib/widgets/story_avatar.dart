@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
@@ -26,81 +27,97 @@ class StoryAvatar extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: SizedBox(
-        width: 76,
+        width: 106,
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: isOwnStory
-                        ? const [Color(0xFF2563EB), Color(0xFF06B6D4)]
-                        : const [Color(0xFFF97316), Color(0xFFEC4899)],
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isOwnStory
+                          ? const [Color(0xFF2563EB), Color(0xFF06B6D4)]
+                          : const [Color(0xFFF97316), Color(0xFFEC4899)],
+                    ),
                   ),
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFFE5E7EB),
-                    backgroundImage: avatarUrl.trim().isEmpty
-                        ? null
-                        : NetworkImage(ApiConfig.assetUrl(avatarUrl)),
-                    child: avatarUrl.trim().isEmpty
-                        ? Text(
-                            initials,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827),
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-              if (showPlus)
-                Positioned(
-                  right: -1,
-                  bottom: 1,
                   child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.add,
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      size: 15,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: SizedBox.expand(
+                        child: avatarUrl.trim().isEmpty
+                            ? ColoredBox(
+                                color: const Color(0xFFE5E7EB),
+                                child: Center(
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF111827),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: ApiConfig.assetUrl(avatarUrl),
+                                fit: BoxFit.cover,
+                                fadeInDuration: Duration.zero,
+                                fadeOutDuration: Duration.zero,
+                                placeholderFadeInDuration: Duration.zero,
+                                placeholder: (context, url) => const ColoredBox(
+                                  color: Color(0xFFE5E7EB),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const ColoredBox(
+                                  color: Color(0xFFE5E7EB),
+                                ),
+                              ),
+                      ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+                if (showPlus)
+                  Positioned(
+                    right: 0,
+                    bottom: 2,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 7),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

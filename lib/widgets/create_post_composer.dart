@@ -206,12 +206,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _errorMessage = 'Unable to select images: $error';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isPickingImages = false;
-        _progressMessage = null;
-        _progressValue = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isPickingImages = false;
+          _progressMessage = null;
+          _progressValue = null;
+        });
+      }
     }
   }
 
@@ -247,12 +248,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _errorMessage = 'Unable to select cover image: $error';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isPickingImages = false;
-        _progressMessage = null;
-        _progressValue = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isPickingImages = false;
+          _progressMessage = null;
+          _progressValue = null;
+        });
+      }
     }
   }
 
@@ -289,12 +291,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _errorMessage = 'Unable to select reel image: $error';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isPickingImages = false;
-        _progressMessage = null;
-        _progressValue = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isPickingImages = false;
+          _progressMessage = null;
+          _progressValue = null;
+        });
+      }
     }
   }
 
@@ -324,12 +327,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _errorMessage = 'Unable to select video: $error';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isPickingVideo = false;
-        _progressMessage = null;
-        _progressValue = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isPickingVideo = false;
+          _progressMessage = null;
+          _progressValue = null;
+        });
+      }
     }
   }
 

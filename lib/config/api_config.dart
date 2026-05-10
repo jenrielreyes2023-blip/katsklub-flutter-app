@@ -18,11 +18,27 @@ class ApiConfig {
 
   static String assetUrl(String value) {
     final url = value.trim();
-    if (url.isEmpty ||
-        url.startsWith('http://') ||
-        url.startsWith('https://') ||
-        url.startsWith('data:')) {
+    if (url.isEmpty || url.startsWith('data:')) {
       return url;
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      final assetUri = Uri.tryParse(url);
+      final apiUri = Uri.tryParse(apiBaseUrl);
+      if (assetUri == null || apiUri == null) {
+        return url;
+      }
+
+      final sameOrigin = assetUri.scheme == apiUri.scheme &&
+          assetUri.host == apiUri.host &&
+          _normalizedPort(assetUri) == _normalizedPort(apiUri);
+
+      if (sameOrigin) {
+        return url;
+      }
+
+      final encodedUrl = Uri.encodeQueryComponent(url);
+      return '$apiBaseUrl/api/proxy-media?url=$encodedUrl';
     }
 
     if (url.startsWith('/')) {
@@ -30,5 +46,13 @@ class ApiConfig {
     }
 
     return '$apiBaseUrl/$url';
+  }
+
+  static int _normalizedPort(Uri uri) {
+    if (uri.hasPort) {
+      return uri.port;
+    }
+
+    return uri.scheme == 'https' ? 443 : 80;
   }
 }
