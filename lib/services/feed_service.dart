@@ -1453,6 +1453,26 @@ class FeedService {
     return data['ok'] == true;
   }
 
+  Future<bool> muteUser(String username) async {
+    final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
+    if (cleanUsername.isEmpty) {
+      return false;
+    }
+
+    final data = await _authenticatedPost('/api/users/$cleanUsername/mute');
+    return data['ok'] == true;
+  }
+
+  Future<bool> unmuteUser(String username) async {
+    final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
+    if (cleanUsername.isEmpty) {
+      return false;
+    }
+
+    final data = await _authenticatedDelete('/api/users/$cleanUsername/mute');
+    return data['ok'] == true;
+  }
+
   Future<void> _applyFollowStateUpdate(User targetUser) async {
     final targetUsername = targetUser.username?.trim().toLowerCase() ?? '';
     if (targetUsername.isEmpty) {

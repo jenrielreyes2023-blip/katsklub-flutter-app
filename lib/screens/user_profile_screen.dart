@@ -104,6 +104,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       builder: (sheetContext) {
         return _ProfileOptionsSheet(
           username: username,
+          isMuted: user.isMuted,
           onMention: () {
             Navigator.of(sheetContext).pop();
             _copyMention(username);
@@ -122,7 +123,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           },
           onMute: () {
             Navigator.of(sheetContext).pop();
-            _showPlaceholder('Mute coming soon.');
+            _confirmAndMuteUser(user);
           },
           onAbout: () {
             Navigator.of(sheetContext).pop();
@@ -228,6 +229,65 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
+  }
+
+  Future<void> _confirmAndMuteUser(User user) async {
+    final username = user.username ?? '';
+    final displayName = user.displayName;
+    if (username.isEmpty) return;
+
+    final isMuted = user.isMuted;
+    final titleText = isMuted ? 'Unmute $displayName?' : 'Mute $displayName?';
+    final contentText = isMuted
+        ? 'You will start seeing their posts in your feed again.'
+        : 'KatsKlub won\'t let them know you muted them. You will stop seeing their posts in your feed.';
+    final actionText = isMuted ? 'Unmute' : 'Mute';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titleText),
+          content: Text(contentText),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(actionText),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final ok = isMuted
+        ? await FeedService().unmuteUser(username)
+        : await FeedService().muteUser(username);
+    if (!mounted) {
+      return;
+    }
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not $actionText this user. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${isMuted ? "Unmuted" : "Muted"} $displayName.')),
+    );
+
+    setState(() {
+      _profileFuture = FeedService().loadUserProfile(username);
+    });
   }
 
   @override
@@ -368,6 +428,7 @@ class _ProfileOptionsSheet extends StatelessWidget {
     required this.onBlock,
     required this.onMute,
     required this.onAbout,
+    required this.isMuted,
   });
 
   final String username;
@@ -377,6 +438,7 @@ class _ProfileOptionsSheet extends StatelessWidget {
   final VoidCallback onBlock;
   final VoidCallback onMute;
   final VoidCallback onAbout;
+  final bool isMuted;
 
   @override
   Widget build(BuildContext context) {
@@ -443,8 +505,8 @@ class _ProfileOptionsSheet extends StatelessWidget {
                 ),
                 const _ProfileOptionDivider(),
                 _ProfileOptionRow(
-                  label: 'Mute @$username',
-                  icon: Icons.volume_off_outlined,
+                  label: isMuted ? 'Unmute @$username' : 'Mute @$username',
+                  icon: isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
                   iconColor: destructiveColor,
                   textColor: destructiveColor,
                   onTap: onMute,

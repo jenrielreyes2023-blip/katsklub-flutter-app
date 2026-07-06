@@ -16,6 +16,8 @@ class User {
     this.isAuthor = false,
     this.isPrivate = false,
     this.isRequested = false,
+    this.isMuted = false,
+    this.isBlocked = false,
     this.showAdminBadge = false,
     this.followersCount = 0,
     this.followingCount = 0,
@@ -53,6 +55,8 @@ class User {
   final bool isAuthor;
   final bool isPrivate;
   final bool isRequested;
+  final bool isMuted;
+  final bool isBlocked;
   final bool showAdminBadge;
   final int followersCount;
   final int followingCount;
@@ -91,6 +95,8 @@ class User {
       isAuthor: _readBool(json['isAuthor'] ?? json['is_author']),
       isPrivate: _readBool(json['isPrivate'] ?? json['is_private']),
       isRequested: _readBool(json['isRequested'] ?? json['is_requested']),
+      isMuted: _readBool(json['isMuted'] ?? json['is_muted']),
+      isBlocked: _readBool(json['isBlocked'] ?? json['is_blocked']),
       showAdminBadge:
           _readBool(json['showAdminBadge'] ?? json['show_admin_badge']),
       followersCount: _readInt(
@@ -194,6 +200,8 @@ class User {
     bool? isFollowing,
     bool? isPrivate,
     bool? isRequested,
+    bool? isMuted,
+    bool? isBlocked,
     bool? profileShowEmail,
     bool? profileShowGender,
     bool? profileShowBirthday,
@@ -215,6 +223,8 @@ class User {
     final nextIsFollowing = isFollowing ?? this.isFollowing;
     final nextIsPrivate = isPrivate ?? this.isPrivate;
     final nextIsRequested = isRequested ?? this.isRequested;
+    final nextIsMuted = isMuted ?? this.isMuted;
+    final nextIsBlocked = isBlocked ?? this.isBlocked;
     final nextProfileShowEmail = profileShowEmail ?? this.profileShowEmail;
     final nextProfileShowGender = profileShowGender ?? this.profileShowGender;
     final nextProfileShowBirthday =
@@ -239,6 +249,8 @@ class User {
       ..['isFollowing'] = nextIsFollowing
       ..['isPrivate'] = nextIsPrivate
       ..['isRequested'] = nextIsRequested
+      ..['isMuted'] = nextIsMuted
+      ..['isBlocked'] = nextIsBlocked
       ..['profileShowEmail'] = nextProfileShowEmail
       ..['profileShowGender'] = nextProfileShowGender
       ..['profileShowBirthday'] = nextProfileShowBirthday
@@ -270,6 +282,8 @@ class User {
       isAuthor: isAuthor,
       isPrivate: nextIsPrivate,
       isRequested: nextIsRequested,
+      isMuted: nextIsMuted,
+      isBlocked: nextIsBlocked,
       showAdminBadge: showAdminBadge,
       followersCount: nextFollowersCount,
       followingCount: nextFollowingCount,
