@@ -213,8 +213,16 @@ Para hindi mawala sa scope, ito ang suggested sequencing:
 ------------------------------------------------------------------------
 8. NOTES FOR FUTURE AI / DEV
 ------------------------------------------------------------------------
-   - Walang git ang katsklub-flutter-wip-test AND ang /home/ubuntu/katsklub
-     server. Use .bak-{desc}-YYYYMMDD copies bago mag non-trivial edits.
+   - GIT & GITHUB: Ang `katsklub-flutter-wip-test` ay isang Git Worktree ng
+     `katsklub-flutter` (kasalukuyang nasa branch `rescue-lost-1d1b`).
+     Naka-link ito sa bagong private GitHub repository:
+     `https://github.com/Katsklub2022/katsklub-flutter-wip-test.git` (Remote name: `wip-test`).
+     * Para mag-push ng local changes: `git push wip-test HEAD:main`
+     * May autocompile/build ang repo gamit ang GitHub Actions na nag-go-generate ng APKs.
+     * Naka-force add ang `android/app/debug.keystore` sa Git para magkapareho ang signature
+       ng build sa VPS at GitHub Actions (para gumana ang Google Sign-In sa pareho).
+     * In-ignore sa `.gitignore` ang `*.bak*`, `*.backup*`, at `*before-*` files para malinis ang repo.
+   - Server: Walang git ang `/home/ubuntu/katsklub` server directory.
    - Backend lives sa /home/ubuntu/katsklub/server.js — most new features
      above will require new tables + endpoints there. PM2 app name is
      `katsklub`; restart after route changes.
