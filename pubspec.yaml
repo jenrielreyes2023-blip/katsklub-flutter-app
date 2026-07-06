@@ -1,15 +1,32 @@
 dependencies:
+  audioplayers: ^6.1.0
   cached_network_image: ^3.4.1
+  firebase_core: ^4.9.0
+  firebase_messaging: ^16.2.2
+  file_picker: ^8.1.7
   flutter:
     sdk: flutter
   flutter_image_compress: ^2.4.0
   flutter_svg: ^2.2.4
+  google_sign_in: ^6.2.2
   http: ^1.2.2
   image_picker: ^1.1.2
+  just_audio: ^0.9.40
+  just_audio_background: ^0.0.1-beta.13
+  lottie: ^3.3.3
+  mime: ^2.0.0
+  path_provider: ^2.1.5
   provider: ^6.1.2
+  record: ^6.2.1
+  share_plus: ^10.1.4
   shared_preferences: ^2.2.3
   socket_io_client: ^3.1.4
   video_player: ^2.9.2
+  visibility_detector: ^0.4.0+2
+  webview_flutter: ^4.8.0
+  speech_to_text: ^7.4.0
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
 description: Flutter mobile app for KatsKlub
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -20,9 +37,58 @@ environment:
 flutter:
   assets:
   - assets/images/kats-logo-final.png
-  - assets/images/neon.svg
-  - assets/images/neon-border.svg
+  - assets/images/default_avatar_cat.jpg
+  - assets/images/default_avatar_dog.jpg
+  - assets/images/default_avatar_panda.jpg
+  - assets/images/default_avatar_bunny.jpg
+  - assets/images/sunrise_sticker.png
+  - assets/images/ocean_sticker.png
+  - assets/images/ocean_sticker_v2.png
+  - assets/images/ocean_sticker_v3.png
+  - assets/images/bee_sticker_v1.png
+  - assets/images/eagle_sticker_v1.png
+  - assets/images/pinkswan_sticker_v1.png
+  - assets/images/dandelion_sticker_v1.png
+  - assets/images/gta_pastel_sticker_v1.png
+  - assets/images/sharingan_eyes_sticker_v1.png
+  - assets/images/pastel_sticker_v1.png
+  - assets/images/lavender_sticker_v1.png
+  - assets/images/ph_flag_sticker_v1.png
+  - assets/images/gemini_roger_wolf_v1.png
+  - assets/images/gemini_roger_hunter_v1.png
+  - assets/images/xmas_cozy_sticker.png
+  - assets/images/xmas_snowy_sticker.png
+  - assets/images/bunny_sticker_v1.png
+  - assets/images/ghost_sticker_v1.png
+  - assets/images/prince_sticker_v1.png
+  - assets/images/elsa_sticker.png
+  - assets/images/achievement_pill_preview_v1.png
+  - assets/images/achievement_pill_preview_v1_trimmed.png
+  - assets/images/borders/
+  - assets/sounds/message_in.mp3
+  - assets/sounds/message_out.mp3
+  - assets/animations/empty_status.json
+  fonts:
+  - family: Inter
+    fonts:
+    - asset: assets/fonts/Inter-Regular.ttf
+      weight: 400
+    - asset: assets/fonts/Inter-Medium.ttf
+      weight: 500
+    - asset: assets/fonts/Inter-SemiBold.ttf
+      weight: 600
+    - asset: assets/fonts/Inter-Bold.ttf
+      weight: 700
+    - asset: assets/fonts/Inter-MediumItalic.ttf
+      weight: 500
+      style: italic
+    - asset: assets/fonts/Inter-SemiBoldItalic.ttf
+      weight: 600
+      style: italic
+    - asset: assets/fonts/Inter-BoldItalic.ttf
+      weight: 700
+      style: italic
   uses-material-design: true
 name: katsklub_flutter
 publish_to: none
-version: 1.0.0+1
+version: 1.0.12+21

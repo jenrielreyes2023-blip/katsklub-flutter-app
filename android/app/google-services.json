@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "417307366870",
+    "project_id": "katsklub-c7885",
+    "storage_bucket": "katsklub-c7885.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417307366870:android:890bc6ee42c2f4f5234077",
+        "android_client_info": {
+          "package_name": "com.katsklub.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAp6eISixReW5bZiSbS1l5o2k8HbsLjwvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

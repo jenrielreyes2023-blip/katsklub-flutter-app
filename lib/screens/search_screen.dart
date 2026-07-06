@@ -4,6 +4,7 @@ import '../config/api_config.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
+import '../widgets/avatar_with_border.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
 
@@ -95,13 +96,15 @@ class _PersonResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderType = AvatarBorderType.parse(user.profileBorder);
+
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: user.avatarUrl == null
-              ? null
-              : NetworkImage(ApiConfig.assetUrl(user.avatarUrl!)),
-          child: user.avatarUrl == null ? Text(user.initials) : null,
+        leading: AvatarWithBorder(
+          avatarUrl: user.avatarUrl ?? '',
+          initials: user.initials,
+          borderType: borderType,
+          size: 40,
         ),
         title: Text(user.displayName),
         subtitle: Text(user.handle ?? ''),

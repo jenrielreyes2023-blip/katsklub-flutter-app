@@ -10,10 +10,15 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/loading_skeletons.dart';
+import '../widgets/feed_momentum_scroll_physics.dart';
+import '../widgets/media_post_snap_coordinator.dart';
 import '../widgets/post_card.dart';
+import '../widgets/share_post_sheet.dart';
+import 'hashtag_screen.dart';
 import 'image_viewer_screen.dart';
 import 'post_detail_screen.dart';
 import 'reels_viewer_screen.dart';
+import 'repost_post_screen.dart';
 import 'user_profile_screen.dart';
 import 'vertical_gallery_screen.dart';
 
@@ -42,12 +47,13 @@ class _FeedScreenState extends State<FeedScreen>
   static const int _maxRailReels = 4;
 
   final ScrollController _scrollController = ScrollController();
+  late final MediaPostSnapCoordinator _mediaSnapCoordinator;
   final FeedService _feedService = FeedService();
-  final TextEditingController _peopleSearchController =
-      TextEditingController();
+  final TextEditingController _peopleSearchController = TextEditingController();
 
   String _activeTab = 'posts';
   Timer? _peopleSearchDebounce;
+  Timer? _peopleHydrateDebounce;
   Set<String> _followedUsernames = <String>{};
   Set<String> _followPendingUsernames = <String>{};
   Set<String> _profileLoadingUsernames = <String>{};
@@ -55,16 +61,26 @@ class _FeedScreenState extends State<FeedScreen>
   Set<String> _invalidProfileUsernames = <String>{};
   Map<String, User> _peopleProfileDetails = <String, User>{};
   List<User> _searchPeopleResults = [];
+  List<HashtagResult> _searchHashtagResults = [];
   String _peopleSearchQuery = '';
   List<Post> _posts = [];
   List<Post> _railReels = [];
   bool _isInitialLoading = true;
+  bool _hasLoadedInitialContent = false;
   bool _isSearchingPeople = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   bool _railReelsLocked = false;
   int _nextOffset = 0;
   double _lastScrollPixels = 0;
+  StreamSubscription<String>? _postDeletedSubscription;
+  StreamSubscription<String>? _postHiddenSubscription;
+  StreamSubscription<Post>? _postUpdatedSubscription;
+  StreamSubscription<CommentCountChange>? _commentCountSubscription;
+  StreamSubscription<ProfileStatsChange>? _profileStatsSubscription;
+  StreamSubscription<void>? _postcardThemesResetSubscription;
+  final Set<String> _prefetchedPostImages = <String>{};
+  bool _isMediaClamping = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -73,6 +89,13 @@ class _FeedScreenState extends State<FeedScreen>
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    _mediaSnapCoordinator = MediaPostSnapCoordinator(
+      controller: _scrollController,
+      topInsetBuilder: _feedSnapTopInset,
+      hardClampEnabled: true,
+      onClampStateChanged: _handleClampStateChanged,
+    );
+    _bindFeedEvents();
     _loadInitialFeed();
     _loadFollowedUsers();
   }
@@ -81,9 +104,137 @@ class _FeedScreenState extends State<FeedScreen>
   void dispose() {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
+    _mediaSnapCoordinator.dispose();
     _peopleSearchDebounce?.cancel();
+    _peopleHydrateDebounce?.cancel();
     _peopleSearchController.dispose();
+    _postDeletedSubscription?.cancel();
+    _postHiddenSubscription?.cancel();
+    _postUpdatedSubscription?.cancel();
+    _commentCountSubscription?.cancel();
+    _profileStatsSubscription?.cancel();
+    _postcardThemesResetSubscription?.cancel();
     super.dispose();
+  }
+
+  void _bindFeedEvents() {
+    _postDeletedSubscription =
+        FeedService.postDeletedStream.listen(_removePostById);
+    _postHiddenSubscription =
+        FeedService.postHiddenStream.listen(_removePostById);
+    _postUpdatedSubscription =
+        FeedService.postUpdatedStream.listen(_replacePost);
+    _commentCountSubscription =
+        FeedService.commentCountChangedStream.listen(_applyCommentCountChange);
+    _profileStatsSubscription =
+        FeedService.profileStatsChangedStream.listen(_applyProfileStatsChange);
+    _postcardThemesResetSubscription = FeedService.postcardThemesResetStream
+        .listen((_) => _clearAllPostcardThemes());
+  }
+
+  void _removePostById(String postId) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _posts = _posts.where((item) => item.id != postId).toList();
+      _railReels = _railReels.where((item) => item.id != postId).toList();
+    });
+  }
+
+  void _clearAllPostcardThemes() {
+    if (!mounted) {
+      return;
+    }
+
+    var changed = false;
+    final nextPosts = List<Post>.from(_posts);
+    for (var i = 0; i < nextPosts.length; i++) {
+      final item = nextPosts[i];
+      final hasOwnTheme = (item.authorPostcardTheme ?? '').isNotEmpty;
+      final hasInnerTheme =
+          (item.originalPost?.authorPostcardTheme ?? '').isNotEmpty;
+      if (!hasOwnTheme && !hasInnerTheme) continue;
+      changed = true;
+      nextPosts[i] = item.copyWith(
+        authorPostcardTheme: '',
+        originalPost: hasInnerTheme
+            ? item.originalPost!.copyWith(authorPostcardTheme: '')
+            : item.originalPost,
+      );
+    }
+
+    if (!changed) return;
+    setState(() {
+      _posts = nextPosts;
+    });
+  }
+
+  void _applyCommentCountChange(CommentCountChange event) {
+    if (!mounted) {
+      return;
+    }
+
+    final postIndex = _posts.indexWhere((item) => item.id == event.postId);
+    final reelIndex = _railReels.indexWhere((item) => item.id == event.postId);
+    if (postIndex < 0 && reelIndex < 0) return;
+
+    List<Post>? nextPosts;
+    List<Post>? nextReels;
+    if (postIndex >= 0 &&
+        _posts[postIndex].commentCount != event.commentCount) {
+      nextPosts = List<Post>.from(_posts);
+      nextPosts[postIndex] =
+          nextPosts[postIndex].copyWith(commentCount: event.commentCount);
+    }
+    if (reelIndex >= 0 &&
+        _railReels[reelIndex].commentCount != event.commentCount) {
+      nextReels = List<Post>.from(_railReels);
+      nextReels[reelIndex] =
+          nextReels[reelIndex].copyWith(commentCount: event.commentCount);
+    }
+
+    if (nextPosts == null && nextReels == null) return;
+    setState(() {
+      if (nextPosts != null) _posts = nextPosts;
+      if (nextReels != null) _railReels = nextReels;
+    });
+  }
+
+  void _applyProfileStatsChange(ProfileStatsChange event) {
+    final nextTheme = event.user?.postcardTheme ?? '';
+    final username = event.username.trim().toLowerCase();
+    if (!mounted || username.isEmpty) {
+      return;
+    }
+
+    List<Post>? nextPosts;
+    List<Post>? nextRailReels;
+    for (var i = 0; i < _posts.length; i++) {
+      final item = _posts[i];
+      if (item.authorUsername.trim().toLowerCase() != username ||
+          (item.authorPostcardTheme ?? '') == nextTheme) {
+        continue;
+      }
+      nextPosts ??= List<Post>.from(_posts);
+      nextPosts[i] = item.copyWith(authorPostcardTheme: nextTheme);
+    }
+    for (var i = 0; i < _railReels.length; i++) {
+      final item = _railReels[i];
+      if (item.authorUsername.trim().toLowerCase() != username ||
+          (item.authorPostcardTheme ?? '') == nextTheme) {
+        continue;
+      }
+      nextRailReels ??= List<Post>.from(_railReels);
+      nextRailReels[i] = item.copyWith(authorPostcardTheme: nextTheme);
+    }
+
+    if (nextPosts == null && nextRailReels == null) return;
+    setState(() {
+      if (nextPosts != null) _posts = nextPosts;
+      if (nextRailReels != null) _railReels = nextRailReels;
+    });
   }
 
   @override
@@ -120,7 +271,7 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Future<void> _loadInitialFeed() async {
-    final shouldShowSkeleton = _posts.isEmpty;
+    final shouldShowSkeleton = !_hasLoadedInitialContent && _posts.isEmpty;
     setState(() {
       _isInitialLoading = shouldShowSkeleton;
       _isLoadingMore = false;
@@ -144,8 +295,11 @@ class _FeedScreenState extends State<FeedScreen>
         _nextOffset = seed.nextOffset;
         _hasMore = seed.hasMore;
         _isInitialLoading = false;
+        _hasLoadedInitialContent = true;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      print('DEBUG: _loadInitialFeed caught error: $e');
+      print(stack);
       if (!mounted) return;
       setState(() {
         _posts = [];
@@ -153,6 +307,7 @@ class _FeedScreenState extends State<FeedScreen>
         _railReelsLocked = true;
         _hasMore = false;
         _isInitialLoading = false;
+        _hasLoadedInitialContent = true;
       });
     }
   }
@@ -203,7 +358,9 @@ class _FeedScreenState extends State<FeedScreen>
         _hasMore = page.hasMore;
         _isLoadingMore = false;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      print('DEBUG: _loadMoreFeed caught error: $e');
+      print(stack);
       if (!mounted) return;
       setState(() {
         _isLoadingMore = false;
@@ -230,7 +387,9 @@ class _FeedScreenState extends State<FeedScreen>
 
   List<Post> _eligibleReels(List<Post> posts) {
     return posts
-        .where((post) => post.isReel && post.videoUrl.trim().isNotEmpty)
+        .where((post) =>
+            post.isReel &&
+            (post.videoUrl.trim().isNotEmpty || post.imageUrls.isNotEmpty))
         .toList();
   }
 
@@ -247,103 +406,172 @@ class _FeedScreenState extends State<FeedScreen>
     super.build(context);
     final posts = _visiblePosts(_posts);
     final people = _visiblePeople();
+    final hashtags = _visibleHashtags();
+    final searchEntries = _buildSearchEntries(people, hashtags);
     final headerHeight = _activeTab == 'people' ? 114.0 : 54.0;
 
     if (_activeTab == 'people') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _hydrateVisiblePeople(people);
-      });
+      _scheduleHydrateVisiblePeople(people);
     }
 
-    return Container(
-      color: const Color(0xFFF7F8FA),
-      child: RefreshIndicator(
-        onRefresh: _refresh,
-        child: CustomScrollView(
-          key: const PageStorageKey<String>('feed-post-list'),
-          controller: _scrollController,
-          cacheExtent: 1500,
-          physics: const ClampingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+    return Stack(
+      children: [
+        Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) =>
+                  _handleFeedScrollNotification(notification, posts),
+              child: CustomScrollView(
+                key: const PageStorageKey<String>('feed-post-list'),
+                controller: _scrollController,
+                cacheExtent: 600,
+                physics: const FeedMomentumScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyTabDelegate(
+                      extent: headerHeight,
+                      child: _FeedHeader(
+                        activeTab: _activeTab,
+                        searchController: _peopleSearchController,
+                        onSearchChanged: _handlePeopleSearchChanged,
+                        onChanged: (tab) {
+                          setState(() {
+                            _activeTab = tab;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _activeTab == 'people'
+                            ? _buildSearchItem(index, searchEntries, people)
+                            : _buildFeedItem(context, index, posts),
+                        childCount: _activeTab == 'people'
+                            ? _searchItemCount(searchEntries)
+                            : _feedItemCount(posts),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyTabDelegate(
-                extent: headerHeight,
-                child: _FeedHeader(
-                  activeTab: _activeTab,
-                  searchController: _peopleSearchController,
-                  onSearchChanged: _handlePeopleSearchChanged,
-                  onChanged: (tab) {
-                    setState(() {
-                      _activeTab = tab;
-                    });
-                  },
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _activeTab == 'people'
-                      ? _buildPeopleItem(index, people)
-                      : _buildFeedItem(index, posts),
-                  childCount: _activeTab == 'people'
-                      ? _peopleItemCount(people)
-                      : _feedItemCount(posts) - 2,
-                ),
-              ),
-            ),
-          ],
         ),
-      ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 24,
+          child: Center(
+            child: MediaLoadingChip(visible: _isMediaClamping),
+          ),
+        ),
+      ],
     );
   }
 
   int _feedItemCount(List<Post> posts) {
     if (!_isInitialLoading && posts.isNotEmpty && _railReels.isNotEmpty) {
-      return posts.length + 1 + (_isLoadingMore ? 1 : 0);
+      return posts.length + 1 + (_isLoadingMore ? 3 : 0);
     }
 
     if (_isInitialLoading || posts.isEmpty) {
       return 1;
     }
 
-    return posts.length + (_isLoadingMore ? 1 : 0);
+    return posts.length + (_isLoadingMore ? 3 : 0);
   }
 
-  Widget _buildFeedItem(int index, List<Post> posts) {
+  void _prefetchUpcomingPostImages(
+      BuildContext context, List<Post> posts, int currentIndex) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final end = (currentIndex + 3).clamp(0, posts.length - 1).toInt();
+      for (var i = currentIndex + 1; i <= end; i++) {
+        final post = posts[i];
+        if (!_prefetchedPostImages.add(post.id)) continue;
+        final urls = <String>[];
+        if (post.imageUrls.isNotEmpty) urls.add(post.imageUrls.first);
+        if (post.videoPosterUrl.trim().isNotEmpty) {
+          urls.add(post.videoPosterUrl);
+        }
+        for (final url in urls) {
+          final resolved = ApiConfig.assetUrl(url);
+          if (resolved.isEmpty) continue;
+          precacheImage(CachedNetworkImageProvider(resolved), context)
+              .catchError((_) {});
+        }
+      }
+    });
+  }
+
+  Widget _buildFeedItem(BuildContext context, int index, List<Post> posts) {
     if (_isInitialLoading) {
       return const Column(
         children: [
-          PostSkeletonCard(),
-          PostSkeletonCard(),
-          PostSkeletonCard(),
+          PostSkeletonCard(variant: 0),
+          PostSkeletonCard(variant: 1),
+          PostSkeletonCard(variant: 2),
         ],
       );
     }
 
     if (posts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            Text(
-              'No posts yet.',
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF1E3),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Icon(
+                Icons.people_alt_outlined,
+                size: 30,
+                color: Color(0xFFEE8F3F),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Your feed is quiet',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF111827),
               ),
             ),
-            SizedBox(height: 6),
-            Text(
-              'Pull to refresh.',
+            const SizedBox(height: 6),
+            const Text(
+              'Follow people to fill your feed with their posts.',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.5,
                 color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () => setState(() => _activeTab = 'people'),
+              icon: const Icon(Icons.person_add_alt_1, size: 18),
+              label: const Text('Discover people'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEE8F3F),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               ),
             ),
           ],
@@ -367,14 +595,47 @@ class _FeedScreenState extends State<FeedScreen>
       );
     }
 
-    final contentIndex = index - (reelsItemIndex != null && index > reelsItemIndex ? 1 : 0);
+    final contentIndex =
+        index - (reelsItemIndex != null && index > reelsItemIndex ? 1 : 0);
     if (contentIndex >= 0 && contentIndex < posts.length) {
-      return _postCard(posts[contentIndex]);
+      _prefetchUpcomingPostImages(context, posts, contentIndex);
+      return _buildSnappablePostCard(posts[contentIndex]);
     }
 
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.only(top: 4),
-      child: PostSkeletonCard(),
+      child: PostSkeletonCard(variant: index % 4),
+    );
+  }
+
+  double _feedSnapTopInset() {
+    return _activeTab == 'people' ? 114.0 : 54.0;
+  }
+
+  void _handleClampStateChanged(bool isClamping) {
+    if (!mounted || _isMediaClamping == isClamping) return;
+    setState(() {
+      _isMediaClamping = isClamping;
+    });
+  }
+
+  bool _handleFeedScrollNotification(
+    ScrollNotification notification,
+    List<Post> posts,
+  ) {
+    _mediaSnapCoordinator.handleNotification(
+      notification,
+      posts: posts,
+      enabled: _activeTab == 'posts' && posts.isNotEmpty,
+      isMediaPost: hasSnappableMedia,
+    );
+    return false;
+  }
+
+  Widget _buildSnappablePostCard(Post post) {
+    return KeyedSubtree(
+      key: _mediaSnapCoordinator.keyForPost(post),
+      child: _postCard(post),
     );
   }
 
@@ -405,7 +666,8 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   List<User> _visiblePeople() {
-    final sourcePeople = _peopleSearchQuery.trim().length >= 2
+    final isSearching = _peopleSearchQuery.trim().length >= 2;
+    final sourcePeople = isSearching
         ? _searchPeopleResults
         : _discoverPeople(_posts);
     final seen = <String>{};
@@ -415,7 +677,7 @@ class _FeedScreenState extends State<FeedScreen>
       final username = _normalizeUsername(user.username);
       if (username.isEmpty ||
           username == _normalizeUsername(widget.user.username) ||
-          _followedUsernames.contains(username) ||
+          (!isSearching && _followedUsernames.contains(username)) ||
           _invalidProfileUsernames.contains(username) ||
           !seen.add(username)) {
         continue;
@@ -424,6 +686,54 @@ class _FeedScreenState extends State<FeedScreen>
     }
 
     return visible;
+  }
+
+  List<HashtagResult> _visibleHashtags() {
+    if (!_peopleSearchQuery.trim().startsWith('#')) {
+      return const [];
+    }
+
+    final visible = <HashtagResult>[];
+    final seen = <String>{};
+
+    for (final hashtag in _searchHashtagResults) {
+      final name = hashtag.name.trim().toLowerCase();
+      if (name.isEmpty || !seen.add(name)) {
+        continue;
+      }
+      visible.add(hashtag);
+    }
+
+    return visible;
+  }
+
+  List<_SearchEntry> _buildSearchEntries(
+    List<User> people,
+    List<HashtagResult> hashtags,
+  ) {
+    if (_isSearchingPeople) {
+      return const <_SearchEntry>[];
+    }
+
+    final entries = <_SearchEntry>[];
+
+    if (hashtags.isNotEmpty) {
+      entries.add(const _SearchEntry.section('Hashtags'));
+      entries.addAll(
+        hashtags.map(_SearchEntry.hashtag),
+      );
+    }
+
+    if (people.isNotEmpty) {
+      if (entries.isNotEmpty) {
+        entries.add(const _SearchEntry.section('People'));
+      }
+      entries.addAll(
+        people.map(_SearchEntry.person),
+      );
+    }
+
+    return entries;
   }
 
   List<User> _discoverPeople(List<Post> posts) {
@@ -499,6 +809,7 @@ class _FeedScreenState extends State<FeedScreen>
       _peopleSearchQuery = nextQuery;
       if (nextQuery.length < 2) {
         _searchPeopleResults = [];
+        _searchHashtagResults = [];
         _isSearchingPeople = false;
       }
     });
@@ -523,6 +834,7 @@ class _FeedScreenState extends State<FeedScreen>
 
           setState(() {
             _searchPeopleResults = results.people;
+            _searchHashtagResults = results.hashtags;
             _isSearchingPeople = false;
           });
         } catch (_) {
@@ -532,6 +844,7 @@ class _FeedScreenState extends State<FeedScreen>
 
           setState(() {
             _searchPeopleResults = [];
+            _searchHashtagResults = [];
             _isSearchingPeople = false;
           });
         }
@@ -539,15 +852,19 @@ class _FeedScreenState extends State<FeedScreen>
     );
   }
 
-  int _peopleItemCount(List<User> people) {
-    if (_isSearchingPeople || people.isEmpty) {
+  int _searchItemCount(List<_SearchEntry> entries) {
+    if (_isSearchingPeople || entries.isEmpty) {
       return 1;
     }
 
-    return people.length;
+    return entries.length;
   }
 
-  Widget _buildPeopleItem(int index, List<User> people) {
+  Widget _buildSearchItem(
+    int index,
+    List<_SearchEntry> entries,
+    List<User> people,
+  ) {
     if (_isSearchingPeople) {
       return const Padding(
         padding: EdgeInsets.only(top: 28),
@@ -555,9 +872,11 @@ class _FeedScreenState extends State<FeedScreen>
       );
     }
 
-    if (people.isEmpty) {
+    if (entries.isEmpty) {
       final message = _peopleSearchQuery.trim().length >= 2
-          ? 'No people found.'
+          ? (_peopleSearchQuery.trim().startsWith('#')
+              ? 'No hashtags found.'
+              : 'No people found.')
           : 'No people to show right now.';
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
@@ -572,15 +891,52 @@ class _FeedScreenState extends State<FeedScreen>
       );
     }
 
-    final baseUser = people[index];
-    final user = _peopleProfileDetails[_normalizeUsername(baseUser.username)] ??
-        baseUser;
-    return _PeopleListRow(
-      user: user,
-      isFollowPending:
-          _followPendingUsernames.contains(_normalizeUsername(user.username)),
-      onTap: () => _openPerson(user),
-      onFollow: () => _followPerson(user),
+    final entry = entries[index];
+    switch (entry.type) {
+      case _SearchEntryType.section:
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            entry.label!,
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        );
+      case _SearchEntryType.person:
+        final baseUser = entry.user!;
+        final user =
+            _peopleProfileDetails[_normalizeUsername(baseUser.username)] ??
+                baseUser;
+        final isFollowing = _followedUsernames.contains(_normalizeUsername(user.username));
+        return _PeopleListRow(
+          user: user,
+          isFollowing: isFollowing,
+          isFollowPending: _followPendingUsernames
+              .contains(_normalizeUsername(user.username)),
+          onTap: () => _openPerson(user),
+          onFollow: () => isFollowing ? _unfollowPerson(user) : _followPerson(user),
+        );
+      case _SearchEntryType.hashtag:
+        return _HashtagListRow(
+          hashtag: entry.hashtag!,
+          onTap: () => _openHashtag(entry.hashtag!.name),
+        );
+    }
+  }
+
+  void _openHashtag(String tag) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HashtagScreen(
+          tag: tag,
+          currentUser: widget.user,
+          onOpenCurrentUserProfile: widget.onOpenCurrentUserProfile,
+          onOpenUserProfile: widget.onOpenUserProfile,
+        ),
+      ),
     );
   }
 
@@ -619,6 +975,99 @@ class _FeedScreenState extends State<FeedScreen>
         const SnackBar(content: Text('Failed to follow user.')),
       );
     }
+  }
+
+  Future<void> _unfollowPerson(User user) async {
+    final username = _normalizeUsername(user.username);
+    if (username.isEmpty || _followPendingUsernames.contains(username)) {
+      return;
+    }
+
+    setState(() {
+      _followPendingUsernames = {
+        ..._followPendingUsernames,
+        username,
+      };
+    });
+
+    try {
+      final updatedUser = await _feedService.unfollowUser(username);
+      if (!mounted) return;
+
+      setState(() {
+        _followPendingUsernames = Set<String>.from(_followPendingUsernames)
+          ..remove(username);
+        _followedUsernames = Set<String>.from(_followedUsernames)
+          ..remove(username);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _followPendingUsernames = Set<String>.from(_followPendingUsernames)
+          ..remove(username);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to unfollow user.')),
+      );
+    }
+  }
+
+  Future<void> _followAuthorFromPost(Post post) async {
+    final username = _normalizeUsername(post.authorUsername);
+    if (username.isEmpty || _followPendingUsernames.contains(username)) {
+      return;
+    }
+
+    setState(() {
+      _followPendingUsernames = {
+        ..._followPendingUsernames,
+        username,
+      };
+    });
+
+    try {
+      final updatedUser = await _feedService.followUser(username);
+      if (!mounted) {
+        return;
+      }
+
+      final resolvedUsername =
+          _normalizeUsername(updatedUser?.username ?? username);
+      setState(() {
+        _followPendingUsernames = Set<String>.from(_followPendingUsernames)
+          ..remove(username);
+        _followedUsernames = {
+          ..._followedUsernames,
+          resolvedUsername,
+        };
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'You followed @${updatedUser?.username ?? post.authorUsername}.')),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _followPendingUsernames = Set<String>.from(_followPendingUsernames)
+          ..remove(username);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to follow user.')),
+      );
+    }
+  }
+
+  void _scheduleHydrateVisiblePeople(List<User> people) {
+    _peopleHydrateDebounce?.cancel();
+    _peopleHydrateDebounce = Timer(const Duration(milliseconds: 220), () {
+      if (!mounted || _activeTab != 'people') return;
+      _hydrateVisiblePeople(people);
+    });
   }
 
   Future<void> _hydrateVisiblePeople(List<User> people) async {
@@ -671,7 +1120,8 @@ class _FeedScreenState extends State<FeedScreen>
       _profileLoadingUsernames = nextLoading;
       _resolvedProfileUsernames = {
         ..._resolvedProfileUsernames,
-        ...usernamesToLoad.where((username) => !invalidUsernames.contains(username)),
+        ...usernamesToLoad
+            .where((username) => !invalidUsernames.contains(username)),
       };
       _invalidProfileUsernames = {
         ..._invalidProfileUsernames,
@@ -685,17 +1135,75 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Widget _postCard(Post post) {
+    final authorUsername = _normalizeUsername(post.authorUsername);
+    final showFollowButton = authorUsername.isNotEmpty &&
+        !_isOwnPost(post) &&
+        !post.isFollowingAuthor &&
+        !_isFollowedUsername(authorUsername);
+
     return PostCard(
+      key: ValueKey<String>('feed-post-card-${post.id}'),
       post: post,
       onOpenPost: _openPost,
       onOpenImages: _openImages,
       onOpenAuthor: _openAuthor,
-      onLike: FeedService().toggleLike,
+      onLike: _feedService.toggleLike,
+      onPollVote: _feedService.votePoll,
       onDelete: _deletePost,
+      onHide: _hidePost,
+      onUpdate: _replacePost,
       onComment: _openComments,
+      onRepost: _openRepostComposer,
       onShare: _showSharePlaceholder,
-      onBookmark: _showBookmarkPlaceholder,
+      onBookmark: _toggleBookmark,
+      showAuthorFollowButton: showFollowButton,
+      isAuthorFollowPending: _followPendingUsernames.contains(authorUsername),
+      onAuthorFollow:
+          showFollowButton ? () => _followAuthorFromPost(post) : null,
     );
+  }
+
+  Future<void> _openRepostComposer(Post post) async {
+    final repostedPost = await Navigator.of(context).push<Post>(
+      MaterialPageRoute(
+        builder: (_) => RepostPostScreen(originalPost: post),
+      ),
+    );
+
+    if (!mounted || repostedPost == null) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Post reposted.')),
+    );
+  }
+
+  void _replacePost(Post updatedPost) {
+    if (!mounted) {
+      return;
+    }
+
+    final postIndex = _posts.indexWhere((item) => item.id == updatedPost.id);
+    final reelIndex =
+        _railReels.indexWhere((item) => item.id == updatedPost.id);
+    if (postIndex < 0 && reelIndex < 0) return;
+
+    List<Post>? nextPosts;
+    List<Post>? nextReels;
+    if (postIndex >= 0) {
+      nextPosts = List<Post>.from(_posts);
+      nextPosts[postIndex] = updatedPost;
+    }
+    if (reelIndex >= 0) {
+      nextReels = List<Post>.from(_railReels);
+      nextReels[reelIndex] = updatedPost;
+    }
+
+    setState(() {
+      if (nextPosts != null) _posts = nextPosts;
+      if (nextReels != null) _railReels = nextReels;
+    });
   }
 
   Future<void> _openComments(Post post) async {
@@ -704,14 +1212,12 @@ class _FeedScreenState extends State<FeedScreen>
       return;
     }
 
+    final index = _posts.indexWhere((item) => item.id == post.id);
+    if (index < 0 || _posts[index].commentCount == commentCount) return;
+    final next = List<Post>.from(_posts);
+    next[index] = next[index].copyWith(commentCount: commentCount);
     setState(() {
-      _posts = _posts
-          .map(
-            (item) => item.id == post.id
-                ? item.copyWith(commentCount: commentCount)
-                : item,
-          )
-          .toList();
+      _posts = next;
     });
   }
 
@@ -720,7 +1226,38 @@ class _FeedScreenState extends State<FeedScreen>
     if (!mounted) return;
     setState(() {
       _posts = _posts.where((item) => item.id != post.id).toList();
+      _railReels = _railReels.where((item) => item.id != post.id).toList();
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Post successfully deleted.')),
+    );
+  }
+
+  Future<void> _hidePost(Post post) async {
+    final previousPosts = List<Post>.from(_posts);
+    final previousRailReels = List<Post>.from(_railReels);
+
+    setState(() {
+      _posts = _posts.where((item) => item.id != post.id).toList();
+      _railReels = _railReels.where((item) => item.id != post.id).toList();
+    });
+
+    try {
+      await _feedService.hidePost(post.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post hidden')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _posts = previousPosts;
+        _railReels = previousRailReels;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to hide post.')),
+      );
+    }
   }
 
   void _openPost(Post post) {
@@ -745,6 +1282,8 @@ class _FeedScreenState extends State<FeedScreen>
               ImageViewerScreen(
             imageUrls: post.imageUrls,
             initialIndex: index,
+            post: post,
+            currentUser: widget.user,
             postId: post.id,
             uploaderName: post.authorFullName,
             createdAt: post.createdAt,
@@ -759,8 +1298,8 @@ class _FeedScreenState extends State<FeedScreen>
               child: child,
             );
           },
-          transitionDuration: const Duration(milliseconds: 300),
-          reverseTransitionDuration: const Duration(milliseconds: 250),
+          transitionDuration: const Duration(milliseconds: 200),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
           opaque: false,
           barrierColor: Colors.black.withValues(alpha: 0.5),
         ),
@@ -773,6 +1312,8 @@ class _FeedScreenState extends State<FeedScreen>
         builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
           initialIndex: index,
+          post: post,
+          currentUser: widget.user,
           postId: post.id,
           uploaderName: post.authorFullName,
           createdAt: post.createdAt,
@@ -869,15 +1410,31 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   void _showSharePlaceholder(Post post) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Share placeholder: ${post.id}')),
+    SharePostSheet.show(
+      context,
+      post: post,
+      currentUser: widget.user,
     );
   }
 
-  void _showBookmarkPlaceholder(Post post) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Save/bookmark is not available yet.')),
-    );
+  Future<void> _toggleBookmark(Post post) async {
+    try {
+      final updatedPost = await _feedService.toggleBookmark(post);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(updatedPost.bookmarkedByMe
+              ? 'Added to Bookmarks'
+              : 'Removed from Bookmarks'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to bookmark: $e')),
+      );
+    }
   }
 
   void _openRailReel(Post reel, int fallbackIndex) {
@@ -1100,9 +1657,9 @@ class _FeedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showSearch = activeTab == 'people';
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ColoredBox(
-      color: Colors.white,
+      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1113,6 +1670,9 @@ class _FeedHeader extends StatelessWidget {
                 controller: searchController,
                 onChanged: onSearchChanged,
                 textInputAction: TextInputAction.search,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search',
                   prefixIcon: const Icon(
@@ -1121,7 +1681,7 @@ class _FeedHeader extends StatelessWidget {
                     size: 20,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF2F2F2),
+                  fillColor: isDark ? const Color(0xFF242526) : const Color(0xFFF2F2F2),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(999),
@@ -1133,8 +1693,8 @@ class _FeedHeader extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(999),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF111827),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
                       width: 1,
                     ),
                   ),
@@ -1162,9 +1722,10 @@ class _FeedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 54,
-      color: Colors.white,
+      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
       child: Row(
         children: [
           _FeedTabButton(
@@ -1186,19 +1747,21 @@ class _FeedTabs extends StatelessWidget {
 class _PeopleListRow extends StatelessWidget {
   const _PeopleListRow({
     required this.user,
+    required this.isFollowing,
     required this.isFollowPending,
     required this.onTap,
     required this.onFollow,
   });
 
   final User user;
+  final bool isFollowing;
   final bool isFollowPending;
   final VoidCallback onTap;
   final VoidCallback onFollow;
-
   @override
   Widget build(BuildContext context) {
     final extras = _extraLines(user);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       onTap: onTap,
@@ -1209,15 +1772,15 @@ class _PeopleListRow extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 23,
-              backgroundColor: const Color(0xFFE5E7EB),
+              backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
               backgroundImage: user.avatarUrl == null || user.avatarUrl!.isEmpty
                   ? null
                   : NetworkImage(ApiConfig.assetUrl(user.avatarUrl!)),
               child: user.avatarUrl == null || user.avatarUrl!.isEmpty
                   ? Text(
                       user.initials,
-                      style: const TextStyle(
-                        color: Color(0xFF111827),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     )
@@ -1232,8 +1795,8 @@ class _PeopleListRow extends StatelessWidget {
                     user.displayName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF111111),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1268,17 +1831,26 @@ class _PeopleListRow extends StatelessWidget {
             TextButton(
               onPressed: isFollowPending ? null : onFollow,
               style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFF2F2F2),
-                foregroundColor: const Color(0xFF111111),
+                backgroundColor: isFollowing
+                    ? (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB))
+                    : (isDark ? const Color(0xFFFF7A45) : const Color(0xFFF2F2F2)),
+                foregroundColor: isFollowing
+                    ? (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563))
+                    : (isDark ? Colors.white : const Color(0xFF111111)),
                 minimumSize: const Size(84, 36),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                 shape: const StadiumBorder(),
                 textStyle: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              child: Text(isFollowPending ? '...' : 'Follow'),
+              child: Text(
+                isFollowPending
+                    ? '...'
+                    : (isFollowing ? 'Following' : 'Follow'),
+              ),
             ),
           ],
         ),
@@ -1308,6 +1880,121 @@ class _PeopleListRow extends StatelessWidget {
   }
 }
 
+enum _SearchEntryType {
+  section,
+  person,
+  hashtag,
+}
+
+class _SearchEntry {
+  const _SearchEntry._({
+    required this.type,
+    this.label,
+    this.user,
+    this.hashtag,
+  });
+
+  const _SearchEntry.section(String label)
+      : this._(
+          type: _SearchEntryType.section,
+          label: label,
+        );
+
+  const _SearchEntry.person(User user)
+      : this._(
+          type: _SearchEntryType.person,
+          user: user,
+        );
+
+  const _SearchEntry.hashtag(HashtagResult hashtag)
+      : this._(
+          type: _SearchEntryType.hashtag,
+          hashtag: hashtag,
+        );
+
+  final _SearchEntryType type;
+  final String? label;
+  final User? user;
+  final HashtagResult? hashtag;
+}
+
+class _HashtagListRow extends StatelessWidget {
+  const _HashtagListRow({
+    required this.hashtag,
+    required this.onTap,
+  });
+
+  final HashtagResult hashtag;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final countLabel =
+        hashtag.postCount == 1 ? '1 post' : '${hashtag.postCount} posts';
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF3F4F6),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                '#',
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '#${hashtag.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF111111),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    countLabel,
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF9CA3AF),
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _FeedTabButton extends StatelessWidget {
   const _FeedTabButton({
     required this.label,
@@ -1321,6 +2008,10 @@ class _FeedTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827);
+    final inactiveColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF);
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -1329,7 +2020,7 @@ class _FeedTabButton extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: isActive ? const Color(0xFF111827) : Colors.transparent,
+                color: isActive ? activeColor : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -1337,7 +2028,7 @@ class _FeedTabButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF111827) : const Color(0xFF9CA3AF),
+              color: isActive ? activeColor : inactiveColor,
               fontWeight: FontWeight.w800,
               fontSize: 15,
             ),
@@ -1364,10 +2055,12 @@ class _StickyTabDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => extent;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 
   @override
-  bool shouldRebuild(_StickyTabDelegate oldDelegate) => true;
+  bool shouldRebuild(_StickyTabDelegate oldDelegate) =>
+      oldDelegate.extent != extent || oldDelegate.child != child;
 }

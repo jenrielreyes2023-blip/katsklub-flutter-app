@@ -96,8 +96,23 @@ class CreatePostRequest {
     this.discussionCoverDataUrl,
     this.isReel = false,
     this.reelImage,
+    this.reelImages = const <SelectedPostImage>[],
     this.videoDataUrl,
     this.videoTitle,
+    this.videoVolume = 1.0,
+    this.musicTitle,
+    this.musicArtist,
+    this.musicArtworkUrl,
+    this.musicPreviewUrl,
+    this.musicSource,
+    this.isPoll = false,
+    this.pollQuestion,
+    this.pollOptions = const <String>[],
+    this.pollDurationHours = 24,
+    this.withUserIds = const <String>[],
+    this.isSensitive = false,
+    this.location,
+    this.feeling,
   });
 
   final String text;
@@ -110,8 +125,23 @@ class CreatePostRequest {
   final String? discussionCoverDataUrl;
   final bool isReel;
   final SelectedPostImage? reelImage;
+  final List<SelectedPostImage> reelImages;
   final String? videoDataUrl;
   final String? videoTitle;
+  final double videoVolume;
+  final String? musicTitle;
+  final String? musicArtist;
+  final String? musicArtworkUrl;
+  final String? musicPreviewUrl;
+  final String? musicSource;
+  final bool isPoll;
+  final String? pollQuestion;
+  final List<String> pollOptions;
+  final int pollDurationHours;
+  final List<String> withUserIds;
+  final bool isSensitive;
+  final String? location;
+  final String? feeling;
 }
 
 class CreatePostResult {
@@ -144,7 +174,8 @@ class PostService {
       maxHeight: _maxImageDimension.toDouble(),
     );
     pickWatch.stop();
-    _imageLog('image picker duration=${pickWatch.elapsedMilliseconds}ms; count=${images.length}');
+    _imageLog(
+        'image picker duration=${pickWatch.elapsedMilliseconds}ms; count=${images.length}');
 
     final selected = <SelectedPostImage>[];
     var index = 0;
@@ -172,14 +203,75 @@ class PostService {
       );
       onImageSelected?.call(placeholder);
 
-      final prepared = await _prepareSelectedImage(placeholder, originalBytes, originalMime);
+      final prepared =
+          await _prepareSelectedImage(placeholder, originalBytes, originalMime);
       selected.add(prepared);
       onImageUpdated?.call(prepared);
       index++;
     }
 
-    onProgress?.call(const CreatePostProgress(message: 'Images ready.', progress: 1));
+    onProgress
+        ?.call(const CreatePostProgress(message: 'Images ready.', progress: 1));
     return selected;
+  }
+
+  Future<SelectedPostImage?> addImageFromBytes({
+    required Uint8List bytes,
+    required String mimeType,
+    String? suggestedName,
+    SelectedPostImageCallback? onImageSelected,
+    SelectedPostImageCallback? onImageUpdated,
+  }) async {
+    if (bytes.isEmpty) return null;
+
+    final normalizedMime =
+        mimeType.startsWith('image/') ? mimeType : 'image/png';
+    final ext = _extensionForMime(normalizedMime);
+    final batchId = DateTime.now().microsecondsSinceEpoch;
+    final name = (suggestedName?.trim().isNotEmpty == true)
+        ? suggestedName!.trim()
+        : 'pasted-$batchId$ext';
+
+    final xfile = XFile.fromData(
+      bytes,
+      name: name,
+      mimeType: normalizedMime,
+      length: bytes.length,
+    );
+
+    final placeholder = SelectedPostImage(
+      id: '$batchId-pasted-$name',
+      file: xfile,
+      dataUrl: '',
+      previewBytes: bytes,
+      mimeType: normalizedMime,
+      originalByteCount: bytes.length,
+      uploadByteCount: 0,
+      optimized: false,
+      status: SelectedPostImageStatus.preparing,
+    );
+    onImageSelected?.call(placeholder);
+
+    final prepared =
+        await _prepareSelectedImage(placeholder, bytes, normalizedMime);
+    onImageUpdated?.call(prepared);
+    return prepared;
+  }
+
+  String _extensionForMime(String mime) {
+    switch (mime) {
+      case 'image/png':
+        return '.png';
+      case 'image/jpeg':
+      case 'image/jpg':
+        return '.jpg';
+      case 'image/webp':
+        return '.webp';
+      case 'image/gif':
+        return '.gif';
+      default:
+        return '.png';
+    }
   }
 
   Future<CreatePostResult> createPost(CreatePostRequest request) async {
@@ -189,19 +281,38 @@ class PostService {
     final albumTitle = request.albumTitle?.trim() ?? '';
     final discussionTitle = request.discussionTitle?.trim() ?? '';
     final hasVideo = request.videoDataUrl?.trim().isNotEmpty == true;
+    final musicTitle = request.musicTitle?.trim() ?? '';
+    final musicArtist = request.musicArtist?.trim() ?? '';
+    final musicArtworkUrl = request.musicArtworkUrl?.trim() ?? '';
+    final musicPreviewUrl = request.musicPreviewUrl?.trim() ?? '';
+    final musicSource = request.musicSource?.trim() ?? '';
+    final hasMusicPreview = musicPreviewUrl.isNotEmpty;
     final hasReelImage = request.reelImage?.isReady == true;
-    final hasDiscussionCover = request.discussionCoverDataUrl?.trim().isNotEmpty == true;
+    final readyReelImages =
+        request.reelImages.where((image) => image.isReady).toList();
+    final hasReelImages = readyReelImages.isNotEmpty;
+    final pollQuestion = request.pollQuestion?.trim() ?? '';
+    final pollOptions = request.pollOptions
+        .map((option) => option.trim())
+        .where((option) => option.isNotEmpty)
+        .toList(growable: false);
+    final hasDiscussionCover =
+        request.discussionCoverDataUrl?.trim().isNotEmpty == true;
     final normalizedVisibility = _normalizeVisibility(request.visibility);
-    final uploadImageCount =
-        readyImages.length + (hasReelImage ? 1 : 0) + (hasDiscussionCover ? 1 : 0);
+    final uploadImageCount = readyImages.length +
+        (hasReelImage ? 1 : 0) +
+        readyReelImages.length +
+        (hasDiscussionCover ? 1 : 0);
     final hasMediaUpload = uploadImageCount > 0 || hasVideo;
     final mode = request.isDiscussion
         ? 'discussion'
-        : request.isReel
-            ? 'reel'
-            : albumTitle.isNotEmpty
-                ? 'album'
-                : 'post';
+        : request.isPoll
+            ? 'poll'
+            : request.isReel
+                ? 'reel'
+                : albumTitle.isNotEmpty
+                    ? 'album'
+                    : 'post';
     final uploadTargetLabel = hasVideo
         ? uploadImageCount > 0
             ? '$uploadImageCount image${uploadImageCount == 1 ? '' : 's'} and video'
@@ -222,10 +333,28 @@ class PostService {
       );
     }
 
-    if (request.isReel && text.isEmpty && !hasReelImage && !hasVideo) {
+    if (request.isPoll && (pollQuestion.isEmpty || pollOptions.length < 2)) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Add a poll question and at least two options.',
+      );
+    }
+
+    if (request.isReel &&
+        text.isEmpty &&
+        !hasReelImage &&
+        !hasReelImages &&
+        !hasVideo) {
       return const CreatePostResult(
         ok: false,
         error: 'Add a caption, image, or video before posting a reel.',
+      );
+    }
+
+    if (request.reelImages.any((image) => !image.isReady)) {
+      return const CreatePostResult(
+        ok: false,
+        error: 'Please wait until all reel images are ready.',
       );
     }
 
@@ -240,8 +369,10 @@ class PostService {
         readyImages.isEmpty &&
         albumTitle.isEmpty &&
         !request.isDiscussion &&
+        !request.isPoll &&
         !request.isReel &&
-        !hasVideo) {
+        !hasVideo &&
+        !hasMusicPreview) {
       return const CreatePostResult(
         ok: false,
         error: 'Write something or attach an image before posting.',
@@ -258,7 +389,8 @@ class PostService {
 
     final payload = <String, dynamic>{
       'text': text,
-      if (!request.isDiscussion && !request.isReel) 'visibility': normalizedVisibility,
+      if (!request.isDiscussion && !request.isReel)
+        'visibility': normalizedVisibility,
       if (hasImages)
         'imageDataUrls': readyImages.map((image) => image.dataUrl).toList(),
       if (albumTitle.isNotEmpty) 'albumTitle': albumTitle,
@@ -267,11 +399,32 @@ class PostService {
         'discussionTitle': discussionTitle,
       if (request.discussionCoverDataUrl?.trim().isNotEmpty == true)
         'discussionCoverDataUrl': request.discussionCoverDataUrl!.trim(),
+      if (request.isPoll) 'isPoll': true,
+      if (request.isPoll) 'pollQuestion': pollQuestion,
+      if (request.isPoll) 'pollOptions': pollOptions,
+      if (request.isPoll) 'pollDurationHours': request.pollDurationHours,
       if (request.isReel) 'isReel': true,
-      if (request.isReel && hasReelImage) 'imageDataUrl': request.reelImage!.dataUrl,
+      if (request.isReel && hasReelImage)
+        'imageDataUrl': request.reelImage!.dataUrl,
+      if (request.isReel && hasReelImages)
+        'reelImageDataUrls':
+            readyReelImages.map((image) => image.dataUrl).toList(),
       if (hasVideo) 'videoDataUrl': request.videoDataUrl!.trim(),
+      if (request.isReel && hasVideo && request.videoVolume < 1.0)
+        'videoVolume': request.videoVolume.clamp(0.0, 1.0),
       if (!request.isReel && request.videoTitle?.trim().isNotEmpty == true)
         'videoTitle': request.videoTitle!.trim(),
+      if (hasMusicPreview) 'musicTitle': musicTitle,
+      if (hasMusicPreview) 'musicArtist': musicArtist,
+      if (hasMusicPreview) 'musicArtworkUrl': musicArtworkUrl,
+      if (hasMusicPreview) 'musicPreviewUrl': musicPreviewUrl,
+      if (hasMusicPreview) 'musicSource': musicSource,
+      if (request.withUserIds.isNotEmpty) 'withUserIds': request.withUserIds,
+      'isSensitive': request.isSensitive,
+      if (request.location != null && request.location!.isNotEmpty)
+        'location': request.location,
+      if (request.feeling != null && request.feeling!.isNotEmpty)
+        'feeling': request.feeling,
     };
 
     io.Socket? socket;
@@ -293,10 +446,14 @@ class PostService {
       };
       final totalPostWatch = Stopwatch()..start();
       final uploadBytes = readyImages.fold<int>(
-        0,
-        (total, image) => total + image.uploadByteCount,
-      ) +
+            0,
+            (total, image) => total + image.uploadByteCount,
+          ) +
           (request.reelImage?.uploadByteCount ?? 0) +
+          readyReelImages.fold<int>(
+            0,
+            (total, image) => total + image.uploadByteCount,
+          ) +
           ((request.discussionCoverDataUrl?.length ?? 0) * 0.75).round() +
           ((request.videoDataUrl?.length ?? 0) * 0.75).round();
       _socketLog(
@@ -309,8 +466,9 @@ class PostService {
         'mode=$mode; '
         'keys=${payload.keys.toList()}; '
         'textLength=${text.length}; '
-        'imageCount=${hasImages ? readyImages.length : (hasReelImage ? 1 : 0)}; '
+        'imageCount=${hasImages ? readyImages.length : (hasReelImage ? 1 : 0) + readyReelImages.length}; '
         'hasVideo=$hasVideo; '
+        'hasMusicPreview=$hasMusicPreview; '
         'videoMime=${request.videoDataUrl != null ? _extractDataUrlMime(request.videoDataUrl!) : ''}; '
         'videoSize=${((request.videoDataUrl?.length ?? 0) * 0.75).round()}; '
         'hasAlbumTitle=${albumTitle.isNotEmpty}; '
@@ -345,13 +503,16 @@ class PostService {
       void finishWithPostEvent(dynamic data, String eventName) {
         if (completer.isCompleted) return;
         final post = _readPostFromSocketEvent(data);
-        if (post == null || !_looksLikeCreatedPost(post, text, readyImages.length)) {
+        if (post == null ||
+            !_looksLikeCreatedPost(post, text, readyImages.length)) {
           return;
         }
 
-        _socketLog('$eventName received before ACK; treating matching created post as success');
+        _socketLog(
+            '$eventName received before ACK; treating matching created post as success');
         totalPostWatch.stop();
-        _socketLog('total post duration=${totalPostWatch.elapsedMilliseconds}ms via $eventName');
+        _socketLog(
+            'total post duration=${totalPostWatch.elapsedMilliseconds}ms via $eventName');
         request.onProgress?.call(
           const CreatePostProgress(
             message: 'Post created.',
@@ -383,16 +544,16 @@ class PostService {
 
       socket.onConnect((_) {
         connectWatch.stop();
-        _socketLog('socket connect duration=${connectWatch.elapsedMilliseconds}ms');
+        _socketLog(
+            'socket connect duration=${connectWatch.elapsedMilliseconds}ms');
         final ackWatch = Stopwatch()..start();
         _socketLog(
           'connected before emit; connected=${socket?.connected == true}; id=${socket?.id ?? 'unknown'}',
         );
         request.onProgress?.call(
           CreatePostProgress(
-            message: hasMediaUpload
-                ? 'Uploading prepared media...'
-                : 'Posting...',
+            message:
+                hasMediaUpload ? 'Uploading prepared media...' : 'Posting...',
             progress: hasMediaUpload ? 0.35 : null,
           ),
         );
@@ -413,7 +574,8 @@ class PostService {
               final rawPost = response['post'];
               if (rawPost is Map) {
                 totalPostWatch.stop();
-                _socketLog('total post duration=${totalPostWatch.elapsedMilliseconds}ms via ACK');
+                _socketLog(
+                    'total post duration=${totalPostWatch.elapsedMilliseconds}ms via ACK');
                 _socketLog('ACK success; payloadKeys=${payload.keys.toList()}');
                 request.onProgress?.call(
                   const CreatePostProgress(
@@ -434,11 +596,14 @@ class PostService {
             final error = response is Map
                 ? response['error']?.toString()
                 : 'Failed to create post.';
-            _socketLog('ACK error; error=$error; payloadKeys=${payload.keys.toList()}');
+            _socketLog(
+                'ACK error; error=$error; payloadKeys=${payload.keys.toList()}');
             completer.complete(
               CreatePostResult(
                 ok: false,
-                error: error?.isNotEmpty == true ? error : 'Failed to create post.',
+                error: error?.isNotEmpty == true
+                    ? error
+                    : 'Failed to create post.',
               ),
             );
           },
@@ -502,7 +667,8 @@ class PostService {
 
   Future<String?> _readSessionCookie() async {
     final prefs = await SharedPreferences.getInstance();
-    return _normalizeCookieHeader(prefs.getString(AuthService.sessionCookieKey));
+    return _normalizeCookieHeader(
+        prefs.getString(AuthService.sessionCookieKey));
   }
 
   Future<SelectedPostImage?> pickSinglePreparedImage({
@@ -528,7 +694,8 @@ class PostService {
       return null;
     }
 
-    onProgress?.call(const CreatePostProgress(message: 'Preparing video...', progress: null));
+    onProgress?.call(const CreatePostProgress(
+        message: 'Preparing video...', progress: null));
     final bytes = await picked.readAsBytes();
     if (bytes.length > maxBytes) {
       throw StateError('Video file is too large. Maximum is 250MB.');
@@ -547,6 +714,7 @@ class PostService {
       dataUrl: 'data:$mime;base64,$encoded',
       byteCount: bytes.length,
       mimeType: mime,
+      previewPath: picked.path,
     );
   }
 
@@ -592,7 +760,8 @@ class PostService {
     String originalMime,
   ) async {
     if (originalMime == 'image/gif') {
-      _imageLog('GIF selected; preserving original bytes=${originalBytes.length}');
+      _imageLog(
+          'GIF selected; preserving original bytes=${originalBytes.length}');
       return _PreparedImage(
         bytes: originalBytes,
         mimeType: originalMime,
@@ -615,7 +784,8 @@ class PostService {
       'originalBytes=${originalBytes.length}; webpBytes=${webpBytes.length}; quality=$_webpQuality',
     );
 
-    if (webpBytes.isNotEmpty && webpBytes.length < originalBytes.length * 0.95) {
+    if (webpBytes.isNotEmpty &&
+        webpBytes.length < originalBytes.length * 0.95) {
       return _PreparedImage(
         bytes: webpBytes,
         mimeType: 'image/webp',
@@ -674,7 +844,8 @@ class PostService {
       }
     }
 
-    if (sessionCookie != null && sessionCookie.length > 'katsklub_session='.length) {
+    if (sessionCookie != null &&
+        sessionCookie.length > 'katsklub_session='.length) {
       return sessionCookie;
     }
 
@@ -688,7 +859,8 @@ class PostService {
   }
 
   String _extractDataUrlMime(String dataUrl) {
-    final match = RegExp(r'^data:([^;]+);base64,', caseSensitive: false).firstMatch(dataUrl);
+    final match = RegExp(r'^data:([^;]+);base64,', caseSensitive: false)
+        .firstMatch(dataUrl);
     return match?.group(1) ?? '';
   }
 
@@ -736,10 +908,12 @@ class PreparedVideo {
     required this.dataUrl,
     required this.byteCount,
     required this.mimeType,
+    this.previewPath,
   });
 
   final String name;
   final String dataUrl;
   final int byteCount;
   final String mimeType;
+  final String? previewPath;
 }

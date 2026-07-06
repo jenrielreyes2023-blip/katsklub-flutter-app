@@ -11,6 +11,25 @@ class ApiConfig {
   static const String storiesPath = '/api/stories';
   static const String notificationsUnreadCountPath =
       '/api/notifications/unread-count';
+  static const String playlistsPath = '/api/playlists';
+  static const String musicLibrarySearchPath = '/api/music-library/search';
+
+  static String playlistPath(int playlistId) => '/api/playlists/$playlistId';
+
+  static String playlistTrackUploadPath(int playlistId) =>
+      '/api/playlists/$playlistId/tracks/upload-audio';
+
+  static String playlistTrackFromLibraryPath(int playlistId) =>
+      '/api/playlists/$playlistId/tracks/from-library';
+
+  static String playlistTrackPath(int playlistId, int trackId) =>
+      '/api/playlists/$playlistId/tracks/$trackId';
+
+  static String playlistReorderPath(int playlistId) =>
+      '/api/playlists/$playlistId/tracks/reorder';
+
+  static String userPlaylistsPath(String username) =>
+      '/api/users/$username/playlists';
 
   static Uri uri(String path) {
     return Uri.parse('$apiBaseUrl$path');

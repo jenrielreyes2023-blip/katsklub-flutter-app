@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../config/api_config.dart';
 import '../models/user.dart';
+import '../services/auth_service.dart';
 import '../services/feed_service.dart';
 import 'profile_screen.dart';
+import '../widgets/loading_skeletons.dart';
+import '../widgets/normal_video_overlay_host.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
     required this.username,
+    this.seedFullName,
+    this.seedAvatarUrl,
+    this.seedIsVerified = false,
+    this.seedIsAdmin = false,
     this.onOpenCurrentUserProfile,
     this.onOpenUserProfile,
     this.onOpenNotifications,
@@ -15,6 +24,10 @@ class UserProfileScreen extends StatefulWidget {
   });
 
   final String username;
+  final String? seedFullName;
+  final String? seedAvatarUrl;
+  final bool seedIsVerified;
+  final bool seedIsAdmin;
   final VoidCallback? onOpenCurrentUserProfile;
   final ValueChanged<String>? onOpenUserProfile;
   final VoidCallback? onOpenNotifications;
@@ -26,11 +39,22 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   late Future<User?> _profileFuture;
+  String? _currentUsername;
+  late User _seedUser;
 
   @override
   void initState() {
     super.initState();
+    _seedUser = User(
+      username: widget.username,
+      fullName: widget.seedFullName,
+      avatarUrl: widget.seedAvatarUrl,
+      isVerified: widget.seedIsVerified,
+      isAdmin: widget.seedIsAdmin,
+      raw: const {},
+    );
     _profileFuture = FeedService().loadUserProfile(widget.username);
+    _loadCurrentUsername();
   }
 
   @override
@@ -41,34 +65,481 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<User?>(
-      future: _profileFuture,
-      builder: (context, snapshot) {
-        final user = snapshot.data;
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            user == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+  Future<void> _loadCurrentUsername() async {
+    final currentUser = await AuthService().getSavedUser();
+    if (!mounted) {
+      return;
+    }
 
-        if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Profile unavailable.')),
-          );
-        }
+    setState(() {
+      _currentUsername = currentUser?.username?.trim().toLowerCase();
+    });
+  }
 
-        return ProfileScreen(
-          user: user,
-          refreshToken: 0,
-          onOpenCurrentUserProfile: widget.onOpenCurrentUserProfile,
-          onOpenUserProfile: widget.onOpenUserProfile,
-          onOpenNotifications: widget.onOpenNotifications,
-          onBack: widget.onBack,
+  bool _isOtherUser(User user) {
+    final profileUsername = user.username?.trim().toLowerCase() ?? '';
+    final currentUsername = _currentUsername?.trim().toLowerCase() ?? '';
+    if (profileUsername.isEmpty) {
+      return false;
+    }
+
+    if (currentUsername.isEmpty) {
+      return true;
+    }
+
+    return profileUsername != currentUsername;
+  }
+
+  void _openProfileOptions(User user) {
+    final username = user.username?.trim();
+    if (username == null || username.isEmpty) {
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.52),
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _ProfileOptionsSheet(
+          username: username,
+          onMention: () {
+            Navigator.of(sheetContext).pop();
+            _copyMention(username);
+          },
+          onCopyLink: () {
+            Navigator.of(sheetContext).pop();
+            _copyProfileLink(username);
+          },
+          onReport: () {
+            Navigator.of(sheetContext).pop();
+            _showPlaceholder('Report coming soon.');
+          },
+          onBlock: () {
+            Navigator.of(sheetContext).pop();
+            _confirmAndBlockUser(user);
+          },
+          onMute: () {
+            Navigator.of(sheetContext).pop();
+            _showPlaceholder('Mute coming soon.');
+          },
+          onAbout: () {
+            Navigator.of(sheetContext).pop();
+            showProfileAboutSheet(
+              context,
+              user: user,
+              showPrivateFields: false,
+            );
+          },
         );
       },
+    );
+  }
+
+  Future<void> _copyMention(String username) async {
+    await Clipboard.setData(ClipboardData(text: '@$username'));
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Mention copied.')),
+    );
+  }
+
+  Future<void> _copyProfileLink(String username) async {
+    final profileLink = '${ApiConfig.apiBaseUrl}/u/$username';
+    await Clipboard.setData(ClipboardData(text: profileLink));
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile link copied.')),
+    );
+  }
+
+  void _showPlaceholder(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _confirmAndBlockUser(User user) async {
+    final username = user.username?.trim();
+    if (username == null || username.isEmpty) {
+      return;
+    }
+
+    final displayName = (user.fullName?.trim().isNotEmpty ?? false)
+        ? user.fullName!.trim()
+        : '@$username';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Block $displayName?'),
+          content: Text(
+            'They will no longer be able to see your profile or posts, and you will stop seeing theirs. You will also unfollow each other.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
+              child: const Text('Block'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final ok = await FeedService().blockUser(username);
+    if (!mounted) {
+      return;
+    }
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not block this user. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Blocked $displayName.')),
+    );
+
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NormalVideoOverlayHost(
+      child: FutureBuilder<User?>(
+        future: _profileFuture,
+        builder: (context, snapshot) {
+          final loadedUser = snapshot.data;
+          final isDone = snapshot.connectionState == ConnectionState.done;
+
+          if (isDone && loadedUser == null) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final textColor = isDark ? Colors.white : Colors.black;
+            return Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: textColor,
+                  onPressed: () {
+                    if (widget.onBack != null) {
+                      widget.onBack!();
+                    } else if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+              ),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Profile Unavailable',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Failed to load profile. Please check your connection and try again.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _profileFuture = FeedService().loadUserProfile(widget.username);
+                          });
+                        },
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          if (loadedUser == null) {
+            return ProfileSkeleton(
+              hasBackButton: widget.onBack != null || Navigator.of(context).canPop(),
+              hasActions: _isOtherUser(_seedUser),
+            );
+          }
+
+          final user = loadedUser;
+
+          return ProfileScreen(
+            user: user,
+            refreshToken: 1,
+            onOpenCurrentUserProfile: widget.onOpenCurrentUserProfile,
+            onOpenUserProfile: widget.onOpenUserProfile,
+            onOpenNotifications: widget.onOpenNotifications,
+            onBack: widget.onBack,
+            extraHeaderAction: _isOtherUser(user)
+                ? _UserProfileMoreButton(
+                    onPressed: () => _openProfileOptions(user),
+                  )
+                : null,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _UserProfileMoreButton extends StatelessWidget {
+  const _UserProfileMoreButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: const Icon(
+        Icons.more_horiz,
+        color: Color(0xFFFF7A45),
+        size: 24,
+      ),
+      splashRadius: 22,
+    );
+  }
+}
+
+class _ProfileOptionsSheet extends StatelessWidget {
+  const _ProfileOptionsSheet({
+    required this.username,
+    required this.onMention,
+    required this.onCopyLink,
+    required this.onReport,
+    required this.onBlock,
+    required this.onMute,
+    required this.onAbout,
+  });
+
+  final String username;
+  final VoidCallback onMention;
+  final VoidCallback onCopyLink;
+  final VoidCallback onReport;
+  final VoidCallback onBlock;
+  final VoidCallback onMute;
+  final VoidCallback onAbout;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final normalColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
+    const destructiveColor = Color(0xFFDC2626);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _ProfileOptionGroup(
+              children: [
+                _ProfileOptionRow(
+                  label: 'Mention @$username',
+                  icon: Icons.alternate_email,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onMention,
+                ),
+                const _ProfileOptionDivider(),
+                _ProfileOptionRow(
+                  label: 'Copy profile link',
+                  icon: Icons.link,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onCopyLink,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _ProfileOptionGroup(
+              children: [
+                _ProfileOptionRow(
+                  label: 'Report @$username',
+                  icon: Icons.report_outlined,
+                  iconColor: destructiveColor,
+                  textColor: destructiveColor,
+                  onTap: onReport,
+                ),
+                const _ProfileOptionDivider(),
+                _ProfileOptionRow(
+                  label: 'Block @$username',
+                  icon: Icons.block,
+                  iconColor: destructiveColor,
+                  textColor: destructiveColor,
+                  onTap: onBlock,
+                ),
+                const _ProfileOptionDivider(),
+                _ProfileOptionRow(
+                  label: 'Mute @$username',
+                  icon: Icons.volume_off_outlined,
+                  iconColor: destructiveColor,
+                  textColor: destructiveColor,
+                  onTap: onMute,
+                ),
+                const _ProfileOptionDivider(),
+                _ProfileOptionRow(
+                  label: 'About account',
+                  icon: Icons.info_outline,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onAbout,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileOptionGroup extends StatelessWidget {
+  const _ProfileOptionGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: ColoredBox(
+        color: isDark ? const Color(0xFF242526) : Colors.white,
+        child: Column(children: children),
+      ),
+    );
+  }
+}
+
+class _ProfileOptionRow extends StatelessWidget {
+  const _ProfileOptionRow({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(icon, size: 23, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileOptionDivider extends StatelessWidget {
+  const _ProfileOptionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF3E4042)
+          : const Color(0xFFE5E7EB),
     );
   }
 }

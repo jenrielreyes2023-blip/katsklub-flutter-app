@@ -1,0 +1,230 @@
+========================================================================
+KATSKLUB FLUTTER - MINI SOCIAL FEATURE GAPS (HANDOFF V2)
+========================================================================
+
+Date assessed: 2026-06-21
+Scope: Audit ng existing mini-social features ng katsklub-flutter-wip-test
+at listahan ng kulang pa para maging complete na mini-social experience.
+
+------------------------------------------------------------------------
+0. CURRENT STATE (NAGAWA NA)
+------------------------------------------------------------------------
+Para hindi maulit, ito ang already shipped sa app:
+   - Auth: login, signup (with avatar, bio, username/location)
+   - Feed (with hashtags, link preview, mentions, follow rail)
+   - Posts: create, edit, repost, comments (threaded + replies + mentions),
+     likes, hashtags, link preview, YouTube inline, share sheet, bookmarks
+   - Stories: text bg, music, image pan/zoom, viewer
+   - Reels viewer
+   - Profile: featured photos, postcard themes (sunrise, ocean, gemini),
+     profile music panel, pinned post badge
+   - Messages: groups, requests, tab badges, sounds, emoji reactions
+   - Notifications: bell, activity redesign, clear all, mentions
+   - Search, Hashtag screen, Shop, Wallet
+   - Music: playlists, tracks, global mini player (floating disc)
+   - Presence dots (online indicator)
+   - Push notifications (with media preview)
+   - Sensitive content wrapper
+   - Games: Uno, Memory Match, Flappy Kat, Guess the Song, Connect Four
+   - Admin dashboard, Settings screen
+   - Image / video viewer with hero transitions
+
+------------------------------------------------------------------------
+1. SAFETY / MODERATION STACK (HIGHEST PRIORITY)
+------------------------------------------------------------------------
+Kapag may real users na ang katsklub, ito ang dapat unahin. Walang
+mini-social na ligtas kung wala nito.
+
+   1.1 Block / Mute user
+       - Block: complete cutoff (hindi makakakita ng posts/profile/dm)
+       - Mute: tahimik na hide sa feed without notifying the user
+       - Backend: blocks table (blocker_id, blocked_id, created_at)
+       - Apply mo sa: feed query, profile view, search, DM, mentions,
+         notifications.
+
+   1.2 Report user / post / comment
+       - Modal with reason categories (spam, harassment, nudity, etc.)
+       - Backend: reports table na nakikita sa admin_dashboard_screen
+       - Auto-hide threshold (e.g., 5+ reports = auto-hidden pending review)
+
+   1.3 Private account toggle
+       - Profile setting: public vs private
+       - Private: kailangan ng follow request before makita ang posts
+       - Add follow_requests table at request flow sa notifications
+
+   1.4 Comment controls
+       - Per-post setting: who can comment (everyone / followers / no one)
+       - Default sa user preference
+       - Muted keywords (i-filter comments na may listed words)
+
+   1.5 Account deletion / data export
+       - Settings screen: "Delete account" with grace period (e.g., 14 days)
+       - Settings screen: "Download my data" (JSON export ng posts, dm, etc.)
+
+------------------------------------------------------------------------
+2. EXPLORE / DISCOVERY (BIG ENGAGEMENT GAP)
+------------------------------------------------------------------------
+Search screen exists pero walang "Explore" mood. Without explore tab,
+hindi ma-discover ng users ang content beyond followed accounts.
+
+   2.1 Explore tab
+       - Bagong root tab or section ng search_screen
+       - Mixed grid: trending posts, popular reels, suggested users
+       - Algorithm: weight by likes, comments, recency, sa user's region
+
+   2.2 Trending hashtags list
+       - "Trending now" section sa hashtag_screen
+       - Backend: query top hashtags from last 24h / 7d
+
+   2.3 Suggested users (beyond home rail)
+       - Dedicated suggestions screen
+       - Mutual followers, similar interests, location-based
+
+   2.4 Onboarding interest picker
+       - After signup: ask 3-5 interests / topics
+       - Use yan to seed initial feed + suggestions
+
+------------------------------------------------------------------------
+3. CONTENT CREATION (NICE-TO-HAVE)
+------------------------------------------------------------------------
+   3.1 Post drafts
+       - Auto-save sa local storage habang nag-co-compose
+       - "Drafts" entry sa profile or create flow
+
+   3.2 Polls
+       - Bagong post type: question + 2-4 options
+       - Vote count, end time, results view
+
+   3.3 Scheduled posts
+       - Pick future date/time when posting
+       - Backend cron or scheduled jobs sa /home/ubuntu/katsklub server
+
+   3.4 Story highlights
+       - Save stories permanently sa profile as named collections
+       - Visible sa profile bago featured photos
+
+   3.5 Close friends list
+       - User builds a list; stories can be posted "close friends only"
+       - Green ring sa story avatar (Instagram style)
+
+------------------------------------------------------------------------
+4. COMMUNICATIONS UPGRADE
+------------------------------------------------------------------------
+   4.1 Voice notes sa DM
+       - Hold-to-record sa messages_screen
+       - Upload as audio file, inline waveform player
+
+   4.2 Voice / video call (optional, malaki ang scope)
+       - Requires WebRTC infra; baka second phase
+
+   4.3 Read receipts toggle
+       - User can disable read receipts sa settings
+       - Honor sa both sides (kung may disabled, walang lalabas)
+
+   4.4 Message reactions (full set)
+       - Heart emoji exists; expand to 6 standard reactions
+       - Long-press on message bubble
+
+   4.5 Typing indicator
+       - Real-time via socket; verify kung wired na
+
+------------------------------------------------------------------------
+5. PROFILE & ENGAGEMENT
+------------------------------------------------------------------------
+   5.1 Verification badge system
+       - Different from pinned-badge
+       - Manual approval sa admin_dashboard_screen
+       - Blue check sa user.dart model + render sa avatar_with_border
+
+   5.2 Followers / Following tabs polish
+       - Pagination, search within list, mutual indicator
+
+   5.3 Save to collections (beyond plain bookmarks)
+       - Like Pinterest boards: user-named buckets
+       - bookmarks_screen redesign para may collections grid
+
+   5.4 Reactions beyond like
+       - Love, Haha, Wow, Sad, Angry (FB-style) or kat-themed
+       - Long-press on like button
+
+   5.5 Gift / tip via wallet
+       - May wallet_screen na — connect to posts
+       - "Send tip" button sa post action row
+
+------------------------------------------------------------------------
+6. ACCOUNT & SETTINGS
+------------------------------------------------------------------------
+   6.1 2FA / passkey
+       - TOTP authenticator app support
+       - Backup codes
+
+   6.2 Sessions & login activity
+       - List of active sessions (device, location, last active)
+       - "Sign out everywhere"
+
+   6.3 Notification preferences (granular)
+       - Per-type toggle (likes, comments, follows, mentions, DMs, etc.)
+       - Push vs in-app separately
+
+   6.4 Language switcher
+       - Tagalog / English at minimum
+       - Use Flutter intl package
+       - Move hardcoded strings to ARB files
+
+   6.5 Accessibility pass
+       - Semantic labels sa buttons
+       - Larger font size option
+       - High contrast mode
+
+------------------------------------------------------------------------
+7. RECOMMENDED ROLLOUT ORDER
+------------------------------------------------------------------------
+Para hindi mawala sa scope, ito ang suggested sequencing:
+
+   Phase 1 (CRITICAL before public launch):
+      - Block / mute (1.1)
+      - Report user / post / comment (1.2)
+      - Private account toggle (1.3)
+      - Account deletion (1.5)
+
+   Phase 2 (engagement boost):
+      - Explore tab (2.1)
+      - Trending hashtags (2.2)
+      - Onboarding interest picker (2.4)
+      - Reactions beyond like (5.4)
+
+   Phase 3 (polish + retention):
+      - Story highlights (3.4)
+      - Close friends (3.5)
+      - Collections (5.3)
+      - Verification badge (5.1)
+      - Granular notification prefs (6.3)
+
+   Phase 4 (advanced):
+      - Polls (3.2), Scheduled posts (3.3), Drafts (3.1)
+      - Voice notes (4.1)
+      - 2FA (6.1), Sessions (6.2)
+      - Language switcher (6.4)
+
+   Phase 5 (heavy infra):
+      - Voice/video calls (4.2)
+      - Live streaming (not listed above, but a future possibility)
+
+------------------------------------------------------------------------
+8. NOTES FOR FUTURE AI / DEV
+------------------------------------------------------------------------
+   - Walang git ang katsklub-flutter-wip-test AND ang /home/ubuntu/katsklub
+     server. Use .bak-{desc}-YYYYMMDD copies bago mag non-trivial edits.
+   - Backend lives sa /home/ubuntu/katsklub/server.js — most new features
+     above will require new tables + endpoints there. PM2 app name is
+     `katsklub`; restart after route changes.
+   - Postcard themes may dependency between feed payload at GET /api/posts/:postId
+     (see original handoff.txt section 5). Apply same care kapag nagdagdag
+     ng new author fields (verified, private, etc.) — both endpoints must
+     return them.
+   - Flutter model files na affected by new features:
+      * user.dart - private account, verified badge, settings flags
+      * post.dart - poll, scheduled_at, collection_id, comment_policy
+      * post_comment.dart - reactions
+      * new: block.dart, report.dart, follow_request.dart, poll.dart,
+             collection.dart, draft.dart

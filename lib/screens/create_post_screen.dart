@@ -25,10 +25,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _composerKey++;
     });
 
+    widget.onPostCreated();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Created.')),
     );
-    widget.onPostCreated();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).maybePop();
+    }
   }
 
   @override
