@@ -1473,6 +1473,42 @@ class FeedService {
     return data['ok'] == true;
   }
 
+  Future<bool> reportPost(int postId, String reason) async {
+    final data = await _authenticatedPost(
+      '/api/posts/$postId/report',
+      body: {'reason': reason},
+    );
+    return data['ok'] == true;
+  }
+
+  Future<bool> reportStory(int storyId, String reason) async {
+    final data = await _authenticatedPost(
+      '/api/stories/$storyId/report',
+      body: {'reason': reason},
+    );
+    return data['ok'] == true;
+  }
+
+  Future<bool> reportUser(String username, String reason) async {
+    final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
+    if (cleanUsername.isEmpty) {
+      return false;
+    }
+    final data = await _authenticatedPost(
+      '/api/users/$cleanUsername/report',
+      body: {'reason': reason},
+    );
+    return data['ok'] == true;
+  }
+
+  Future<bool> reportComment(int commentId, String reason) async {
+    final data = await _authenticatedPost(
+      '/api/comments/$commentId/report',
+      body: {'reason': reason},
+    );
+    return data['ok'] == true;
+  }
+
   Future<void> _applyFollowStateUpdate(User targetUser) async {
     final targetUsername = targetUser.username?.trim().toLowerCase() ?? '';
     if (targetUsername.isEmpty) {

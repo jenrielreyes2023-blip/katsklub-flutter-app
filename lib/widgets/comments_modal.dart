@@ -716,6 +716,17 @@ class _CommentTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                        InkWell(
+                          onTap: () => _showReportCommentDialog(context, comment),
+                          child: Text(
+                            'Report',
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1402,5 +1413,83 @@ PostComment _copyCommentWithReplyCount(PostComment comment, int replyCount) {
     authorIsVerified: comment.authorIsVerified,
     authorIsAuthor: comment.authorIsAuthor,
     authorIsAdmin: comment.authorIsAdmin,
+  );
+}
+
+Future<void> _showReportCommentDialog(BuildContext context, PostComment comment) async {
+  final commentId = comment.id;
+  if (commentId == 0) return;
+
+  final reasons = [
+    'Spam',
+    'Harassment or bullying',
+    'Hate speech',
+    'Nudity or sexual content',
+    'Violence or dangerous content',
+    'Something else',
+  ];
+
+  String? selectedReason = reasons.first;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Report Comment'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: reasons.map((reason) {
+                  return RadioListTile<String>(
+                    title: Text(reason, style: const TextStyle(fontSize: 14)),
+                    value: reason,
+                    groupValue: selectedReason,
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedReason = value;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Report'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  if (confirmed != true || selectedReason == null) {
+    return;
+  }
+
+  final ok = await FeedService().reportComment(commentId, selectedReason!);
+  if (!context.mounted) {
+    return;
+  }
+
+  if (!ok) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not submit report. Please try again.')),
+    );
+    return;
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Thank you for reporting this comment. We will review it shortly.')),
   );
 }

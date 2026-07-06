@@ -188,6 +188,84 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  Future<void> _showReportPostDialog() async {
+    final postId = int.tryParse(_post.id) ?? 0;
+    if (postId == 0) return;
+
+    final reasons = [
+      'Spam',
+      'Harassment or bullying',
+      'Hate speech',
+      'Nudity or sexual content',
+      'Violence or dangerous content',
+      'Something else',
+    ];
+
+    String? selectedReason = reasons.first;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Report Post'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: reasons.map((reason) {
+                    return RadioListTile<String>(
+                      title: Text(reason, style: const TextStyle(fontSize: 14)),
+                      value: reason,
+                      groupValue: selectedReason,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || selectedReason == null || !mounted) {
+      return;
+    }
+
+    final ok = await FeedService().reportPost(postId, selectedReason!);
+    if (!mounted) {
+      return;
+    }
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not submit report. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Thank you for reporting this post. We will review it shortly.')),
+    );
+  }
+
   Future<void> _openMoreOptions() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -283,7 +361,10 @@ class _PostCardState extends State<PostCard> {
       _PostActionItem(
         icon: Icons.flag_outlined,
         label: 'Report post',
-        onTap: () async => _showMessage('Report coming soon.'),
+        onTap: () async {
+          Navigator.of(context).pop();
+          _showReportPostDialog();
+        },
       ),
       _PostActionItem(
         icon: Icons.link_rounded,

@@ -115,7 +115,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           },
           onReport: () {
             Navigator.of(sheetContext).pop();
-            _showPlaceholder('Report coming soon.');
+            _showReportUserDialog(user);
           },
           onBlock: () {
             Navigator.of(sheetContext).pop();
@@ -161,15 +161,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  void _showPlaceholder(String message) {
-    if (!mounted) {
-      return;
-    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
 
   Future<void> _confirmAndBlockUser(User user) async {
     final username = user.username?.trim();
@@ -288,6 +280,85 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     setState(() {
       _profileFuture = FeedService().loadUserProfile(username);
     });
+  }
+
+  Future<void> _showReportUserDialog(User user) async {
+    final username = user.username ?? '';
+    final displayName = user.displayName;
+    if (username.isEmpty) return;
+
+    final reasons = [
+      'Spam',
+      'Harassment or bullying',
+      'Hate speech',
+      'Nudity or sexual content',
+      'Violence or dangerous content',
+      'Something else',
+    ];
+
+    String? selectedReason = reasons.first;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Report $displayName'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: reasons.map((reason) {
+                    return RadioListTile<String>(
+                      title: Text(reason, style: const TextStyle(fontSize: 14)),
+                      value: reason,
+                      groupValue: selectedReason,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || selectedReason == null || !mounted) {
+      return;
+    }
+
+    final ok = await FeedService().reportUser(username, selectedReason!);
+    if (!mounted) {
+      return;
+    }
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not submit report. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Thank you for reporting $displayName. We will review it shortly.')),
+    );
   }
 
   @override
