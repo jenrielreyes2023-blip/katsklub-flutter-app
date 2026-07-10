@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+      - rescue-lost-1d1b
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
+  JAVA_OPTS: "-Xmx2048m"
 
 jobs:
   build-android:
@@ -33,9 +38,6 @@ jobs:
           fi
           grep -q 'android.permission.INTERNET' "$manifest"
       
-      - name: Install dependencies
-        run: flutter pub get
-
       - name: Install dependencies
         run: flutter pub get
 
