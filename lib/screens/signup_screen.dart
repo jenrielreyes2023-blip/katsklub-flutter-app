@@ -1182,33 +1182,34 @@ class _SignupScreenState extends State<SignupScreen> {
     required String hintText,
     IconData? icon,
   }) {
-    const borderColor = Color(0x1F787878);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262626) : const Color(0x1F787878);
     return InputDecoration(
       filled: true,
-      fillColor: const Color(0xFFF3F4F7),
+      fillColor: isDark ? Colors.black : const Color(0xFFF3F4F7),
       hintText: hintText,
-      hintStyle: const TextStyle(
+      hintStyle: TextStyle(
         fontSize: 14,
-        color: Color(0xFF6C7174),
+        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       prefixIcon: icon == null
           ? null
           : Icon(
               icon,
               size: 20,
-              color: const Color(0xFF6C7174),
+              color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
             ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF4A5CF9), width: 1.2),
+        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -1223,19 +1224,34 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildHeader() {
-    const primaryText = Color(0xFF0F1419);
-    const secondaryText = Color(0xFF6C7174);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
 
     return Column(
       children: <Widget>[
-        Image.asset(
-          'assets/images/kats-logo-final.png',
-          width: 54,
-          height: 54,
-          fit: BoxFit.contain,
-        ),
+        isDark
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  'assets/images/kats-logo-final.png',
+                  width: 54,
+                  height: 54,
+                  fit: BoxFit.contain,
+                ),
+              )
+            : Image.asset(
+                'assets/images/kats-logo-final.png',
+                width: 54,
+                height: 54,
+                fit: BoxFit.contain,
+              ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'KatsKlub',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -1248,7 +1264,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text(
           _showOnboarding ? "You're almost there!" : "Sign up for KatsKlub",
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: primaryText,
@@ -1260,7 +1276,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ? "Your account is almost ready, all that's left is to tell us a little about yourself"
               : "Join us, it's easy and fast.",
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             color: secondaryText,
           ),
@@ -1271,7 +1287,7 @@ class _SignupScreenState extends State<SignupScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               'Signing up $_currentProgressStep/4',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
@@ -1288,7 +1304,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(
                   widthFactor: _progressValue,
-                  child: Container(color: const Color(0xFF4A5CF9)),
+                  child: Container(color: const Color(0xFFFF7A59)),
                 ),
               ),
             ),
@@ -1299,7 +1315,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildEmailStep() {
-    const primaryText = Color(0xFF0F1419);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1322,7 +1339,7 @@ class _SignupScreenState extends State<SignupScreen> {
               });
             }
           },
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: primaryText,
           ),
@@ -1478,8 +1495,9 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildOnboardingFields() {
-    const primaryText = Color(0xFF0F1419);
-    const secondaryText = Color(0xFF6C7174);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
 
     final Widget currentStepFields;
     switch (_stage) {
@@ -1507,7 +1525,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   });
                 }
               },
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: primaryText,
               ),
@@ -1535,7 +1553,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   });
                 }
               },
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: primaryText,
               ),
@@ -1551,7 +1569,7 @@ class _SignupScreenState extends State<SignupScreen> {
           key: const ValueKey(_SignupStage.basicInfo),
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Text(
+            Text(
               'Date of birth',
               style: TextStyle(
                 fontSize: 15,
@@ -1613,7 +1631,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ],
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Enter your date of birth, even if creating an account for an organization or pet.',
               style: TextStyle(
                 fontSize: 13,
@@ -1622,7 +1640,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Gender',
               style: TextStyle(
                 fontSize: 15,
@@ -1651,13 +1669,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   if (states.contains(WidgetState.selected)) {
                     return const Color(0x1F767680);
                   }
-                  return const Color(0xFFF3F4F7);
+                  return isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F7);
                 }),
                 foregroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return const Color(0xFF4A5CF9);
+                    return const Color(0xFFFF7A59);
                   }
-                  return const Color(0xFF0F1419);
+                  return isDark ? Colors.white : const Color(0xFF0F1419);
                 }),
                 side: WidgetStateProperty.all(BorderSide.none),
                 shape: WidgetStateProperty.all(
@@ -1681,7 +1699,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ],
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'This information will not be made publicly available.',
               style: TextStyle(
                 fontSize: 13,
@@ -1707,7 +1725,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               onChanged: _onUsernameChanged,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: primaryText,
               ),
@@ -1799,14 +1817,14 @@ class _SignupScreenState extends State<SignupScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text(
+                  Text(
                     'Profile photo',
                     style: TextStyle(
                       fontSize: 15,
@@ -1815,7 +1833,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Optional. Upload one now and adjust it so your profile is ready after signup.',
                     style: TextStyle(
                       fontSize: 13,
@@ -1872,8 +1890,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ? null
                                     : _pickAvatar,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF0F1419),
-                                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                                  foregroundColor: isDark ? Colors.white : const Color(0xFF0F1419),
+                                  side: BorderSide(color: isDark ? const Color(0xFF444444) : const Color(0xFFD1D5DB)),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(999),
                                   ),
@@ -1913,7 +1931,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Or choose a default avatar:',
                     style: TextStyle(
                       fontSize: 13,
@@ -1969,7 +1987,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         _inlineError = null;
                       });
                     },
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: primaryText,
                     ),
@@ -1997,7 +2015,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   });
                 }
               },
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: primaryText,
               ),
@@ -2041,7 +2059,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   });
                 }
               },
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: primaryText,
               ),
@@ -2125,8 +2143,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildTerms(BuildContext context) {
     final theme = Theme.of(context);
-    const primaryText = Color(0xFF0F1419);
-    const secondaryText = Color(0xFF6C7174);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2134,13 +2153,13 @@ class _SignupScreenState extends State<SignupScreen> {
         const SizedBox(height: 12),
         Text.rich(
           TextSpan(
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: secondaryText,
               height: 1.5,
             ),
-            children: const <InlineSpan>[
-              TextSpan(
+            children: <InlineSpan>[
+              const TextSpan(
                 text: 'By continuing, you agree to the terms of the main documents ',
               ),
               TextSpan(
@@ -2150,7 +2169,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   decoration: TextDecoration.underline,
                 ),
               ),
-              TextSpan(text: ' and '),
+              const TextSpan(text: ' and '),
               TextSpan(
                 text: 'Privacy Policy',
                 style: TextStyle(
@@ -2158,7 +2177,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   decoration: TextDecoration.underline,
                 ),
               ),
-              TextSpan(text: '.'),
+              const TextSpan(text: '.'),
             ],
           ),
           textAlign: TextAlign.center,
@@ -2179,12 +2198,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const secondaryText = Color(0xFF6C7174);
-    const brandBlue = Color(0xFF4A5CF9);
-    const mutedButtonColor = Color(0x1F767680);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+    const brandOrange = Color(0xFFFF7A59);
+    final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -2215,10 +2235,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ? null
                                   : _handleContinue,
                               style: FilledButton.styleFrom(
-                                backgroundColor: mutedButtonColor,
-                                foregroundColor: brandBlue,
-                                disabledBackgroundColor: mutedButtonColor,
-                                disabledForegroundColor: brandBlue,
+                                backgroundColor: brandOrange,
+                                foregroundColor: isDark ? Colors.black : Colors.white,
+                                disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
+                                disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                                 shape: const StadiumBorder(),
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 elevation: 0,
@@ -2233,7 +2253,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       height: 18,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: brandBlue,
+                                        color: Colors.white,
                                       ),
                                     )
                                   : Text(_buttonText),
@@ -2244,7 +2264,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
-                                foregroundColor: brandBlue,
+                                foregroundColor: brandOrange,
                                 textStyle: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -2259,7 +2279,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Wrap(
+                  Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
                     runSpacing: 4,
@@ -2326,14 +2346,16 @@ class _DropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 48,
       child: DropdownButtonFormField<String>(
         initialValue: value,
         isExpanded: true,
+        dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         decoration: InputDecoration(
           filled: true,
-          fillColor: const Color(0xFFF3F4F7),
+          fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F7),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -2345,14 +2367,14 @@ class _DropdownField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF4A5CF9), width: 1.2),
+            borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.2),
           ),
         ),
         hint: Text(
           items.first,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF6C7174),
+            color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
           ),
         ),
         items: items
@@ -2363,9 +2385,9 @@ class _DropdownField extends StatelessWidget {
                 child: Text(
                   item,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF0F1419),
+                    color: isDark ? Colors.white : const Color(0xFF0F1419),
                   ),
                 ),
               ),
@@ -2449,12 +2471,13 @@ class _SearchSelectField extends StatelessWidget {
             );
           },
           optionsViewBuilder: (context, onOptionSelected, filteredOptions) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             final optionsList = filteredOptions.toList(growable: false);
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
                 elevation: 8,
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -2466,9 +2489,9 @@ class _SearchSelectField extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shrinkWrap: true,
                     itemCount: optionsList.length,
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, __) => Divider(
                       height: 1,
-                      color: Color(0xFFF1F5F9),
+                      color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF1F5F9),
                     ),
                     itemBuilder: (context, index) {
                       final option = optionsList[index];
@@ -2484,9 +2507,9 @@ class _SearchSelectField extends StatelessWidget {
                           ),
                           child: Text(
                             option,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF0F1419),
+                              color: isDark ? Colors.white : const Color(0xFF0F1419),
                             ),
                           ),
                         ),

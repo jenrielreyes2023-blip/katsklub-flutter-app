@@ -235,6 +235,7 @@ class Post {
     this.location = '',
     this.feeling = '',
     this.isPinned = false,
+    this.isGhost = false,
     this.slides = const [],
     this.repostedByText,
   });
@@ -303,6 +304,7 @@ class Post {
   final String location;
   final String feeling;
   final bool isPinned;
+  final bool isGhost;
   final String? repostedByText;
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -431,6 +433,7 @@ class Post {
         json['selectedOptionIndex'] ?? json['selected_option_index'],
       ),
       isSensitive: json['isSensitive'] == true || json['is_sensitive'] == true,
+      isGhost: json['isGhost'] == true || json['is_ghost'] == true,
       location: _readString(json['location']) ?? '',
       feeling: _readString(json['feeling']) ?? '',
       isPinned: json['isPinned'] == true || json['is_pinned'] == true,
@@ -463,6 +466,7 @@ class Post {
     String? location,
     String? feeling,
     bool? isPinned,
+    bool? isGhost,
     List<PostSlide>? slides,
   }) {
     return Post(
@@ -529,6 +533,7 @@ class Post {
       repostCount: repostCount ?? this.repostCount,
       withUsers: withUsers ?? this.withUsers,
       isPinned: isPinned ?? this.isPinned,
+      isGhost: isGhost ?? this.isGhost,
       slides: slides ?? this.slides,
     );
   }
@@ -666,6 +671,7 @@ class Post {
       'repostCount': repostCount,
       'withUsers': withUsers.map((user) => user.toJson()).toList(),
       'isSensitive': isSensitive,
+      'isGhost': isGhost,
       'location': location,
       'feeling': feeling,
       // Poll fields

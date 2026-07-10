@@ -235,32 +235,33 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     Widget? suffixIcon,
   }) {
-    const borderColor = Color(0x1F787878);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262626) : const Color(0x1F787878);
     return InputDecoration(
       filled: true,
-      fillColor: const Color(0xFFF3F4F7),
+      fillColor: isDark ? Colors.black : const Color(0xFFF3F4F7),
       hintText: hintText,
-      hintStyle: const TextStyle(
+      hintStyle: TextStyle(
         fontSize: 14,
-        color: Color(0xFF6C7174),
+        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       prefixIcon: Icon(
         icon,
         size: 20,
-        color: const Color(0xFF6C7174),
+        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF4A5CF9), width: 1.2),
+        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -277,13 +278,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const primaryText = Color(0xFF0F1419);
-    const secondaryText = Color(0xFF6C7174);
-    const outlineColor = Color(0x1F787878);
-    const brandBlue = Color(0xFF4A5CF9);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+    final outlineColor = isDark ? const Color(0x2DFFFFFF) : const Color(0x1F787878);
+    const brandOrange = Color(0xFFFF7A59);
+    final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -301,14 +304,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const SizedBox(height: 24),
                             Center(
-                              child: Image.asset(
-                                'assets/images/kats-logo-final.png',
-                                height: 64,
-                                fit: BoxFit.contain,
-                              ),
+                              child: isDark
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Image.asset(
+                                        'assets/images/kats-logo-final.png',
+                                        height: 64,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    )
+                                  : Image.asset(
+                                      'assets/images/kats-logo-final.png',
+                                      height: 64,
+                                      fit: BoxFit.contain,
+                                    ),
                             ),
                             const SizedBox(height: 32),
-                            const Text(
+                            Text(
                               'Welcome back',
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -319,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               'Sign in to continue to your klub.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -340,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _handleContinue();
                                 }
                               },
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 color: primaryText,
                               ),
@@ -368,7 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _handleContinue();
                                   }
                                 },
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   color: primaryText,
                                 ),
@@ -410,8 +426,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                               _rememberMe = value;
                                             });
                                           },
-                                    activeThumbColor: brandBlue,
-                                    activeTrackColor: const Color(0x334A5CF9),
+                                    activeThumbColor: brandOrange,
+                                    activeTrackColor: const Color(0x33FF7A59),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -438,15 +454,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                             const SizedBox(height: 20),
-                            SizedBox(
+                             SizedBox(
                               height: 52,
                               child: FilledButton(
                                 onPressed: _isLoading ? null : _handleContinue,
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: brandBlue,
-                                  foregroundColor: Colors.white,
-                                  disabledBackgroundColor: brandBlue.withValues(alpha: 0.5),
-                                  disabledForegroundColor: Colors.white,
+                                  backgroundColor: brandOrange,
+                                  foregroundColor: isDark ? Colors.black : Colors.white,
+                                  disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
+                                  disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
@@ -530,9 +546,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 label: const Text('Continue with Google'),
                                 style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                                   foregroundColor: primaryText,
-                                  side: const BorderSide(color: outlineColor),
+                                  side: BorderSide(color: outlineColor),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
@@ -578,9 +594,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         );
                                       },
                                 style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                                   foregroundColor: primaryText,
-                                  side: const BorderSide(color: outlineColor),
+                                  side: BorderSide(color: outlineColor),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
@@ -599,7 +615,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'By continuing, you agree to our Terms & Privacy Policy.',
                     textAlign: TextAlign.center,
                     style: TextStyle(

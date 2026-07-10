@@ -111,6 +111,7 @@ class CreatePostRequest {
     this.pollDurationHours = 24,
     this.withUserIds = const <String>[],
     this.isSensitive = false,
+    this.isGhost = false,
     this.location,
     this.feeling,
   });
@@ -140,6 +141,7 @@ class CreatePostRequest {
   final int pollDurationHours;
   final List<String> withUserIds;
   final bool isSensitive;
+  final bool isGhost;
   final String? location;
   final String? feeling;
 }
@@ -421,6 +423,7 @@ class PostService {
       if (hasMusicPreview) 'musicSource': musicSource,
       if (request.withUserIds.isNotEmpty) 'withUserIds': request.withUserIds,
       'isSensitive': request.isSensitive,
+      'isGhost': request.isGhost,
       if (request.location != null && request.location!.isNotEmpty)
         'location': request.location,
       if (request.feeling != null && request.feeling!.isNotEmpty)
@@ -487,7 +490,7 @@ class PostService {
           .setReconnectionAttempts(2)
           .setReconnectionDelay(500)
           .setTimeout(20000)
-          .setAckTimeout(hasMediaUpload ? 120000 : 65000)
+          .setAckTimeout(hasVideo ? 300000 : (hasMediaUpload ? 120000 : 65000))
           .enableWithCredentials()
           .setExtraHeaders(socketHeaders)
           .setTransportOptions({
@@ -522,7 +525,8 @@ class PostService {
         completer.complete(CreatePostResult(ok: true, post: post));
       }
 
-      timeout = Timer(Duration(seconds: hasMediaUpload ? 120 : 65), () {
+      final timeoutDuration = hasVideo ? 300 : (hasMediaUpload ? 120 : 65);
+      timeout = Timer(Duration(seconds: timeoutDuration), () {
         if (!completer.isCompleted) {
           _socketLog(
             'timeout waiting for post:create ACK; connected=${socket?.connected == true}; '

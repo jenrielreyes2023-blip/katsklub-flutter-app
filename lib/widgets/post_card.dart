@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import '../models/post.dart';
 import '../screens/edit_post_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/youtube_player_screen.dart';
+import '../screens/messages_screen.dart';
 import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_overlay_controller.dart';
@@ -463,6 +465,39 @@ class _PostCardState extends State<PostCard> {
     widget.onUpdate?.call(updatedPost);
   }
 
+  Future<void> _openDMWithAuthor() async {
+    final authorUsername = _post.authorUsername.trim();
+    if (authorUsername.isEmpty) return;
+    
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFF7A59),
+        ),
+      ),
+    );
+    
+    try {
+      final thread = await FeedService().startMessageThread(authorUsername);
+      Navigator.of(context).pop(); // Close loading dialog
+      if (!mounted) return;
+      if (thread != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MessagesScreen(initialThread: thread),
+          ),
+        );
+      } else {
+        _showMessage('Unable to open messages with $authorUsername.');
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close loading dialog
+      _showMessage('Error opening messages.');
+    }
+  }
+
   void _showMessage(String message) {
     if (!mounted) {
       return;
@@ -597,32 +632,38 @@ class _PostCardState extends State<PostCard> {
                 : gradientHeight;
     final backdropFadeTop = (activeBackdropHeight - 14).clamp(0.0, 10000.0);
 
-    return GestureDetector(
-      onTap: () {
-        if (_post.imageUrls.isNotEmpty && shouldUseMusicCarousel) {
-          return;
-        }
-        if (_shouldSuppressOpenPostTap()) {
-          return;
-        }
-        widget.onOpenPost?.call(_post);
-      },
-      child: RepaintBoundary(
-        child: Container(
-          margin: EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2F3031)
-                    : const Color(0xFFD1D5DB),
-                width: 2.5,
+    final isGhost = _post.isGhost;
+    final ghostBgColor = isGlobalDark ? const Color(0xFF171324) : const Color(0xFFF5F2FC);
+    final ghostBorderColor = const Color(0xFFFF7A59);
+
+    final mainCard = Container(
+      margin: EdgeInsets.zero,
+      decoration: isGhost
+          ? BoxDecoration(
+              color: ghostBgColor,
+              borderRadius: BorderRadius.circular(20),
+            )
+          : BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2F3031)
+                      : const Color(0xFFD1D5DB),
+                  width: 2.5,
+                ),
               ),
             ),
-          ),
-          child: Stack(
-            children: [
+      child: ClipRRect(
+        borderRadius: isGhost ? BorderRadius.circular(20) : BorderRadius.zero,
+        child: Stack(
+          children: [
+            if (isGhost || showGhost)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GhostBubblePainter(isDark: isGlobalDark),
+                ),
+              ),
               if (showGeminiRogerHunter) ...[
                 Positioned(
                   top: 0,
@@ -1801,19 +1842,39 @@ class _PostCardState extends State<PostCard> {
                     ],
                     if (showPostText && _post.text.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ExpandablePostText(
-                          text: _post.text,
-                          expanded: _isTextExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _isTextExpanded = !_isTextExpanded;
-                            });
-                          },
-                          onInteractiveTap: _markInteractiveSurfaceTap,
-                        ),
-                      ),
+                      isGhost
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: CustomPaint(
+                                painter: _DottedChatBubblePainter(isDark: isGlobalDark),
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
+                                  child: ExpandablePostText(
+                                    text: _post.text,
+                                    expanded: _isTextExpanded,
+                                    onToggle: () {
+                                      setState(() {
+                                        _isTextExpanded = !_isTextExpanded;
+                                      });
+                                    },
+                                    onInteractiveTap: _markInteractiveSurfaceTap,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: ExpandablePostText(
+                                text: _post.text,
+                                expanded: _isTextExpanded,
+                                onToggle: () {
+                                  setState(() {
+                                    _isTextExpanded = !_isTextExpanded;
+                                  });
+                                },
+                                onInteractiveTap: _markInteractiveSurfaceTap,
+                              ),
+                            ),
                     ],
                     if (_post.isPoll) ...[
                       const SizedBox(height: 12),
@@ -1903,7 +1964,7 @@ class _PostCardState extends State<PostCard> {
                       child: _ReactionRow(
                         post: _post,
                         onLike: _toggleLike,
-                        onComment: () => widget.onComment?.call(_post),
+                        onComment: () => isGhost ? _openDMWithAuthor() : widget.onComment?.call(_post),
                         onShare: () => widget.onShare?.call(_post),
                         onRepost: () {
                           final handler = widget.onRepost;
@@ -1922,8 +1983,41 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
         ),
-      ),
-    );
+      );
+
+      Widget wrappedCard = mainCard;
+      if (isGhost) {
+        wrappedCard = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: CustomPaint(
+            painter: _DashedBorderPainter(
+              color: ghostBorderColor,
+              borderRadius: 20,
+              strokeWidth: 1.5,
+            ),
+            child: mainCard,
+          ),
+        );
+      }
+
+      return GestureDetector(
+        onTap: () {
+          if (_post.imageUrls.isNotEmpty && shouldUseMusicCarousel) {
+            return;
+          }
+          if (_shouldSuppressOpenPostTap()) {
+            return;
+          }
+          if (isGhost) {
+            _openDMWithAuthor();
+            return;
+          }
+          widget.onOpenPost?.call(_post);
+        },
+        child: RepaintBoundary(
+          child: wrappedCard,
+        ),
+      );
   }
 }
 
@@ -1956,22 +2050,28 @@ class _PostPoll extends StatelessWidget {
         post.pollEndTime != null && !post.pollEndTime!.isAfter(DateTime.now());
     final showResults = post.hasVoted || hasEnded;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF242526) : const Color(0xFFF8FAFC);
+    final borderColor = isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB);
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final metaColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             post.pollQuestion.isNotEmpty ? post.pollQuestion : 'Poll',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 10),
@@ -1993,8 +2093,8 @@ class _PostPoll extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             _pollMetaText(totalVotes, hasEnded),
-            style: const TextStyle(
-              color: Color(0xFF6B7280),
+            style: TextStyle(
+              color: metaColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -2050,9 +2150,20 @@ class _PostPollOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final ratio = totalVotes <= 0 ? 0.0 : (votes / totalVotes).clamp(0.0, 1.0);
     final percent = (ratio * 100).round();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final optionBgColor = isDark ? const Color(0xFF18191A) : Colors.white;
+    final optionBorderColor = selected
+        ? const Color(0xFF2563EB)
+        : (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB));
+    final fillBgColor = selected
+        ? (isDark ? const Color(0x4D2563EB) : const Color(0x332563EB))
+        : (isDark ? const Color(0x262563EB) : const Color(0xFFEFF4FF));
+    final labelTextColor = isDark ? Colors.white : const Color(0xFF111827);
+    final percentTextColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
 
     return Material(
-      color: Colors.white,
+      color: optionBgColor,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -2062,8 +2173,7 @@ class _PostPollOption extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color:
-                  selected ? const Color(0xFF2563EB) : const Color(0xFFE5E7EB),
+              color: optionBorderColor,
               width: selected ? 1.4 : 1,
             ),
           ),
@@ -2077,9 +2187,7 @@ class _PostPollOption extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 widthFactor: showResults ? ratio : 0,
                 child: ColoredBox(
-                  color: selected
-                      ? const Color(0x332563EB)
-                      : const Color(0xFFEFF4FF),
+                  color: fillBgColor,
                 ),
               ),
               Padding(
@@ -2092,8 +2200,8 @@ class _PostPollOption extends StatelessWidget {
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF111827),
+                        style: TextStyle(
+                          color: labelTextColor,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -2129,8 +2237,8 @@ class _PostPollOption extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 8),
                               child: Text(
                                 '$percent%',
-                                style: const TextStyle(
-                                  color: Color(0xFF374151),
+                                style: TextStyle(
+                                  color: percentTextColor,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -2178,6 +2286,9 @@ class _PollVoterAvatarStack extends StatelessWidget {
         ? 0.0
         : avatarSize + ((visible.length - 1) * overlap) + (extra > 0 ? 30 : 0);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final optionBgColor = isDark ? const Color(0xFF18191A) : Colors.white;
+
     return SizedBox(
       width: width,
       height: avatarSize,
@@ -2197,14 +2308,14 @@ class _PollVoterAvatarStack extends StatelessWidget {
                 height: avatarSize,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
+                  color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF111827),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: optionBgColor, width: 1.5),
                 ),
                 child: Text(
                   '+$extra',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF111827) : Colors.white,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                   ),
@@ -2226,6 +2337,9 @@ class _PollVoterAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = voter.avatarUrl.trim();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final optionBgColor = isDark ? const Color(0xFF18191A) : Colors.white;
+
     return Tooltip(
       message: voter.displayName,
       child: Container(
@@ -2233,16 +2347,16 @@ class _PollVoterAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE5E7EB),
-          border: Border.all(color: Colors.white, width: 1.5),
+          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+          border: Border.all(color: optionBgColor, width: 1.5),
         ),
         clipBehavior: Clip.antiAlias,
         child: avatarUrl.isEmpty
             ? Center(
                 child: Text(
                   voter.initials,
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                   ),
@@ -2254,8 +2368,8 @@ class _PollVoterAvatar extends StatelessWidget {
                 errorBuilder: (_, __, ___) => Center(
                   child: Text(
                     voter.initials,
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
                     ),
@@ -3631,6 +3745,20 @@ class _PostHeader extends StatelessWidget {
   final VoidCallback? onHide;
   final bool isHiding;
 
+  String _getGhostTimeRemaining(DateTime? createdAt) {
+    if (createdAt == null) return '';
+    final expiresAt = createdAt.add(const Duration(hours: 24));
+    final remaining = expiresAt.difference(DateTime.now());
+    if (remaining.isNegative) return 'Expired';
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes % 60;
+    if (hours > 0) {
+      return 'Expires in ${hours}h ${minutes}m';
+    } else {
+      return 'Expires in ${minutes}m';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeKey = (post.authorPostcardTheme ?? '').trim().toLowerCase();
@@ -3835,6 +3963,31 @@ class _PostHeader extends StatelessWidget {
                           color: metaColor,
                           size: 13,
                         ),
+                        if (post.isGhost) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '·',
+                              style: TextStyle(
+                                color: metaColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          const Text(
+                            '👻 ',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            _getGhostTimeRemaining(post.createdAt),
+                            style: const TextStyle(
+                              color: Color(0xFFFF7A59),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                         if (post.location.isNotEmpty) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -4311,6 +4464,8 @@ class _ReactionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     const inactiveColor = Color(0xFF65676B);
     const likedColor = Color(0xFFE11D48);
+    
+    final showCounts = !(post.isGhost && !post.ownedByMe);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4319,20 +4474,20 @@ class _ReactionRow extends StatelessWidget {
           icon: post.likedByMe
               ? CustomIcons.heartFilled(color: likedColor, size: 23)
               : CustomIcons.heart(color: inactiveColor, size: 23),
-          count: post.likeCount,
+          count: showCounts ? post.likeCount : 0,
           color: post.likedByMe ? likedColor : inactiveColor,
           onTap: onLike,
         ),
         const SizedBox(width: 24),
         _ActionIcon(
           icon: CustomIcons.comment(color: inactiveColor, size: 23),
-          count: post.commentCount,
+          count: showCounts ? post.commentCount : 0,
           onTap: onComment,
         ),
         const SizedBox(width: 24),
         _ActionIcon(
           icon: CustomIcons.repost(color: inactiveColor, size: 23),
-          count: post.repostCount,
+          count: showCounts ? post.repostCount : 0,
           onTap: onRepost,
         ),
         const SizedBox(width: 24),
@@ -4428,4 +4583,166 @@ class _ImageLoadingPlaceholder extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.0,
+    this.borderRadius = 12.0,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(borderRadius),
+      ));
+
+    final dashWidth = 5.0;
+    final dashSpace = 3.0;
+    
+    final pms = path.computeMetrics();
+    for (final pm in pms) {
+      double distance = 0.0;
+      while (distance < pm.length) {
+        final len = dashWidth;
+        canvas.drawPath(
+          pm.extractPath(distance, distance + len),
+          paint,
+        );
+        distance += len + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+class _GhostBubblePainter extends CustomPainter {
+  _GhostBubblePainter({required this.isDark});
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fillPaint = Paint()
+      ..color = isDark
+          ? Colors.black.withValues(alpha: 0.12)
+          : Colors.black.withValues(alpha: 0.05)
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = isDark
+          ? Colors.black.withValues(alpha: 0.25)
+          : Colors.black.withValues(alpha: 0.10)
+      ..style = PaintingStyle.fill;
+
+    // A collection of cute floating bubble shapes with varying radii
+    final bubbles = [
+      _Bubble(x: size.width * 0.12, y: size.height * 0.18, radius: 22),
+      _Bubble(x: size.width * 0.88, y: size.height * 0.15, radius: 30),
+      _Bubble(x: size.width * 0.76, y: size.height * 0.72, radius: 25),
+      _Bubble(x: size.width * 0.20, y: size.height * 0.78, radius: 28),
+      _Bubble(x: size.width * 0.52, y: size.height * 0.45, radius: 38),
+      _Bubble(x: size.width * 0.09, y: size.height * 0.52, radius: 18),
+      _Bubble(x: size.width * 0.91, y: size.height * 0.48, radius: 24),
+    ];
+
+    for (final bubble in bubbles) {
+      // 1. Draw transparent fill for the bubble
+      canvas.drawCircle(Offset(bubble.x, bubble.y), bubble.radius, fillPaint);
+
+      // 2. Draw dots along the circumference of each bubble to make it a dotted bubble!
+      final double circumference = 2 * math.pi * bubble.radius;
+      // Spaces of ~6 pixels between dots
+      final int dotCount = (circumference / 6.5).floor().clamp(10, 80);
+      for (int i = 0; i < dotCount; i++) {
+        final double angle = (i * 2 * math.pi) / dotCount;
+        final double dx = bubble.x + bubble.radius * math.cos(angle);
+        final double dy = bubble.y + bubble.radius * math.sin(angle);
+        canvas.drawCircle(Offset(dx, dy), 1.4, borderPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GhostBubblePainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
+}
+
+class _Bubble {
+  const _Bubble({required this.x, required this.y, required this.radius});
+  final double x;
+  final double y;
+  final double radius;
+}
+
+class _DottedChatBubblePainter extends CustomPainter {
+  _DottedChatBubblePainter({required this.isDark});
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double r = 16.0; // Corner radius
+    final double tailTop = 8.0;
+
+    final path = Path()
+      ..moveTo(32, tailTop)
+      ..lineTo(size.width - r, tailTop)
+      ..arcToPoint(Offset(size.width, tailTop + r), radius: Radius.circular(r))
+      ..lineTo(size.width, size.height - r)
+      ..arcToPoint(Offset(size.width - r, size.height), radius: Radius.circular(r))
+      ..lineTo(r, size.height)
+      ..arcToPoint(Offset(0, size.height - r), radius: Radius.circular(r))
+      ..lineTo(0, tailTop + r)
+      ..arcToPoint(Offset(r, tailTop), radius: Radius.circular(r))
+      ..lineTo(12, tailTop)
+      ..lineTo(20, 0)
+      ..lineTo(26, tailTop)
+      ..close();
+
+    // 1. Draw fill background
+    final fillPaint = Paint()
+      ..color = isDark ? const Color(0xFF251E38) : Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, fillPaint);
+
+    // 2. Draw dotted outline
+    final dotPaint = Paint()
+      ..color = isDark 
+          ? Colors.black.withValues(alpha: 0.5) 
+          : Colors.black.withValues(alpha: 0.2)
+      ..style = PaintingStyle.fill;
+
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final tangent = metric.getTangentForOffset(distance);
+        if (tangent != null) {
+          canvas.drawCircle(tangent.position, 1.5, dotPaint);
+        }
+        distance += 5.5; // space between dots
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedChatBubblePainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }

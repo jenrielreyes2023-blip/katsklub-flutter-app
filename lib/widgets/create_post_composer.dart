@@ -48,6 +48,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   _CreateMode _mode = _CreateMode.post;
   String _visibility = 'public';
   bool _isSensitive = false;
+  bool _isGhost = false;
   List<SelectedPostImage> _images = [];
   List<User> _withUsers = [];
   String _location = '';
@@ -190,6 +191,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       _selectedMusic = null;
       _selectedReelMusic = null;
       _isSensitive = false;
+      _isGhost = false;
       if (mode == _CreateMode.discussion || mode == _CreateMode.reel) {
         _visibility = 'public';
       }
@@ -490,6 +492,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         visibility: _visibility,
         images: _images,
         isSensitive: _isSensitive,
+        isGhost: _isGhost,
         onProgress: _handleProgress,
         withUserIds: _withUsers.map((u) => u.id!).toList(),
         location: _location,
@@ -562,6 +565,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _selectedReelMusic = null;
         _visibility = 'public';
         _isSensitive = false;
+        _isGhost = false;
         _withUsers = [];
         _location = '';
         _feeling = '';
@@ -1164,6 +1168,17 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                       onPickFeeling: _selectFeeling,
                       isDetectingLocation: _isDetectingLocation,
                     ),
+                  if (_mode == _CreateMode.post) ...[
+                    const SizedBox(height: 14),
+                    _GhostPostToggle(
+                      isGhost: _isGhost,
+                      onChanged: (value) {
+                        setState(() {
+                          _isGhost = value;
+                        });
+                      },
+                    ),
+                  ],
                   if (showAudience) ...[
                     const SizedBox(height: 14),
                     _AudienceHint(audienceValue: _visibility),
@@ -4221,5 +4236,156 @@ class _AudienceHint extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _GhostPostToggle extends StatelessWidget {
+  const _GhostPostToggle({
+    required this.isGhost,
+    required this.onChanged,
+  });
+
+  final bool isGhost;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final activeBg = isDark ? const Color(0xFF1E1B4B) : const Color(0xFFF5F3FF);
+    const activeBorderColor = Color(0xFFFF7A59);
+    final inactiveBg = isDark ? const Color(0xFF18191A) : Colors.white;
+    final inactiveBorderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+    
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final subtitleColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
+    final cardContent = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isGhost
+                  ? (isDark ? const Color(0xFF312E81) : const Color(0xFFDDD6FE))
+                  : (isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6)),
+              shape: BoxShape.circle,
+            ),
+            child: const Text(
+              '👻',
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Ghost Post',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Disappears in 24h. Replies go to DMs.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: isGhost,
+            onChanged: onChanged,
+            activeColor: const Color(0xFFFF7A59),
+            activeTrackColor: const Color(0xFFFF7A59).withOpacity(0.3),
+          ),
+        ],
+      ),
+    );
+
+    return isGhost
+        ? CustomPaint(
+            painter: _DashedBorderPainter(
+              color: activeBorderColor,
+              borderRadius: 16,
+              strokeWidth: 1.5,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: activeBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: cardContent,
+            ),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: inactiveBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: inactiveBorderColor),
+            ),
+            child: cardContent,
+          );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.0,
+    this.borderRadius = 12.0,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(borderRadius),
+      ));
+
+    final dashWidth = 5.0;
+    final dashSpace = 3.0;
+    
+    final pms = path.computeMetrics();
+    for (final pm in pms) {
+      double distance = 0.0;
+      while (distance < pm.length) {
+        final len = dashWidth;
+        canvas.drawPath(
+          pm.extractPath(distance, distance + len),
+          paint,
+        );
+        distance += len + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.borderRadius != borderRadius;
   }
 }
