@@ -13,6 +13,7 @@ import '../utils/emoji_presentation.dart';
 import 'hashtag_text.dart';
 import 'loading_skeletons.dart';
 import 'mention_autocomplete.dart';
+import 'gold_shimmer_text.dart';
 
 Future<int?> showCommentsModal({
   required BuildContext context,
@@ -622,16 +623,24 @@ class _CommentTile extends StatelessWidget {
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => _openAuthor(context, comment),
-                                  child: Text(
-                                    comment.displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: primaryTextColor,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                   child: comment.authorUsername.toLowerCase() == 'gemini'
+                                       ? GoldShimmerText(
+                                           text: comment.displayName,
+                                           style: const TextStyle(
+                                             fontSize: 13,
+                                             fontWeight: FontWeight.w600,
+                                           ),
+                                         )
+                                       : Text(
+                                           comment.displayName,
+                                           maxLines: 1,
+                                           overflow: TextOverflow.ellipsis,
+                                           style: TextStyle(
+                                             color: primaryTextColor,
+                                             fontSize: 13,
+                                             fontWeight: FontWeight.w600,
+                                           ),
+                                         ),
                                 ),
                               ),
                               if (comment.authorIsVerified ||

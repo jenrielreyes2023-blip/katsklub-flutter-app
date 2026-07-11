@@ -23,6 +23,7 @@ import '../widgets/mention_autocomplete.dart';
 import '../widgets/normal_video_overlay_host.dart';
 import '../widgets/post_image_grid.dart';
 import '../widgets/post_card.dart';
+import '../widgets/gold_shimmer_text.dart';
 import '../widgets/post_with_users_line.dart';
 import '../widgets/repost_source_preview.dart';
 import '../widgets/share_post_sheet.dart';
@@ -2632,16 +2633,24 @@ class _PostMetaRow extends StatelessWidget {
               Row(
                 children: [
                   Flexible(
-                    child: Text(
-                      post.authorFullName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    child: post.authorUsername.toLowerCase() == 'gemini'
+                        ? GoldShimmerText(
+                            text: post.authorFullName,
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : Text(
+                            post.authorFullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                   if (post.authorIsVerified) ...[
                     const SizedBox(width: 4),
@@ -2722,16 +2731,24 @@ class _PostMetaRow extends StatelessWidget {
                     CustomIcons.repost(size: 12, color: Color(0xFF6B7280)),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(
-                        post.originalPost!.authorFullName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      child: post.originalPost!.authorUsername.toLowerCase() == 'gemini'
+                          ? GoldShimmerText(
+                              text: post.originalPost!.authorFullName,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            )
+                          : Text(
+                              post.originalPost!.authorFullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF6B7280),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                     ),
                     if (post.originalPost!.authorIsVerified) ...[
                       const SizedBox(width: 3),

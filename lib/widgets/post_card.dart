@@ -28,6 +28,7 @@ import 'custom_icons.dart';
 import 'repost_source_preview.dart';
 import 'post_with_users_line.dart';
 import 'sensitive_content_wrapper.dart';
+import 'gold_shimmer_text.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -3818,16 +3819,25 @@ class _PostHeader extends StatelessWidget {
                         Flexible(
                           child: GestureDetector(
                             onTap: onOpenAuthor,
-                            child: Text(
-                              post.authorFullName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  letterSpacing: -0.2,
-                                  color: nameColor),
-                            ),
+                            child: post.authorUsername.toLowerCase() == 'gemini'
+                                ? GoldShimmerText(
+                                    text: post.authorFullName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  )
+                                : Text(
+                                    post.authorFullName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        letterSpacing: -0.2,
+                                        color: nameColor),
+                                  ),
                           ),
                         ),
                         if (post.feeling.isNotEmpty) ...[
@@ -4045,16 +4055,24 @@ class _PostHeader extends StatelessWidget {
                           CustomIcons.repost(size: 12, color: metaColor),
                           const SizedBox(width: 4),
                           Flexible(
-                            child: Text(
-                              post.originalPost!.authorFullName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: metaColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
+                            child: post.originalPost!.authorUsername.toLowerCase() == 'gemini'
+                                ? GoldShimmerText(
+                                    text: post.originalPost!.authorFullName,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  )
+                                : Text(
+                                    post.originalPost!.authorFullName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: metaColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
                           ),
                           if (post.originalPost!.authorIsVerified) ...[
                             const SizedBox(width: 3),
