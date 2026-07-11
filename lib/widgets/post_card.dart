@@ -486,7 +486,10 @@ class _PostCardState extends State<PostCard> {
       if (thread != null) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => MessagesScreen(initialThread: thread),
+            builder: (_) => MessagesScreen(
+              initialThread: thread,
+              initialGhostPost: _post,
+            ),
           ),
         );
       } else {
@@ -633,7 +636,7 @@ class _PostCardState extends State<PostCard> {
     final backdropFadeTop = (activeBackdropHeight - 14).clamp(0.0, 10000.0);
 
     final isGhost = _post.isGhost;
-    final ghostBgColor = isGlobalDark ? const Color(0xFF171324) : const Color(0xFFF5F2FC);
+    final ghostBgColor = Theme.of(context).colorScheme.surface;
     final ghostBorderColor = const Color(0xFFFF7A59);
 
     final mainCard = Container(
@@ -658,12 +661,7 @@ class _PostCardState extends State<PostCard> {
         borderRadius: isGhost ? BorderRadius.circular(20) : BorderRadius.zero,
         child: Stack(
           children: [
-            if (isGhost || showGhost)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _GhostBubblePainter(isDark: isGlobalDark),
-                ),
-              ),
+
               if (showGeminiRogerHunter) ...[
                 Positioned(
                   top: 0,
@@ -1846,7 +1844,10 @@ class _PostCardState extends State<PostCard> {
                           ? Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: CustomPaint(
-                                painter: _DottedChatBubblePainter(isDark: isGlobalDark),
+                                painter: _DottedChatBubblePainter(
+                                  fillColor: ghostBgColor,
+                                  dotColor: ghostBorderColor,
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
                                   child: ExpandablePostText(
@@ -1926,7 +1927,7 @@ class _PostCardState extends State<PostCard> {
                           children: [
                             if (_post.imageUrls.isNotEmpty) ...[
                               if (shouldUseMusicCarousel)
-                                _MusicPhotoCarousel(
+                                MusicPhotoCarousel(
                                   post: _post,
                                   activeIndex: musicCarouselIndex,
                                   onPageChanged: (index) {
@@ -1986,19 +1987,7 @@ class _PostCardState extends State<PostCard> {
       );
 
       Widget wrappedCard = mainCard;
-      if (isGhost) {
-        wrappedCard = Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: CustomPaint(
-            painter: _DashedBorderPainter(
-              color: ghostBorderColor,
-              borderRadius: 20,
-              strokeWidth: 1.5,
-            ),
-            child: mainCard,
-          ),
-        );
-      }
+
 
       return GestureDetector(
         onTap: () {
@@ -2381,13 +2370,14 @@ class _PollVoterAvatar extends StatelessWidget {
   }
 }
 
-class _MusicPhotoCarousel extends StatefulWidget {
-  const _MusicPhotoCarousel({
+class MusicPhotoCarousel extends StatefulWidget {
+  const MusicPhotoCarousel({
     required this.post,
     required this.activeIndex,
     required this.onPageChanged,
     this.onImageTap,
     this.onMediaReady,
+    super.key,
   });
 
   final Post post;
@@ -2397,10 +2387,10 @@ class _MusicPhotoCarousel extends StatefulWidget {
   final VoidCallback? onMediaReady;
 
   @override
-  State<_MusicPhotoCarousel> createState() => _MusicPhotoCarouselState();
+  State<MusicPhotoCarousel> createState() => _MusicPhotoCarouselState();
 }
 
-class _MusicPhotoCarouselState extends State<_MusicPhotoCarousel> {
+class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
   static const String _swipeHintSeenKey = 'seen_carousel_swipe_hint_v1';
   final Map<int, double> _loadedAspectRatios = {};
 
@@ -2445,7 +2435,7 @@ class _MusicPhotoCarouselState extends State<_MusicPhotoCarousel> {
   }
 
   @override
-  void didUpdateWidget(_MusicPhotoCarousel oldWidget) {
+  void didUpdateWidget(MusicPhotoCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.post.musicPreviewUrl.trim() !=
         widget.post.musicPreviewUrl.trim()) {
@@ -2712,17 +2702,16 @@ class _MusicPhotoCarouselState extends State<_MusicPhotoCarousel> {
   }
 
   double _carouselAspectRatio() {
-    final activeIndex = widget.activeIndex.clamp(0, widget.post.imageUrls.length - 1);
-    if (activeIndex < 0) return 1.0;
+    if (widget.post.imageUrls.isEmpty) return 1.0;
 
-    // First check if we have a dynamically loaded aspect ratio
-    if (_loadedAspectRatios.containsKey(activeIndex)) {
-      return _loadedAspectRatios[activeIndex]!;
+    // Use the first image's aspect ratio to define the carousel's uniform height.
+    // This matches Instagram/Threads behavior and prevents height jumping/skeletons mismatch.
+    if (_loadedAspectRatios.containsKey(0)) {
+      return _loadedAspectRatios[0]!;
     }
 
-    // Fallback to database aspect ratio
-    if (widget.post.imageAspectRatios.length > activeIndex) {
-      final dbRatio = widget.post.imageAspectRatios[activeIndex];
+    if (widget.post.imageAspectRatios.isNotEmpty) {
+      final dbRatio = widget.post.imageAspectRatios[0];
       if (dbRatio != null && dbRatio > 0) {
         return dbRatio.toDouble();
       }
@@ -3724,6 +3713,34 @@ class _InlineSoundButton extends StatelessWidget {
   }
 }
 
+String _getGhostTimeRemaining(DateTime? createdAt) {
+  if (createdAt == null) return '';
+  final expiresAt = createdAt.add(const Duration(hours: 24));
+  final remaining = expiresAt.difference(DateTime.now());
+  if (remaining.isNegative) return 'Expired';
+  final hours = remaining.inHours;
+  final minutes = remaining.inMinutes % 60;
+  if (hours > 0) {
+    return 'Expires in ${hours}h ${minutes}m';
+  } else {
+    return 'Expires in ${minutes}m';
+  }
+}
+
+String _getGhostTimeRemainingShort(DateTime? createdAt) {
+  if (createdAt == null) return '';
+  final expiresAt = createdAt.add(const Duration(hours: 24));
+  final remaining = expiresAt.difference(DateTime.now());
+  if (remaining.isNegative) return '(Expired)';
+  final hours = remaining.inHours;
+  final minutes = remaining.inMinutes % 60;
+  if (hours > 0) {
+    return '(${hours}h)';
+  } else {
+    return '(${minutes}m)';
+  }
+}
+
 class _PostHeader extends StatelessWidget {
   const _PostHeader({
     required this.post,
@@ -3744,20 +3761,6 @@ class _PostHeader extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onHide;
   final bool isHiding;
-
-  String _getGhostTimeRemaining(DateTime? createdAt) {
-    if (createdAt == null) return '';
-    final expiresAt = createdAt.add(const Duration(hours: 24));
-    final remaining = expiresAt.difference(DateTime.now());
-    if (remaining.isNegative) return 'Expired';
-    final hours = remaining.inHours;
-    final minutes = remaining.inMinutes % 60;
-    if (hours > 0) {
-      return 'Expires in ${hours}h ${minutes}m';
-    } else {
-      return 'Expires in ${minutes}m';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -3963,31 +3966,7 @@ class _PostHeader extends StatelessWidget {
                           color: metaColor,
                           size: 13,
                         ),
-                        if (post.isGhost) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(
-                              '·',
-                              style: TextStyle(
-                                color: metaColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          const Text(
-                            '👻 ',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            _getGhostTimeRemaining(post.createdAt),
-                            style: const TextStyle(
-                              color: Color(0xFFFF7A59),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+
                         if (post.location.isNotEmpty) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -4467,6 +4446,48 @@ class _ReactionRow extends StatelessWidget {
     
     final showCounts = !(post.isGhost && !post.ownedByMe);
 
+    if (post.isGhost) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _ActionIcon(
+            icon: post.likedByMe
+                ? CustomIcons.heartFilled(color: likedColor, size: 23)
+                : CustomIcons.heart(color: inactiveColor, size: 23),
+            count: showCounts ? post.likeCount : 0,
+            color: post.likedByMe ? likedColor : inactiveColor,
+            onTap: onLike,
+          ),
+          const SizedBox(width: 24),
+          _ActionIcon(
+            icon: CustomIcons.dm(color: inactiveColor, size: 23),
+            count: showCounts ? post.commentCount : 0,
+            onTap: onComment,
+          ),
+          const SizedBox(width: 24),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CustomIcons.ghost(
+                color: const Color(0xFFFF7A59),
+                size: 20,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _getGhostTimeRemainingShort(post.createdAt),
+                style: const TextStyle(
+                  color: Color(0xFFFF7A59),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -4693,8 +4714,15 @@ class _Bubble {
 }
 
 class _DottedChatBubblePainter extends CustomPainter {
-  _DottedChatBubblePainter({required this.isDark});
-  final bool isDark;
+  _DottedChatBubblePainter({
+    required this.fillColor,
+    required this.dotColor,
+  });
+
+  final Color fillColor;
+  final Color dotColor;
+
+  static final Map<Size, Path> _dashedPathCache = {};
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -4718,31 +4746,37 @@ class _DottedChatBubblePainter extends CustomPainter {
 
     // 1. Draw fill background
     final fillPaint = Paint()
-      ..color = isDark ? const Color(0xFF251E38) : Colors.white
+      ..color = fillColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
 
-    // 2. Draw dotted outline
-    final dotPaint = Paint()
-      ..color = isDark 
-          ? Colors.black.withValues(alpha: 0.5) 
-          : Colors.black.withValues(alpha: 0.2)
-      ..style = PaintingStyle.fill;
+    // 2. Draw dashed outline
+    final dashPaint = Paint()
+      ..color = dotColor
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
 
-    final metrics = path.computeMetrics();
-    for (final metric in metrics) {
-      double distance = 0.0;
-      while (distance < metric.length) {
-        final tangent = metric.getTangentForOffset(distance);
-        if (tangent != null) {
-          canvas.drawCircle(tangent.position, 1.5, dotPaint);
+    Path? dashedPath = _dashedPathCache[size];
+    if (dashedPath == null) {
+      dashedPath = Path();
+      final double dashLength = 6.0;
+      final double dashSpace = 4.0;
+      final metrics = path.computeMetrics();
+      for (final metric in metrics) {
+        double distance = 0.0;
+        while (distance < metric.length) {
+          final double end = (distance + dashLength).clamp(0.0, metric.length);
+          dashedPath.addPath(metric.extractPath(distance, end), Offset.zero);
+          distance += dashLength + dashSpace;
         }
-        distance += 5.5; // space between dots
       }
+      _dashedPathCache[size] = dashedPath;
     }
+
+    canvas.drawPath(dashedPath, dashPaint);
   }
 
   @override
   bool shouldRepaint(covariant _DottedChatBubblePainter oldDelegate) =>
-      oldDelegate.isDark != isDark;
+      oldDelegate.fillColor != fillColor || oldDelegate.dotColor != dotColor;
 }

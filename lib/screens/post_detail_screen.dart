@@ -22,6 +22,7 @@ import '../widgets/loading_skeletons.dart';
 import '../widgets/mention_autocomplete.dart';
 import '../widgets/normal_video_overlay_host.dart';
 import '../widgets/post_image_grid.dart';
+import '../widgets/post_card.dart';
 import '../widgets/post_with_users_line.dart';
 import '../widgets/repost_source_preview.dart';
 import '../widgets/share_post_sheet.dart';
@@ -68,6 +69,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final Set<int> _expandedReplyThreads = <int>{};
   final Set<int> _loadingReplyThreads = <int>{};
   _ReplyTarget? _activeReplyTarget;
+  int _musicCarouselIndex = 0;
   int? _nextCommentsBeforeId;
   bool _hasMoreComments = false;
   bool _isLoadingPost = true;
@@ -87,6 +89,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void initState() {
     super.initState();
     _post = widget.initialPost;
+    if (_post != null && _post!.isGhost) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+      return;
+    }
     _isLoadingPost = widget.initialPost == null;
     _scrollController.addListener(_handleCommentsScroll);
     _bindFeedEvents();
@@ -143,6 +153,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Future<void> _loadPost() async {
     final loadedPost = await _feedService.loadPost(widget.postId);
     if (!mounted) {
+      return;
+    }
+
+    if (loadedPost != null && loadedPost.isGhost) {
+      Navigator.of(context).pop();
       return;
     }
 
@@ -2062,12 +2077,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         if (post.imageUrls.isNotEmpty) ...[
-                                          PostImageGrid(
-                                            imageUrls: post.imageUrls,
-                                            initialAspectRatios: post.imageAspectRatios,
-                                            postId: post.id,
-                                            onImageTap: _openImages,
-                                          ),
+                                          post.hasMusicPreview && post.imageUrls.length > 1 && !post.isAlbum
+                                              ? MusicPhotoCarousel(
+                                                  post: post,
+                                                  activeIndex: _musicCarouselIndex.clamp(0, post.imageUrls.length - 1).toInt(),
+                                                  onPageChanged: (index) {
+                                                    setState(() {
+                                                      _musicCarouselIndex = index;
+                                                    });
+                                                  },
+                                                  onImageTap: _openImages,
+                                                )
+                                              : PostImageGrid(
+                                                  imageUrls: post.imageUrls,
+                                                  initialAspectRatios: post.imageAspectRatios,
+                                                  postId: post.id,
+                                                  onImageTap: _openImages,
+                                                ),
                                         ],
                                         if (post.hasVideo) ...[
                                           if (post.imageUrls.isNotEmpty)

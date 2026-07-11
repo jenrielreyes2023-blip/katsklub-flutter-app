@@ -19,6 +19,7 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/user_note.dart';
 import '../models/story.dart';
+import '../models/post.dart';
 import '../services/auth_service.dart';
 import '../services/conversation_theme.dart';
 import '../services/feed_service.dart';
@@ -74,12 +75,14 @@ class MessagesScreen extends StatefulWidget {
   const MessagesScreen({
     this.initialThread,
     this.initialThreadId,
+    this.initialGhostPost,
     this.onBack,
     super.key,
   });
 
   final MessageThread? initialThread;
   final int? initialThreadId;
+  final Post? initialGhostPost;
   final VoidCallback? onBack;
 
   @override
@@ -105,6 +108,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _isSending = false;
   bool _isRecording = false;
   DirectMessage? _replyTarget;
+  Post? _replyingGhostPost;
   final List<_PendingMessageAttachment> _pendingAttachments =
       <_PendingMessageAttachment>[];
   _MessagesPageState _state = _MessagesPageState.general;
@@ -141,6 +145,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   void initState() {
     super.initState();
     _thread = widget.initialThread;
+    _replyingGhostPost = widget.initialGhostPost;
     _pendingThreadId = widget.initialThreadId;
     WidgetsBinding.instance.addObserver(this);
     ConversationThemeStore.ensureInitialized();
@@ -2487,6 +2492,18 @@ class _MessagesScreenState extends State<MessagesScreen>
                   accent: theme.accent,
                   onClose: _isSending ? null : _clearReplyTarget,
                 ),
+              if (_replyingGhostPost != null)
+                _GhostPostReplyBar(
+                  post: _replyingGhostPost!,
+                  accent: theme.accent,
+                  onClose: _isSending
+                      ? null
+                      : () {
+                          setState(() {
+                            _replyingGhostPost = null;
+                          });
+                        },
+                ),
               if (_pendingAttachments.isNotEmpty)
                 _AttachmentPreviewStrip(
                   attachments: _pendingAttachments,
@@ -2705,7 +2722,14 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Future<void> _send() async {
     final thread = _thread;
-    final body = _controller.text.trim();
+    String body = _controller.text.trim();
+    if (_replyingGhostPost != null) {
+      final postText = _replyingGhostPost!.text;
+      final textPreview = postText.length > 60
+          ? '${postText.substring(0, 60)}...'
+          : postText;
+      body = '👻 Replied to ghost post: "$textPreview"\n\n$body';
+    }
     final attachments =
         List<_PendingMessageAttachment>.from(_pendingAttachments);
     if (thread == null || _isSending || (body.isEmpty && attachments.isEmpty)) {
@@ -2778,6 +2802,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         _controller.clear();
         _pendingAttachments.clear();
         _replyTarget = null;
+        _replyingGhostPost = null;
       }
     });
 
@@ -4940,6 +4965,84 @@ class _ReplyingToBar extends StatelessWidget {
                     style: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 13,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Cancel reply',
+            icon: const Icon(Icons.close_rounded, size: 18),
+            color: const Color(0xFF6B7280),
+            visualDensity: VisualDensity.compact,
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GhostPostReplyBar extends StatelessWidget {
+  const _GhostPostReplyBar({
+    required this.post,
+    required this.accent,
+    this.onClose,
+  });
+
+  final Post post;
+  final Color accent;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final authorName = post.authorFullName.isNotEmpty 
+        ? post.authorFullName 
+        : post.authorUsername;
+    final preview = post.text.trim();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E1625)
+            : const Color(0xFFF9F7FC),
+        borderRadius: BorderRadius.circular(10),
+        border: const Border(left: BorderSide(color: Color(0xFFFF7A59), width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      '👻 ',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      "Replying to $authorName's ghost post",
+                      style: const TextStyle(
+                        color: Color(0xFFFF7A59),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                if (preview.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 11,
                     ),
                   ),
                 ],
