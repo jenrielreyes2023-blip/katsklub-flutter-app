@@ -27,6 +27,7 @@ import '../services/message_sound_service.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/presence_avatar_dot.dart';
+import '../widgets/gold_shimmer_text.dart';
 import '../services/presence_service.dart';
 
 enum _MessagesPageState { general, groups, requests, archived }
@@ -395,20 +396,28 @@ class _MessagesScreenState extends State<MessagesScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    _thread?.isGroup == true
-                        ? (_thread!.name.isNotEmpty
-                            ? _thread!.name
-                            : 'Group chat')
-                        : (_thread?.otherUser.displayName ?? 'Messages'),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF111827),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  _thread?.isGroup == false && _thread?.otherUser.username?.toLowerCase() == 'gemini'
+                      ? GoldShimmerText(
+                          text: _thread?.otherUser.displayName ?? 'Messages',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : Text(
+                          _thread?.isGroup == true
+                              ? (_thread!.name.isNotEmpty
+                                  ? _thread!.name
+                                  : 'Group chat')
+                              : (_thread?.otherUser.displayName ?? 'Messages'),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                   if (_thread?.isGroup == true)
                     Text(
                       '${_thread!.members.length} members',
@@ -4416,20 +4425,28 @@ class _MessagesThreadList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            thread.isGroup
-                                ? (thread.name.isNotEmpty
-                                    ? thread.name
-                                    : 'Group chat')
-                                : thread.otherUser.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+                          thread.isGroup == false && thread.otherUser.username?.toLowerCase() == 'gemini'
+                              ? GoldShimmerText(
+                                  text: thread.otherUser.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )
+                              : Text(
+                                  thread.isGroup
+                                      ? (thread.name.isNotEmpty
+                                          ? thread.name
+                                          : 'Group chat')
+                                      : thread.otherUser.displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                           const SizedBox(height: 2),
                           if (isTyping)
                             const _ThreadTypingPreview()
@@ -5719,20 +5736,28 @@ class _MessagesRequestList extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                thread.isGroup
-                                    ? (thread.name.isNotEmpty
-                                        ? thread.name
-                                        : 'Group chat')
-                                    : thread.otherUser.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
+                              thread.isGroup == false && thread.otherUser.username?.toLowerCase() == 'gemini'
+                                  ? GoldShimmerText(
+                                      text: thread.otherUser.displayName,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    )
+                                  : Text(
+                                      thread.isGroup
+                                          ? (thread.name.isNotEmpty
+                                              ? thread.name
+                                              : 'Group chat')
+                                          : thread.otherUser.displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
                               const SizedBox(height: 2),
                               Text(
                                 _previewFor(thread.lastMessage),

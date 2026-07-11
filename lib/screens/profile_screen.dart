@@ -23,6 +23,7 @@ import '../widgets/presence_avatar_dot.dart';
 import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
+import '../widgets/gold_shimmer_text.dart';
 import 'image_viewer_screen.dart';
 import 'post_detail_screen.dart';
 import 'repost_post_screen.dart';
@@ -2085,15 +2086,24 @@ class _ProfileBio extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: Text(
-                  user.displayName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: -0.2,
-                  ),
-                ),
+                child: (user.username?.toLowerCase() == 'gemini')
+                    ? GoldShimmerText(
+                        text: user.displayName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                      )
+                    : Text(
+                        user.displayName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
               ),
               if (user.isVerified) ...[
                 const SizedBox(width: 5),
