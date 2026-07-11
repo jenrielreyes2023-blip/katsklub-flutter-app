@@ -46,7 +46,29 @@ jobs:
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: katsklub-flutter-apks
           path: build/app/outputs/flutter-apk/*.apk
           retention-days: 1
+
+      - name: Upload APK fallback to tmpfiles.org
+        if: always()
+        run: |
+          for apk in build/app/outputs/flutter-apk/*.apk; do
+            if [ -f "$apk" ]; then
+              filename=$(basename "$apk")
+              echo "Uploading $filename..."
+              response=$(curl -s -F "file=@$apk" https://tmpfiles.org/api/v1/upload)
+              url=$(echo "$response" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+              if [ -n "$url" ]; then
+                dl_url=$(echo "$url" | sed 's/tmpfiles.org/tmpfiles.org\/dl/')
+                echo "--------------------------------------------------------"
+                echo "DOWNLOAD LINK for $filename:"
+                echo "$dl_url"
+                echo "--------------------------------------------------------"
+              else
+                echo "Failed to upload $filename. Response: $response"
+              fi
+            fi
+          done
