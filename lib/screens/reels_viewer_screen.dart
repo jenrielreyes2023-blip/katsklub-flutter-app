@@ -12,6 +12,7 @@ import '../utils/emoji_presentation.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/custom_icons.dart';
 import '../widgets/sensitive_content_wrapper.dart';
+import '../widgets/gold_shimmer_text.dart';
 import '../widgets/share_post_sheet.dart';
 import 'user_profile_screen.dart';
 import 'repost_post_screen.dart';
@@ -1517,16 +1518,24 @@ class _ReelCreatorInfo extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: Text(
-                        reel.authorFullName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: reel.authorUsername.toLowerCase() == 'gemini'
+                          ? GoldShimmerText(
+                              text: reel.authorFullName,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            )
+                          : Text(
+                              reel.authorFullName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                     ),
                     if (reel.authorIsVerified) ...[
                       const SizedBox(width: 4),

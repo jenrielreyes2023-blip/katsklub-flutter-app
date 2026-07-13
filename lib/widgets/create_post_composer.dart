@@ -16,6 +16,7 @@ import '../services/post_service.dart';
 import '../services/gemini_service.dart';
 import '../utils/emoji_presentation.dart';
 import 'post_with_users_picker.dart';
+import 'gold_shimmer_text.dart';
 
 enum _CreateMode {
   post,
@@ -1925,18 +1926,28 @@ class _UserRow extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(
-                        user.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          decoration: TextDecoration.none,
-                          fontFamily: 'Inter',
-                          color: textStyleColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
+                      child: user.username?.toLowerCase() == 'gemini'
+                          ? GoldShimmerText(
+                              text: user.displayName,
+                              style: const TextStyle(
+                                decoration: TextDecoration.none,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            )
+                          : Text(
+                              user.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                decoration: TextDecoration.none,
+                                fontFamily: 'Inter',
+                                color: textStyleColor,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                 if (feeling.isNotEmpty) ...[
                   const SizedBox(width: 4),

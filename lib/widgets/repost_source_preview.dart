@@ -8,6 +8,7 @@ import '../screens/user_profile_screen.dart';
 import '../utils/emoji_presentation.dart';
 import 'post_image_grid.dart';
 import 'post_card.dart';
+import 'gold_shimmer_text.dart';
 
 class RepostSourcePreview extends StatefulWidget {
   const RepostSourcePreview({
@@ -163,16 +164,24 @@ class _RepostSourcePreviewState extends State<RepostSourcePreview> {
                                 behavior: HitTestBehavior.opaque,
                                 onTapDown: (_) => _markInteractiveSurfaceTap(),
                                 onTap: _openAuthorProfile,
-                                child: Text(
-                                  post.authorFullName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: titleColor,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
+                                child: post.authorUsername.toLowerCase() == 'gemini'
+                                    ? GoldShimmerText(
+                                        text: post.authorFullName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      )
+                                    : Text(
+                                        post.authorFullName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: titleColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
                               ),
                             ),
                             if (post.authorIsVerified) ...[

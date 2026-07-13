@@ -4071,14 +4071,22 @@ class _CommentMessageBlock extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onAuthorTap,
-                child: Text(
-                  comment.displayName,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: comment.authorUsername.toLowerCase() == 'gemini'
+                    ? GoldShimmerText(
+                        text: comment.displayName,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : Text(
+                        comment.displayName,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
             if (comment.authorIsAuthor) ...[

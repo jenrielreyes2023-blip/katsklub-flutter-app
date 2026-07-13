@@ -11,6 +11,7 @@ import '../services/feed_service.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/mention_autocomplete.dart';
 import '../widgets/post_with_users_picker.dart';
+import '../widgets/gold_shimmer_text.dart';
 
 class EditPostScreen extends StatefulWidget {
   const EditPostScreen({
@@ -568,14 +569,22 @@ class _EditPostScreenState extends State<EditPostScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          post.authorFullName,
-                          style: TextStyle(
-                            color: titleColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        post.authorUsername.toLowerCase() == 'gemini'
+                            ? GoldShimmerText(
+                                text: post.authorFullName,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            : Text(
+                                post.authorFullName,
+                                style: TextStyle(
+                                  color: titleColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                         const SizedBox(height: 2),
                         Text(
                           '@${post.authorUsername}',

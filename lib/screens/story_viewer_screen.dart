@@ -9,6 +9,7 @@ import '../config/api_config.dart';
 import '../models/story.dart';
 import '../widgets/custom_icons.dart';
 import '../widgets/sensitive_content_wrapper.dart';
+import '../widgets/gold_shimmer_text.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   const StoryViewerScreen({
@@ -618,14 +619,22 @@ class _PlaceholderStory extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              story.authorFullName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            story.authorUsername.toLowerCase() == 'gemini'
+                ? GoldShimmerText(
+                    text: story.authorFullName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                : Text(
+                    story.authorFullName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
             const SizedBox(height: 8),
             Text(
               'Story content unavailable',
@@ -757,14 +766,22 @@ class _StoryHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  story.authorFullName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                story.authorUsername.toLowerCase() == 'gemini'
+                    ? GoldShimmerText(
+                        text: story.authorFullName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : Text(
+                        story.authorFullName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                 if (story.authorUsername.isNotEmpty || (story.musicTitle?.isNotEmpty ?? false))
                   RichText(
                     maxLines: 1,

@@ -495,6 +495,9 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
   }
 
   Widget _buildBottomOverlay(Post post) {
+    final controller = normalVideoPlaybackSession.controller;
+    final hasController = controller != null && controller.value.isInitialized;
+
     return Positioned(
       left: 16,
       right: 80,
@@ -627,6 +630,57 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                     ],
                   ),
                 ),
+              ),
+            ],
+            if (hasController) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  ValueListenableBuilder(
+                    valueListenable: controller,
+                    builder: (context, VideoPlayerValue value, child) {
+                      return Text(
+                        _formatDuration(value.position),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          shadows: [
+                            Shadow(color: Colors.black87, blurRadius: 4),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 14,
+                      child: VideoProgressIndicator(
+                        controller,
+                        allowScrubbing: true,
+                        colors: VideoProgressColors(
+                          playedColor: const Color(0xFFFF7A45),
+                          bufferedColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDuration(controller.value.duration),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      shadows: [
+                        Shadow(color: Colors.black87, blurRadius: 4),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
@@ -805,6 +859,13 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration == Duration.zero) return '00:00';
+    final minutes = duration.inMinutes.toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 }
 
