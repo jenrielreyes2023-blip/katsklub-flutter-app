@@ -221,6 +221,9 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     final charmColor = isDark ? const Color(0xFFFF9F7C) : const Color(0xFFFF5E3A);
     final rankColor = _getRankColor(rank);
 
+    // Optimize image cache decoding size (prevents jank on rendering large assets)
+    final int cacheSize = (height * MediaQuery.of(context).devicePixelRatio).round().clamp(120, 360);
+
     Widget imageWidget;
     if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
       imageWidget = CachedNetworkImage(
@@ -228,6 +231,8 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        memCacheWidth: cacheSize,
+        memCacheHeight: cacheSize,
       );
     } else {
       imageWidget = Container(
@@ -302,53 +307,57 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                 width: rank <= 3 ? 2.0 : 1.0,
               ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              children: [
-                Positioned.fill(child: imageWidget),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: bannerBg,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '$rank.${user.displayName}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : const Color(0xFF111827),
-                                  fontSize: height > 120 ? 12 : 10.5,
-                                  fontWeight: FontWeight.w900,
+            // Replaced Clip.antiAlias on the Container decoration with a fast ClipRRect sub-hierarchy
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              clipBehavior: Clip.hardEdge, // Blazing fast clipping on GPUs
+              child: Stack(
+                children: [
+                  Positioned.fill(child: imageWidget),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: bannerBg,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '$rank.${user.displayName}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : const Color(0xFF111827),
+                                    fontSize: height > 120 ? 12 : 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            _buildCharmLevelBadge(user.charmLevel),
-                          ],
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          'Charm ${user.charmPoints}',
-                          style: TextStyle(
-                            color: charmColor,
-                            fontSize: height > 120 ? 9.5 : 8.5,
-                            fontWeight: FontWeight.w700,
+                              const SizedBox(width: 4),
+                              _buildCharmLevelBadge(user.charmLevel),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 1),
+                          Text(
+                            'Charm ${user.charmPoints}',
+                            style: TextStyle(
+                              color: charmColor,
+                              fontSize: height > 120 ? 9.5 : 8.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (crownWidget != null) crownWidget,
