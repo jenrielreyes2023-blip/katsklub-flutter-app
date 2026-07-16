@@ -16,11 +16,13 @@ class TopUsersHomeCard extends StatefulWidget {
 }
 
 class _TopUsersHomeCardState extends State<TopUsersHomeCard>
-    with AutomaticKeepAliveClientMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final FeedService _feedService = FeedService();
   List<User> _users = [];
   bool _isLoading = true;
   bool _isExpanded = false;
+  late final AnimationController _expandController;
+  late final Animation<double> _expandAnimation;
 
   @override
   bool get wantKeepAlive => true;
@@ -28,7 +30,24 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
   @override
   void initState() {
     super.initState();
+    _expandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: Curves.easeInOut,
+    );
+    if (_isExpanded) {
+      _expandController.value = 1.0;
+    }
     _loadTopUsers();
+  }
+
+  @override
+  void dispose() {
+    _expandController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTopUsers() async {
@@ -558,6 +577,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
           if (mounted) {
             setState(() {
               _isExpanded = false;
+              _expandController.reverse();
             });
           }
         }
@@ -576,104 +596,107 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                    });
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.workspace_premium_rounded,
-                          color: Color(0xFFFF7A45),
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Top Outstanding Users',
-                        style: TextStyle(
-                          color: titleColor,
-                          fontFamily: 'Inter',
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                        color: const Color(0xFFFF7A45),
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _navigateToLeaderboard(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'See All',
-                        style: TextStyle(
-                          color: Color(0xFFFF7A45),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(width: 2),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFFFF7A45),
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _isExpanded
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                        if (_isExpanded) {
+                          _expandController.forward();
+                        } else {
+                          _expandController.reverse();
+                        }
+                      });
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
                       children: [
-                        if (_isLoading)
-                          _buildSkeletonContent(context, isDark)
-                        else
-                          _buildGridContent(context, activeUsers, isDark),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.workspace_premium_rounded,
+                            color: Color(0xFFFF7A45),
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Top Outstanding Users',
+                          style: TextStyle(
+                            color: titleColor,
+                            fontFamily: 'Inter',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                          color: const Color(0xFFFF7A45),
+                          size: 20,
+                        ),
                       ],
                     ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
+                  ),
+                  TextButton(
+                    onPressed: () => _navigateToLeaderboard(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'See All',
+                          style: TextStyle(
+                            color: Color(0xFFFF7A45),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFFFF7A45),
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              axis: Axis.vertical,
+              axisAlignment: -1.0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    if (_isLoading)
+                      _buildSkeletonContent(context, isDark)
+                    else
+                      _buildGridContent(context, activeUsers, isDark),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
 }
 }
