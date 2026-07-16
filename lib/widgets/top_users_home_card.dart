@@ -476,108 +476,457 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const SkeletonBox(width: 52, height: 52, radius: 26),
-                        const SizedBox(height: 8),
-                        const SkeletonBox(width: 60, height: 10, radius: 5),
-                        const SizedBox(height: 4),
-                        const SkeletonBox(width: 40, height: 8, radius: 4),
-                      ],
-                    ),
+                  const Expanded(
+                    flex: 5,
+                    child: SkeletonBox(width: double.infinity, height: 180, radius: 16),
                   ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const SkeletonBox(width: 66, height: 66, radius: 33),
-                        const SizedBox(height: 8),
-                        const SkeletonBox(width: 70, height: 12, radius: 6),
-                        const SizedBox(height: 4),
-                        const SkeletonBox(width: 50, height: 8, radius: 4),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const SkeletonBox(width: 50, height: 50, radius: 25),
-                        const SizedBox(height: 8),
-                        const SkeletonBox(width: 60, height: 10, radius: 5),
-                        const SizedBox(height: 4),
-                        const SkeletonBox(width: 40, height: 8, radius: 4),
-                      ],
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    flex: 5,
+                    child: SizedBox(
+                      height: 180,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: SkeletonBox(width: double.infinity, height: double.infinity, radius: 12),
+                          ),
+                          SizedBox(height: 8),
+                          Expanded(
+                            child: SkeletonBox(width: double.infinity, height: double.infinity, radius: 12),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.3) : const Color(0xFFE6EBF2).withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatPoints(int points) {
+    if (points >= 1000000) {
+      return '${(points / 1000000).toStringAsFixed(1)}M';
+    }
+    if (points >= 1000) {
+      return '${(points / 1000).toStringAsFixed(1)}k';
+    }
+    return points.toString();
+  }
+
+  Widget _buildFeaturedSquareUser(
+    BuildContext context, {
+    required User user,
+    required int rank,
+    required double height,
+    required bool isDark,
+  }) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final rankColor = _getRankColor(rank);
+
+    Widget imageWidget;
+    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+      imageWidget = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    } else {
+      imageWidget = Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [const Color(0xFF3E4042), const Color(0xFF2D2E30)]
+                : [const Color(0xFFE5E7EB), const Color(0xFFD1D5DB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            user.initials,
+            style: TextStyle(
+              color: titleColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 32,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _navigateToProfile(context, user.username ?? ''),
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: rankColor, width: 2.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned.fill(child: imageWidget),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.8),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: rankColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 12),
+                    const SizedBox(width: 2),
+                    Text(
+                      '$rank',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: const Row(
-                        children: [
-                          SkeletonBox(width: 24, height: 24, radius: 12),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SkeletonBox(width: 50, height: 8, radius: 4),
-                                SizedBox(height: 4),
-                                SkeletonBox(width: 30, height: 6, radius: 3),
-                              ],
-                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 8,
+              left: 8,
+              right: 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
                           ),
-                        ],
+                        ),
                       ),
+                      const SizedBox(width: 4),
+                      _buildCharmLevelBadge(user.charmLevel),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_formatPoints(user.charmPoints)} CP',
+                    style: const TextStyle(
+                      color: Color(0xFFFF9F7C),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.3) : const Color(0xFFE6EBF2).withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: const Row(
-                        children: [
-                          SkeletonBox(width: 24, height: 24, radius: 12),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SkeletonBox(width: 50, height: 8, radius: 4),
-                                SizedBox(height: 4),
-                                SkeletonBox(width: 30, height: 6, radius: 3),
-                              ],
-                            ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRightSideTileUser(
+    BuildContext context, {
+    required User user,
+    required int rank,
+    required bool isDark,
+  }) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final rankColor = _getRankColor(rank);
+
+    Widget avatarWidget;
+    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+      avatarWidget = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    } else {
+      avatarWidget = Container(
+        color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
+        child: Center(
+          child: Text(
+            user.initials,
+            style: TextStyle(
+              color: titleColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _navigateToProfile(context, user.username ?? ''),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.5) : const Color(0xFFF3F4F6).withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: rankColor.withValues(alpha: 0.6), width: 1.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: rankColor, width: 2),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: avatarWidget,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: titleColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
                           ),
-                        ],
+                        ),
                       ),
+                      const SizedBox(width: 2),
+                      _buildCharmLevelBadge(user.charmLevel),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_formatPoints(user.charmPoints)} CP',
+                        style: const TextStyle(
+                          color: Color(0xFFFF7A45),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: rankColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '#$rank',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSquareUser(
+    BuildContext context, {
+    required User user,
+    required int rank,
+    required bool isDark,
+  }) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final rankColor = _getRankColor(rank);
+
+    Widget imageWidget;
+    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+      imageWidget = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    } else {
+      imageWidget = Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [const Color(0xFF3E4042), const Color(0xFF2D2E30)]
+                : [const Color(0xFFE5E7EB), const Color(0xFFD1D5DB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            user.initials,
+            style: TextStyle(
+              color: titleColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _navigateToProfile(context, user.username ?? ''),
+      child: Container(
+        height: 105,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: rankColor.withValues(alpha: 0.6), width: 1.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned.fill(child: imageWidget),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.82),
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    stops: const [0.0, 0.45, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 5,
+              left: 5,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: rankColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '#$rank',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 7.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 5,
+              left: 5,
+              right: 5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
                     ),
+                  ),
+                  const SizedBox(height: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_formatPoints(user.charmPoints)} CP',
+                        style: const TextStyle(
+                          color: Color(0xFFFF9F7C),
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      _buildCharmLevelBadge(user.charmLevel),
+                    ],
                   ),
                 ],
               ),
@@ -599,13 +948,11 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       return _buildHomeCardSkeleton(context, cardColor, isDark);
     }
 
-    // Determine active top users list
     final List<User> activeUsers = [];
-    if (_users.length >= 3) {
+    if (_users.length >= 6) {
       activeUsers.addAll(_users);
     }
 
-    // Fill remaining ranks with mock data if necessary
     final mockUserList = [
       User.fromJson(const {
         'username': 'gemini',
@@ -635,9 +982,14 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         'fullName': 'Traveler One',
         'charmPoints': 3900,
       }),
+      User.fromJson(const {
+        'username': 'designer_cat',
+        'fullName': 'Designer Cat',
+        'charmPoints': 2500,
+      }),
     ];
 
-    while (activeUsers.length < 5) {
+    while (activeUsers.length < 6) {
       activeUsers.add(mockUserList[activeUsers.length]);
     }
 
@@ -661,7 +1013,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
             child: Row(
@@ -724,89 +1075,88 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
               ],
             ),
           ),
-
-          // Podium Section (Ranks 1, 2, 3)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.end,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
               children: [
-                // 2nd Place (Left)
-                Expanded(
-                  child: _buildPodiumUser(
-                    context,
-                    username: activeUsers[1].username ?? '',
-                    fullName: activeUsers[1].displayName,
-                    rank: 2,
-                    avatarSize: 52,
-                    yOffset: 8,
-                    charmPoints: activeUsers[1].charmPoints,
-                    isDark: isDark,
-                    avatarUrl: activeUsers[1].avatarUrl,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: _buildFeaturedSquareUser(
+                        context,
+                        user: activeUsers[0],
+                        rank: 1,
+                        height: 180,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 5,
+                      child: SizedBox(
+                        height: 180,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: _buildRightSideTileUser(
+                                context,
+                                user: activeUsers[1],
+                                rank: 2,
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: _buildRightSideTileUser(
+                                context,
+                                user: activeUsers[2],
+                                rank: 3,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                // 1st Place (Center - Larger)
-                Expanded(
-                  child: _buildPodiumUser(
-                    context,
-                    username: activeUsers[0].username ?? '',
-                    fullName: activeUsers[0].displayName,
-                    rank: 1,
-                    avatarSize: 66,
-                    yOffset: -10,
-                    charmPoints: activeUsers[0].charmPoints,
-                    isDark: isDark,
-                    avatarUrl: activeUsers[0].avatarUrl,
-                  ),
-                ),
-                // 3rd Place (Right)
-                Expanded(
-                  child: _buildPodiumUser(
-                    context,
-                    username: activeUsers[2].username ?? '',
-                    fullName: activeUsers[2].displayName,
-                    rank: 3,
-                    avatarSize: 50,
-                    yOffset: 12,
-                    charmPoints: activeUsers[2].charmPoints,
-                    isDark: isDark,
-                    avatarUrl: activeUsers[2].avatarUrl,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBottomSquareUser(
+                        context,
+                        user: activeUsers[3],
+                        rank: 4,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildBottomSquareUser(
+                        context,
+                        user: activeUsers[4],
+                        rank: 5,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildBottomSquareUser(
+                        context,
+                        user: activeUsers[5],
+                        rank: 6,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          // 4th and 5th Place Row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                _buildSmallTileUser(
-                  context,
-                  username: activeUsers[3].username ?? '',
-                  fullName: activeUsers[3].displayName,
-                  rank: 4,
-                  charmPoints: activeUsers[3].charmPoints,
-                  isDark: isDark,
-                  avatarUrl: activeUsers[3].avatarUrl,
-                ),
-                const SizedBox(width: 12),
-                _buildSmallTileUser(
-                  context,
-                  username: activeUsers[4].username ?? '',
-                  fullName: activeUsers[4].displayName,
-                  rank: 5,
-                  charmPoints: activeUsers[4].charmPoints,
-                  isDark: isDark,
-                  avatarUrl: activeUsers[4].avatarUrl,
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
