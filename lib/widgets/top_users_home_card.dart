@@ -2,10 +2,45 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/user_profile_screen.dart';
+import '../services/feed_service.dart';
 import 'gold_shimmer_text.dart';
 
-class TopUsersHomeCard extends StatelessWidget {
+class TopUsersHomeCard extends StatefulWidget {
   const TopUsersHomeCard({super.key});
+
+  @override
+  State<TopUsersHomeCard> createState() => _TopUsersHomeCardState();
+}
+
+class _TopUsersHomeCardState extends State<TopUsersHomeCard> {
+  final FeedService _feedService = FeedService();
+  List<User> _users = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopUsers();
+  }
+
+  Future<void> _loadTopUsers() async {
+    try {
+      final list = await _feedService.loadLeaderboard();
+      if (list.length >= 3 && mounted) {
+        setState(() {
+          _users = list;
+          _isLoading = false;
+        });
+        return;
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _navigateToLeaderboard(BuildContext context) {
     Navigator.of(context).push(
@@ -367,6 +402,68 @@ class TopUsersHomeCard extends StatelessWidget {
     final cardColor = isDark ? const Color(0xFF1E1F20) : Colors.white;
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
 
+    if (_isLoading) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        height: 180,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF7A45),
+          ),
+        ),
+      );
+    }
+
+    // Determine active top users list
+    final List<User> activeUsers = [];
+    if (_users.length >= 3) {
+      activeUsers.addAll(_users);
+    }
+
+    // Fill remaining ranks with mock data if necessary
+    final mockUserList = [
+      User.fromJson(const {
+        'username': 'gemini',
+        'fullName': 'Gemini AI',
+        'charmPoints': 12500,
+        'isVerified': true,
+      }),
+      User.fromJson(const {
+        'username': 'kat_boss',
+        'fullName': 'Kat Boss',
+        'charmPoints': 9800,
+        'isVerified': true,
+      }),
+      User.fromJson(const {
+        'username': 'music_fanatic',
+        'fullName': 'Music Fanatic',
+        'charmPoints': 7400,
+      }),
+      User.fromJson(const {
+        'username': 'katsklub_dev',
+        'fullName': 'KatsKlub Dev',
+        'charmPoints': 5200,
+        'isVerified': true,
+      }),
+      User.fromJson(const {
+        'username': 'traveler_01',
+        'fullName': 'Traveler One',
+        'charmPoints': 3900,
+      }),
+    ];
+
+    while (activeUsers.length < 5) {
+      activeUsers.add(mockUserList[activeUsers.length]);
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       decoration: BoxDecoration(
@@ -462,12 +559,12 @@ class TopUsersHomeCard extends StatelessWidget {
                 Expanded(
                   child: _buildPodiumUser(
                     context,
-                    username: 'kat_boss',
-                    fullName: 'Kat Boss',
+                    username: activeUsers[1].username ?? '',
+                    fullName: activeUsers[1].displayName,
                     rank: 2,
                     avatarSize: 52,
                     yOffset: 8,
-                    charmPoints: 9800,
+                    charmPoints: activeUsers[1].charmPoints,
                     isDark: isDark,
                   ),
                 ),
@@ -475,12 +572,12 @@ class TopUsersHomeCard extends StatelessWidget {
                 Expanded(
                   child: _buildPodiumUser(
                     context,
-                    username: 'gemini',
-                    fullName: 'Gemini AI',
+                    username: activeUsers[0].username ?? '',
+                    fullName: activeUsers[0].displayName,
                     rank: 1,
                     avatarSize: 66,
                     yOffset: -10,
-                    charmPoints: 12500,
+                    charmPoints: activeUsers[0].charmPoints,
                     isDark: isDark,
                   ),
                 ),
@@ -488,12 +585,12 @@ class TopUsersHomeCard extends StatelessWidget {
                 Expanded(
                   child: _buildPodiumUser(
                     context,
-                    username: 'music_fanatic',
-                    fullName: 'Music Fanatic',
+                    username: activeUsers[2].username ?? '',
+                    fullName: activeUsers[2].displayName,
                     rank: 3,
                     avatarSize: 50,
                     yOffset: 12,
-                    charmPoints: 7400,
+                    charmPoints: activeUsers[2].charmPoints,
                     isDark: isDark,
                   ),
                 ),
@@ -510,19 +607,19 @@ class TopUsersHomeCard extends StatelessWidget {
               children: [
                 _buildSmallTileUser(
                   context,
-                  username: 'katsklub_dev',
-                  fullName: 'KatsKlub Dev',
+                  username: activeUsers[3].username ?? '',
+                  fullName: activeUsers[3].displayName,
                   rank: 4,
-                  charmPoints: 5200,
+                  charmPoints: activeUsers[3].charmPoints,
                   isDark: isDark,
                 ),
                 const SizedBox(width: 12),
                 _buildSmallTileUser(
                   context,
-                  username: 'traveler_01',
-                  fullName: 'Traveler One',
+                  username: activeUsers[4].username ?? '',
+                  fullName: activeUsers[4].displayName,
                   rank: 5,
-                  charmPoints: 3900,
+                  charmPoints: activeUsers[4].charmPoints,
                   isDark: isDark,
                 ),
               ],
