@@ -27,7 +27,8 @@ import 'vertical_gallery_screen.dart';
 import 'settings_screen.dart';
 import 'bookmarks_screen.dart';
 import 'game_room_screen.dart';
-import 'wallet_screen.dart';
+import '../widgets/top_users_home_card.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -586,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   int _homeItemCount(List<Post> posts) {
-    const fixedHeaderCount = 2;
+    const fixedHeaderCount = 3;
     final contentCount = _isInitialLoading || posts.isEmpty ? 1 : posts.length;
     final inlineSuggestions = _hasInlineSuggestions(posts) ? 1 : 0;
     return fixedHeaderCount +
@@ -645,6 +646,10 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     if (index == 1) {
+      return const TopUsersHomeCard();
+    }
+
+    if (index == 2) {
       if (_hasEmptyStateSuggestions(posts)) {
         return _buildSuggestionsRail();
       }
@@ -652,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     final hasInlineRail = _hasInlineSuggestions(posts);
-    const inlineRailIndex = 2 + _kSuggestionsInlineAfter;
+    final inlineRailIndex = 3 + _kSuggestionsInlineAfter;
 
     if (index == _homeItemCount(posts) - 1) {
       return const SizedBox(height: 18);
@@ -666,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen>
       return _buildSuggestionsRail();
     }
 
-    var contentIndex = index - 2;
+    var contentIndex = index - 3;
     if (hasInlineRail && index > inlineRailIndex) {
       contentIndex -= 1;
     }
