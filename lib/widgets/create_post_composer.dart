@@ -14,6 +14,7 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../services/post_service.dart';
 import '../services/gemini_service.dart';
+import '../services/auth_service.dart';
 import '../utils/emoji_presentation.dart';
 import 'post_with_users_picker.dart';
 import 'gold_shimmer_text.dart';
@@ -553,6 +554,75 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     });
 
     if (result.ok) {
+      // Calculate charm points before state is cleared
+      int pointsGained = 2;
+      String postType = 'Normal Post';
+      if (_mode == _CreateMode.discussion) {
+        pointsGained = 5;
+        postType = 'Discussion';
+      } else if (_mode == _CreateMode.reel) {
+        pointsGained = 3;
+        postType = 'Reel';
+      } else if (_mode == _CreateMode.poll) {
+        pointsGained = 2;
+        postType = 'Poll';
+      } else if (_images.length > 1) {
+        pointsGained = 3;
+        postType = 'Carousel Post';
+      }
+
+      // Add points to current user session
+      unawaited(() async {
+        try {
+          final authService = AuthService();
+          final currentUser = await authService.getSavedUser();
+          if (currentUser != null) {
+            final oldPoints = currentUser.charmPoints;
+            final newPoints = oldPoints + pointsGained;
+            final updatedUser = currentUser.copyWith(charmPoints: newPoints);
+            await authService.saveCurrentUser(updatedUser);
+
+            final oldLevel = currentUser.charmLevel;
+            final newLevel = updatedUser.charmLevel;
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFFFF7A45),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  content: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          newLevel > oldLevel
+                              ? 'LEVEL UP! You reached Lv.$newLevel! 🎉'
+                              : 'Earned +$pointsGained Charm Points for $postType! ✨ (Total: $newPoints CP)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Notify streams
+            FeedService.notifyProfileStatsChanged(
+              username: updatedUser.username!,
+              user: updatedUser,
+            );
+          }
+        } catch (_) {}
+      }());
+
       _controller.clear();
       setState(() {
         _titleController.clear();
