@@ -27,6 +27,7 @@ import 'vertical_gallery_screen.dart';
 import 'settings_screen.dart';
 import 'bookmarks_screen.dart';
 import 'game_room_screen.dart';
+import 'wallet_screen.dart';
 import '../widgets/top_users_home_card.dart';
 
 
