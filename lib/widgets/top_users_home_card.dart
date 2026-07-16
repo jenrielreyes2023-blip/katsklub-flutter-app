@@ -118,12 +118,14 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
 
   Widget _buildHomeCardSkeleton(BuildContext context, Color cardColor, bool isDark) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: cardColor,
-        border: Border.all(
-          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-          width: 1,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF2F3031) : const Color(0xFFD1D5DB),
+            width: 2.5,
+          ),
         ),
       ),
       child: SkeletonPulse(
@@ -137,12 +139,12 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                 children: [
                   Row(
                     children: [
-                      const SkeletonBox(width: 24, height: 24, radius: 0),
+                      const SkeletonBox(width: 24, height: 24, radius: 6),
                       const SizedBox(width: 8),
-                      const SkeletonBox(width: 140, height: 14, radius: 0),
+                      const SkeletonBox(width: 140, height: 14, radius: 7),
                     ],
                   ),
-                  const SkeletonBox(width: 50, height: 14, radius: 0),
+                  const SkeletonBox(width: 50, height: 14, radius: 7),
                 ],
               ),
             ),
@@ -160,16 +162,16 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SkeletonBox(width: bigSize, height: bigSize, radius: 0),
+                          SkeletonBox(width: bigSize, height: bigSize, radius: 12),
                           SizedBox(width: gap),
                           SizedBox(
                             width: s,
                             height: bigSize,
                             child: Column(
                               children: [
-                                SkeletonBox(width: s, height: s, radius: 0),
+                                SkeletonBox(width: s, height: s, radius: 12),
                                 SizedBox(height: gap),
-                                SkeletonBox(width: s, height: s, radius: 0),
+                                SkeletonBox(width: s, height: s, radius: 12),
                               ],
                             ),
                           ),
@@ -178,21 +180,21 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                       SizedBox(height: gap),
                       Row(
                         children: [
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                           SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                           SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                         ],
                       ),
                       SizedBox(height: gap),
                       Row(
                         children: [
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                           SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                           SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 0),
+                          SkeletonBox(width: s, height: s, radius: 12),
                         ],
                       ),
                     ],
@@ -300,57 +302,62 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
           Container(
             height: height,
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: rank <= 3 ? rankColor : (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB)),
                 width: rank <= 3 ? 2.0 : 1.0,
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned.fill(child: imageWidget),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: bannerBg,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '$rank.${user.displayName}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : const Color(0xFF111827),
-                                  fontSize: height > 120 ? 12 : 10.5,
-                                  fontWeight: FontWeight.w900,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              clipBehavior: Clip.hardEdge,
+              child: Stack(
+                children: [
+                  Positioned.fill(child: imageWidget),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: bannerBg,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '$rank.${user.displayName}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : const Color(0xFF111827),
+                                    fontSize: height > 120 ? 12 : 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            _buildCharmLevelBadge(user.charmLevel),
-                          ],
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          'Charm ${user.charmPoints}',
-                          style: TextStyle(
-                            color: charmColor,
-                            fontSize: height > 120 ? 9.5 : 8.5,
-                            fontWeight: FontWeight.w700,
+                              const SizedBox(width: 4),
+                              _buildCharmLevelBadge(user.charmLevel),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 1),
+                          Text(
+                            'Charm ${user.charmPoints}',
+                            style: TextStyle(
+                              color: charmColor,
+                              fontSize: height > 120 ? 9.5 : 8.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (crownWidget != null) crownWidget,
@@ -431,19 +438,14 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     }
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF2F3031) : const Color(0xFFD1D5DB),
+            width: 2.5,
           ),
-        ],
-        border: Border.all(
-          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-          width: 1,
         ),
       ),
       child: Column(
