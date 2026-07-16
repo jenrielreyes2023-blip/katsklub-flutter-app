@@ -27,14 +27,70 @@ class TopUsersScreen extends StatefulWidget {
 
 class _TopUsersScreenState extends State<TopUsersScreen> {
   final FeedService _feedService = FeedService();
-  late List<TopUser> _topUsers;
+  List<TopUser> _topUsers = [];
   final Set<String> _followingInFlight = <String>{};
   final Set<String> _followedUsernames = <String>{};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeTopUsers();
+    _loadRealLeaderboard();
+  }
+
+  Future<void> _loadRealLeaderboard() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final realUsers = await _feedService.loadLeaderboard();
+      if (realUsers.isNotEmpty && mounted) {
+        int rank = 1;
+        setState(() {
+          _topUsers = realUsers.map((user) {
+            String status = 'Kat Member';
+            if (rank == 1) {
+              status = 'Outstanding Member';
+            } else if (rank == 2) {
+              status = 'Top Contributor';
+            } else if (rank == 3) {
+              status = 'Daily Star';
+            } else if (rank <= 5) {
+              status = 'Rising Star';
+            } else {
+              status = 'Popular Member';
+            }
+
+            final tu = TopUser(
+              user: user,
+              rank: rank,
+              score: user.charmPoints,
+              status: status,
+            );
+            rank++;
+            return tu;
+          }).toList();
+
+          _followedUsernames.clear();
+          for (final tu in _topUsers) {
+            if (tu.user.isFollowing) {
+              _followedUsernames.add(tu.user.username!.toLowerCase());
+            }
+          }
+          _isLoading = false;
+        });
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback to mock data
+    if (mounted) {
+      setState(() {
+        _initializeTopUsers();
+        _isLoading = false;
+      });
+    }
   }
 
   void _initializeTopUsers() {
@@ -249,9 +305,15 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: _topUsers.length,
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFFF7A45),
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                itemCount: _topUsers.length,
           itemBuilder: (context, index) {
             final tu = _topUsers[index];
             final isGemini = tu.user.username?.toLowerCase() == 'gemini';

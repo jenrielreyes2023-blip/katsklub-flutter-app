@@ -1296,6 +1296,20 @@ class FeedService {
     return null;
   }
 
+  Future<List<User>> loadLeaderboard() async {
+    try {
+      final data = await _authenticatedGet('/api/users/leaderboard');
+      final list = data['leaderboard'];
+      if (list is List) {
+        return list
+            .map((item) => User.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+
   Future<User> updateCurrentUserPostcardTheme(String postcardTheme) async {
     final normalizedTheme = postcardTheme.trim().toLowerCase();
     final data = await _authenticatedPatch(
