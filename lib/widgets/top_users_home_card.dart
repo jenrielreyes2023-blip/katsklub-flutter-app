@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../screens/top_users_screen.dart';
@@ -19,7 +20,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
   final FeedService _feedService = FeedService();
   List<User> _users = [];
   bool _isLoading = true;
-  bool _isExpanded = true;
+  bool _isExpanded = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -438,20 +439,31 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       activeUsers.add(mockUserList[activeUsers.length]);
     }
 
-    return Container(
-      margin: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: cardColor,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF2F3031) : const Color(0xFFD1D5DB),
-            width: 2.5,
+    return VisibilityDetector(
+      key: const Key('top-outstanding-users-visibility-key'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (visibilityInfo.visibleFraction == 0.0 && _isExpanded) {
+          if (mounted) {
+            setState(() {
+              _isExpanded = false;
+            });
+          }
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.zero,
+        decoration: BoxDecoration(
+          color: cardColor,
+          border: Border(
+            bottom: BorderSide(
+              color: isDark ? const Color(0xFF2F3031) : const Color(0xFFD1D5DB),
+              width: 2.5,
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
             child: Row(
@@ -692,6 +704,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
