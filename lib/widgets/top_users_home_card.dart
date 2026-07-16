@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../config/api_config.dart';
 import '../models/user.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/user_profile_screen.dart';
@@ -134,6 +136,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     required double yOffset,
     required int charmPoints,
     required bool isDark,
+    String? avatarUrl,
   }) {
     final rankColor = _getRankColor(rank);
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
@@ -145,6 +148,35 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       'username': username,
       'fullName': fullName,
     });
+
+    Widget avatarChild;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      avatarChild = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(avatarUrl),
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => Center(
+          child: Text(
+            tempUser.initials,
+            style: TextStyle(
+              color: titleColor,
+              fontWeight: FontWeight.w800,
+              fontSize: avatarSize * 0.35,
+            ),
+          ),
+        ),
+      );
+    } else {
+      avatarChild = Center(
+        child: Text(
+          tempUser.initials,
+          style: TextStyle(
+            color: titleColor,
+            fontWeight: FontWeight.w800,
+            fontSize: avatarSize * 0.35,
+          ),
+        ),
+      );
+    }
 
     return Transform.translate(
       offset: Offset(0, yOffset),
@@ -186,16 +218,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                   child: ClipOval(
                     child: Container(
                       color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-                      child: Center(
-                        child: Text(
-                          tempUser.initials,
-                          style: TextStyle(
-                            color: titleColor,
-                            fontWeight: FontWeight.w800,
-                            fontSize: avatarSize * 0.35,
-                          ),
-                        ),
-                      ),
+                      child: avatarChild,
                     ),
                   ),
                 ),
@@ -291,6 +314,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     required int rank,
     required int charmPoints,
     required bool isDark,
+    String? avatarUrl,
   }) {
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
     final tempUser = User.fromJson({
@@ -298,6 +322,35 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       'fullName': fullName,
     });
     final level = _calculateLevel(charmPoints);
+
+    Widget avatarChild;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      avatarChild = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(avatarUrl),
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => Center(
+          child: Text(
+            tempUser.initials,
+            style: TextStyle(
+              color: titleColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+            ),
+          ),
+        ),
+      );
+    } else {
+      avatarChild = Center(
+        child: Text(
+          tempUser.initials,
+          style: TextStyle(
+            color: titleColor,
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+          ),
+        ),
+      );
+    }
 
     return Expanded(
       child: GestureDetector(
@@ -322,16 +375,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                     child: ClipOval(
                       child: Container(
                         color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-                        child: Center(
-                          child: Text(
-                            tempUser.initials,
-                            style: TextStyle(
-                              color: titleColor,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
+                        child: avatarChild,
                       ),
                     ),
                   ),
@@ -699,6 +743,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                     yOffset: 8,
                     charmPoints: activeUsers[1].charmPoints,
                     isDark: isDark,
+                    avatarUrl: activeUsers[1].avatarUrl,
                   ),
                 ),
                 // 1st Place (Center - Larger)
@@ -712,6 +757,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                     yOffset: -10,
                     charmPoints: activeUsers[0].charmPoints,
                     isDark: isDark,
+                    avatarUrl: activeUsers[0].avatarUrl,
                   ),
                 ),
                 // 3rd Place (Right)
@@ -725,6 +771,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                     yOffset: 12,
                     charmPoints: activeUsers[2].charmPoints,
                     isDark: isDark,
+                    avatarUrl: activeUsers[2].avatarUrl,
                   ),
                 ),
               ],
@@ -745,6 +792,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                   rank: 4,
                   charmPoints: activeUsers[3].charmPoints,
                   isDark: isDark,
+                  avatarUrl: activeUsers[3].avatarUrl,
                 ),
                 const SizedBox(width: 12),
                 _buildSmallTileUser(
@@ -754,6 +802,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                   rank: 5,
                   charmPoints: activeUsers[4].charmPoints,
                   isDark: isDark,
+                  avatarUrl: activeUsers[4].avatarUrl,
                 ),
               ],
             ),

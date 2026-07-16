@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/gold_shimmer_text.dart';
@@ -393,16 +395,31 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                       child: ClipOval(
                         child: Container(
                           color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-                          child: Center(
-                            child: Text(
-                              tu.user.initials,
-                              style: TextStyle(
-                                color: titleColor,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                          child: (tu.user.avatarUrl != null && tu.user.avatarUrl!.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: ApiConfig.assetUrl(tu.user.avatarUrl!),
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Center(
+                                    child: Text(
+                                      tu.user.initials,
+                                      style: TextStyle(
+                                        color: titleColor,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    tu.user.initials,
+                                    style: TextStyle(
+                                      color: titleColor,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                     ),
