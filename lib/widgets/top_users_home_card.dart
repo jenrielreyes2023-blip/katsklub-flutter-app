@@ -39,17 +39,66 @@ class TopUsersHomeCard extends StatelessWidget {
     }
   }
 
+  int _calculateLevel(int points) {
+    if (points < 100) return 1;
+    if (points < 300) return 2;
+    if (points < 600) return 3;
+    if (points < 1000) return 4;
+    if (points < 2000) return 5;
+    if (points < 3500) return 6;
+    if (points < 5500) return 7;
+    if (points < 8000) return 8;
+    if (points < 11000) return 9;
+    return 10;
+  }
+
+  Widget _buildCharmLevelBadge(int level) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF7A45), Color(0xFFFF5E3A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: Colors.white,
+            size: 8,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            'Lv.$level',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 7.5,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPodiumUser(BuildContext context, {
     required String username,
     required String fullName,
     required int rank,
     required double avatarSize,
     required double yOffset,
+    required int charmPoints,
     required bool isDark,
   }) {
     final rankColor = _getRankColor(rank);
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
     final isGemini = username.toLowerCase() == 'gemini';
+    final level = _calculateLevel(charmPoints);
 
     // Mock user for initials
     final tempUser = User.fromJson({
@@ -188,6 +237,8 @@ class TopUsersHomeCard extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(height: 4),
+            _buildCharmLevelBadge(level),
           ],
         ),
       ),
@@ -198,6 +249,7 @@ class TopUsersHomeCard extends StatelessWidget {
     required String username,
     required String fullName,
     required int rank,
+    required int charmPoints,
     required bool isDark,
   }) {
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
@@ -205,6 +257,7 @@ class TopUsersHomeCard extends StatelessWidget {
       'username': username,
       'fullName': fullName,
     });
+    final level = _calculateLevel(charmPoints);
 
     return Expanded(
       child: GestureDetector(
@@ -279,15 +332,24 @@ class TopUsersHomeCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Text(
-                      '@$username',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '@$username',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        _buildCharmLevelBadge(level),
+                      ],
                     ),
                   ],
                 ),
@@ -405,6 +467,7 @@ class TopUsersHomeCard extends StatelessWidget {
                     rank: 2,
                     avatarSize: 52,
                     yOffset: 8,
+                    charmPoints: 9800,
                     isDark: isDark,
                   ),
                 ),
@@ -417,6 +480,7 @@ class TopUsersHomeCard extends StatelessWidget {
                     rank: 1,
                     avatarSize: 66,
                     yOffset: -10,
+                    charmPoints: 12500,
                     isDark: isDark,
                   ),
                 ),
@@ -429,6 +493,7 @@ class TopUsersHomeCard extends StatelessWidget {
                     rank: 3,
                     avatarSize: 50,
                     yOffset: 12,
+                    charmPoints: 7400,
                     isDark: isDark,
                   ),
                 ),
@@ -448,6 +513,7 @@ class TopUsersHomeCard extends StatelessWidget {
                   username: 'katsklub_dev',
                   fullName: 'KatsKlub Dev',
                   rank: 4,
+                  charmPoints: 5200,
                   isDark: isDark,
                 ),
                 const SizedBox(width: 12),
@@ -456,6 +522,7 @@ class TopUsersHomeCard extends StatelessWidget {
                   username: 'traveler_01',
                   fullName: 'Traveler One',
                   rank: 5,
+                  charmPoints: 3900,
                   isDark: isDark,
                 ),
               ],

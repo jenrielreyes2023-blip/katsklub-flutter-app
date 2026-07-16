@@ -36,6 +36,7 @@ class User {
     this.profileLinks = const [],
     this.featuredPhotos = const [],
     this.pinnedPostId,
+    this.charmPoints = 0,
     required this.raw,
   });
 
@@ -75,6 +76,7 @@ class User {
   final List<ProfileLink> profileLinks;
   final List<FeaturedPhoto> featuredPhotos;
   final int? pinnedPostId;
+  final int charmPoints;
   final Map<String, dynamic> raw;
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -146,6 +148,7 @@ class User {
       profileLinks: _readProfileLinks(json['profileLinks'] ?? json['profile_links']),
       featuredPhotos: _readFeaturedPhotos(json['featuredPhotos'] ?? json['featured_photos']),
       pinnedPostId: json['pinnedPostId'] != null ? _readInt(json['pinnedPostId']) : (json['pinned_post_id'] != null ? _readInt(json['pinned_post_id']) : null),
+      charmPoints: _readInt(json['charmPoints'] ?? json['charm_points']),
       raw: Map<String, dynamic>.from(json),
     );
   }
@@ -164,6 +167,19 @@ class User {
     }
 
     return 'KatsKlub user';
+  }
+
+  int get charmLevel {
+    if (charmPoints < 100) return 1;
+    if (charmPoints < 300) return 2;
+    if (charmPoints < 600) return 3;
+    if (charmPoints < 1000) return 4;
+    if (charmPoints < 2000) return 5;
+    if (charmPoints < 3500) return 6;
+    if (charmPoints < 5500) return 7;
+    if (charmPoints < 8000) return 8;
+    if (charmPoints < 11000) return 9;
+    return 10;
   }
 
   String? get handle {
@@ -215,11 +231,13 @@ class User {
     List<ProfileLink>? profileLinks,
     List<FeaturedPhoto>? featuredPhotos,
     int? pinnedPostId,
+    int? charmPoints,
     Map<String, dynamic>? raw,
   }) {
     final nextFollowersCount = followersCount ?? this.followersCount;
     final nextFollowingCount = followingCount ?? this.followingCount;
     final nextPostCount = postCount ?? this.postCount;
+    final nextCharmPoints = charmPoints ?? this.charmPoints;
     final nextIsFollowing = isFollowing ?? this.isFollowing;
     final nextIsPrivate = isPrivate ?? this.isPrivate;
     final nextIsRequested = isRequested ?? this.isRequested;
@@ -263,7 +281,8 @@ class User {
       ..['achievements'] = nextAchievements
       ..['profileLinks'] = nextProfileLinks.map((l) => l.toJson()).toList()
       ..['featuredPhotos'] = nextFeaturedPhotos.map((p) => p.toJson()).toList()
-      ..['pinnedPostId'] = nextPinnedPostId;
+      ..['pinnedPostId'] = nextPinnedPostId
+      ..['charmPoints'] = nextCharmPoints;
 
     return User(
       id: id,
@@ -302,6 +321,7 @@ class User {
       profileLinks: nextProfileLinks,
       featuredPhotos: nextFeaturedPhotos,
       pinnedPostId: nextPinnedPostId,
+      charmPoints: nextCharmPoints,
       raw: nextRaw,
     );
   }

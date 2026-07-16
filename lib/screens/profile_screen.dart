@@ -2113,6 +2113,8 @@ class _ProfileBio extends StatelessWidget {
                   color: Color(0xFF1D9BF0),
                 ),
               ],
+              const SizedBox(width: 6),
+              _buildCharmLevelBadge(user.charmLevel),
             ],
           ),
           if (achievements.isNotEmpty) ...[
@@ -2184,6 +2186,40 @@ class _ProfileBio extends StatelessWidget {
               }).toList(),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCharmLevelBadge(int level) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF7A45), Color(0xFFFF5E3A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: Colors.white,
+            size: 9,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            'Lv.$level',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
         ],
       ),
     );

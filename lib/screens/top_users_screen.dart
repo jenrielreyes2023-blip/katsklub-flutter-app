@@ -49,6 +49,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
           'isVerified': true,
           'isAdmin': true,
           'isFollowing': false,
+          'charmPoints': 12500,
         }),
         rank: 1,
         score: 12500,
@@ -62,6 +63,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
           'avatarUrl': '',
           'isVerified': true,
           'isFollowing': false,
+          'charmPoints': 9800,
         }),
         rank: 2,
         score: 9800,
@@ -74,6 +76,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
           'fullName': 'Music Fanatic',
           'avatarUrl': '',
           'isFollowing': false,
+          'charmPoints': 7400,
         }),
         rank: 3,
         score: 7400,
@@ -87,6 +90,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
           'avatarUrl': '',
           'isVerified': true,
           'isFollowing': false,
+          'charmPoints': 5200,
         }),
         rank: 4,
         score: 5200,
@@ -99,6 +103,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
           'fullName': 'Traveler One',
           'avatarUrl': '',
           'isFollowing': false,
+          'charmPoints': 3900,
         }),
         rank: 5,
         score: 3900,
@@ -164,6 +169,40 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => UserProfileScreen(username: cleanUsername),
+      ),
+    );
+  }
+
+  Widget _buildCharmLevelBadge(int level) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF7A45), Color(0xFFFF5E3A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: Colors.white,
+            size: 9,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            'Lv.$level',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -309,6 +348,8 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
                         size: 15,
                       ),
                     ],
+                    const SizedBox(width: 6),
+                    _buildCharmLevelBadge(tu.user.charmLevel),
                   ],
                 ),
                 subtitle: Column(
