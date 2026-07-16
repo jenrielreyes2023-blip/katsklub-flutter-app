@@ -118,95 +118,57 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     );
   }
 
-  Widget _buildHomeCardSkeleton(BuildContext context, Color cardColor, bool isDark) {
-    return Container(
-      margin: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: cardColor,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF2F3031) : const Color(0xFFD1D5DB),
-            width: 2.5,
-          ),
-        ),
-      ),
-      child: SkeletonPulse(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSkeletonContent(BuildContext context, bool isDark) {
+    return SkeletonPulse(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double gap = 10.0;
+          final double s = (constraints.maxWidth - (2 * gap)) / 3;
+          final double bigSize = 2 * s + gap;
+
+          return Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const SkeletonBox(width: 24, height: 24, radius: 6),
-                      const SizedBox(width: 8),
-                      const SkeletonBox(width: 140, height: 14, radius: 7),
-                    ],
+                  SkeletonBox(width: bigSize, height: bigSize, radius: 12),
+                  SizedBox(width: gap),
+                  SizedBox(
+                    width: s,
+                    height: bigSize,
+                    child: Column(
+                      children: [
+                        SkeletonBox(width: s, height: s, radius: 12),
+                        SizedBox(height: gap),
+                        SkeletonBox(width: s, height: s, radius: 12),
+                      ],
+                    ),
                   ),
-                  const SkeletonBox(width: 50, height: 14, radius: 7),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final double gap = 10.0;
-                  final double s = (constraints.maxWidth - (2 * gap)) / 3;
-                  final double bigSize = 2 * s + gap;
-
-                  return Column(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SkeletonBox(width: bigSize, height: bigSize, radius: 12),
-                          SizedBox(width: gap),
-                          SizedBox(
-                            width: s,
-                            height: bigSize,
-                            child: Column(
-                              children: [
-                                SkeletonBox(width: s, height: s, radius: 12),
-                                SizedBox(height: gap),
-                                SkeletonBox(width: s, height: s, radius: 12),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: gap),
-                      Row(
-                        children: [
-                          SkeletonBox(width: s, height: s, radius: 12),
-                          SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 12),
-                          SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 12),
-                        ],
-                      ),
-                      SizedBox(height: gap),
-                      Row(
-                        children: [
-                          SkeletonBox(width: s, height: s, radius: 12),
-                          SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 12),
-                          SizedBox(width: gap),
-                          SkeletonBox(width: s, height: s, radius: 12),
-                        ],
-                      ),
-                    ],
-                  );
-                },
+              SizedBox(height: gap),
+              Row(
+                children: [
+                  SkeletonBox(width: s, height: s, radius: 12),
+                  SizedBox(width: gap),
+                  SkeletonBox(width: s, height: s, radius: 12),
+                  SizedBox(width: gap),
+                  SkeletonBox(width: s, height: s, radius: 12),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+              SizedBox(height: gap),
+              Row(
+                children: [
+                  SkeletonBox(width: s, height: s, radius: 12),
+                  SizedBox(width: gap),
+                  SkeletonBox(width: s, height: s, radius: 12),
+                  SizedBox(width: gap),
+                  SkeletonBox(width: s, height: s, radius: 12),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -368,6 +330,158 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     );
   }
 
+  Widget _buildGridContent(BuildContext context, List<User> activeUsers, bool isDark) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double gap = 10.0;
+        final double s = (constraints.maxWidth - (2 * gap)) / 3;
+        final double bigSize = 2 * s + gap;
+
+        return Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: bigSize,
+                  height: bigSize,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[0],
+                    rank: 1,
+                    height: bigSize,
+                    isDark: isDark,
+                    showCrown: true,
+                  ),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: s,
+                  height: bigSize,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: s,
+                        height: s,
+                        child: _buildWePlayCard(
+                          context,
+                          user: activeUsers[1],
+                          rank: 2,
+                          height: s,
+                          isDark: isDark,
+                          showCrown: true,
+                        ),
+                      ),
+                      SizedBox(height: gap),
+                      SizedBox(
+                        width: s,
+                        height: s,
+                        child: _buildWePlayCard(
+                          context,
+                          user: activeUsers[2],
+                          rank: 3,
+                          height: s,
+                          isDark: isDark,
+                          showCrown: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: gap),
+            Row(
+              children: [
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[3],
+                    rank: 4,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[4],
+                    rank: 5,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[5],
+                    rank: 6,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: gap),
+            Row(
+              children: [
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[6],
+                    rank: 7,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[7],
+                    rank: 8,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: s,
+                  height: s,
+                  child: _buildWePlayCard(
+                    context,
+                    user: activeUsers[8],
+                    rank: 9,
+                    height: s,
+                    isDark: isDark,
+                    showCrown: false,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -375,9 +489,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     final cardColor = isDark ? const Color(0xFF1E1F20) : Colors.white;
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
 
-    if (_isLoading) {
-      return _buildHomeCardSkeleton(context, cardColor, isDark);
-    }
+
 
     final List<User> activeUsers = [];
     if (_users.length >= 9) {
@@ -540,167 +652,24 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
               ],
             ),
           ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final double gap = 10.0;
-                      final double s = (constraints.maxWidth - (2 * gap)) / 3;
-                      final double bigSize = 2 * s + gap;
-
-                      return Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: bigSize,
-                                height: bigSize,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[0],
-                                  rank: 1,
-                                  height: bigSize,
-                                  isDark: isDark,
-                                  showCrown: true,
-                                ),
-                              ),
-                              SizedBox(width: gap),
-                              SizedBox(
-                                width: s,
-                                height: bigSize,
-                                child: Column(
-                                  children: [
-                                    SizedBox(
-                                      width: s,
-                                      height: s,
-                                      child: _buildWePlayCard(
-                                        context,
-                                        user: activeUsers[1],
-                                        rank: 2,
-                                        height: s,
-                                        isDark: isDark,
-                                        showCrown: true,
-                                      ),
-                                    ),
-                                    SizedBox(height: gap),
-                                    SizedBox(
-                                      width: s,
-                                      height: s,
-                                      child: _buildWePlayCard(
-                                        context,
-                                        user: activeUsers[2],
-                                        rank: 3,
-                                        height: s,
-                                        isDark: isDark,
-                                        showCrown: true,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: gap),
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[3],
-                                  rank: 4,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                              SizedBox(width: gap),
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[4],
-                                  rank: 5,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                              SizedBox(width: gap),
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[5],
-                                  rank: 6,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: gap),
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[6],
-                                  rank: 7,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                              SizedBox(width: gap),
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[7],
-                                  rank: 8,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                              SizedBox(width: gap),
-                              SizedBox(
-                                width: s,
-                                height: s,
-                                child: _buildWePlayCard(
-                                  context,
-                                  user: activeUsers[8],
-                                  rank: 9,
-                                  height: s,
-                                  isDark: isDark,
-                                  showCrown: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 250),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        if (_isLoading)
+                          _buildSkeletonContent(context, isDark)
+                        else
+                          _buildGridContent(context, activeUsers, isDark),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
