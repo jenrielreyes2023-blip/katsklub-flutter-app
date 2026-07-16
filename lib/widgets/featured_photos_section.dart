@@ -114,6 +114,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
       return const SizedBox.shrink();
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -148,13 +150,13 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Featured Photos',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1C1E21),
+                      color: isDark ? Colors.white : const Color(0xFF1C1E21),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -218,16 +220,18 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
   }
 
   Widget _buildAddPlaceholderCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: _showAddOptions,
       child: Container(
         width: 100,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
+          color: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: const Color(0xFFE5E7EB),
+            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
             width: 1.5,
             style: BorderStyle.solid,
           ),
@@ -238,7 +242,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF242526) : Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -255,13 +259,13 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Add New',
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
               ),
             ),
           ],
