@@ -733,7 +733,7 @@ class _ExpandableRepostTextState extends State<_ExpandableRepostText> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF6B7280),
+                      color: Color(0xFFFF7A45),
                       decoration: TextDecoration.underline,
                     ),
                   ),

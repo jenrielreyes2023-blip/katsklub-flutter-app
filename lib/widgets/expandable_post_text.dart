@@ -250,12 +250,10 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text(
                       widget.expanded ? 'See less' : 'See more',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? const Color(0xFFB0B3B8)
-                            : const Color(0xFF65676B),
+                        color: Color(0xFFFF7A45),
                       ),
                     ),
                   ),
