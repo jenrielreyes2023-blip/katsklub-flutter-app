@@ -5,7 +5,6 @@ import '../models/user.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../services/feed_service.dart';
-import 'gold_shimmer_text.dart';
 import 'loading_skeletons.dart';
 
 class TopUsersHomeCard extends StatefulWidget {
@@ -81,18 +80,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     }
   }
 
-  int _calculateLevel(int points) {
-    if (points < 100) return 1;
-    if (points < 300) return 2;
-    if (points < 600) return 3;
-    if (points < 1000) return 4;
-    if (points < 2000) return 5;
-    if (points < 3500) return 6;
-    if (points < 5500) return 7;
-    if (points < 8000) return 8;
-    if (points < 11000) return 9;
-    return 10;
-  }
+
 
   Widget _buildCharmLevelBadge(int level) {
     return Container(
@@ -124,323 +112,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPodiumUser(BuildContext context, {
-    required String username,
-    required String fullName,
-    required int rank,
-    required double avatarSize,
-    required double yOffset,
-    required int charmPoints,
-    required bool isDark,
-    String? avatarUrl,
-  }) {
-    final rankColor = _getRankColor(rank);
-    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final isGemini = username.toLowerCase() == 'gemini';
-    final level = _calculateLevel(charmPoints);
-
-    // Mock user for initials
-    final tempUser = User.fromJson({
-      'username': username,
-      'fullName': fullName,
-    });
-
-    Widget avatarChild;
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      avatarChild = CachedNetworkImage(
-        imageUrl: ApiConfig.assetUrl(avatarUrl),
-        fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => Center(
-          child: Text(
-            tempUser.initials,
-            style: TextStyle(
-              color: titleColor,
-              fontWeight: FontWeight.w800,
-              fontSize: avatarSize * 0.35,
-            ),
-          ),
-        ),
-      );
-    } else {
-      avatarChild = Center(
-        child: Text(
-          tempUser.initials,
-          style: TextStyle(
-            color: titleColor,
-            fontWeight: FontWeight.w800,
-            fontSize: avatarSize * 0.35,
-          ),
-        ),
-      );
-    }
-
-    return Transform.translate(
-      offset: Offset(0, yOffset),
-      child: GestureDetector(
-        onTap: () => _navigateToProfile(context, username),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                // Glowing background ring for 1st rank
-                if (rank == 1)
-                  Container(
-                    width: avatarSize + 8,
-                    height: avatarSize + 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: rankColor.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                  ),
-                // Avatar container with rank border
-                Container(
-                  width: avatarSize,
-                  height: avatarSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: rankColor,
-                      width: rank == 1 ? 3.0 : 2.5,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Container(
-                      color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-                      child: avatarChild,
-                    ),
-                  ),
-                ),
-                // Crown Badge / Rank Badge
-                Positioned(
-                  top: -6,
-                  child: rank == 1
-                      ? const Icon(
-                          Icons.workspace_premium_rounded,
-                          color: Color(0xFFFFD700),
-                          size: 20,
-                        )
-                      : Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: rankColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.star_rounded,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                        ),
-                ),
-                // Rank number at the bottom right
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: rankColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF1E1F20) : Colors.white,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Text(
-                      '$rank',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            isGemini
-                ? GoldShimmerText(
-                    text: fullName,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  )
-                : Text(
-                    fullName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: titleColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-            const SizedBox(height: 2),
-            Text(
-              '@$username',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            _buildCharmLevelBadge(level),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmallTileUser(BuildContext context, {
-    required String username,
-    required String fullName,
-    required int rank,
-    required int charmPoints,
-    required bool isDark,
-    String? avatarUrl,
-  }) {
-    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final tempUser = User.fromJson({
-      'username': username,
-      'fullName': fullName,
-    });
-    final level = _calculateLevel(charmPoints);
-
-    Widget avatarChild;
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      avatarChild = CachedNetworkImage(
-        imageUrl: ApiConfig.assetUrl(avatarUrl),
-        fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => Center(
-          child: Text(
-            tempUser.initials,
-            style: TextStyle(
-              color: titleColor,
-              fontWeight: FontWeight.w800,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      );
-    } else {
-      avatarChild = Center(
-        child: Text(
-          tempUser.initials,
-          style: TextStyle(
-            color: titleColor,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _navigateToProfile(context, username),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: Container(
-                        color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-                        child: avatarChild,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF9CA3AF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '$rank',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 7,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      fullName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: titleColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '@$username',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        _buildCharmLevelBadge(level),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -477,6 +148,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
               ),
             ),
             const SizedBox(height: 8),
+            // Top Row (1st, 2nd, 3rd)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -484,13 +156,13 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                 children: [
                   const Expanded(
                     flex: 5,
-                    child: SkeletonBox(width: double.infinity, height: 180, radius: 16),
+                    child: SkeletonBox(width: double.infinity, height: 188, radius: 12),
                   ),
                   const SizedBox(width: 10),
                   const Expanded(
                     flex: 5,
                     child: SizedBox(
-                      height: 180,
+                      height: 188,
                       child: Column(
                         children: [
                           Expanded(
@@ -508,6 +180,27 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
               ),
             ),
             const SizedBox(height: 12),
+            // Middle Row (4th, 5th, 6th)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: SkeletonBox(width: double.infinity, height: 105, radius: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Bottom Row (7th, 8th, 9th)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -533,24 +226,17 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     );
   }
 
-  String _formatPoints(int points) {
-    if (points >= 1000000) {
-      return '${(points / 1000000).toStringAsFixed(1)}M';
-    }
-    if (points >= 1000) {
-      return '${(points / 1000).toStringAsFixed(1)}k';
-    }
-    return points.toString();
-  }
-
-  Widget _buildFeaturedSquareUser(
+  Widget _buildWePlayCard(
     BuildContext context, {
     required User user,
     required int rank,
     required double height,
     required bool isDark,
+    required bool showCrown,
   }) {
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final bannerBg = isDark ? const Color(0xFF242526).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85);
+    final charmColor = isDark ? const Color(0xFFFF9F7C) : const Color(0xFFFF5E3A);
     final rankColor = _getRankColor(rank);
 
     Widget imageWidget;
@@ -578,8 +264,43 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
             style: TextStyle(
               color: titleColor,
               fontWeight: FontWeight.w900,
-              fontSize: 32,
+              fontSize: height > 120 ? 32 : 20,
             ),
+          ),
+        ),
+      );
+    }
+
+    Widget? crownWidget;
+    if (showCrown) {
+      IconData crownIcon = Icons.workspace_premium_rounded;
+      Color crownColor = const Color(0xFFFFD700); // Gold
+      if (rank == 2) {
+        crownColor = const Color(0xFFC0C0C0); // Silver
+      } else if (rank == 3) {
+        crownColor = const Color(0xFFCD7F32); // Bronze
+      }
+
+      crownWidget = Positioned(
+        top: -4,
+        left: -4,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 4,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(3),
+          child: Icon(
+            crownIcon,
+            color: crownColor,
+            size: 16,
           ),
         ),
       );
@@ -587,355 +308,74 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
 
     return GestureDetector(
       onTap: () => _navigateToProfile(context, user.username ?? ''),
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: rankColor, width: 2.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(child: imageWidget),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.8),
-                      Colors.black.withValues(alpha: 0.3),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            height: height,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: rank <= 3 ? rankColor : (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB)),
+                width: rank <= 3 ? 2.0 : 1.0,
               ),
             ),
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: rankColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 12),
-                    const SizedBox(width: 2),
-                    Text(
-                      '$rank',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 8,
-              left: 8,
-              right: 8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          user.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                          ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                Positioned.fill(child: imageWidget),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: bannerBg,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$rank.${user.displayName}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : const Color(0xFF111827),
+                                  fontSize: height > 120 ? 12 : 10.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _buildCharmLevelBadge(user.charmLevel),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      _buildCharmLevelBadge(user.charmLevel),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_formatPoints(user.charmPoints)} CP',
-                    style: const TextStyle(
-                      color: Color(0xFFFF9F7C),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRightSideTileUser(
-    BuildContext context, {
-    required User user,
-    required int rank,
-    required bool isDark,
-  }) {
-    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final rankColor = _getRankColor(rank);
-
-    Widget avatarWidget;
-    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
-      avatarWidget = CachedNetworkImage(
-        imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    } else {
-      avatarWidget = Container(
-        color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
-        child: Center(
-          child: Text(
-            user.initials,
-            style: TextStyle(
-              color: titleColor,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () => _navigateToProfile(context, user.username ?? ''),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.5) : const Color(0xFFF3F4F6).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: rankColor.withValues(alpha: 0.6), width: 1.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: rankColor, width: 2),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: avatarWidget,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          user.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 1),
+                        Text(
+                          'Charm ${user.charmPoints}',
                           style: TextStyle(
-                            color: titleColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
+                            color: charmColor,
+                            fontSize: height > 120 ? 9.5 : 8.5,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      _buildCharmLevelBadge(user.charmLevel),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_formatPoints(user.charmPoints)} CP',
-                        style: const TextStyle(
-                          color: Color(0xFFFF7A45),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: rankColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '#$rank',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 7.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomSquareUser(
-    BuildContext context, {
-    required User user,
-    required int rank,
-    required bool isDark,
-  }) {
-    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final rankColor = _getRankColor(rank);
-
-    Widget imageWidget;
-    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
-      imageWidget = CachedNetworkImage(
-        imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    } else {
-      imageWidget = Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark 
-                ? [const Color(0xFF3E4042), const Color(0xFF2D2E30)]
-                : [const Color(0xFFE5E7EB), const Color(0xFFD1D5DB)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            user.initials,
-            style: TextStyle(
-              color: titleColor,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () => _navigateToProfile(context, user.username ?? ''),
-      child: Container(
-        height: 105,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: rankColor.withValues(alpha: 0.6), width: 1.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(child: imageWidget),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.82),
-                      Colors.black.withValues(alpha: 0.2),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    stops: const [0.0, 0.45, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 5,
-              left: 5,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: rankColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '#$rank',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 5,
-              left: 5,
-              right: 5,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    user.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w900,
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 1),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_formatPoints(user.charmPoints)} CP',
-                        style: const TextStyle(
-                          color: Color(0xFFFF9F7C),
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      _buildCharmLevelBadge(user.charmLevel),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (crownWidget != null) crownWidget,
+        ],
       ),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -949,7 +389,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     }
 
     final List<User> activeUsers = [];
-    if (_users.length >= 6) {
+    if (_users.length >= 9) {
       activeUsers.addAll(_users);
     }
 
@@ -957,39 +397,54 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       User.fromJson(const {
         'username': 'gemini',
         'fullName': 'Gemini AI',
-        'charmPoints': 12500,
+        'charmPoints': 319283,
         'isVerified': true,
       }),
       User.fromJson(const {
         'username': 'kat_boss',
         'fullName': 'Kat Boss',
-        'charmPoints': 9800,
+        'charmPoints': 222695,
         'isVerified': true,
       }),
       User.fromJson(const {
         'username': 'music_fanatic',
         'fullName': 'Music Fanatic',
-        'charmPoints': 7400,
+        'charmPoints': 207150,
       }),
       User.fromJson(const {
         'username': 'katsklub_dev',
         'fullName': 'KatsKlub Dev',
-        'charmPoints': 5200,
+        'charmPoints': 196963,
         'isVerified': true,
       }),
       User.fromJson(const {
         'username': 'traveler_01',
         'fullName': 'Traveler One',
-        'charmPoints': 3900,
+        'charmPoints': 133679,
       }),
       User.fromJson(const {
         'username': 'designer_cat',
         'fullName': 'Designer Cat',
-        'charmPoints': 2500,
+        'charmPoints': 129929,
+      }),
+      User.fromJson(const {
+        'username': 'sythe_user',
+        'fullName': 'SYTHE',
+        'charmPoints': 122294,
+      }),
+      User.fromJson(const {
+        'username': 'haize_2.0',
+        'fullName': 'haize 2.0',
+        'charmPoints': 117635,
+      }),
+      User.fromJson(const {
+        'username': 'cent_aams',
+        'fullName': 'CENT aams',
+        'charmPoints': 90226,
       }),
     ];
 
-    while (activeUsers.length < 6) {
+    while (activeUsers.length < 9) {
       activeUsers.add(mockUserList[activeUsers.length]);
     }
 
@@ -1084,36 +539,41 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                   children: [
                     Expanded(
                       flex: 5,
-                      child: _buildFeaturedSquareUser(
+                      child: _buildWePlayCard(
                         context,
                         user: activeUsers[0],
                         rank: 1,
-                        height: 180,
+                        height: 188,
                         isDark: isDark,
+                        showCrown: true,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       flex: 5,
                       child: SizedBox(
-                        height: 180,
+                        height: 188,
                         child: Column(
                           children: [
                             Expanded(
-                              child: _buildRightSideTileUser(
+                              child: _buildWePlayCard(
                                 context,
                                 user: activeUsers[1],
                                 rank: 2,
+                                height: 90,
                                 isDark: isDark,
+                                showCrown: true,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Expanded(
-                              child: _buildRightSideTileUser(
+                              child: _buildWePlayCard(
                                 context,
                                 user: activeUsers[2],
                                 rank: 3,
+                                height: 90,
                                 isDark: isDark,
+                                showCrown: true,
                               ),
                             ),
                           ],
@@ -1126,29 +586,72 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                 Row(
                   children: [
                     Expanded(
-                      child: _buildBottomSquareUser(
+                      child: _buildWePlayCard(
                         context,
                         user: activeUsers[3],
                         rank: 4,
+                        height: 105,
                         isDark: isDark,
+                        showCrown: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _buildBottomSquareUser(
+                      child: _buildWePlayCard(
                         context,
                         user: activeUsers[4],
                         rank: 5,
+                        height: 105,
                         isDark: isDark,
+                        showCrown: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _buildBottomSquareUser(
+                      child: _buildWePlayCard(
                         context,
                         user: activeUsers[5],
                         rank: 6,
+                        height: 105,
                         isDark: isDark,
+                        showCrown: false,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildWePlayCard(
+                        context,
+                        user: activeUsers[6],
+                        rank: 7,
+                        height: 105,
+                        isDark: isDark,
+                        showCrown: false,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildWePlayCard(
+                        context,
+                        user: activeUsers[7],
+                        rank: 8,
+                        height: 105,
+                        isDark: isDark,
+                        showCrown: false,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildWePlayCard(
+                        context,
+                        user: activeUsers[8],
+                        rank: 9,
+                        height: 105,
+                        isDark: isDark,
+                        showCrown: false,
                       ),
                     ),
                   ],
