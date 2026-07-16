@@ -7,6 +7,7 @@ import '../screens/top_users_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../services/feed_service.dart';
 import 'loading_skeletons.dart';
+import 'gold_shimmer_text.dart';
 
 class TopUsersHomeCard extends StatefulWidget {
   const TopUsersHomeCard({super.key});
@@ -311,16 +312,24 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  '$rank.${user.displayName}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : const Color(0xFF111827),
-                                    fontSize: height > 120 ? 12 : 10.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                                child: (user.isAdmin || user.username?.toLowerCase() == 'gemini')
+                                    ? GoldShimmerText(
+                                        text: '$rank.${user.displayName}',
+                                        style: TextStyle(
+                                          fontSize: height > 120 ? 12 : 10.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      )
+                                    : Text(
+                                        '$rank.${user.displayName}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : const Color(0xFF111827),
+                                          fontSize: height > 120 ? 12 : 10.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(width: 4),
                               _buildCharmLevelBadge(user.charmLevel),

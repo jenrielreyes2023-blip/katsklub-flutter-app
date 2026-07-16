@@ -516,16 +516,24 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  '$rank.${user.displayName}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : const Color(0xFF111827),
-                                    fontSize: height > 120 ? 12 : 10.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                                child: (user.isAdmin || user.username?.toLowerCase() == 'gemini')
+                                    ? GoldShimmerText(
+                                        text: '$rank.${user.displayName}',
+                                        style: TextStyle(
+                                          fontSize: height > 120 ? 12 : 10.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      )
+                                    : Text(
+                                        '$rank.${user.displayName}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : const Color(0xFF111827),
+                                          fontSize: height > 120 ? 12 : 10.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(width: 4),
                               _buildCharmLevelBadge(user.charmLevel),
@@ -838,7 +846,7 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                       title: Row(
                         children: [
                           Flexible(
-                            child: isGemini
+                            child: (tu.user.isAdmin || isGemini)
                                 ? GoldShimmerText(
                                     text: tu.user.displayName,
                                     style: const TextStyle(
