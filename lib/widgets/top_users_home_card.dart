@@ -4,6 +4,7 @@ import '../screens/top_users_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../services/feed_service.dart';
 import 'gold_shimmer_text.dart';
+import 'loading_skeletons.dart';
 
 class TopUsersHomeCard extends StatefulWidget {
   const TopUsersHomeCard({super.key});
@@ -12,10 +13,14 @@ class TopUsersHomeCard extends StatefulWidget {
   State<TopUsersHomeCard> createState() => _TopUsersHomeCardState();
 }
 
-class _TopUsersHomeCardState extends State<TopUsersHomeCard> {
+class _TopUsersHomeCardState extends State<TopUsersHomeCard>
+    with AutomaticKeepAliveClientMixin {
   final FeedService _feedService = FeedService();
   List<User> _users = [];
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -396,30 +401,158 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard> {
     );
   }
 
+  Widget _buildHomeCardSkeleton(BuildContext context, Color cardColor, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+          width: 1,
+        ),
+      ),
+      child: SkeletonPulse(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const SkeletonBox(width: 24, height: 24, radius: 6),
+                      const SizedBox(width: 8),
+                      const SkeletonBox(width: 140, height: 14, radius: 7),
+                    ],
+                  ),
+                  const SkeletonBox(width: 50, height: 14, radius: 7),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const SkeletonBox(width: 52, height: 52, radius: 26),
+                        const SizedBox(height: 8),
+                        const SkeletonBox(width: 60, height: 10, radius: 5),
+                        const SizedBox(height: 4),
+                        const SkeletonBox(width: 40, height: 8, radius: 4),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const SkeletonBox(width: 66, height: 66, radius: 33),
+                        const SizedBox(height: 8),
+                        const SkeletonBox(width: 70, height: 12, radius: 6),
+                        const SizedBox(height: 4),
+                        const SkeletonBox(width: 50, height: 8, radius: 4),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const SkeletonBox(width: 50, height: 50, radius: 25),
+                        const SizedBox(height: 8),
+                        const SkeletonBox(width: 60, height: 10, radius: 5),
+                        const SizedBox(height: 4),
+                        const SkeletonBox(width: 40, height: 8, radius: 4),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.3) : const Color(0xFFE6EBF2).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: const Row(
+                        children: [
+                          SkeletonBox(width: 24, height: 24, radius: 12),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SkeletonBox(width: 50, height: 8, radius: 4),
+                                SizedBox(height: 4),
+                                SkeletonBox(width: 30, height: 6, radius: 3),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2D2E30).withValues(alpha: 0.3) : const Color(0xFFE6EBF2).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: const Row(
+                        children: [
+                          SkeletonBox(width: 24, height: 24, radius: 12),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SkeletonBox(width: 50, height: 8, radius: 4),
+                                SizedBox(height: 4),
+                                SkeletonBox(width: 30, height: 6, radius: 3),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xFF1E1F20) : Colors.white;
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
 
     if (_isLoading) {
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        height: 180,
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-            width: 1,
-          ),
-        ),
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF7A45),
-          ),
-        ),
-      );
+      return _buildHomeCardSkeleton(context, cardColor, isDark);
     }
 
     // Determine active top users list

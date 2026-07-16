@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/gold_shimmer_text.dart';
+import '../widgets/loading_skeletons.dart';
 import 'user_profile_screen.dart';
 
 class TopUser {
@@ -25,12 +26,16 @@ class TopUsersScreen extends StatefulWidget {
   State<TopUsersScreen> createState() => _TopUsersScreenState();
 }
 
-class _TopUsersScreenState extends State<TopUsersScreen> {
+class _TopUsersScreenState extends State<TopUsersScreen>
+    with AutomaticKeepAliveClientMixin {
   final FeedService _feedService = FeedService();
   List<TopUser> _topUsers = [];
   final Set<String> _followingInFlight = <String>{};
   final Set<String> _followedUsernames = <String>{};
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -276,8 +281,54 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
     }
   }
 
+  Widget _buildLeaderboardSkeleton(BuildContext context, Color cardColor) {
+    return SkeletonPulse(
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Card(
+            color: cardColor,
+            elevation: 0,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  SkeletonBox(width: 46, height: 46, radius: 23),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            SkeletonBox(width: 110, height: 14, radius: 7),
+                            SizedBox(width: 6),
+                            SkeletonBox(width: 32, height: 14, radius: 7),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        SkeletonBox(width: 70, height: 11, radius: 6),
+                      ],
+                    ),
+                  ),
+                  SkeletonBox(width: 68, height: 26, radius: 13),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF18191A) : Colors.white;
     final cardColor = isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6);
@@ -306,11 +357,7 @@ class _TopUsersScreenState extends State<TopUsersScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFFFF7A45),
-                ),
-              )
+            ? _buildLeaderboardSkeleton(context, cardColor)
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 itemCount: _topUsers.length,
