@@ -77,47 +77,9 @@ class _TopUsersScreenState extends State<TopUsersScreen>
         return tu;
       }).toList();
 
-      final Set<String> loadedUsernames = fetchedList.map((tu) => tu.user.username!.toLowerCase()).toSet();
-      final mockFallbackNames = [
-        'music_fanatic', 'traveler_01', 'designer_cat', 'sythe_user', 'haize_2.0',
-        'cent_aams', 'charlie_p', 'john_doe', 'alice_w', 'bob_smith',
-        'kats_klub_superstar', 'alpha_dog', 'beta_cat', 'charlie_panda', 'delta_bunny',
-        'omega_wolf', 'star_gazer', 'code_ninja', 'flutter_fanatic', 'dart_master',
-        'shadow_hunter', 'lone_wolf', 'silver_surfer', 'gold_miner', 'bronze_medal',
-        'cyber_junkie', 'pixel_artist', 'sound_wave', 'rhythm_master', 'melody_maker',
-        'harmony_seeker', 'beat_drop', 'groove_cat', 'jazz_panda', 'rock_star',
-        'pop_diva', 'indie_spirit', 'folk_hero', 'blues_man', 'metal_head'
-      ];
-
-      int mockIndex = 0;
-      while (fetchedList.length < 50) {
-        final mockName = mockFallbackNames[mockIndex % mockFallbackNames.length] + '_${fetchedList.length + 1}';
-        final mockScore = fetchedList.isNotEmpty 
-            ? (fetchedList.last.score * 0.95).round().clamp(500, 1000000) 
-            : 50000 - (fetchedList.length * 1000);
-
-        final u = User.fromJson({
-          'id': 'mock-${fetchedList.length}',
-          'username': mockName,
-          'fullName': mockName.replaceAll('_', ' ').toUpperCase(),
-          'avatarUrl': '',
-          'isVerified': false,
-          'isFollowing': false,
-          'charmPoints': mockScore,
-        });
-
-        fetchedList.add(TopUser(
-          user: u,
-          rank: fetchedList.length + 1,
-          score: mockScore,
-          status: 'Popular Member',
-        ));
-        mockIndex++;
-      }
-
       if (mounted) {
         setState(() {
-          _topUsers = fetchedList;
+          _topUsers = fetchedList.take(50).toList();
           _followedUsernames.clear();
           for (final tu in _topUsers) {
             if (tu.user.isFollowing) {
@@ -130,64 +92,11 @@ class _TopUsersScreenState extends State<TopUsersScreen>
       return;
     } catch (_) {}
 
-    // Fallback to mock data
     if (mounted) {
       setState(() {
-        _initializeTopUsers();
+        _topUsers = [];
         _isLoading = false;
       });
-    }
-  }
-
-  void _initializeTopUsers() {
-    final List<TopUser> fetchedList = [];
-    final mockFallbackNames = [
-      'gemini', 'kat_boss', 'music_fanatic', 'katsklub_dev', 'traveler_01',
-      'designer_cat', 'sythe_user', 'haize_2.0', 'cent_aams', 'charlie_p',
-      'john_doe', 'alice_w', 'bob_smith', 'kats_klub_superstar', 'alpha_dog',
-      'beta_cat', 'charlie_panda', 'delta_bunny', 'omega_wolf', 'star_gazer',
-      'code_ninja', 'flutter_fanatic', 'dart_master', 'shadow_hunter', 'lone_wolf',
-      'silver_surfer', 'gold_miner', 'bronze_medal', 'cyber_junkie', 'pixel_artist',
-      'sound_wave', 'rhythm_master', 'melody_maker', 'harmony_seeker', 'beat_drop',
-      'groove_cat', 'jazz_panda', 'rock_star', 'pop_diva', 'indie_spirit',
-      'folk_hero', 'blues_man', 'metal_head', 'guitar_hero', 'techno_beat',
-      'synth_wave', 'neon_dream', 'pixel_boy', 'retro_cat', 'retro_dog'
-    ];
-
-    for (int i = 0; i < 50; i++) {
-      final mockName = mockFallbackNames[i % mockFallbackNames.length];
-      final score = 320000 - (i * 6200);
-
-      String status = 'Popular Member';
-      if (i == 0) status = 'Outstanding Admin';
-      else if (i == 1) status = 'Top Contributor';
-      else if (i == 2) status = 'Daily Star';
-      else if (i <= 4) status = 'Rising Star';
-
-      final u = User.fromJson({
-        'id': 'fallback-$i',
-        'username': mockName,
-        'fullName': mockName.replaceAll('_', ' ').toUpperCase(),
-        'avatarUrl': '',
-        'isVerified': i < 4,
-        'isFollowing': false,
-        'charmPoints': score,
-      });
-
-      fetchedList.add(TopUser(
-        user: u,
-        rank: i + 1,
-        score: score,
-        status: status,
-      ));
-    }
-
-    _topUsers = fetchedList;
-    _followedUsernames.clear();
-    for (final tu in _topUsers) {
-      if (tu.user.isFollowing) {
-        _followedUsernames.add(tu.user.username!.toLowerCase());
-      }
     }
   }
 
@@ -705,6 +614,192 @@ class _TopUsersScreenState extends State<TopUsersScreen>
     );
   }
 
+  Widget _buildUserRow(
+    BuildContext context,
+    TopUser tu,
+    Color cardColor,
+    bool isDark,
+    Color titleColor,
+    Color subtitleColor,
+  ) {
+    final isGemini = tu.user.username?.toLowerCase() == 'gemini';
+    final isFollowing = _followedUsernames.contains(tu.user.username!.toLowerCase());
+    final isFlight = _followingInFlight.contains(tu.user.username!.toLowerCase());
+
+    return Card(
+      color: cardColor,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListTile(
+        onTap: () => _openProfile(tu.user.username!),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _getRankColor(tu.rank),
+                  width: 2.5,
+                ),
+              ),
+              child: ClipOval(
+                child: Container(
+                  color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+                  child: (tu.user.avatarUrl != null && tu.user.avatarUrl!.isNotEmpty)
+                      ? CachedNetworkImage(
+                          imageUrl: ApiConfig.assetUrl(tu.user.avatarUrl!),
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Center(
+                            child: Text(
+                              tu.user.initials,
+                              style: TextStyle(
+                                color: titleColor,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            tu.user.initials,
+                            style: TextStyle(
+                              color: titleColor,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: _getRankColor(tu.rank),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${tu.rank}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Flexible(
+              child: (tu.user.isAdmin || isGemini)
+                  ? GoldShimmerText(
+                      text: tu.user.displayName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                  : Text(
+                      tu.user.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+            ),
+            if (tu.user.isVerified) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.verified,
+                color: Color(0xFFFF7A45),
+                size: 15,
+              ),
+            ],
+            const SizedBox(width: 6),
+            _buildCharmLevelBadge(tu.user.charmLevel),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 2),
+            Text(
+              tu.status,
+              style: const TextStyle(
+                color: Color(0xFFFF7A45),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              '${tu.score.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} pts',
+              style: TextStyle(
+                color: subtitleColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        trailing: SizedBox(
+          width: 82,
+          height: 32,
+          child: OutlinedButton(
+            onPressed: isFlight ? null : () => _toggleFollow(tu.user.username!),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                color: isFollowing
+                    ? (isDark ? Colors.white30 : Colors.black26)
+                    : const Color(0xFFFF7A45),
+                width: 1.2,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: EdgeInsets.zero,
+            ),
+            child: isFlight
+                ? const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: Color(0xFFFF7A45),
+                    ),
+                  )
+                : Text(
+                    isFollowing ? 'Following' : 'Follow',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isFollowing
+                          ? titleColor
+                          : const Color(0xFFFF7A45),
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -739,13 +834,17 @@ class _TopUsersScreenState extends State<TopUsersScreen>
             ? _buildLeaderboardSkeleton(context, cardColor, isDark)
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: _topUsers.length <= 9 ? 1 : _topUsers.length - 7,
+                itemCount: _topUsers.length < 9 
+                    ? _topUsers.length 
+                    : _topUsers.length - 7,
                 itemBuilder: (context, index) {
+                  if (_topUsers.length < 9) {
+                    final tu = _topUsers[index];
+                    return _buildUserRow(context, tu, cardColor, isDark, titleColor, subtitleColor);
+                  }
+
                   if (index == 0) {
-                    final top9 = _topUsers.length >= 9 
-                        ? _topUsers.sublist(0, 9) 
-                        : _topUsers;
-                    return _buildWePlayCollage(context, top9, isDark);
+                    return _buildWePlayCollage(context, _topUsers.sublist(0, 9), isDark);
                   }
 
                   if (index == 1) {
@@ -764,182 +863,7 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                   }
 
                   final tu = _topUsers[index + 7];
-                  final isGemini = tu.user.username?.toLowerCase() == 'gemini';
-                  final isFollowing = _followedUsernames.contains(tu.user.username!.toLowerCase());
-                  final isFlight = _followingInFlight.contains(tu.user.username!.toLowerCase());
-
-                  return Card(
-                    color: cardColor,
-                    elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ListTile(
-                      onTap: () => _openProfile(tu.user.username!),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: _getRankColor(tu.rank),
-                                width: 2.5,
-                              ),
-                            ),
-                            child: ClipOval(
-                              child: Container(
-                                color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-                                child: (tu.user.avatarUrl != null && tu.user.avatarUrl!.isNotEmpty)
-                                    ? CachedNetworkImage(
-                                        imageUrl: ApiConfig.assetUrl(tu.user.avatarUrl!),
-                                        fit: BoxFit.cover,
-                                        errorWidget: (_, __, ___) => Center(
-                                          child: Text(
-                                            tu.user.initials,
-                                            style: TextStyle(
-                                              color: titleColor,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          tu.user.initials,
-                                          style: TextStyle(
-                                            color: titleColor,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: _getRankColor(tu.rank),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '${tu.rank}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      title: Row(
-                        children: [
-                          Flexible(
-                            child: (tu.user.isAdmin || isGemini)
-                                ? GoldShimmerText(
-                                    text: tu.user.displayName,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  )
-                                : Text(
-                                    tu.user.displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: titleColor,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                          ),
-                          if (tu.user.isVerified) ...[
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.verified,
-                              color: Color(0xFFFF7A45),
-                              size: 15,
-                            ),
-                          ],
-                          const SizedBox(width: 6),
-                          _buildCharmLevelBadge(tu.user.charmLevel),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 2),
-                          Text(
-                            tu.status,
-                            style: const TextStyle(
-                              color: Color(0xFFFF7A45),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            '${tu.score.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} pts',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: SizedBox(
-                        width: 82,
-                        height: 32,
-                        child: OutlinedButton(
-                          onPressed: isFlight ? null : () => _toggleFollow(tu.user.username!),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: isFollowing
-                                  ? (isDark ? Colors.white30 : Colors.black26)
-                                  : const Color(0xFFFF7A45),
-                              width: 1.2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: isFlight
-                              ? const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                    color: Color(0xFFFF7A45),
-                                  ),
-                                )
-                              : Text(
-                                  isFollowing ? 'Following' : 'Follow',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: isFollowing
-                                        ? titleColor
-                                        : const Color(0xFFFF7A45),
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildUserRow(context, tu, cardColor, isDark, titleColor, subtitleColor);
                 },
               ),
       ),
