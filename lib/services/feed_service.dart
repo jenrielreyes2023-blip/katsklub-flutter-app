@@ -1298,7 +1298,7 @@ class FeedService {
 
   Future<List<User>> loadLeaderboard() async {
     try {
-      final data = await _authenticatedGet('/api/users/leaderboard');
+      final data = await _authenticatedGet('/api/users/leaderboard?limit=50');
       final list = data['leaderboard'];
       if (list is List) {
         return list

@@ -848,10 +848,14 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                   }
 
                   if (index == 1) {
+                    final maxRank = _topUsers.length;
+                    final titleText = maxRank > 10 
+                        ? 'Leaderboard Rankings (10-$maxRank)' 
+                        : 'Leaderboard Rankings (10)';
                     return Padding(
                       padding: const EdgeInsets.only(top: 20, bottom: 12),
                       child: Text(
-                        'Leaderboard Rankings (10-50)',
+                        titleText,
                         style: TextStyle(
                           color: titleColor,
                           fontSize: 16,
