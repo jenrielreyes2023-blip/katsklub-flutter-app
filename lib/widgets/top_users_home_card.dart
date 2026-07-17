@@ -24,6 +24,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
   bool _isExpanded = false;
   late final AnimationController _expandController;
   late final Animation<double> _expandAnimation;
+  DateTime? _lastFetchTime;
 
   @override
   bool get wantKeepAlive => true;
@@ -52,6 +53,12 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
   }
 
   Future<void> _loadTopUsers() async {
+    final now = DateTime.now();
+    if (_lastFetchTime != null && now.difference(_lastFetchTime!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastFetchTime = now;
+
     try {
       final list = await _feedService.loadLeaderboard();
       if (list.length >= 3 && mounted) {
@@ -589,6 +596,8 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
               _expandController.reverse();
             });
           }
+        } else if (visibilityInfo.visibleFraction > 0.0) {
+          _loadTopUsers();
         }
       },
       child: Container(
@@ -616,6 +625,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                         _isExpanded = !_isExpanded;
                         if (_isExpanded) {
                           _expandController.forward();
+                          _loadTopUsers();
                         } else {
                           _expandController.reverse();
                         }
