@@ -51,58 +51,9 @@ class _TopUsersScreenState extends State<TopUsersScreen>
     });
 
     try {
-      final List<User> leaderboardUsers = await _feedService.loadLeaderboard();
-      List<User> suggestionUsers = [];
-      try {
-        suggestionUsers = await _feedService.loadFollowSuggestions();
-      } catch (_) {}
-
-      final Map<String, User> uniqueUsers = {};
-      for (final u in leaderboardUsers) {
-        if (u.username != null && u.username!.isNotEmpty) {
-          uniqueUsers[u.username!.toLowerCase()] = u;
-        }
-      }
-      for (final u in suggestionUsers) {
-        if (u.username != null && u.username!.isNotEmpty) {
-          final key = u.username!.toLowerCase();
-          if (!uniqueUsers.containsKey(key)) {
-            uniqueUsers[key] = u;
-          }
-        }
-      }
-
-      // Fetch recent feed posts to find other active posting users (like 'jade')
-      try {
-        final feedResult = await _feedService.loadFeed(offset: 0, limit: 50);
-        final Set<String> missingUsernames = {};
-        for (final post in feedResult.posts) {
-          final username = post.authorUsername;
-          if (username.isNotEmpty) {
-            final key = username.toLowerCase();
-            if (!uniqueUsers.containsKey(key)) {
-              missingUsernames.add(username);
-            }
-          }
-        }
-
-        if (missingUsernames.isNotEmpty) {
-          final List<User?> profiles = await Future.wait(
-            missingUsernames.map((username) => _feedService.loadUserProfile(username)),
-          );
-          for (final profile in profiles) {
-            if (profile != null && profile.username != null && profile.username!.isNotEmpty) {
-              uniqueUsers[profile.username!.toLowerCase()] = profile;
-            }
-          }
-        }
-      } catch (_) {}
-
-      final List<User> combinedList = uniqueUsers.values.toList();
-      combinedList.sort((a, b) => b.charmPoints.compareTo(a.charmPoints));
-
+      final realUsers = await _feedService.loadLeaderboard();
       int rank = 1;
-      final List<TopUser> fetchedList = combinedList.map((user) {
+      final List<TopUser> fetchedList = realUsers.map((user) {
         String status = 'Kat Member';
         if (rank == 1) {
           status = 'Outstanding Member';
