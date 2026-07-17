@@ -51,9 +51,32 @@ class _TopUsersScreenState extends State<TopUsersScreen>
     });
 
     try {
-      final realUsers = await _feedService.loadLeaderboard();
+      final List<User> leaderboardUsers = await _feedService.loadLeaderboard();
+      List<User> suggestionUsers = [];
+      try {
+        suggestionUsers = await _feedService.loadFollowSuggestions();
+      } catch (_) {}
+
+      final Map<String, User> uniqueUsers = {};
+      for (final u in leaderboardUsers) {
+        if (u.username != null && u.username!.isNotEmpty) {
+          uniqueUsers[u.username!.toLowerCase()] = u;
+        }
+      }
+      for (final u in suggestionUsers) {
+        if (u.username != null && u.username!.isNotEmpty) {
+          final key = u.username!.toLowerCase();
+          if (!uniqueUsers.containsKey(key)) {
+            uniqueUsers[key] = u;
+          }
+        }
+      }
+
+      final List<User> combinedList = uniqueUsers.values.toList();
+      combinedList.sort((a, b) => b.charmPoints.compareTo(a.charmPoints));
+
       int rank = 1;
-      final List<TopUser> fetchedList = realUsers.map((user) {
+      final List<TopUser> fetchedList = combinedList.map((user) {
         String status = 'Kat Member';
         if (rank == 1) {
           status = 'Outstanding Member';
