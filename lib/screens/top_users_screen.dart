@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
+import '../services/auth_service.dart';
 import '../widgets/gold_shimmer_text.dart';
 import '../widgets/loading_skeletons.dart';
 import 'user_profile_screen.dart';
@@ -74,7 +75,7 @@ class _TopUsersScreenState extends State<TopUsersScreen>
 
       // Fetch recent feed posts to find other active posting users (like 'jade')
       try {
-        final feedResult = await _feedService.loadFeed(offset: 0, limit: 50);
+        final feedResult = await _feedService.loadFeed(offset: 0, limit: 100);
         final Set<String> missingUsernames = {};
         for (final post in feedResult.posts) {
           final username = post.authorUsername;
@@ -98,7 +99,39 @@ class _TopUsersScreenState extends State<TopUsersScreen>
         }
       } catch (_) {}
 
-      final List<User> combinedList = uniqueUsers.values.toList();
+      // Fetch current user's followers/following to find users like 'vanessa'
+      try {
+        final authUser = await AuthService().getSavedUser();
+        if (authUser != null && authUser.username != null && authUser.username!.isNotEmpty) {
+          final currentUsername = authUser.username!;
+          final List<User> followers = await _feedService.getUserFollowers(currentUsername);
+          final List<User> following = await _feedService.getUserFollowing(currentUsername);
+
+          for (final u in followers) {
+            if (u.username != null && u.username!.isNotEmpty) {
+              final key = u.username!.toLowerCase();
+              if (!uniqueUsers.containsKey(key)) {
+                uniqueUsers[key] = u;
+              }
+            }
+          }
+          for (final u in following) {
+            if (u.username != null && u.username!.isNotEmpty) {
+              final key = u.username!.toLowerCase();
+              if (!uniqueUsers.containsKey(key)) {
+                uniqueUsers[key] = u;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      // Filter out users who have 0 or negative charm points
+      final List<User> combinedList = uniqueUsers.values
+          .where((user) => user.charmPoints > 0)
+          .toList();
+
+      // Sort by charmPoints descending
       combinedList.sort((a, b) => b.charmPoints.compareTo(a.charmPoints));
 
       int rank = 1;
