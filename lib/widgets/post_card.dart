@@ -90,6 +90,9 @@ class _PostCardState extends State<PostCard> {
   void initState() {
     super.initState();
     _post = widget.post;
+    if (_post.isPromotion && _post.imageUrls.isEmpty) {
+      MediaPostLoadRegistry.markReady(_post.id);
+    }
   }
 
   @override
@@ -684,15 +687,32 @@ class _PostCardState extends State<PostCard> {
               const SizedBox(height: 8),
               CachedNetworkImage(
                 imageUrl: _post.imageUrls.first,
-                fit: BoxFit.cover,
                 height: 180,
                 width: double.infinity,
+                imageBuilder: (context, imageProvider) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    MediaPostLoadRegistry.markReady(_post.id);
+                  });
+                  return Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
                 placeholder: (context, url) => Container(
                   height: 180,
                   color: isDark ? const Color(0xFF18191A) : const Color(0xFFF3F4F6),
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
-                errorWidget: (context, url, error) => const SizedBox.shrink(),
+                errorWidget: (context, url, error) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    MediaPostLoadRegistry.markReady(_post.id);
+                  });
+                  return const SizedBox.shrink();
+                },
               ),
             ],
             // CTA Button / Action Row
