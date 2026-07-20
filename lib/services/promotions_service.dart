@@ -10,6 +10,7 @@ class Promotion {
   final String? actionUrl;
   final String buttonText;
   final bool isEnabled;
+  final String? targetUsername;
 
   Promotion({
     required this.id,
@@ -19,6 +20,7 @@ class Promotion {
     this.actionUrl,
     required this.buttonText,
     this.isEnabled = true,
+    this.targetUsername,
   });
 
   Map<String, dynamic> toJson() {
@@ -30,6 +32,7 @@ class Promotion {
       'actionUrl': actionUrl,
       'buttonText': buttonText,
       'isEnabled': isEnabled,
+      'targetUsername': targetUsername,
     };
   }
 
@@ -42,14 +45,16 @@ class Promotion {
       actionUrl: json['actionUrl']?.toString(),
       buttonText: json['buttonText']?.toString() ?? 'Learn More',
       isEnabled: json['isEnabled'] == null ? true : json['isEnabled'] == true,
+      targetUsername: json['targetUsername']?.toString(),
     );
   }
 
   Post toPost() {
+    final cleanUsername = targetUsername?.trim() ?? '';
     return Post(
       id: 'promo_$id',
       authorFullName: title,
-      authorUsername: 'sponsor',
+      authorUsername: cleanUsername.isNotEmpty ? cleanUsername : 'sponsor',
       authorAvatarUrl: '',
       authorIsVerified: true,
       authorIsAdmin: true,
@@ -81,6 +86,7 @@ class Promotion {
       isPromotion: true,
       promotionUrl: actionUrl ?? '',
       promotionButtonText: buttonText,
+      promotionTargetUsername: cleanUsername,
     );
   }
 }

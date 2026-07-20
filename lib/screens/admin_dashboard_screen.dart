@@ -3336,6 +3336,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                   ),
                                   const SizedBox(height: 8),
                                 ],
+                                if (promo.targetUsername != null && promo.targetUsername!.trim().isNotEmpty) ...[
+                                  Text(
+                                    'Linked Profile: @${promo.targetUsername}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFD97706),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                ],
                                 Row(
                                   children: [
                                     if (promo.actionUrl != null && promo.actionUrl!.isNotEmpty)
@@ -3385,6 +3396,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final imageCtrl = TextEditingController(text: promotion?.imageUrl ?? '');
     final actionCtrl = TextEditingController(text: promotion?.actionUrl ?? '');
     final buttonCtrl = TextEditingController(text: promotion?.buttonText ?? '');
+    final targetUserCtrl = TextEditingController(text: promotion?.targetUsername ?? '');
 
     showDialog<void>(
       context: context,
@@ -3421,6 +3433,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   controller: buttonCtrl,
                   decoration: const InputDecoration(labelText: 'Button Label (e.g. Learn More)'),
                 ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: targetUserCtrl,
+                  decoration: const InputDecoration(labelText: 'Target User Profile Link (e.g. human_equality) (optional)'),
+                ),
               ],
             ),
           ),
@@ -3449,6 +3466,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     actionUrl: actionCtrl.text.trim(),
                     buttonText: buttonCtrl.text.trim(),
                     isEnabled: true,
+                    targetUsername: targetUserCtrl.text.trim(),
                   );
                   list.add(newPromo);
                 } else {
@@ -3462,6 +3480,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       actionUrl: actionCtrl.text.trim(),
                       buttonText: buttonCtrl.text.trim(),
                       isEnabled: promotion.isEnabled,
+                      targetUsername: targetUserCtrl.text.trim(),
                     );
                   }
                 }

@@ -565,68 +565,103 @@ class _PostCardState extends State<PostCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header Row
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // App Icon / Logo
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.star_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _post.authorFullName, // Promotion Title
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
+            GestureDetector(
+              onTap: () {
+                if (_post.promotionTargetUsername.isNotEmpty) {
+                  widget.onOpenAuthor?.call(_post);
+                }
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // App Icon / Logo or User Icon
+                    _post.promotionTargetUsername.isNotEmpty
+                        ? Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFFF8A00), width: 1.5),
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: Color(0xFFFF8A00),
+                              size: 20,
+                            ),
+                          )
+                        : Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              child: const Text(
-                                'SPONSORED',
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.star_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                _post.authorFullName, // Promotion Title
                                 style: TextStyle(
                                   fontFamily: 'Inter',
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFFFF8A00),
-                                  letterSpacing: 0.5,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: textColor,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              if (_post.promotionTargetUsername.isNotEmpty) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 11,
+                                  color: Color(0xFFFF8A00),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'SPONSORED',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFFF8A00),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             // Text Content
@@ -665,8 +700,26 @@ class _PostCardState extends State<PostCard> {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _handlePromotionTap(context),
+                        child: Text(
+                          _post.promotionUrl,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            color: Color(0xFF2563EB),
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF8A00),

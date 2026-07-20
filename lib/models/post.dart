@@ -241,6 +241,7 @@ class Post {
     this.isPromotion = false,
     this.promotionUrl = '',
     this.promotionButtonText = '',
+    this.promotionTargetUsername = '',
   });
 
   final String id;
@@ -312,6 +313,7 @@ class Post {
   final bool isPromotion;
   final String promotionUrl;
   final String promotionButtonText;
+  final String promotionTargetUsername;
 
   factory Post.fromJson(Map<String, dynamic> json) {
     final imageUrls = _readImageUrls(json);
@@ -325,6 +327,7 @@ class Post {
       isPromotion: json['isPromotion'] == true || json['is_promotion'] == true,
       promotionUrl: _readString(json['promotionUrl'] ?? json['promotion_url']) ?? '',
       promotionButtonText: _readString(json['promotionButtonText'] ?? json['promotion_button_text']) ?? '',
+      promotionTargetUsername: _readString(json['promotionTargetUsername'] ?? json['promotion_target_username']) ?? '',
       authorFullName: _readString(json['authorFullName']) ??
           _readString(json['fullName']) ??
           _readString(json['author']) ??
