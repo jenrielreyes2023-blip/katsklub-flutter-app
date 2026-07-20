@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../models/user.dart';
 import '../screens/edit_post_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/youtube_player_screen.dart';
@@ -86,12 +87,18 @@ class _PostCardState extends State<PostCard> {
   int _musicCarouselIndex = 0;
   DateTime? _lastInteractiveSurfaceTapAt;
 
+  User? _targetProfileUser;
+  bool _isLoadingTargetProfile = false;
+
   @override
   void initState() {
     super.initState();
     _post = widget.post;
     if (_post.isPromotion && _post.imageUrls.isEmpty) {
       MediaPostLoadRegistry.markReady(_post.id);
+    }
+    if (_post.isPromotion && _post.promotionTargetUsername.isNotEmpty) {
+      _loadTargetProfile();
     }
   }
 
@@ -101,11 +108,36 @@ class _PostCardState extends State<PostCard> {
     if (oldWidget.post.id != widget.post.id) {
       _isTextExpanded = false;
       _musicCarouselIndex = 0;
+      _targetProfileUser = null;
     }
     _post = widget.post;
     if (_post.imageUrls.isNotEmpty &&
         _musicCarouselIndex >= _post.imageUrls.length) {
       _musicCarouselIndex = _post.imageUrls.length - 1;
+    }
+    if (_post.isPromotion && _post.promotionTargetUsername.isNotEmpty && _targetProfileUser == null && !_isLoadingTargetProfile) {
+      _loadTargetProfile();
+    }
+  }
+
+  Future<void> _loadTargetProfile() async {
+    final username = _post.promotionTargetUsername;
+    if (username.isEmpty) return;
+    setState(() {
+      _isLoadingTargetProfile = true;
+    });
+    try {
+      final user = await FeedService().loadUserProfile(username);
+      if (user != null && mounted && _post.promotionTargetUsername == username) {
+        setState(() {
+          _targetProfileUser = user;
+        });
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _isLoadingTargetProfile = false;
+      });
     }
   }
 
@@ -541,12 +573,34 @@ class _PostCardState extends State<PostCard> {
     widget.onOpenPost?.call(originalPost);
   }
 
+  String _getUserInitials(String fullName) {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .toList();
+
+    if (parts.isEmpty) {
+      return 'K';
+    }
+    if (parts.length == 1) {
+      return parts[0][0].toUpperCase();
+    }
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
   Widget _buildPromotionCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xFF242526) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1C1E21);
     final subtitleColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B);
     final borderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+
+    final bool hasTargetProfile = _post.promotionTargetUsername.isNotEmpty && _targetProfileUser != null;
+    final String displayHeaderName = hasTargetProfile
+        ? (_targetProfileUser!.fullName ?? _post.promotionTargetUsername)
+        : _post.authorFullName;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
@@ -579,39 +633,61 @@ class _PostCardState extends State<PostCard> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    // App Icon / Logo or User Icon
-                    _post.promotionTargetUsername.isNotEmpty
-                        ? Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFFF8A00), width: 1.5),
-                            ),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: Color(0xFFFF8A00),
-                              size: 20,
-                            ),
-                          )
-                        : Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.star_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                    // Avatar Image
+                    if (hasTargetProfile)
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: const Color(0xFFE5E7EB),
+                        backgroundImage: _targetProfileUser!.avatarUrl == null || _targetProfileUser!.avatarUrl!.trim().isEmpty
+                            ? null
+                            : CachedNetworkImageProvider(ApiConfig.assetUrl(_targetProfileUser!.avatarUrl!)),
+                        child: _targetProfileUser!.avatarUrl == null || _targetProfileUser!.avatarUrl!.trim().isEmpty
+                            ? Text(
+                                _getUserInitials(displayHeaderName),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1C1E21),
+                                  fontSize: 12,
+                                ),
+                              )
+                            : null,
+                      )
+                    else if (_post.promotionTargetUsername.isNotEmpty)
+                      // Loader or general icon during loading
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 1.5, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00))),
                           ),
+                        ),
+                      )
+                    else
+                      // Sponsored Star Badge
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.star_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -620,7 +696,7 @@ class _PostCardState extends State<PostCard> {
                           Row(
                             children: [
                               Text(
-                                _post.authorFullName, // Promotion Title
+                                displayHeaderName,
                                 style: TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 14.5,
@@ -667,21 +743,39 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
             ),
-            // Text Content
-            if (_post.text.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: Text(
-                  _post.text,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w500,
-                    color: subtitleColor,
-                    height: 1.4,
-                  ),
-                ),
+            // Text Content (Title & Description)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // If we are showing target profile name at top, show promotion title here in body!
+                  if (hasTargetProfile && _post.authorFullName.isNotEmpty) ...[
+                    Text(
+                      _post.authorFullName,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  if (_post.text.isNotEmpty)
+                    Text(
+                      _post.text,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: subtitleColor,
+                        height: 1.4,
+                      ),
+                    ),
+                ],
               ),
+            ),
             // Image Content
             if (_post.imageUrls.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -723,20 +817,16 @@ class _PostCardState extends State<PostCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => _handlePromotionTap(context),
-                        child: Text(
-                          _post.promotionUrl,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: Color(0xFF2563EB),
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        'Ads: ${_post.promotionUrl}',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11.5,
+                          color: subtitleColor.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 12),
