@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/conversation_theme.dart';
 import '../services/feed_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../config/api_config.dart';
 
 enum ThemeProductType {
   sunrise,
@@ -586,12 +589,24 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadThemeState() async {
     final user = await _authService.getSavedUser();
-    final prefs = await SharedPreferences.getInstance();
+
+    final disabledSet = <String>{};
+    try {
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/shop/themes');
+      final res = await http.get(url).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final List<dynamic> disabled = data['disabledThemes'] ?? [];
+        for (final item in disabled) {
+          disabledSet.add(item.toString().trim().toLowerCase());
+        }
+      }
+    } catch (_) {}
 
     final visible = <ThemeProductData>[];
     for (final product in themeProducts) {
-      final key = 'katsklub_theme_public_${_themeKeyFor(product.type)}';
-      final isPublic = prefs.getBool(key) ?? true;
+      final themeKey = _themeKeyFor(product.type).trim().toLowerCase();
+      final isPublic = !disabledSet.contains(themeKey);
       if (isPublic) {
         visible.add(product);
       }

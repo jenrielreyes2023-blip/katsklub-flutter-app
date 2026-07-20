@@ -2977,13 +2977,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Shop Tab methods
   Future<void> _loadAdminShopSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      for (final theme in themeProducts) {
-        final themeKey = _themeKeyForPublic(theme.type);
-        final key = 'katsklub_theme_public_$themeKey';
-        _enabledThemes[themeKey] = prefs.getBool(key) ?? true;
+      _isShopStateLoading = true;
+    });
+    try {
+      final token = await _getToken();
+      if (token == null) return;
+
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/shop/themes');
+      final res = await http.get(url, headers: _headers(token));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final List<dynamic> disabledList = data['disabledThemes'] ?? [];
+        final disabledSet = disabledList.map((e) => e.toString().trim().toLowerCase()).toSet();
+
+        setState(() {
+          _enabledThemes.clear();
+          for (final theme in themeProducts) {
+            final themeKey = _themeKeyForPublic(theme.type);
+            _enabledThemes[themeKey] = !disabledSet.contains(themeKey.toLowerCase());
+          }
+        });
       }
+    } catch (_) {}
+    setState(() {
       _isShopStateLoading = false;
     });
   }
@@ -3047,12 +3064,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Future<void> _toggleThemePublicStatus(String themeKey, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'katsklub_theme_public_$themeKey';
-    await prefs.setBool(key, value);
-    setState(() {
-      _enabledThemes[themeKey] = value;
+    final token = await _getToken();
+    if (token == null) return;
+
+    final updatedMap = Map<String, bool>.from(_enabledThemes);
+    updatedMap[themeKey] = value;
+
+    final disabledThemes = <String>[];
+    updatedMap.forEach((key, isEnabled) {
+      if (!isEnabled) {
+        disabledThemes.add(key);
+      }
     });
+
+    try {
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/shop/themes');
+      final res = await http.post(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'disabledThemes': disabledThemes}),
+      );
+      if (res.statusCode == 200) {
+        setState(() {
+          _enabledThemes[themeKey] = value;
+        });
+      } else {
+        _showErrorSnackBar('Failed to update theme status on server.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('An error occurred.');
+    }
   }
 
   Widget _buildShopTab() {
