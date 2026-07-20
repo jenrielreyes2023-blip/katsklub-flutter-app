@@ -134,14 +134,35 @@ class PromotionsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = prefs.getString(_prefsKey);
-      if (jsonStr == null || jsonStr.isEmpty) {
-        return _defaultPromotions;
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(jsonStr);
+        final localPromos = decoded.map((item) => Promotion.fromJson(item)).toList();
+
+        // Auto-sync: If server returned empty/failed, but admin has local custom promotions,
+        // we automatically push them to the server if we can fetch the token.
+        if (localPromos.isNotEmpty) {
+          final token = await _authService.getToken();
+          if (token != null && token.isNotEmpty) {
+            try {
+              final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/promotions');
+              await http.post(
+                url,
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({
+                  'promotions': localPromos.map((p) => p.toJson()).toList(),
+                }),
+              );
+            } catch (_) {}
+          }
+        }
+        return localPromos;
       }
-      final List<dynamic> decoded = jsonDecode(jsonStr);
-      return decoded.map((item) => Promotion.fromJson(item)).toList();
-    } catch (_) {
-      return _defaultPromotions;
-    }
+    } catch (_) {}
+
+    return _defaultPromotions;
   }
 
   Future<void> savePromotions(List<Promotion> promotions) async {
