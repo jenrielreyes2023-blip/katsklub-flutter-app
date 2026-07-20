@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../models/post.dart';
+import '../services/auth_service.dart';
+import '../config/api_config.dart';
 
 class Promotion {
   final String id;
@@ -93,6 +96,7 @@ class Promotion {
 
 class PromotionsService {
   static const String _prefsKey = 'katsklub_promotions_list';
+  final AuthService _authService = AuthService();
 
   static final List<Promotion> _defaultPromotions = [
     Promotion(
@@ -115,6 +119,19 @@ class PromotionsService {
 
   Future<List<Promotion>> getPromotions() async {
     try {
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/promotions');
+      final res = await http.get(url).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final List<dynamic> list = data['promotions'] ?? [];
+        if (list.isNotEmpty) {
+          return list.map((item) => Promotion.fromJson(item)).toList();
+        }
+      }
+    } catch (_) {}
+
+    // Fallback to local SharedPreferences
+    try {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = prefs.getString(_prefsKey);
       if (jsonStr == null || jsonStr.isEmpty) {
@@ -128,10 +145,29 @@ class PromotionsService {
   }
 
   Future<void> savePromotions(List<Promotion> promotions) async {
+    // 1. Save locally to SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = jsonEncode(promotions.map((p) => p.toJson()).toList());
       await prefs.setString(_prefsKey, jsonStr);
+    } catch (_) {}
+
+    // 2. Save globally to backend database
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return;
+
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/promotions');
+      await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'promotions': promotions.map((p) => p.toJson()).toList(),
+        }),
+      );
     } catch (_) {}
   }
 
