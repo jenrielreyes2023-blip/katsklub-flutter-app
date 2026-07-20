@@ -478,24 +478,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       onTapFollowing: () => _openUserList(false),
                       onTapFollowers: () => _openUserList(true),
                       isOwnProfile: isOwnProfile,
-                      onTapVisitors: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VisitorsScreen(currentUser: _profileUser),
-                          ),
-                        );
-                        final username = _profileUser.username;
-                        if (username != null && username.isNotEmpty) {
-                          final updatedUser = await _feedService.loadUserProfile(username);
-                          if (updatedUser != null && mounted) {
-                            setState(() {
-                              _profileUser = updatedUser;
-                            });
-                            widget.onUserUpdated?.call(updatedUser);
-                          }
-                        }
-                      },
                     ),
                     const SizedBox(height: 14),
                     _ProfileActionRow(
@@ -1962,7 +1944,6 @@ class _ProfileInlineCounters extends StatelessWidget {
     required this.onTapFollowing,
     required this.onTapFollowers,
     required this.isOwnProfile,
-    required this.onTapVisitors,
   });
 
   final User user;
@@ -1970,130 +1951,6 @@ class _ProfileInlineCounters extends StatelessWidget {
   final VoidCallback onTapFollowing;
   final VoidCallback onTapFollowers;
   final bool isOwnProfile;
-  final VoidCallback onTapVisitors;
-
-  Widget _buildVisitorsInlineItem(BuildContext context, bool isDark) {
-    if (user.recentVisitors.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final visitors = user.recentVisitors;
-
-    return GestureDetector(
-      onTap: onTapVisitors,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 14.0 * (visitors.length - 1) + 24.0,
-              height: 24,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: List.generate(visitors.length, (index) {
-                  final visitor = visitors[index];
-                  return Positioned(
-                    left: index * 14.0,
-                    top: 0,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark ? const Color(0xFF18191A) : Colors.white,
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 3,
-                            spreadRadius: 0.5,
-                          )
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: visitor.avatarUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
-                                fit: BoxFit.cover,
-                                errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
-                              )
-                            : _buildDefaultAvatar(visitor.username),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Text(
-                  'Visitors',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF65676B),
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                if (user.newVisitorsCount > 0)
-                  Positioned(
-                    right: -18,
-                    top: -8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF5E3A),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF5E3A).withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            spreadRadius: 0.5,
-                          )
-                        ],
-                      ),
-                      child: Text(
-                        '+${user.newVisitorsCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDefaultAvatar(String username) {
-    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'K';
-    return Container(
-      color: const Color(0xFFFFEADC),
-      child: Center(
-        child: Text(
-          initial,
-          style: const TextStyle(
-            color: Color(0xFFFF5E3A),
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -2106,16 +1963,6 @@ class _ProfileInlineCounters extends StatelessWidget {
         spacing: 0,
         runSpacing: 8,
         children: [
-          if (isOwnProfile && user.recentVisitors.isNotEmpty) ...[
-            _buildVisitorsInlineItem(context, isDark),
-            const Text(
-              '  ·  ',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF65676B),
-              ),
-            ),
-          ],
           GestureDetector(
             onTap: onTapFollowing,
             child: Text.rich(

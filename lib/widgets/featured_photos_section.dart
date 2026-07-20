@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/feed_service.dart';
+import '../screens/visitors_screen.dart';
 
 String _mimeFromPath(String path) {
   final lower = path.toLowerCase();
@@ -108,9 +110,195 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
     );
   }
 
+  Widget _buildDefaultAvatar(String username) {
+    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'K';
+    return Container(
+      color: const Color(0xFFFFEADC),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Color(0xFFFF5E3A),
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyPlaceholder(BuildContext context, bool isDark) {
+    final cardColor = isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6);
+    final textColor = isDark ? Colors.white70 : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: GestureDetector(
+        onTap: _showAddOptions,
+        child: Container(
+          width: double.infinity,
+          height: 120,
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.white10 : Colors.black12,
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.star_border_rounded,
+                size: 32,
+                color: const Color(0xFFFF8A00).withValues(alpha: 0.8),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add Featured Photos',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : const Color(0xFF1C1E21),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Showcase up to 5 of your best moments',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVisitorsHeaderItem(BuildContext context, bool isDark) {
+    final visitors = widget.user.recentVisitors;
+    if (visitors.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VisitorsScreen(currentUser: widget.user),
+          ),
+        );
+        final username = widget.user.username;
+        if (username != null && username.isNotEmpty) {
+          final updatedUser = await FeedService().loadUserProfile(username);
+          if (updatedUser != null && mounted) {
+            widget.onUpdated?.call(updatedUser);
+          }
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 14.0 * (visitors.length - 1) + 24.0,
+            height: 24,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: List.generate(visitors.length, (index) {
+                final visitor = visitors[index];
+                return Positioned(
+                  left: index * 14.0,
+                  top: 0,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF18191A) : Colors.white,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 3,
+                          spreadRadius: 0.5,
+                        )
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: visitor.avatarUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
+                            )
+                          : _buildDefaultAvatar(visitor.username),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Text(
+                'Visitors',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF65676B),
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              if (widget.user.newVisitorsCount > 0)
+                Positioned(
+                  right: -16,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF5E3A),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5E3A).withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          spreadRadius: 0.5,
+                        )
+                      ],
+                    ),
+                    child: Text(
+                      '+${widget.user.newVisitorsCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_photos.isEmpty) {
+    if (_photos.isEmpty && !widget.isOwnProfile) {
       return const SizedBox.shrink();
     }
 
@@ -162,58 +350,69 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   ),
                 ],
               ),
-              if (widget.isOwnProfile)
-                GestureDetector(
-                  onTap: _showAddOptions,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _photos.length >= 5
-                          ? Colors.grey.withValues(alpha: 0.1)
-                          : const Color(0xFFFF8A00).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.add_rounded,
-                          size: 14,
-                          color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isOwnProfile && widget.user.recentVisitors.isNotEmpty) ...[
+                    _buildVisitorsHeaderItem(context, isDark),
+                    const SizedBox(width: 12),
+                  ],
+                  if (widget.isOwnProfile)
+                    GestureDetector(
+                      onTap: _showAddOptions,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _photos.length >= 5
+                              ? Colors.grey.withValues(alpha: 0.1)
+                              : const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(width: 2),
-                        Text(
-                          'Add',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
-                          ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 14,
+                              color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              'Add',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                ],
+              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 150,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: _photos.length + (widget.isOwnProfile && _photos.length < 5 ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (widget.isOwnProfile && index == _photos.length) {
-                return _buildAddPlaceholderCard();
-              }
+        _photos.isEmpty
+            ? _buildEmptyPlaceholder(context, isDark)
+            : SizedBox(
+                height: 150,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _photos.length + (widget.isOwnProfile && _photos.length < 5 ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (widget.isOwnProfile && index == _photos.length) {
+                      return _buildAddPlaceholderCard();
+                    }
 
-              final photo = _photos[index];
-              return _buildPhotoCard(photo, index);
-            },
-          ),
-        ),
+                    final photo = _photos[index];
+                    return _buildPhotoCard(photo, index);
+                  },
+                ),
+              ),
         const SizedBox(height: 16),
       ],
     );
