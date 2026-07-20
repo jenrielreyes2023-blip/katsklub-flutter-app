@@ -8,6 +8,7 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/feed_service.dart';
 import 'shop_screen.dart';
+import '../services/promotions_service.dart';
 
 class _AdminAchievementOption {
   const _AdminAchievementOption({required this.key, required this.label});
@@ -96,6 +97,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   bool _isLoadingR2 = false;
   bool _isLoadingAWS = false;
   bool _isShopStateLoading = true;
+  List<Promotion> _promotionsList = [];
+  bool _isLoadingPromotions = false;
 
   // Action Pending flags
   bool _isTestingR2 = false;
@@ -120,8 +123,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    // 6 Tabs: Stats, Users, Posts, Flags, Services, Shop
-    _tabController = TabController(length: 6, vsync: this);
+    // 7 Tabs: Stats, Users, Posts, Flags, Services, Shop, Ads & Promo
+    _tabController = TabController(length: 7, vsync: this);
     _tabController.addListener(_handleTabSelection);
 
     // Initial loads
@@ -133,6 +136,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _fetchR2Status();
     _fetchAWSStatus();
     _loadAdminShopSettings();
+    _fetchPromotions();
   }
 
   @override
@@ -1581,6 +1585,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Tab(icon: Icon(Icons.report_gmailerrorred_outlined), text: 'Flags'),
             Tab(icon: Icon(Icons.cloud_sync_outlined), text: 'Services'),
             Tab(icon: Icon(Icons.shopping_bag_outlined), text: 'Shop'),
+            Tab(icon: Icon(Icons.campaign_outlined), text: 'Ads & Promo'),
           ],
         ),
         leading: IconButton(
@@ -1600,6 +1605,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               _fetchR2Status();
               _fetchAWSStatus();
               _loadAdminShopSettings();
+              _fetchPromotions();
               _showSuccessSnackBar('Data reloaded.');
             },
           )
@@ -1614,6 +1620,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _buildFlagsTab(),
           _buildServicesTab(),
           _buildShopTab(),
+          _buildPromotionsTab(),
         ],
       ),
     );
@@ -2981,6 +2988,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     });
   }
 
+  Future<void> _fetchPromotions() async {
+    setState(() => _isLoadingPromotions = true);
+    try {
+      final list = await PromotionsService().getPromotions();
+      setState(() {
+        _promotionsList = list;
+      });
+    } catch (_) {}
+    setState(() => _isLoadingPromotions = false);
+  }
+
   String _themeKeyForPublic(ThemeProductType type) {
     switch (type) {
       case ThemeProductType.sunrise:
@@ -3179,5 +3197,283 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               );
             },
           );
+  }
+
+  Widget _buildPromotionsTab() {
+    return _isLoadingPromotions
+        ? const Center(child: CircularProgressIndicator())
+        : Scaffold(
+            body: RefreshIndicator(
+              onRefresh: _fetchPromotions,
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Feed Promotions & Ads',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        onPressed: () => _showAddEditPromotionDialog(),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Promotions are injected into the home feed list after every 15 posts. Toggle the switch to activate or deactivate them.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_promotionsList.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.campaign_outlined, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No promotions configured',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _promotionsList.length,
+                      itemBuilder: (context, index) {
+                        final promo = _promotionsList[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        promo.title,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF111827),
+                                        ),
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: promo.isEnabled,
+                                      activeColor: const Color(0xFF2563EB),
+                                      onChanged: (val) async {
+                                        final list = List<Promotion>.from(_promotionsList);
+                                        list[index] = Promotion(
+                                          id: promo.id,
+                                          title: promo.title,
+                                          text: promo.text,
+                                          imageUrl: promo.imageUrl,
+                                          actionUrl: promo.actionUrl,
+                                          buttonText: promo.buttonText,
+                                          isEnabled: val,
+                                        );
+                                        await PromotionsService().savePromotions(list);
+                                        _fetchPromotions();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  promo.text,
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    color: Color(0xFF4B5563),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                if (promo.imageUrl != null && promo.imageUrl!.isNotEmpty) ...[
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      promo.imageUrl!,
+                                      height: 120,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                                Row(
+                                  children: [
+                                    if (promo.actionUrl != null && promo.actionUrl!.isNotEmpty)
+                                      Expanded(
+                                        child: Text(
+                                          'Action: ${promo.actionUrl} (${promo.buttonText})',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF2563EB),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF4B5563)),
+                                      onPressed: () => _showAddEditPromotionDialog(promotion: promo),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                      onPressed: () => _deletePromotion(promo),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          );
+  }
+
+  Future<void> _deletePromotion(Promotion promo) async {
+    final list = _promotionsList.where((p) => p.id != promo.id).toList();
+    await PromotionsService().savePromotions(list);
+    _fetchPromotions();
+  }
+
+  void _showAddEditPromotionDialog({Promotion? promotion}) {
+    final titleCtrl = TextEditingController(text: promotion?.title ?? '');
+    final textCtrl = TextEditingController(text: promotion?.text ?? '');
+    final imageCtrl = TextEditingController(text: promotion?.imageUrl ?? '');
+    final actionCtrl = TextEditingController(text: promotion?.actionUrl ?? '');
+    final buttonCtrl = TextEditingController(text: promotion?.buttonText ?? '');
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(promotion == null ? 'Add Promotion' : 'Edit Promotion'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Title / Sponsor Name'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: textCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Description / Message'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: imageCtrl,
+                  decoration: const InputDecoration(labelText: 'Image URL (optional)'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: actionCtrl,
+                  decoration: const InputDecoration(labelText: 'Action Link (e.g. katsklub://shop or https://...)'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: buttonCtrl,
+                  decoration: const InputDecoration(labelText: 'Button Label (e.g. Learn More)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final title = titleCtrl.text.trim();
+                final text = textCtrl.text.trim();
+                if (title.isEmpty || text.isEmpty) return;
+
+                final list = List<Promotion>.from(_promotionsList);
+                if (promotion == null) {
+                  final newPromo = Promotion(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    title: title,
+                    text: text,
+                    imageUrl: imageCtrl.text.trim(),
+                    actionUrl: actionCtrl.text.trim(),
+                    buttonText: buttonCtrl.text.trim(),
+                    isEnabled: true,
+                  );
+                  list.add(newPromo);
+                } else {
+                  final idx = list.indexWhere((p) => p.id == promotion.id);
+                  if (idx >= 0) {
+                    list[idx] = Promotion(
+                      id: promotion.id,
+                      title: title,
+                      text: text,
+                      imageUrl: imageCtrl.text.trim(),
+                      actionUrl: actionCtrl.text.trim(),
+                      buttonText: buttonCtrl.text.trim(),
+                      isEnabled: promotion.isEnabled,
+                    );
+                  }
+                }
+                await PromotionsService().savePromotions(list);
+                _fetchPromotions();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -16,6 +16,8 @@ import '../screens/edit_post_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/youtube_player_screen.dart';
 import '../screens/messages_screen.dart';
+import '../screens/shop_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_overlay_controller.dart';
@@ -536,8 +538,198 @@ class _PostCardState extends State<PostCard> {
     widget.onOpenPost?.call(originalPost);
   }
 
+  Widget _buildPromotionCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF242526) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1C1E21);
+    final subtitleColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B);
+    final borderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header Row
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // App Icon / Logo
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.star_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _post.authorFullName, // Promotion Title
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'SPONSORED',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFFF8A00),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Text Content
+            if (_post.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Text(
+                  _post.text,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: subtitleColor,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            // Image Content
+            if (_post.imageUrls.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              CachedNetworkImage(
+                imageUrl: _post.imageUrls.first,
+                fit: BoxFit.cover,
+                height: 180,
+                width: double.infinity,
+                placeholder: (context, url) => Container(
+                  height: 180,
+                  color: isDark ? const Color(0xFF18191A) : const Color(0xFFF3F4F6),
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (context, url, error) => const SizedBox.shrink(),
+              ),
+            ],
+            // CTA Button / Action Row
+            if (_post.promotionUrl.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8A00),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onPressed: () => _handlePromotionTap(context),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _post.promotionButtonText.isNotEmpty
+                                ? _post.promotionButtonText
+                                : 'Learn More',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_rounded, size: 14),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handlePromotionTap(BuildContext context) async {
+    final url = _post.promotionUrl;
+    if (url.isEmpty) return;
+
+    if (url == 'katsklub://shop') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ShopScreen()),
+      );
+    } else if (url.startsWith('http://') || url.startsWith('https://')) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_post.isPromotion) {
+      return _buildPromotionCard(context);
+    }
+
     final isGlobalDark = Theme.of(context).brightness == Brightness.dark;
     final displayTitle = _post.displayTitle;
     final shouldUseMusicCarousel =

@@ -29,6 +29,7 @@ import 'bookmarks_screen.dart';
 import 'game_room_screen.dart';
 import 'wallet_screen.dart';
 import '../widgets/top_users_home_card.dart';
+import '../services/promotions_service.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -61,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen>
   final FeedService _feedService = FeedService();
 
   List<Post> _posts = [];
+  List<Post> _promotions = [];
   List<Post> _pendingNewPosts = [];
   List<List<Story>> _storyGroups = [];
   List<Story> _ownStories = [];
@@ -108,6 +110,16 @@ class _HomeScreenState extends State<HomeScreen>
     // Restore cache first so posts appear instantly, then refresh from network.
     _restoreCachedHomePostsThenLoad();
     _loadSuggestions();
+    _loadPromotions();
+  }
+
+  Future<void> _loadPromotions() async {
+    final promos = await PromotionsService().getActivePromotionPosts();
+    if (mounted) {
+      setState(() {
+        _promotions = promos;
+      });
+    }
   }
 
   /// Shows cached posts immediately, then kicks off the network refresh in
@@ -822,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   List<Post> _homePosts(List<Post> posts) {
-    return posts
+    final filtered = posts
         .where(
           (post) =>
               !post.isReel &&
@@ -832,6 +844,24 @@ class _HomeScreenState extends State<HomeScreen>
                   post.authorIsAdmin),
         )
         .toList();
+
+    if (filtered.isEmpty || _promotions.isEmpty) {
+      return filtered;
+    }
+
+    final result = <Post>[];
+    int promoIndex = 0;
+
+    for (int i = 0; i < filtered.length; i++) {
+      result.add(filtered[i]);
+      // Inject promotion every 15 posts
+      if ((i + 1) % 15 == 0) {
+        final promo = _promotions[promoIndex % _promotions.length];
+        result.add(promo);
+        promoIndex++;
+      }
+    }
+    return result;
   }
 
   Widget _postCard(Post post) {

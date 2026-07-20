@@ -238,6 +238,9 @@ class Post {
     this.isGhost = false,
     this.slides = const [],
     this.repostedByText,
+    this.isPromotion = false,
+    this.promotionUrl = '',
+    this.promotionButtonText = '',
   });
 
   final String id;
@@ -306,6 +309,9 @@ class Post {
   final bool isPinned;
   final bool isGhost;
   final String? repostedByText;
+  final bool isPromotion;
+  final String promotionUrl;
+  final String promotionButtonText;
 
   factory Post.fromJson(Map<String, dynamic> json) {
     final imageUrls = _readImageUrls(json);
@@ -316,6 +322,9 @@ class Post {
 
     return Post(
       id: _readString(json['id']) ?? '',
+      isPromotion: json['isPromotion'] == true || json['is_promotion'] == true,
+      promotionUrl: _readString(json['promotionUrl'] ?? json['promotion_url']) ?? '',
+      promotionButtonText: _readString(json['promotionButtonText'] ?? json['promotion_button_text']) ?? '',
       authorFullName: _readString(json['authorFullName']) ??
           _readString(json['fullName']) ??
           _readString(json['author']) ??
