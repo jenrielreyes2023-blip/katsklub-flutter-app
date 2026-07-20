@@ -24,10 +24,10 @@ class StoryAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      customBorder: const CircleBorder(),
       onTap: onTap,
       child: SizedBox(
-        width: 106,
+        width: 82,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -35,9 +35,9 @@ class StoryAvatar extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 96,
-                  height: 96,
-                  padding: const EdgeInsets.all(3),
+                  width: 72,
+                  height: 72,
+                  padding: const EdgeInsets.all(2.5),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -88,32 +88,32 @@ class StoryAvatar extends StatelessWidget {
                 if (showPlus)
                   Positioned(
                     right: 0,
-                    bottom: 2,
+                    bottom: 0,
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 20,
+                      height: 20,
                       decoration: BoxDecoration(
                         color: const Color(0xFF2563EB),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: Colors.white, width: 1.5),
                       ),
                       child: const Icon(
                         Icons.add,
                         color: Colors.white,
-                        size: 18,
+                        size: 14,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: 5),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),

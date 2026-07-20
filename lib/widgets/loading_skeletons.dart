@@ -284,24 +284,24 @@ class StorySkeletonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 124,
+      height: 102,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         scrollDirection: Axis.horizontal,
         itemCount: count,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, index) {
-          const avatarSize = 96.0;
+          const avatarSize = 72.0;
           final labelWidth = switch (index % 4) {
-            0 => 74.0,
-            1 => 60.0,
-            2 => 68.0,
-            _ => 55.0,
+            0 => 62.0,
+            1 => 50.0,
+            2 => 56.0,
+            _ => 44.0,
           };
 
           return SkeletonPulse(
             child: SizedBox(
-              width: 106,
+              width: 82,
               child: Column(
                 children: [
                   SkeletonBox(
@@ -309,7 +309,7 @@ class StorySkeletonRow extends StatelessWidget {
                     height: avatarSize,
                     radius: avatarSize / 2,
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 5),
                   SkeletonBox(width: labelWidth, height: 10, radius: 5),
                 ],
               ),

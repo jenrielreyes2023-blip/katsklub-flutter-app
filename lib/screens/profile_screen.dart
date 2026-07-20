@@ -23,7 +23,7 @@ import '../widgets/presence_avatar_dot.dart';
 import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
-import '../widgets/gold_shimmer_text.dart';
+import '../widgets/special_name_text.dart';
 import 'image_viewer_screen.dart';
 import 'post_detail_screen.dart';
 import 'repost_post_screen.dart';
@@ -38,6 +38,7 @@ import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
+import 'visitors_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -476,6 +477,25 @@ class _ProfileScreenState extends State<ProfileScreen>
                       postCount: displayedPostCount,
                       onTapFollowing: () => _openUserList(false),
                       onTapFollowers: () => _openUserList(true),
+                      isOwnProfile: isOwnProfile,
+                      onTapVisitors: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VisitorsScreen(currentUser: _profileUser),
+                          ),
+                        );
+                        final username = _profileUser.username;
+                        if (username != null && username.isNotEmpty) {
+                          final updatedUser = await _feedService.loadUserProfile(username);
+                          if (updatedUser != null && mounted) {
+                            setState(() {
+                              _profileUser = updatedUser;
+                            });
+                            widget.onUserUpdated?.call(updatedUser);
+                          }
+                        }
+                      },
                     ),
                     const SizedBox(height: 14),
                     _ProfileActionRow(
@@ -1871,8 +1891,8 @@ class _ProfileAvatar extends StatelessWidget {
     if (borderType == AvatarBorderType.none) {
       final avatarUrl = user.avatarUrl;
       avatar = Container(
-        width: 120,
-        height: 120,
+        width: 86,
+        height: 86,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: hasStories
@@ -1894,12 +1914,12 @@ class _ProfileAvatar extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(2),
           child: CircleAvatar(
-            radius: 57,
+            radius: 39,
             backgroundColor: const Color(0xFFE5E7EB),
             backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                 ? CachedNetworkImageProvider(
                     ApiConfig.assetUrl(avatarUrl),
-                    maxWidth: 240,
+                    maxWidth: 180,
                   )
                 : null,
             child: avatarUrl == null || avatarUrl.isEmpty
@@ -1907,7 +1927,7 @@ class _ProfileAvatar extends StatelessWidget {
                     user.initials,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 40,
+                      fontSize: 28,
                       color: Color(0xFF111827),
                     ),
                   )
@@ -1920,7 +1940,7 @@ class _ProfileAvatar extends StatelessWidget {
         avatarUrl: user.avatarUrl ?? '',
         initials: user.initials,
         borderType: borderType,
-        size: 120,
+        size: 86,
       );
     }
 
@@ -1941,21 +1961,161 @@ class _ProfileInlineCounters extends StatelessWidget {
     required this.postCount,
     required this.onTapFollowing,
     required this.onTapFollowers,
+    required this.isOwnProfile,
+    required this.onTapVisitors,
   });
 
   final User user;
   final int? postCount;
   final VoidCallback onTapFollowing;
   final VoidCallback onTapFollowers;
+  final bool isOwnProfile;
+  final VoidCallback onTapVisitors;
+
+  Widget _buildVisitorsInlineItem(BuildContext context, bool isDark) {
+    if (user.recentVisitors.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final visitors = user.recentVisitors;
+
+    return GestureDetector(
+      onTap: onTapVisitors,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 14.0 * (visitors.length - 1) + 24.0,
+              height: 24,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: List.generate(visitors.length, (index) {
+                  final visitor = visitors[index];
+                  return Positioned(
+                    left: index * 14.0,
+                    top: 0,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF18191A) : Colors.white,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 3,
+                            spreadRadius: 0.5,
+                          )
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: visitor.avatarUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
+                              )
+                            : _buildDefaultAvatar(visitor.username),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Text(
+                  'Visitors',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF65676B),
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                if (user.newVisitorsCount > 0)
+                  Positioned(
+                    right: -18,
+                    top: -8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF5E3A),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF5E3A).withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            spreadRadius: 0.5,
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        '+${user.newVisitorsCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(String username) {
+    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'K';
+    return Container(
+      color: const Color(0xFFFFEADC),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Color(0xFFFF5E3A),
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final postsLabel = postCount == null ? '...' : _formatCount(postCount!);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 0,
+        runSpacing: 8,
         children: [
+          if (isOwnProfile && user.recentVisitors.isNotEmpty) ...[
+            _buildVisitorsInlineItem(context, isDark),
+            const Text(
+              '  ·  ',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF65676B),
+              ),
+            ),
+          ],
           GestureDetector(
             onTap: onTapFollowing,
             child: Text.rich(
@@ -2086,24 +2246,16 @@ class _ProfileBio extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: (user.username?.toLowerCase() == 'gemini')
-                    ? GoldShimmerText(
-                        text: user.displayName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                        ),
-                      )
-                    : Text(
-                        user.displayName,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
+                child: SpecialNameText(
+                  username: user.username ?? '',
+                  displayName: user.displayName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                ),
               ),
               if (user.isVerified) ...[
                 const SizedBox(width: 5),
@@ -2134,38 +2286,14 @@ class _ProfileBio extends StatelessWidget {
           if (user.profileLinks.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: 12,
+              runSpacing: 8,
               children: user.profileLinks.map((link) {
-                return ActionChip(
-                  avatar: link.faviconUrl.isNotEmpty
-                      ? Container(
-                          width: 16,
-                          height: 16,
-                          decoration:
-                              const BoxDecoration(shape: BoxShape.circle),
-                          clipBehavior: Clip.antiAlias,
-                          child: CachedNetworkImage(
-                            imageUrl: link.faviconUrl,
-                            errorWidget: (_, __, ___) =>
-                                const Icon(Icons.link_rounded, size: 12),
-                          ),
-                        )
-                      : const Icon(Icons.link_rounded, size: 12),
-                  label: Text(
-                    link.title.isNotEmpty ? link.title : link.url,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF4A5CF9),
-                        fontWeight: FontWeight.w600),
-                  ),
-                  backgroundColor: const Color(0xFFF3F4F6),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                  onPressed: () {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final linkColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
+                return GestureDetector(
+                  onTap: () {
                     var urlStr = link.url.trim();
                     if (!urlStr.startsWith('http://') &&
                         !urlStr.startsWith('https://')) {
@@ -2182,6 +2310,28 @@ class _ProfileBio extends StatelessWidget {
                       ),
                     );
                   },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.string(
+                        '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.0598 10.9399c2.25 2.25 2.25 5.89.0 8.13-2.25 2.24-5.88995 2.25-8.12995.0s-2.25-5.89.0-8.13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M10.5909 13.4099c-2.33996-2.34-2.33996-6.14002.0-8.49002 2.34-2.35 6.14-2.34 8.49.0s2.34 6.14002.0 8.49002" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
+                        width: 14,
+                        height: 14,
+                        colorFilter: ColorFilter.mode(linkColor, BlendMode.srcIn),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        link.title.isNotEmpty ? link.title : link.url,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: linkColor,
+                          decoration: TextDecoration.underline,
+                          decorationColor: linkColor,
+                          decorationThickness: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               }).toList(),
             ),
@@ -2192,36 +2342,25 @@ class _ProfileBio extends StatelessWidget {
   }
 
   Widget _buildCharmLevelBadge(int level) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF7A45), Color(0xFFFF5E3A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SvgPicture.string(
+          '''<svg width="800" height="800" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M68.05 7.23l13.46 30.7a7.047 7.047.0 005.82 4.19l32.79 2.94c3.71.54 5.19 5.09 2.5 7.71l-24.7 20.75c-2 1.68-2.91 4.32-2.36 6.87l7.18 33.61c.63 3.69-3.24 6.51-6.56 4.76L67.56 102a7.033 7.033.0 00-7.12.0l-28.62 16.75c-3.31 1.74-7.19-1.07-6.56-4.76l7.18-33.61c.54-2.55-.36-5.19-2.36-6.87L5.37 52.78c-2.68-2.61-1.2-7.17 2.5-7.71l32.79-2.94a7.047 7.047.0 005.82-4.19l13.46-30.7c1.67-3.36 6.45-3.36 8.11-.01z" fill="#fdd835"/><path d="M67.07 39.77l-2.28-22.62c-.09-1.26-.35-3.42 1.67-3.42 1.6.0 2.47 3.33 2.47 3.33l6.84 18.16c2.58 6.91 1.52 9.28-.97 10.68-2.86 1.6-7.08.35-7.73-6.13z" fill="#ffff8d"/><path d="M95.28 71.51 114.9 56.2c.97-.81 2.72-2.1 1.32-3.57-1.11-1.16-4.11.51-4.11.51l-17.17 6.71c-5.12 1.77-8.52 4.39-8.82 7.69-.39 4.4 3.56 7.79 9.16 3.97z" fill="#f4b400"/></svg>''',
+          width: 15,
+          height: 15,
         ),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.auto_awesome_rounded,
-            color: Colors.white,
-            size: 9,
+        const SizedBox(width: 2),
+        Text(
+          '$level',
+          style: const TextStyle(
+            color: Color(0xFFFF7A45),
+            fontSize: 9.5,
+            fontWeight: FontWeight.w900,
           ),
-          const SizedBox(width: 2),
-          Text(
-            'Lv.$level',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 8,
-              fontWeight: FontWeight.w900,
-              height: 1.0,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -2309,6 +2448,11 @@ const Map<String, _ProfileAchievementDefinition>
     key: 'rising_paw',
     title: 'Rising Paw',
     theme: _ProfileAchievementTheme.risingPaw,
+  ),
+  'top_50': _ProfileAchievementDefinition(
+    key: 'top_50',
+    title: 'Top 50 Club',
+    theme: _ProfileAchievementTheme.top50,
   ),
   'asset_preview': _ProfileAchievementDefinition(
     key: 'asset_preview',
@@ -2418,7 +2562,8 @@ class _ProfileAchievementPill extends StatelessWidget {
     final hasSweepShimmer = theme == _ProfileAchievementTheme.starsCatcher ||
         isSpringHerald ||
         theme == _ProfileAchievementTheme.supremeWarlord ||
-        theme == _ProfileAchievementTheme.techSupport;
+        theme == _ProfileAchievementTheme.techSupport ||
+        theme == _ProfileAchievementTheme.top50;
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
@@ -2439,6 +2584,22 @@ class _ProfileAchievementPill extends StatelessWidget {
                         color: style.pillBorderColor!,
                         width: 1.0,
                       )
+                    : null,
+                boxShadow: theme == _ProfileAchievementTheme.top50
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFFFF5E3A).withValues(alpha: 0.65),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 0),
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFFFF2A00).withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 0),
+                        ),
+                      ]
                     : null,
               ),
               child: Stack(
@@ -2533,10 +2694,11 @@ class _AchievementPillLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseStyle = TextStyle(
-      fontSize: 10.8,
+    final baseStyle = TextStyle(
+      fontSize: style.fontSize ?? 10.8,
       fontWeight: FontWeight.w800,
-      letterSpacing: 0.02,
+      fontFamily: style.fontFamily,
+      letterSpacing: style.fontFamily != null ? 0.3 : 0.02,
       height: 1,
     );
 
@@ -2969,6 +3131,43 @@ enum _ProfileAchievementTheme {
       textStrokeColor: Color(0xFFC2410C),
     ),
   ),
+  top50(
+    _AchievementThemeStyle(
+      pillColors: [
+        Color(0xFFFF8C00),
+        Color(0xFFFF5E3A),
+        Color(0xFFFF2A00),
+      ],
+      badgeGradient: [
+        Color(0xFFFF9F43),
+        Color(0xFFFF5E3A),
+      ],
+      badgeBorderColor: Color(0xFFFF5E3A),
+      badgeInnerRingColor: Color(0xFFFFE5B4),
+      badgeIconColor: Colors.white,
+      badgeShape: _AchievementBadgeShape.pixel,
+      iconSvg:
+          '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>',
+      iconWidth: 12.0,
+      iconHeight: 12.0,
+      textColor: Colors.white,
+      textStrokeColor: const Color(0xFFC2410C),
+      fontFamily: 'monospace',
+      fontSize: 11.2,
+      textShadows: const [
+        Shadow(
+          color: Color(0xFFFF8C00),
+          blurRadius: 4.0,
+          offset: Offset(0, 0),
+        ),
+        Shadow(
+          color: Color(0xFFFF2A00),
+          blurRadius: 10.0,
+          offset: Offset(0, 0),
+        ),
+      ],
+    ),
+  ),
   assetPreview(
     _AchievementThemeStyle(
       pillColors: [Colors.transparent],
@@ -2989,7 +3188,7 @@ enum _ProfileAchievementTheme {
   final _AchievementThemeStyle style;
 }
 
-enum _AchievementBadgeShape { coin, star, heart, fairy, warlord }
+enum _AchievementBadgeShape { coin, star, heart, fairy, warlord, pixel }
 
 enum _AchievementPillPattern {
   none,
@@ -3018,6 +3217,8 @@ class _AchievementThemeStyle {
     this.badgeScale = 1.16,
     this.assetPillPath,
     this.textShadows,
+    this.fontFamily,
+    this.fontSize,
   });
 
   final List<Color> pillColors;
@@ -3036,6 +3237,8 @@ class _AchievementThemeStyle {
   final double badgeScale;
   final String? assetPillPath;
   final List<Shadow>? textShadows;
+  final String? fontFamily;
+  final double? fontSize;
 }
 
 class _AchievementBadge extends StatelessWidget {
@@ -3056,6 +3259,7 @@ class _AchievementBadge extends StatelessWidget {
         theme == _ProfileAchievementTheme.springHeraldPurple ||
         theme == _ProfileAchievementTheme.springHeraldBlue;
     final isSupremeWarlord = theme == _ProfileAchievementTheme.supremeWarlord;
+    final isTop50 = theme == _ProfileAchievementTheme.top50;
 
     return SizedBox(
       width: 19,
@@ -3064,10 +3268,10 @@ class _AchievementBadge extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: isSpringHerald ? -8.5 : (isSupremeWarlord ? -1.0 : 0),
-            right: isSpringHerald ? -4.5 : (isSupremeWarlord ? -1.0 : 0),
-            top: isSpringHerald ? -7.0 : (isSupremeWarlord ? -1.5 : 0),
-            bottom: isSpringHerald ? -6.0 : (isSupremeWarlord ? -0.5 : 0),
+            left: isSpringHerald ? -8.5 : (isTop50 ? -8.0 : (isSupremeWarlord ? -1.0 : 0)),
+            right: isSpringHerald ? -4.5 : (isTop50 ? -4.0 : (isSupremeWarlord ? -1.0 : 0)),
+            top: isSpringHerald ? -7.0 : (isTop50 ? -9.0 : (isSupremeWarlord ? -1.5 : 0)),
+            bottom: isSpringHerald ? -6.0 : (isTop50 ? -5.0 : (isSupremeWarlord ? -0.5 : 0)),
             child: switch (style.badgeShape) {
               _AchievementBadgeShape.coin => Transform.scale(
                   scale: style.badgeScale,
@@ -3086,6 +3290,20 @@ class _AchievementBadge extends StatelessWidget {
               _AchievementBadgeShape.warlord => _WarlordAchievementFace(
                   style: style,
                   animation: motionAnimation,
+                ),
+              _AchievementBadgeShape.pixel => AnimatedBuilder(
+                  animation: motionAnimation,
+                  builder: (context, child) {
+                    final floatOffset = math.sin(motionAnimation.value * 2 * math.pi) * 2.2;
+                    return Transform.translate(
+                      offset: Offset(0, floatOffset - 3.5),
+                      child: Transform.scale(
+                        scale: style.badgeScale * 1.22,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _PixelAchievementFace(style: style),
                 ),
             },
           ),
@@ -4590,6 +4808,11 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
       value: showPrivateFields || user.profileShowEmail ? user.email : null,
     );
     add(
+      icon: Icons.phone_outlined,
+      label: 'Phone',
+      value: showPrivateFields || user.profileShowPhone ? user.phone : null,
+    );
+    add(
       icon: Icons.person_outline_rounded,
       label: 'Gender',
       value: showPrivateFields || user.profileShowGender
@@ -4771,3 +4994,49 @@ class _RawSvgAchievement extends StatelessWidget {
 
 const String _googleWorkspaceSvg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 66"><path fill="#5F6368" d="M402.551 18.199q6.024 0 10.253 4.742q4.357 4.742 4.357 11.534q0 6.92-4.357 11.663q-4.23 4.742-10.253 4.742h-.128q-3.332 0-6.152-1.41t-4.229-3.845h-.256l.256 4.23v13.584h-5.767V19.096h5.51v4.357h.257q1.41-2.435 4.23-3.844q2.818-1.41 6.28-1.41m-32.68-.128q4.1 0 7.433 2.05q3.332 2.05 4.613 5.127l-5.126 2.178a6.54 6.54 0 0 0-2.82-3.076a9 9 0 0 0-4.485-1.025a7.43 7.43 0 0 0-4.101 1.025q-1.795 1.155-1.795 2.82q0 2.691 4.999 3.717l4.614 1.281q9.227 2.18 9.227 9.228q0 3.973-3.46 6.792t-8.972 2.692q-4.613 0-8.074-2.435a13.33 13.33 0 0 1-4.998-6.28l5.127-2.179q1.153 2.691 3.204 4.23a7.95 7.95 0 0 0 4.741 1.537q2.82 0 4.614-1.153q1.794-1.155 1.923-2.82q0-2.947-4.486-4.357l-5.383-1.282q-8.97-2.307-8.97-8.715q0-4.23 3.46-6.792q3.46-2.563 8.714-2.563m-81.126.128q6.92 0 11.278 4.614q4.486 4.613 4.486 11.662q0 7.178-4.486 11.79q-4.485 4.615-11.278 4.615q-6.792 0-11.406-4.614q-4.486-4.614-4.486-11.79q0-7.05 4.486-11.663t11.406-4.614m208.26 0q6.92 0 10.894 4.357T512 34.988v.64h-24.222q.128 4.486 2.947 7.306t6.921 2.691q5.511 0 8.715-5.51l5.126 2.562a15.4 15.4 0 0 1-5.767 6.024q-3.588 2.178-8.33 2.179q-6.793 0-11.15-4.614t-4.358-11.79q0-6.922 4.23-11.663q4.23-4.743 10.893-4.614m-30.63 0q4.742 0 8.202 2.307t5.255 6.536l-5.255 2.179q-2.434-5.768-8.587-5.768q-3.972 0-6.92 3.204q-2.82 3.204-2.82 7.818t2.82 7.946q2.948 3.204 6.92 3.204q6.28 0 8.844-5.767l5.254 2.179q-1.794 4.23-5.383 6.536q-3.588 2.307-8.33 2.307q-6.921 0-11.406-4.614q-4.486-4.742-4.486-11.79q0-7.05 4.486-11.663t11.406-4.614m-33.45 0q6.408 0 10.125 3.332t3.716 9.356v18.967h-5.51v-4.229h-.257q-3.588 5.255-9.612 5.255q-4.998 0-8.458-2.948t-3.46-7.562q0-4.74 3.588-7.561t9.74-2.82q5.127 0 8.459 1.795v-1.282q0-3.076-2.435-5.126a8.2 8.2 0 0 0-5.423-2.051h-.088q-4.87 0-7.69 4.101l-5.126-3.204q4.23-6.023 12.431-6.023M223.64 4.999l9.483 35.243h.257l9.74-29.22h5.383l9.74 29.22h.256l8.971-35.244h6.024l-12.047 44.856h-5.896L245.94 20.25h-.256l-9.74 29.605h-5.895L217.616 4.998zm99.836 13.2q2.435 0 4.23.769l-1.795 5.639q-1.025-.385-3.332-.385q-3.332 0-5.767 2.563t-2.435 6.152v16.917h-5.767V19.096h5.51v5.126h.257q.897-2.563 3.717-4.229t5.382-1.794m12.688-13.2V32.68l13.329-13.585h7.305v.256l-11.919 11.92l12.56 18.326v.256h-7.049l-9.484-14.482l-4.742 4.742v9.74h-5.767V4.998zm97.53 29.604q-3.46 0-5.895 1.666q-2.436 1.666-2.307 4.23q0 2.307 1.922 3.716q1.923 1.41 4.486 1.538q3.588 0 6.408-2.691t2.948-6.28q-2.692-2.18-7.562-2.179m-32.168-11.15q-4.23 0-7.049 3.076q-2.691 3.204-2.691 7.946q0 4.999 2.691 8.074q2.82 3.075 7.049 3.076t7.049-3.076q2.82-3.075 2.82-8.074q0-4.742-2.82-7.946t-7.05-3.076m-112.781 0q-4.23 0-7.177 3.076q-2.948 3.076-2.948 7.946q0 4.999 2.948 8.074t7.177 3.076t7.177-3.076q2.947-3.075 2.82-8.074q0-4.87-2.82-7.946q-2.948-3.075-7.177-3.076m208.132 0q-3.204 0-5.51 1.923q-2.308 1.922-3.205 5.382h17.686q-.255-3.204-2.563-5.254q-2.307-2.05-6.408-2.05"/><path fill="#4285F4" d="M25.888 30.246v-7.049h23.326c.267 1.437.396 2.896.384 4.357c0 5.127-1.41 11.663-6.024 16.149C39.09 48.445 33.45 50.88 25.76 50.88C11.79 50.88 0 39.473 0 25.504S11.79 0 25.76 0c7.818 0 13.329 3.076 17.558 7.049l-4.998 4.87A18.199 18.199 0 0 0 7.56 25.504c0 10.253 8.075 18.455 18.2 18.455c6.664 0 10.508-2.691 12.943-5.126c1.923-1.923 3.204-4.742 3.717-8.587z"/><path fill="#EA4335" d="M85.098 34.475c0 9.484-7.433 16.405-16.532 16.405S52.16 43.959 52.16 34.475s7.433-16.404 16.405-16.404c8.97 0 16.532 6.92 16.532 16.404m-7.305 0c0-5.895-4.229-9.868-9.227-9.868s-9.228 3.973-9.228 9.868s4.358 9.997 9.228 9.997s9.227-4.102 9.227-9.997"/><path fill="#FBBC04" d="M120.983 34.475c0 9.484-7.433 16.405-16.532 16.405s-16.405-6.921-16.405-16.405s7.433-16.404 16.405-16.404c8.97 0 16.532 6.92 16.532 16.404m-7.305 0c0-5.895-4.23-9.868-9.227-9.868c-4.999 0-9.228 3.973-9.228 9.868s4.357 9.997 9.228 9.997s9.227-4.102 9.227-9.997"/><path fill="#4285F4" d="M155.33 19.096v29.477c0 12.047-7.177 17.045-15.635 17.045c-7.946 0-12.688-5.383-14.482-9.74l6.28-2.563c1.153 2.691 3.844 5.895 8.202 5.895c5.51 0 8.843-3.46 8.843-9.612v-2.435h-.257a11.15 11.15 0 0 1-8.715 3.717c-8.074 0-15.635-7.177-15.635-16.277c0-9.227 7.561-16.532 15.635-16.532c3.973 0 7.05 1.794 8.715 3.716h.257v-2.691zm-6.28 15.507c0-5.767-3.844-9.996-8.843-9.996c-4.87 0-9.1 4.229-9.1 9.996c0 5.64 4.23 9.869 9.1 9.869c4.999 0 8.843-4.23 8.843-9.869"/><path fill="#34A853" d="M160.328 1.922h7.177v48.06h-7.177z"/><path fill="#EA4335" d="m195.316 39.858l5.64 3.845c-1.795 2.563-6.152 7.177-13.714 7.177c-9.356 0-16.276-7.177-16.276-16.405c0-9.74 7.049-16.404 15.507-16.404c8.459 0 12.688 6.792 13.97 10.509l.769 1.794l-21.916 9.1c1.666 3.332 4.23 4.998 7.946 4.998c3.717 0 6.152-1.795 8.074-4.614m-17.173-5.896l14.61-6.023c-.769-2.05-3.204-3.46-6.024-3.46c-3.716 0-8.843 3.204-8.586 9.483"/></svg>';
+
+class _PixelAchievementFace extends StatelessWidget {
+  const _PixelAchievementFace({required this.style});
+
+  final _AchievementThemeStyle style;
+
+  static const String _pixelStarShellSvg =
+      '<svg viewBox="0 0 24 24" fill="none">'
+      '<path d="M12 2h2v2h-2zm-3 4h8v2H9zm-3 4h14v2H6zm-3 4h20v2H3zm-2 4h24v2H1z" fill="url(#pixelStarG1)" stroke="url(#pixelStarG2)" stroke-width="1.15"/>'
+      '<defs>'
+      '<linearGradient id="pixelStarG1" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">'
+      '<stop stop-color="#FF9F43"/>'
+      '<stop offset="1" stop-color="#FF5E3A"/>'
+      '</linearGradient>'
+      '<linearGradient id="pixelStarG2" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">'
+      '<stop stop-color="#FF5E3A"/>'
+      '<stop offset="1" stop-color="#E23E1D"/>'
+      '</linearGradient>'
+      '</defs>'
+      '</svg>';
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SvgPicture.string(
+          _pixelStarShellSvg,
+          width: 19,
+          height: 19,
+        ),
+        SizedBox(
+          width: 12.0,
+          height: 12.0,
+          child: SvgPicture.string(
+            style.iconSvg,
+            colorFilter: ColorFilter.mode(
+              style.badgeIconColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

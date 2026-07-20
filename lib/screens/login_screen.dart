@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -34,6 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   String? _errorMessage;
   String? _checkedIdentifier;
+  bool _isPhoneLogin = false;
+  bool _phoneOtpSent = false;
+  final _otpController = TextEditingController();
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _identifierController.removeListener(_handleIdentifierChanged);
     _identifierController.dispose();
     _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -68,6 +73,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleContinue() async {
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
+      return;
+    }
+
+    if (_isPhoneLogin) {
+      if (_phoneOtpSent) {
+        await _submitPhoneLogin();
+      } else {
+        await _sendLoginOtp();
+      }
       return;
     }
 
@@ -230,6 +244,92 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _sendLoginOtp() async {
+    final phone = _identifierController.text.trim();
+    if (phone.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter your phone number.';
+      });
+      return;
+    }
+    if (!RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(phone)) {
+      setState(() {
+        _errorMessage = 'Gumamit ng E.164 format (e.g. +639187843417).';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await widget.authService.sendLoginOtp(phone: phone);
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        if (result.ok) {
+          _phoneOtpSent = true;
+          _errorMessage = null;
+        } else {
+          _errorMessage = result.error ?? 'Failed to send OTP code.';
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Unable to connect to KatsKlub. Check your connection.';
+        });
+      }
+    }
+  }
+
+  Future<void> _submitPhoneLogin() async {
+    final phone = _identifierController.text.trim();
+    final otpCode = _otpController.text.trim();
+
+    if (otpCode.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter the OTP code.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await widget.authService.verifyLoginOtp(
+        phone: phone,
+        otpCode: otpCode,
+        persistSession: _rememberMe,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        if (result.ok && result.user != null) {
+          widget.onLoginSuccess(result.user!);
+        } else {
+          _errorMessage = result.error ?? 'Invalid verification code.';
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Connection error. Please try again.';
+        });
+      }
+    }
+  }
+
   InputDecoration _inputDecoration({
     required String hintText,
     required IconData icon,
@@ -344,40 +444,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 28),
-                            TextFormField(
-                              controller: _identifierController,
-                              enabled: !_isLoading,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.username, AutofillHints.email],
-                              textInputAction:
-                                  _showPasswordStep ? TextInputAction.next : TextInputAction.done,
-                              onFieldSubmitted: (_) {
-                                if (!_isLoading) {
-                                  _handleContinue();
-                                }
-                              },
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: primaryText,
-                              ),
-                              decoration: _inputDecoration(
-                                hintText: 'Login or Email',
-                                icon: Icons.person_outline_rounded,
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Enter your login or email.';
-                                }
-                                return null;
-                              },
-                            ),
-                            if (_showPasswordStep) ...[
-                              const SizedBox(height: 12),
+                            if (_isPhoneLogin) ...[
                               TextFormField(
-                                controller: _passwordController,
-                                enabled: !_isLoading,
-                                obscureText: _obscurePassword,
-                                autofillHints: const [AutofillHints.password],
+                                controller: _identifierController,
+                                enabled: !_isLoading && !_phoneOtpSent,
+                                keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) {
                                   if (!_isLoading) {
@@ -389,31 +460,171 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: primaryText,
                                 ),
                                 decoration: _inputDecoration(
-                                  hintText: 'Password',
-                                  icon: Icons.lock_outline_rounded,
-                                  suffixIcon: IconButton(
-                                    onPressed: _isLoading
-                                        ? null
-                                        : () {
-                                            setState(() {
-                                              _obscurePassword = !_obscurePassword;
-                                            });
-                                          },
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      color: secondaryText,
-                                    ),
-                                  ),
+                                  hintText: 'Phone number (e.g. +639187843417)',
+                                  icon: Icons.phone_android_rounded,
                                 ),
                                 validator: (value) {
-                                  if (_showPasswordStep && (value == null || value.isEmpty)) {
-                                    return 'Enter your password.';
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Enter your phone number.';
                                   }
                                   return null;
                                 },
                               ),
+                              if (_phoneOtpSent) ...[
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _otpController,
+                                  enabled: !_isLoading,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: primaryText,
+                                  ),
+                                  decoration: _inputDecoration(
+                                    hintText: 'Enter 6-digit OTP code',
+                                    icon: Icons.lock_outline_rounded,
+                                  ).copyWith(counterText: ''),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Enter the OTP code.';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    TextButton(
+                                      onPressed: _isLoading ? null : _sendLoginOtp,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: brandOrange,
+                                      ),
+                                      child: const Text('Resend Code'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _phoneOtpSent = false;
+                                          _otpController.clear();
+                                        });
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: secondaryText,
+                                      ),
+                                      child: const Text('Change Number'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ] else ...[
+                              TextFormField(
+                                controller: _identifierController,
+                                enabled: !_isLoading,
+                                keyboardType: TextInputType.emailAddress,
+                                autofillHints: const [AutofillHints.username, AutofillHints.email],
+                                textInputAction:
+                                    _showPasswordStep ? TextInputAction.next : TextInputAction.done,
+                                onFieldSubmitted: (_) {
+                                  if (!_isLoading) {
+                                    _handleContinue();
+                                  }
+                                },
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: primaryText,
+                                ),
+                                decoration: _inputDecoration(
+                                  hintText: 'Username, Email, or Phone number',
+                                  icon: Icons.person_outline_rounded,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Enter your username, email, or phone number.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              if (_showPasswordStep) ...[
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  enabled: !_isLoading,
+                                  obscureText: _obscurePassword,
+                                  autofillHints: const [AutofillHints.password],
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) {
+                                    if (!_isLoading) {
+                                      _handleContinue();
+                                    }
+                                  },
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: primaryText,
+                                  ),
+                                  decoration: _inputDecoration(
+                                    hintText: 'Password',
+                                    icon: Icons.lock_outline_rounded,
+                                    suffixIcon: IconButton(
+                                      onPressed: _isLoading
+                                          ? null
+                                          : () {
+                                              setState(() {
+                                                _obscurePassword = !_obscurePassword;
+                                              });
+                                            },
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        color: secondaryText,
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (_showPasswordStep && (value == null || value.isEmpty)) {
+                                      return 'Enter your password.';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              backgroundColor: Theme.of(context)
+                                                  .scaffoldBackgroundColor,
+                                              shape: const RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            16)),
+                                              ),
+                                              builder: (_) =>
+                                                  _ForgotPasswordBottomSheet(
+                                                authService: widget.authService,
+                                                initialIdentifier:
+                                                    _identifierController.text
+                                                        .trim(),
+                                              ),
+                                            );
+                                          },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: brandOrange,
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    child: const Text('Forgot password?'),
+                                  ),
+                                ),
+                              ],
+                            ],
+                            if (!_isPhoneLogin || _phoneOtpSent) ...[
                               const SizedBox(height: 12),
                               Row(
                                 children: [
@@ -482,26 +693,61 @@ class _LoginScreenState extends State<LoginScreen> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : Text(_showPasswordStep ? 'Sign in' : 'Continue'),
+                                    : Text(_isPhoneLogin
+                                        ? (_phoneOtpSent ? 'Verify & Sign in' : 'Send OTP')
+                                        : (_showPasswordStep ? 'Sign in' : 'Continue')),
                               ),
                             ),
                             const SizedBox(height: 12),
-                            TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Password recovery is not available in this Flutter build yet.'),
+                            if (!_isPhoneLogin) ...[
+                              TextButton(
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                    ),
+                                    builder: (_) => _ForgotPasswordBottomSheet(
+                                      authService: widget.authService,
+                                      initialIdentifier: _identifierController.text.trim(),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: secondaryText,
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                );
-                              },
+                                ),
+                                child: const Text('Forgot password?'),
+                              ),
+                            ],
+                            TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _isPhoneLogin = !_isPhoneLogin;
+                                        _phoneOtpSent = false;
+                                        _errorMessage = null;
+                                        _identifierController.clear();
+                                        _passwordController.clear();
+                                        _otpController.clear();
+                                      });
+                                    },
                               style: TextButton.styleFrom(
-                                foregroundColor: secondaryText,
+                                foregroundColor: const Color(0xFF1D9BF0),
                                 textStyle: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              child: const Text('Forgot password?'),
+                              child: Text(_isPhoneLogin
+                                  ? 'Log in with Email/Username'
+                                  : 'Log in with Phone Number'),
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -525,25 +771,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 52,
                               child: OutlinedButton.icon(
                                 onPressed: _isLoading ? null : _handleContinueWithGoogle,
-                                icon: Container(
-                                  width: 22,
-                                  height: 22,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(11),
-                                    border: Border.all(color: outlineColor),
-                                  ),
-                                  child: const Text(
-                                    'G',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF4285F4),
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                ),
+                                icon: SvgPicture.string(
+                                   '''<svg width="800" height="800" viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid"><g><path d="M255.878 133.451C255.878 122.717 255.007 114.884 253.122 106.761H130.55v48.448h71.947C201.047 167.249 193.214 185.381 175.807 197.565L175.563 199.187l38.755 30.023L217.003 229.478c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4"/><path d="M130.55 261.1c35.248.0 64.839-11.605 86.453-31.622l-41.196-31.913C164.783 205.253 149.987 210.62 130.55 210.62c-34.523.0-63.824-22.773-74.269-54.25L54.75 156.5 14.452 187.687 13.925 189.152C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853"/><path d="M56.281 156.37C53.525 148.247 51.93 139.543 51.93 130.55 51.93 121.556 53.525 112.853 56.136 104.73L56.063 103 15.26 71.312 13.925 71.947C5.077 89.644.0 109.517.0 130.55c0 21.033 5.077 40.905 13.925 58.602L56.281 156.37" fill="#FBBC05"/><path d="M130.55 50.479c24.514.0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798.0 130.55.0 79.49.0 35.393 29.301 13.925 71.947L56.136 104.73c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335"/></g></svg>''',
+                                   width: 22,
+                                   height: 22,
+                                 ),
                                 label: const Text('Continue with Google'),
                                 style: OutlinedButton.styleFrom(
                                   backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -628,6 +860,333 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ForgotPasswordBottomSheet extends StatefulWidget {
+  const _ForgotPasswordBottomSheet({
+    required this.authService,
+    required this.initialIdentifier,
+  });
+
+  final AuthService authService;
+  final String initialIdentifier;
+
+  @override
+  State<_ForgotPasswordBottomSheet> createState() =>
+      _ForgotPasswordBottomSheetState();
+}
+
+class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> {
+  final _identifierController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _isLoading = false;
+  bool _otpSent = false;
+  String? _error;
+  String? _target;
+  String? _method;
+  bool _hasAlternative = false;
+  String? _alternativeMethod;
+  String? _alternativeTarget;
+
+  @override
+  void initState() {
+    super.initState();
+    _identifierController.text = widget.initialIdentifier;
+  }
+
+  @override
+  void dispose() {
+    _identifierController.dispose();
+    _otpController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendOtp({bool useAlternative = false}) async {
+    final identifier = _identifierController.text.trim();
+    if (identifier.isEmpty) {
+      setState(() {
+        _error = 'Please enter your email or phone number.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await widget.authService.sendForgotPasswordOtp(
+        identifier: identifier,
+        useAlternative: useAlternative,
+      );
+
+      if (!mounted) return;
+
+      if (result.ok) {
+        setState(() {
+          _otpSent = true;
+          _method = result.method;
+          _target = result.target;
+          _hasAlternative = result.hasAlternative;
+          _alternativeMethod = result.alternativeMethod;
+          _alternativeTarget = result.alternativeTarget;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.method == 'phone'
+                ? 'Verification code sent to your phone!'
+                : 'Verification code sent to your email!'),
+          ),
+        );
+      } else {
+        setState(() {
+          _error = result.error ?? 'Failed to send verification code.';
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _error = 'Connection error. Please check your internet connection.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final identifier = _identifierController.text.trim();
+    final code = _otpController.text.trim();
+    final newPassword = _passwordController.text.trim();
+
+    if (code.isEmpty || newPassword.isEmpty) {
+      setState(() {
+        _error = 'Please fill in all fields.';
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setState(() {
+        _error = 'Password must be at least 6 characters.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await widget.authService.resetPassword(
+        identifier: identifier,
+        otpCode: code,
+        newPassword: newPassword,
+      );
+
+      if (!mounted) return;
+
+      if (result.ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Password updated successfully! You can now log in.')),
+        );
+        Navigator.of(context).pop();
+      } else {
+        setState(() {
+          _error = result.error ?? 'Failed to reset password.';
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _error = 'Connection error. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText =
+        isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Password Recovery',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryText,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(Icons.close, color: primaryText),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_error != null) ...[
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (!_otpSent) ...[
+              Text(
+                'Enter the email address or phone number linked to your account to receive a verification code.',
+                style: TextStyle(fontSize: 14, color: secondaryText, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _identifierController,
+                enabled: !_isLoading,
+                style: TextStyle(color: primaryText),
+                decoration: InputDecoration(
+                  labelText: 'Email or Phone Number',
+                  labelStyle: TextStyle(color: secondaryText),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                        color: secondaryText.withOpacity(0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF7A59),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Send Verification Code'),
+                ),
+              ),
+            ] else ...[
+              Text(
+                'A 6-digit verification code has been sent to your ${_method == 'phone' ? 'phone' : 'email'} at $_target.',
+                style: TextStyle(fontSize: 14, color: secondaryText, height: 1.4),
+              ),
+              if (_hasAlternative) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => _sendOtp(useAlternative: true),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFFF7A59),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      'Send to ${_alternativeMethod == 'phone' ? 'phone' : 'email'} instead ($_alternativeTarget)',
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _otpController,
+                enabled: !_isLoading,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: TextStyle(color: primaryText),
+                decoration: InputDecoration(
+                  labelText: 'Verification Code',
+                  labelStyle: TextStyle(color: secondaryText),
+                  counterText: '',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                        color: secondaryText.withOpacity(0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordController,
+                enabled: !_isLoading,
+                obscureText: true,
+                style: TextStyle(color: primaryText),
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  labelStyle: TextStyle(color: secondaryText),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                        color: secondaryText.withOpacity(0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _resetPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF7A59),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Reset Password'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );

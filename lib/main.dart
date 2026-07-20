@@ -232,6 +232,16 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                   systemNavigationBarIconBrightness: Brightness.dark,
                 ),
               ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.fixed,
+                backgroundColor: const Color(0xFF111827),
+                contentTextStyle: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
             darkTheme: ThemeData(
               useMaterial3: true,
@@ -326,7 +336,25 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                   systemNavigationBarIconBrightness: Brightness.light,
                 ),
               ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.fixed,
+                backgroundColor: const Color(0xFF1F2937),
+                contentTextStyle: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
+             builder: (context, child) {
+               return MediaQuery(
+                 data: MediaQuery.of(context).copyWith(
+                   textScaler: TextScaler.noScaling,
+                 ),
+                 child: child!,
+               );
+             },
             home: _currentUser == null
                 ? LoginScreen(
                     authService: widget.authService,

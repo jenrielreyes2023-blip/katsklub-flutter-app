@@ -8,7 +8,7 @@ import '../services/feed_service.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/mention_autocomplete.dart';
 import '../widgets/repost_source_preview.dart';
-import '../widgets/gold_shimmer_text.dart';
+import '../widgets/special_name_text.dart';
 
 class RepostPostScreen extends StatefulWidget {
   const RepostPostScreen({
@@ -280,22 +280,15 @@ class _RepostPostScreenState extends State<RepostPostScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        currentUser?.username?.toLowerCase() == 'gemini'
-                            ? GoldShimmerText(
-                                text: displayName,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              )
-                            : Text(
-                                displayName,
-                                style: TextStyle(
-                                  color: titleColor,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
+                        SpecialNameText(
+                          username: currentUser?.username ?? '',
+                          displayName: displayName,
+                          style: TextStyle(
+                            color: titleColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         if (handle != null) ...[
                           const SizedBox(height: 2),
                           Text(

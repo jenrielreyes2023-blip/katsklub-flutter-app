@@ -1296,9 +1296,9 @@ class FeedService {
     return null;
   }
 
-  Future<List<User>> loadLeaderboard() async {
+  Future<List<User>> loadLeaderboard({String period = 'all-time'}) async {
     try {
-      final data = await _authenticatedGet('/api/users/leaderboard?limit=50');
+      final data = await _authenticatedGet('/api/users/leaderboard?limit=50&period=$period');
       final list = data['leaderboard'];
       if (list is List) {
         return list
@@ -1309,6 +1309,18 @@ class FeedService {
     return const [];
   }
 
+  Future<List<User>> loadProfileVisitors() async {
+    try {
+      final data = await _authenticatedGet('/api/me/visitors');
+      final list = data['visitors'];
+      if (list is List) {
+        return list
+            .map((item) => User.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+    return const [];
+  }
 
   Future<User> updateCurrentUserPostcardTheme(String postcardTheme) async {
     final normalizedTheme = postcardTheme.trim().toLowerCase();

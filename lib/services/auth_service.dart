@@ -20,6 +20,28 @@ class AuthResult {
   final int? statusCode;
 }
 
+class ForgotPasswordResult {
+  const ForgotPasswordResult({
+    required this.ok,
+    this.error,
+    this.method,
+    this.target,
+    this.code,
+    this.hasAlternative = false,
+    this.alternativeMethod,
+    this.alternativeTarget,
+  });
+
+  final bool ok;
+  final String? error;
+  final String? method;
+  final String? target;
+  final String? code;
+  final bool hasAlternative;
+  final String? alternativeMethod;
+  final String? alternativeTarget;
+}
+
 class GoogleAuthResult {
   const GoogleAuthResult({
     required this.ok,
@@ -189,6 +211,176 @@ class AuthService {
       return AuthResult(
         ok: false,
         error: 'Unable to connect to KatsKlub: $e',
+      );
+    }
+  }
+
+  Future<AuthResult> sendLoginOtp({
+    required String phone,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.uri('/api/auth/phone-login/send-otp'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': phone.trim(),
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to send login SMS verification code.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      return const AuthResult(ok: true);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
+  Future<AuthResult> verifyLoginOtp({
+    required String phone,
+    required String otpCode,
+    bool persistSession = true,
+  }) async {
+    _persistSession = persistSession;
+    try {
+      final response = await _client.post(
+        ApiConfig.uri('/api/auth/phone-login/verify-otp'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': phone.trim(),
+          'otpCode': otpCode.trim(),
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Verification failed.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final user = _readUser(data);
+      if (user == null) {
+        return const AuthResult(
+          ok: false,
+          error: 'Verification succeeded but no user was returned.',
+        );
+      }
+
+      final savedToken = await _saveAuthData(
+        response: response,
+        responseData: data,
+        user: user,
+      );
+
+      final verifiedUser =
+          savedToken == null ? null : await _fetchMe(token: savedToken);
+      if (verifiedUser != null) {
+        await _saveUser(verifiedUser);
+        return AuthResult(ok: true, user: verifiedUser);
+      }
+
+      return AuthResult(ok: true, user: user);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
+  Future<ForgotPasswordResult> sendForgotPasswordOtp({
+    required String identifier,
+    bool useAlternative = false,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.uri('/api/auth/forgot-password/send-otp'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'identifier': identifier.trim(),
+          'useAlternative': useAlternative,
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return ForgotPasswordResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to request password reset code.',
+        );
+      }
+
+      return ForgotPasswordResult(
+        ok: true,
+        method: data['method'] as String?,
+        target: data['target'] as String?,
+        code: data['code'] as String?,
+        hasAlternative: data['hasAlternative'] as bool? ?? false,
+        alternativeMethod: data['alternativeMethod'] as String?,
+        alternativeTarget: data['alternativeTarget'] as String?,
+      );
+    } catch (_) {
+      return const ForgotPasswordResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
+  Future<AuthResult> resetPassword({
+    required String identifier,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.uri('/api/auth/forgot-password/reset'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'identifier': identifier.trim(),
+          'otpCode': otpCode.trim(),
+          'newPassword': newPassword,
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to reset password.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      return const AuthResult(ok: true);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
       );
     }
   }
@@ -483,6 +675,41 @@ class AuthService {
     }
   }
 
+  Future<AuthResult> sendOtp({
+    required String draftId,
+    required String phone,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiConfig.uri('/api/signup/send-otp'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'draftId': draftId.trim(),
+          'phone': phone.trim(),
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to send verification SMS.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      return const AuthResult(ok: true);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
   Future<AuthResult> signupComplete({
     required String draftId,
     required String username,
@@ -493,6 +720,7 @@ class AuthService {
     String? bio,
     String? avatarDataUrl,
     String? googleAvatarUrl,
+    String? otpCode,
   }) async {
     try {
       final response = await _client.post(
@@ -514,6 +742,8 @@ class AuthService {
             'avatarDataUrl': avatarDataUrl.trim(),
           if (googleAvatarUrl != null && googleAvatarUrl.trim().isNotEmpty)
             'googleAvatarUrl': googleAvatarUrl.trim(),
+          if (otpCode != null && otpCode.trim().isNotEmpty)
+            'otpCode': otpCode.trim(),
         }),
       );
 

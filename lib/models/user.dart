@@ -4,6 +4,7 @@ class User {
     this.fullName,
     this.username,
     this.email,
+    this.phone,
     this.roleTitle,
     this.avatarUrl,
     this.bio,
@@ -27,6 +28,7 @@ class User {
     this.profileShowGender = true,
     this.profileShowBirthday = true,
     this.profileShowLocation = true,
+    this.profileShowPhone = false,
     this.profileShowFollowers = true,
     this.profileShowFollowing = true,
     this.profileBorder,
@@ -37,6 +39,8 @@ class User {
     this.featuredPhotos = const [],
     this.pinnedPostId,
     this.charmPoints = 0,
+    this.recentVisitors = const [],
+    this.newVisitorsCount = 0,
     required this.raw,
   });
 
@@ -44,6 +48,7 @@ class User {
   final String? fullName;
   final String? username;
   final String? email;
+  final String? phone;
   final String? roleTitle;
   final String? avatarUrl;
   final String? bio;
@@ -67,6 +72,7 @@ class User {
   final bool profileShowGender;
   final bool profileShowBirthday;
   final bool profileShowLocation;
+  final bool profileShowPhone;
   final bool profileShowFollowers;
   final bool profileShowFollowing;
   final String? profileBorder;
@@ -77,6 +83,8 @@ class User {
   final List<FeaturedPhoto> featuredPhotos;
   final int? pinnedPostId;
   final int charmPoints;
+  final List<ProfileVisitorInfo> recentVisitors;
+  final int newVisitorsCount;
   final Map<String, dynamic> raw;
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -85,6 +93,7 @@ class User {
       fullName: _readString(json['fullName'] ?? json['full_name']),
       username: _readString(json['username']),
       email: _readString(json['email']),
+      phone: _readString(json['phone']),
       roleTitle: _readString(json['roleTitle'] ?? json['role_title']),
       avatarUrl: _readString(json['avatarUrl'] ?? json['avatar_url']),
       bio: _readString(json['bio']),
@@ -130,6 +139,9 @@ class User {
       profileShowLocation: _readBool(
         json['profileShowLocation'] ?? json['profile_show_location'] ?? true,
       ),
+      profileShowPhone: _readBool(
+        json['profileShowPhone'] ?? json['profile_show_phone'] ?? false,
+      ),
       profileShowFollowers: _readBool(
         json['profileShowFollowers'] ?? json['profile_show_followers'] ?? true,
       ),
@@ -149,6 +161,11 @@ class User {
       featuredPhotos: _readFeaturedPhotos(json['featuredPhotos'] ?? json['featured_photos']),
       pinnedPostId: json['pinnedPostId'] != null ? _readInt(json['pinnedPostId']) : (json['pinned_post_id'] != null ? _readInt(json['pinned_post_id']) : null),
       charmPoints: _readInt(json['charmPoints'] ?? json['charm_points']),
+      recentVisitors: (json['recentVisitors'] as List?)
+              ?.map((item) => ProfileVisitorInfo.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      newVisitorsCount: _readInt(json['newVisitorsCount'] ?? json['new_visitors_count']),
       raw: Map<String, dynamic>.from(json),
     );
   }
@@ -222,6 +239,7 @@ class User {
     bool? profileShowGender,
     bool? profileShowBirthday,
     bool? profileShowLocation,
+    bool? profileShowPhone,
     bool? profileShowFollowers,
     bool? profileShowFollowing,
     String? profileBorder,
@@ -232,6 +250,8 @@ class User {
     List<FeaturedPhoto>? featuredPhotos,
     int? pinnedPostId,
     int? charmPoints,
+    List<ProfileVisitorInfo>? recentVisitors,
+    int? newVisitorsCount,
     Map<String, dynamic>? raw,
   }) {
     final nextFollowersCount = followersCount ?? this.followersCount;
@@ -249,6 +269,7 @@ class User {
         profileShowBirthday ?? this.profileShowBirthday;
     final nextProfileShowLocation =
         profileShowLocation ?? this.profileShowLocation;
+    final nextProfileShowPhone = profileShowPhone ?? this.profileShowPhone;
     final nextProfileShowFollowers =
         profileShowFollowers ?? this.profileShowFollowers;
     final nextProfileShowFollowing =
@@ -260,6 +281,8 @@ class User {
     final nextProfileLinks = profileLinks ?? this.profileLinks;
     final nextFeaturedPhotos = featuredPhotos ?? this.featuredPhotos;
     final nextPinnedPostId = pinnedPostId ?? this.pinnedPostId;
+    final nextRecentVisitors = recentVisitors ?? this.recentVisitors;
+    final nextNewVisitorsCount = newVisitorsCount ?? this.newVisitorsCount;
     final nextRaw = Map<String, dynamic>.from(raw ?? this.raw)
       ..['followersCount'] = nextFollowersCount
       ..['followingCount'] = nextFollowingCount
@@ -273,6 +296,7 @@ class User {
       ..['profileShowGender'] = nextProfileShowGender
       ..['profileShowBirthday'] = nextProfileShowBirthday
       ..['profileShowLocation'] = nextProfileShowLocation
+      ..['profileShowPhone'] = nextProfileShowPhone
       ..['profileShowFollowers'] = nextProfileShowFollowers
       ..['profileShowFollowing'] = nextProfileShowFollowing
       ..['profileBorder'] = nextProfileBorder
@@ -282,6 +306,8 @@ class User {
       ..['profileLinks'] = nextProfileLinks.map((l) => l.toJson()).toList()
       ..['featuredPhotos'] = nextFeaturedPhotos.map((p) => p.toJson()).toList()
       ..['pinnedPostId'] = nextPinnedPostId
+      ..['recentVisitors'] = nextRecentVisitors.map((v) => v.toJson()).toList()
+      ..['newVisitorsCount'] = nextNewVisitorsCount
       ..['charmPoints'] = nextCharmPoints;
 
     return User(
@@ -289,6 +315,7 @@ class User {
       fullName: fullName,
       username: username,
       email: email,
+      phone: phone,
       roleTitle: roleTitle,
       avatarUrl: avatarUrl,
       bio: bio,
@@ -312,6 +339,7 @@ class User {
       profileShowGender: nextProfileShowGender,
       profileShowBirthday: nextProfileShowBirthday,
       profileShowLocation: nextProfileShowLocation,
+      profileShowPhone: nextProfileShowPhone,
       profileShowFollowers: nextProfileShowFollowers,
       profileShowFollowing: nextProfileShowFollowing,
       profileBorder: nextProfileBorder,
@@ -322,6 +350,8 @@ class User {
       featuredPhotos: nextFeaturedPhotos,
       pinnedPostId: nextPinnedPostId,
       charmPoints: nextCharmPoints,
+      recentVisitors: nextRecentVisitors,
+      newVisitorsCount: nextNewVisitorsCount,
       raw: nextRaw,
     );
   }
@@ -455,6 +485,30 @@ class FeaturedPhoto {
       'photoUrl': photoUrl,
       'caption': caption,
       'position': position,
+    };
+  }
+}
+
+class ProfileVisitorInfo {
+  final String username;
+  final String avatarUrl;
+
+  ProfileVisitorInfo({
+    required this.username,
+    required this.avatarUrl,
+  });
+
+  factory ProfileVisitorInfo.fromJson(Map<String, dynamic> json) {
+    return ProfileVisitorInfo(
+      username: (json['username'] ?? '').toString(),
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url'] ?? '').toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'avatarUrl': avatarUrl,
     };
   }
 }

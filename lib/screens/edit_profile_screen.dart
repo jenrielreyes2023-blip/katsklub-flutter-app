@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
@@ -370,15 +371,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: source,
-        imageQuality: 95,
-        maxWidth: 2200,
-        maxHeight: 2200,
       );
 
       if (picked == null) return;
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
+
+      final isGif = bytes.length > 3 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46;
+      if (isGif) {
+        final isAdmin = widget.user.isAdmin == true || widget.user.username?.toLowerCase() == 'gemini';
+        if (!isAdmin) {
+          setState(() {
+            _errorMessage = 'Only admin users are allowed to upload animated GIF avatars.';
+          });
+        } else {
+          setState(() {
+            _avatarPreviewBytes = bytes;
+            _avatarDataUrl = 'data:image/gif;base64,${base64Encode(bytes)}';
+            _selectedDefaultAvatarPath = null;
+          });
+        }
+        return;
+      }
 
       final result = await Navigator.of(context).push<_AvatarCropResult>(
         MaterialPageRoute(
@@ -925,10 +940,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               // Websites Section Header
               Row(
-                children: const [
-                  Icon(Icons.link_rounded, size: 18, color: Color(0xFF4A5CF9)),
-                  SizedBox(width: 8),
-                  Text(
+                children: [
+                  SvgPicture.string(
+                    '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.0598 10.9399c2.25 2.25 2.25 5.89.0 8.13-2.25 2.24-5.88995 2.25-8.12995.0s-2.25-5.89.0-8.13" stroke="#4A5CF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M10.5909 13.4099c-2.33996-2.34-2.33996-6.14002.0-8.49002 2.34-2.35 6.14-2.34 8.49.0s2.34 6.14002.0 8.49002" stroke="#4A5CF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
+                    width: 18,
+                    height: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
                     'Websites',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A5CF9)),
                   ),

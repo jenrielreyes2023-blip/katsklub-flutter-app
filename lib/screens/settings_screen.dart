@@ -40,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Privacy Settings state
   late bool _showEmail;
+  late bool _showPhone;
   late bool _showGender;
   late bool _showBirthday;
   late bool _showLocation;
@@ -62,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _currentUser = widget.user;
     _showEmail = _currentUser.profileShowEmail;
+    _showPhone = _currentUser.profileShowPhone;
     _showGender = _currentUser.profileShowGender;
     _showBirthday = _currentUser.profileShowBirthday;
     _showLocation = _currentUser.profileShowLocation;
@@ -167,6 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         headers: headers,
         body: jsonEncode({
           'showEmail': _showEmail,
+          'showPhone': _showPhone,
           'showGender': _showGender,
           'showBirthday': _showBirthday,
           'showLocation': _showLocation,
@@ -557,6 +560,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle: 'Allow other users to see your email address',
                         value: _showEmail,
                         onChanged: (val) => setState(() => _showEmail = val),
+                      ),
+                      Divider(
+                        height: 24,
+                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+                      ),
+                      _buildPrivacySwitch(
+                        title: 'Show phone on profile',
+                        subtitle: 'Allow other users to see your phone number',
+                        value: _showPhone,
+                        onChanged: (val) => setState(() => _showPhone = val),
                       ),
                       Divider(
                         height: 24,

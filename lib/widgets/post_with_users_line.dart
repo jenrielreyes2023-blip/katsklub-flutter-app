@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user.dart';
+import 'special_name_text.dart';
 
 class PostWithUsersLine extends StatefulWidget {
   const PostWithUsersLine({
@@ -43,12 +44,31 @@ class _PostWithUsersLineState extends State<PostWithUsersLine> {
     _recognizers.clear();
   }
 
-  TextSpan _userSpan(User user) {
+  InlineSpan _userSpan(User user) {
     final username = (user.username ?? '').trim();
     final label = user.displayName.trim();
     final onUserTap = widget.onUserTap;
+    final cleanUsername = username.toLowerCase();
+    
+    final style = widget.linkStyle ?? widget.style;
+    final isSpecial = cleanUsername == 'gemini' || cleanUsername == 'human_equality';
+    
+    if (isSpecial) {
+      return WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: GestureDetector(
+          onTap: onUserTap != null ? () => onUserTap(username) : null,
+          child: SpecialNameText(
+            username: username,
+            displayName: label,
+            style: style,
+          ),
+        ),
+      );
+    }
+
     if (username.isEmpty || onUserTap == null) {
-      return TextSpan(text: label, style: widget.linkStyle ?? widget.style);
+      return TextSpan(text: label, style: style);
     }
 
     final recognizer = TapGestureRecognizer()
@@ -59,7 +79,7 @@ class _PostWithUsersLineState extends State<PostWithUsersLine> {
 
     return TextSpan(
       text: label,
-      style: widget.linkStyle ?? widget.style,
+      style: style,
       recognizer: recognizer,
     );
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -256,6 +257,9 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
     _isInitializing = false;
     _generation++;
 
+    // Disable wakelock when the controller is disposed
+    WakelockPlus.disable().catchError((_) {});
+
     if (controller != null) {
       debugLog('dispose controller');
       controller.removeListener(_handleControllerChanged);
@@ -282,6 +286,16 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
     final controller = _controller;
     final isInitialized = controller?.value.isInitialized == true;
     final isPlaying = controller?.value.isPlaying == true;
+
+    // Toggle wakelock when playing state changes
+    if (isPlaying != _lastNotifiedPlaying) {
+      if (isPlaying) {
+        WakelockPlus.enable().catchError((_) {});
+      } else {
+        WakelockPlus.disable().catchError((_) {});
+      }
+    }
+
     if (isInitialized == _lastNotifiedInitialized &&
         isPlaying == _lastNotifiedPlaying) {
       return;

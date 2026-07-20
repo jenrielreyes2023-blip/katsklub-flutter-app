@@ -13,7 +13,7 @@ import '../utils/emoji_presentation.dart';
 import 'hashtag_text.dart';
 import 'loading_skeletons.dart';
 import 'mention_autocomplete.dart';
-import 'gold_shimmer_text.dart';
+import 'special_name_text.dart';
 
 Future<int?> showCommentsModal({
   required BuildContext context,
@@ -623,24 +623,15 @@ class _CommentTile extends StatelessWidget {
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => _openAuthor(context, comment),
-                                   child: comment.authorUsername.toLowerCase() == 'gemini'
-                                       ? GoldShimmerText(
-                                           text: comment.displayName,
-                                           style: const TextStyle(
-                                             fontSize: 13,
-                                             fontWeight: FontWeight.w600,
-                                           ),
-                                         )
-                                       : Text(
-                                           comment.displayName,
-                                           maxLines: 1,
-                                           overflow: TextOverflow.ellipsis,
-                                           style: TextStyle(
-                                             color: primaryTextColor,
-                                             fontSize: 13,
-                                             fontWeight: FontWeight.w600,
-                                           ),
-                                         ),
+                                  child: SpecialNameText(
+                                    username: comment.authorUsername,
+                                    displayName: comment.displayName,
+                                    style: TextStyle(
+                                      color: primaryTextColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                               if (comment.authorIsVerified ||
@@ -822,24 +813,15 @@ class _ReplyTile extends StatelessWidget {
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () => _openAuthor(context, reply),
-                              child: reply.authorUsername.toLowerCase() == 'gemini'
-                                  ? GoldShimmerText(
-                                      text: reply.displayName,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    )
-                                  : Text(
-                                      reply.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: primaryTextColor,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                              child: SpecialNameText(
+                                username: reply.authorUsername,
+                                displayName: reply.displayName,
+                                style: TextStyle(
+                                  color: primaryTextColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                           if (reply.authorIsVerified ||
@@ -1358,6 +1340,7 @@ class _CommentComposer extends StatelessWidget {
                           hintText: replyTarget == null
                               ? 'Write a comment...'
                               : 'Reply to ${replyTarget!.displayName}...',
+                          hintMaxLines: 1,
                           hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
                           isDense: true,
                           filled: true,

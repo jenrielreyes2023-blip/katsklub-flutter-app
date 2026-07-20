@@ -101,8 +101,21 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _selectedGender;
   _SignupStage _stage = _SignupStage.email;
   bool _googleAvatarRemoved = false;
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+  bool _otpSent = false;
+  String? _activeDraftId;
 
   bool get _isGoogleMode => widget.googleContext != null;
+  bool get _isPhoneSignup {
+    final val = _emailController.text.trim();
+    if (val.isEmpty) return false;
+    return !val.contains('@');
+  }
+
+  bool _isValidPhone(String value) {
+    return RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(value);
+  }
 
   @override
   void initState() {
@@ -139,6 +152,8 @@ class _SignupScreenState extends State<SignupScreen> {
     _bioController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
     _countryFocusNode.dispose();
     _cityFocusNode.dispose();
     super.dispose();
@@ -164,6 +179,9 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       case _SignupStage.security:
         await _handleSecurityContinue();
+        return;
+      case _SignupStage.phone:
+        await _handlePhoneContinue();
         return;
     }
   }
@@ -296,25 +314,60 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final String draftId;
-      String? googleAvatarUrl;
-
       if (_isGoogleMode) {
-        draftId = widget.googleContext!.draftId;
+        final draftId = widget.googleContext!.draftId;
+        String? googleAvatarUrl;
         if (!_googleAvatarRemoved && _avatarDataUrl == null) {
           googleAvatarUrl = widget.googleContext!.googleAvatarUrl;
+        }
+
+        final signupCompleteResult = await widget.authService.signupComplete(
+          draftId: draftId,
+          username: _normalizedUsername,
+          gender: _selectedGender ?? '',
+          birthday: _birthdayValue ?? '',
+          location: _selectedLocation,
+          fullName: _fullName,
+          bio: _bioController.text.trim(),
+          avatarDataUrl: _avatarDataUrl,
+          googleAvatarUrl: googleAvatarUrl,
+        );
+
+        if (!mounted) return;
+
+        if (!signupCompleteResult.ok || signupCompleteResult.user == null) {
+          setState(() {
+            _inlineError = signupCompleteResult.error ??
+                'Unable to complete signup. Please try again.';
+          });
+          return;
+        }
+
+        setState(() {
+          _didCompleteSignup = true;
+        });
+
+        try {
+          widget.onSignupSuccess(signupCompleteResult.user!);
+          if (!mounted) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          return;
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _inlineError = 'Your account was created, but we could not finish signing you in.';
+          });
+          return;
         }
       } else {
         final signupStartResult = await widget.authService.signupStart(
           fullName: _fullName,
-          email: _normalizedEmail,
+          email: _emailController.text.trim(),
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
         );
 
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
 
         if (!signupStartResult.ok || signupStartResult.draftId == null) {
           setState(() {
@@ -323,11 +376,118 @@ class _SignupScreenState extends State<SignupScreen> {
           });
           return;
         }
-        draftId = signupStartResult.draftId!;
-      }
 
+        setState(() {
+          _activeDraftId = signupStartResult.draftId;
+          _stage = _SignupStage.phone;
+          if (_isPhoneSignup) {
+            _phoneController.text = _emailController.text.trim();
+          }
+        });
+
+        // Auto-send verification code (SMS or Email)
+        _sendOtp();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _sendOtp() async {
+    final String phone;
+    if (_isPhoneSignup) {
+      phone = _phoneController.text.trim();
+      if (phone.isEmpty) {
+        setState(() {
+          _inlineError = 'Please enter your phone number.';
+        });
+        return;
+      }
+      if (!_isValidPhone(phone)) {
+        setState(() {
+          _inlineError = 'Gumamit ng tamang format (e.g. +639187843417).';
+        });
+        return;
+      }
+    } else {
+      phone = '';
+    }
+
+    setState(() {
+      _isLoading = true;
+      _inlineError = null;
+    });
+
+    try {
+      final result = await widget.authService.sendOtp(
+        draftId: _activeDraftId!,
+        phone: phone,
+      );
+
+      if (!mounted) return;
+
+      if (result.ok) {
+        setState(() {
+          _otpSent = true;
+          _inlineError = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isPhoneSignup
+                ? 'OTP sent successfully to your phone!'
+                : 'Verification code sent to your email address!'),
+          ),
+        );
+      } else {
+        setState(() {
+          _inlineError = result.error ?? 'Failed to send OTP code.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _inlineError = 'Error connection. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handlePhoneContinue() async {
+    if (_isPhoneSignup && _phoneController.text.trim().isEmpty) {
+      setState(() {
+        _inlineError = 'Please enter your phone number.';
+      });
+      return;
+    }
+    if (!_otpSent) {
+      setState(() {
+        _inlineError = 'Please wait for the code to be sent.';
+      });
+      return;
+    }
+    if (_otpController.text.trim().isEmpty) {
+      setState(() {
+        _inlineError = 'Please enter the verification code.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _inlineError = null;
+    });
+
+    try {
       final signupCompleteResult = await widget.authService.signupComplete(
-        draftId: draftId,
+        draftId: _activeDraftId!,
         username: _normalizedUsername,
         gender: _selectedGender ?? '',
         birthday: _birthdayValue ?? '',
@@ -335,17 +495,14 @@ class _SignupScreenState extends State<SignupScreen> {
         fullName: _fullName,
         bio: _bioController.text.trim(),
         avatarDataUrl: _avatarDataUrl,
-        googleAvatarUrl: googleAvatarUrl,
+        otpCode: _otpController.text.trim(),
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (!signupCompleteResult.ok || signupCompleteResult.user == null) {
         setState(() {
-          _inlineError = signupCompleteResult.error ??
-              'Unable to complete signup. Please try again.';
+          _inlineError = signupCompleteResult.error ?? 'Invalid verification code or registration failed.';
         });
         return;
       }
@@ -356,22 +513,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
       try {
         widget.onSignupSuccess(signupCompleteResult.user!);
-        if (!mounted) {
-          return;
-        }
-
+        if (!mounted) return;
         Navigator.of(context).popUntil((route) => route.isFirst);
-        return;
       } catch (_) {
-        if (!mounted) {
-          return;
-        }
-
+        if (!mounted) return;
         setState(() {
-          _inlineError =
-              'Your account was created, but we could not finish signing you in. Please return to log in with your new account.';
+          _inlineError = 'Your account was created, but we could not sign you in automatically.';
         });
-        return;
       }
     } finally {
       if (mounted) {
@@ -948,19 +1096,24 @@ class _SignupScreenState extends State<SignupScreen> {
         return 3;
       case _SignupStage.security:
         return 4;
+      case _SignupStage.phone:
+        return 5;
     }
   }
 
-  double get _progressValue => _currentProgressStep / 4;
+  double get _progressValue => _currentProgressStep / 5;
 
   bool get _showOnboarding => _stage != _SignupStage.email;
 
   String get _buttonText {
     if (_stage == _SignupStage.email) {
-      return 'Continue with Email';
+      return 'Continue';
     }
     if (_stage == _SignupStage.security) {
-      return _isGoogleMode ? 'Complete signup' : 'Create account';
+      return _isGoogleMode ? 'Complete signup' : 'Continue to Verification';
+    }
+    if (_stage == _SignupStage.phone) {
+      return 'Verify & Complete';
     }
     return 'Continue';
   }
@@ -997,12 +1150,18 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   String? get _emailErrorText {
-    final email = _normalizedEmail;
-    if (email.isEmpty) {
-      return 'Enter your email.';
+    final value = _emailController.text.trim();
+    if (value.isEmpty) {
+      return 'Enter your email or phone number.';
     }
-    if (!_isValidEmail(email)) {
-      return 'Enter a valid email.';
+    if (_isPhoneSignup) {
+      if (!_isValidPhone(value)) {
+        return 'Enter a valid phone number (e.g. +639187843417).';
+      }
+    } else {
+      if (!_isValidEmail(value)) {
+        return 'Enter a valid email address.';
+      }
     }
     return null;
   }
@@ -1325,27 +1484,27 @@ class _SignupScreenState extends State<SignupScreen> {
         TextFormField(
           controller: _emailController,
           enabled: !_isLoading,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) {
             if (!_isLoading) {
-              unawaited(_handleContinue());
+              _handleContinue();
             }
           },
           onChanged: (_) {
-            if (_didAttemptEmailContinue || _inlineError != null) {
-              setState(() {
+            setState(() {
+              if (_didAttemptEmailContinue || _inlineError != null) {
                 _inlineError = null;
-              });
-            }
+              }
+            });
           },
           style: TextStyle(
             fontSize: 14,
             color: primaryText,
           ),
           decoration: _inputDecoration(
-            hintText: 'Enter your email',
-            icon: Icons.email_outlined,
+            hintText: 'Email address or Phone number (e.g. +63...)',
+            icon: _isPhoneSignup ? Icons.phone_android_outlined : Icons.email_outlined,
           ).copyWith(
             errorText: _didAttemptEmailContinue ? _emailErrorText : null,
           ),
@@ -2107,6 +2266,110 @@ class _SignupScreenState extends State<SignupScreen> {
           ],
         );
         break;
+      case _SignupStage.phone:
+        currentStepFields = Column(
+          key: const ValueKey(_SignupStage.phone),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              _isPhoneSignup ? 'Verify your phone number' : 'Verify your email address',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: primaryText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _isPhoneSignup
+                  ? 'We will send an SMS OTP verification code to secure your account.'
+                  : 'We have sent a verification code to ${_emailController.text.trim()} to secure your account.',
+              style: TextStyle(
+                fontSize: 13,
+                color: secondaryText,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_isPhoneSignup) ...[
+              TextFormField(
+                controller: _phoneController,
+                enabled: !_isLoading && !_didCompleteSignup && !_otpSent,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(fontSize: 14, color: primaryText),
+                decoration: _inputDecoration(
+                  hintText: 'Enter phone number (e.g. +639187843417)',
+                  icon: Icons.phone_android_rounded,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (!_otpSent) ...[
+              SizedBox(
+                height: 44,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D9BF0),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(_isPhoneSignup ? 'Send Verification Code' : 'Send Code to Email'),
+                ),
+              ),
+            ] else ...[
+              TextFormField(
+                controller: _otpController,
+                enabled: !_isLoading && !_didCompleteSignup,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: TextStyle(fontSize: 14, color: primaryText),
+                decoration: _inputDecoration(
+                  hintText: 'Enter 6-digit verification code',
+                  icon: Icons.lock_outline_rounded,
+                ).copyWith(counterText: ''),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: _isLoading ? null : _sendOtp,
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF1D9BF0),
+                    ),
+                    child: const Text('Resend Code'),
+                  ),
+                  if (_isPhoneSignup)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: secondaryText,
+                      ),
+                      child: const Text('Change Number'),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        );
+        break;
     }
 
     return Column(
@@ -2321,6 +2584,7 @@ enum _SignupStage {
   basicInfo,
   profile,
   security,
+  phone,
 }
 
 class _FieldStatus {
