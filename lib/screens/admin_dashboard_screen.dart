@@ -3275,7 +3275,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            side: const BorderSide(color: Color(0xFFE5E7EB)),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
