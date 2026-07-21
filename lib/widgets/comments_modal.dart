@@ -871,8 +871,8 @@ class _ReplyTile extends StatelessWidget {
                           if ((reply.replyToFullName ?? '').trim().isNotEmpty)
                             TextSpan(
                               text: '${reply.replyToFullName!.trim()} ',
-                              style: const TextStyle(
-                                color: Color(0xFF2563EB),
+                              style: TextStyle(
+                                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

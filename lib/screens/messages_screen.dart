@@ -3748,6 +3748,9 @@ class _LinkifiedTextState extends State<LinkifiedText> {
     var currentIndex = 0;
     final text = ensureEmojiPresentation(widget.text);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final linkColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+
     for (final match in _urlPattern.allMatches(text)) {
       if (match.start > currentIndex) {
         spans.addAll(
@@ -3794,7 +3797,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
         splitTextByEmoji(
           url,
           widget.style.copyWith(
-            color: const Color(0xFF2563EB),
+            color: linkColor,
             decoration: TextDecoration.underline,
           ),
         ).map((s) => s is TextSpan ? TextSpan(text: s.text, style: s.style, recognizer: recognizer) : s),

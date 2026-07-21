@@ -653,7 +653,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onTap: _isSaving ? null : _pickAvatar,
                       child: CircleAvatar(
                         radius: 46,
-                        backgroundColor: Colors.blue.shade50,
+                        backgroundColor: isDark ? const Color(0xFF2A2B2D) : Colors.blue.shade50,
                         backgroundImage: _avatarPreviewBytes != null
                             ? MemoryImage(_avatarPreviewBytes!)
                             : (_avatarUrl != null && _avatarUrl!.trim().isNotEmpty
@@ -665,7 +665,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 30,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                  color: isDark ? const Color(0xFFFF7A45) : Colors.blue.shade700,
                                 ),
                               )
                             : null,

@@ -135,6 +135,9 @@ List<InlineSpan> buildHashtagTextSpans({
   final spans = <InlineSpan>[];
   var currentIndex = 0;
 
+  final isDark = style.color != null && style.color!.computeLuminance() > 0.5;
+  final linkColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+
   for (final match in _linkifiedPattern.allMatches(text)) {
     if (match.start > currentIndex) {
       spans.addAll(
@@ -161,7 +164,7 @@ List<InlineSpan> buildHashtagTextSpans({
           token,
           hashtagStyle ??
               style.copyWith(
-                color: const Color(0xFF2563EB),
+                color: linkColor,
                 fontWeight: FontWeight.w700,
               ),
         ).map((s) => s is TextSpan ? TextSpan(text: s.text, style: s.style, recognizer: recognizer) : s),
@@ -181,7 +184,7 @@ List<InlineSpan> buildHashtagTextSpans({
           token,
           mentionStyle ??
               style.copyWith(
-                color: const Color(0xFF2563EB),
+                color: linkColor,
                 fontWeight: FontWeight.w700,
               ),
         ).map((s) => s is TextSpan ? TextSpan(text: s.text, style: s.style, recognizer: recognizer) : s),
