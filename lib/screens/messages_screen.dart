@@ -190,6 +190,12 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _scrollToBottomSoon();
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ConversationThemeStore.selections.removeListener(_onThemeChanged);
@@ -314,6 +320,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (!set.contains(userId)) {
       if (!mounted) return;
       setState(() => set.add(userId));
+      _scrollToBottomSoon();
     }
   }
 
@@ -326,6 +333,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         set.remove(userId);
         if (set.isEmpty) _typingByThread.remove(threadId);
       });
+      _scrollToBottomSoon();
     }
   }
 
@@ -4532,7 +4540,9 @@ class _TypingRowState extends State<_TypingRow>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF242526)
+                : Colors.white,
             borderRadius: BorderRadius.circular(18),
           ),
           child: AnimatedBuilder(
