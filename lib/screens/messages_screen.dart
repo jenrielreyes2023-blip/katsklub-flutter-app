@@ -114,6 +114,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       <_PendingMessageAttachment>[];
   _MessagesPageState _state = _MessagesPageState.general;
   User? _currentUser;
+  User? _otherUserProfile;
   List<UserNote> _notes = [];
   List<Story> _stories = [];
   bool _isLoadingNotes = false;
@@ -1846,6 +1847,20 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
+  Future<void> _loadOtherUserProfile(MessageThread thread) async {
+    if (thread.isGroup) return;
+    final username = thread.otherUser.username;
+    if (username == null || username.isEmpty) return;
+    try {
+      final profile = await _feedService.loadUserProfile(username);
+      if (mounted && _thread?.id == thread.id) {
+        setState(() {
+          _otherUserProfile = profile;
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadThread() async {
     final thread = _thread;
     if (thread == null) {
@@ -1854,6 +1869,7 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     setState(() {
       _isLoadingThread = !_hasLoadedThreadOnce && _messages.isEmpty;
+      _otherUserProfile = null;
     });
 
     try {
@@ -1874,6 +1890,10 @@ class _MessagesScreenState extends State<MessagesScreen>
       _scrollToBottomSoon();
       _feedService.markThreadRead(thread.id);
       _scheduleStaleCatchup(thread.id);
+
+      if (page != null) {
+        _loadOtherUserProfile(page.thread);
+      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -1889,6 +1909,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   Future<void> _loadThreadById(int threadId) async {
     setState(() {
       _isLoadingThread = true;
+      _otherUserProfile = null;
     });
 
     debugPrint('[DM-DBG] _loadThreadById($threadId) start');
@@ -1914,6 +1935,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       _scrollToBottomSoon();
       if (page != null) {
         _feedService.markThreadRead(threadId);
+        _loadOtherUserProfile(page.thread);
       }
       _scheduleStaleCatchup(threadId);
     } catch (_) {
@@ -2136,9 +2158,13 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _openMoreMenu() {
     final t = _thread;
     if (t == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF242526) : Colors.white;
+    final sheetTextIconColor = isDark ? Colors.white : const Color(0xFF111827);
+
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -2153,18 +2179,18 @@ class _MessagesScreenState extends State<MessagesScreen>
                 height: 4,
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
+                  color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               if (t.isGroup)
                 ListTile(
-                  leading: const Icon(Icons.group_add_outlined,
-                      color: Color(0xFF111827)),
-                  title: const Text(
+                  leading: Icon(Icons.group_add_outlined,
+                      color: sheetTextIconColor),
+                  title: Text(
                     'Add members',
                     style: TextStyle(
-                      color: Color(0xFF111827),
+                      color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2175,12 +2201,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ),
               if (t.isGroup)
                 ListTile(
-                  leading: const Icon(Icons.people_outline_rounded,
-                      color: Color(0xFF111827)),
+                  leading: Icon(Icons.people_outline_rounded,
+                      color: sheetTextIconColor),
                   title: Text(
                     'Members (${t.members.length})',
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
+                    style: TextStyle(
+                      color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2190,12 +2216,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                   },
                 ),
               ListTile(
-                leading: const Icon(Icons.palette_outlined,
-                    color: Color(0xFF111827)),
-                title: const Text(
+                leading: Icon(Icons.palette_outlined,
+                    color: sheetTextIconColor),
+                title: Text(
                   'Change theme',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: sheetTextIconColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2206,12 +2232,12 @@ class _MessagesScreenState extends State<MessagesScreen>
               ),
               if (t.isActive)
                 ListTile(
-                  leading: const Icon(Icons.archive_outlined,
-                      color: Color(0xFF111827)),
-                  title: const Text(
+                  leading: Icon(Icons.archive_outlined,
+                      color: sheetTextIconColor),
+                  title: Text(
                     'Archive chat',
                     style: TextStyle(
-                      color: Color(0xFF111827),
+                      color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2222,12 +2248,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ),
               if (t.isArchived)
                 ListTile(
-                  leading: const Icon(Icons.unarchive_outlined,
-                      color: Color(0xFF111827)),
-                  title: const Text(
+                  leading: Icon(Icons.unarchive_outlined,
+                      color: sheetTextIconColor),
+                  title: Text(
                     'Unarchive chat',
                     style: TextStyle(
-                      color: Color(0xFF111827),
+                      color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2236,12 +2262,182 @@ class _MessagesScreenState extends State<MessagesScreen>
                     _unarchiveCurrentThread();
                   },
                 ),
+              if (!t.isGroup) ...[
+                ListTile(
+                  leading: Icon(
+                    (_otherUserProfile?.isMuted == true)
+                        ? Icons.volume_up_outlined
+                        : Icons.volume_off_outlined,
+                    color: const Color(0xFFDC2626),
+                  ),
+                  title: Text(
+                    (_otherUserProfile?.isMuted == true)
+                        ? 'Unmute @${t.otherUser.username}'
+                        : 'Mute @${t.otherUser.username}',
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _toggleMuteUserFromChat(t.otherUser);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    (_otherUserProfile?.isBlocked == true)
+                        ? Icons.lock_open_rounded
+                        : Icons.block,
+                    color: const Color(0xFFDC2626),
+                  ),
+                  title: Text(
+                    (_otherUserProfile?.isBlocked == true)
+                        ? 'Unblock @${t.otherUser.username}'
+                        : 'Block @${t.otherUser.username}',
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _toggleBlockUserFromChat(t.otherUser);
+                  },
+                ),
+              ],
               const SizedBox(height: 4),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<void> _toggleBlockUserFromChat(User user) async {
+    final username = user.username ?? '';
+    final displayName = user.displayName;
+    if (username.isEmpty) return;
+
+    final isBlocked = _otherUserProfile?.isBlocked ?? false;
+    final titleText = isBlocked ? 'Unblock $displayName?' : 'Block $displayName?';
+    final contentText = isBlocked
+        ? 'You will be able to message each other and see each other\'s posts again.'
+        : 'They won\'t be able to message you, see your posts, or find your profile. You will not see their content either.';
+    final actionText = isBlocked ? 'Unblock' : 'Block';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titleText),
+          content: Text(contentText),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: isBlocked ? null : const Color(0xFFDC2626),
+              ),
+              child: Text(actionText),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final ok = isBlocked
+        ? await _feedService.unblockUser(username)
+        : await _feedService.blockUser(username);
+
+    if (!mounted) return;
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not $actionText this user. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${isBlocked ? "Unblocked" : "Blocked"} $displayName.')),
+    );
+
+    if (!isBlocked) {
+      if (widget.onBack != null) {
+        widget.onBack!();
+      } else if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      _loadOtherUserProfile(_thread!);
+    }
+  }
+
+  Future<void> _toggleMuteUserFromChat(User user) async {
+    final username = user.username ?? '';
+    final displayName = user.displayName;
+    if (username.isEmpty) return;
+
+    final isMuted = _otherUserProfile?.isMuted ?? false;
+    final titleText = isMuted ? 'Unmute $displayName?' : 'Mute $displayName?';
+    final contentText = isMuted
+        ? 'You will start seeing their posts in your feed again.'
+        : 'KatsKlub won\'t let them know you muted them. You will stop seeing their posts in your feed.';
+    final actionText = isMuted ? 'Unmute' : 'Mute';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titleText),
+          content: Text(contentText),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: isMuted ? null : const Color(0xFFDC2626),
+              ),
+              child: Text(actionText),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final ok = isMuted
+        ? await _feedService.unmuteUser(username)
+        : await _feedService.muteUser(username);
+
+    if (!mounted) return;
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not $actionText this user. Please try again.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${isMuted ? "Unmuted" : "Muted"} $displayName.')),
+    );
+
+    _loadOtherUserProfile(_thread!);
   }
 
   Future<void> _openCreateGroupSheet() async {
