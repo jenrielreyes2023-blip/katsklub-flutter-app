@@ -2298,6 +2298,7 @@ class _PostCardState extends State<PostCard> {
                                   imageUrls: _post.imageUrls,
                                   initialAspectRatios: _post.imageAspectRatios,
                                   postId: _post.id,
+                                  fit: _post.isDiscussion ? BoxFit.contain : null,
                                   onImageTap: (index) =>
                                       widget.onOpenImages?.call(_post, index),
                                   onMediaReady: () =>

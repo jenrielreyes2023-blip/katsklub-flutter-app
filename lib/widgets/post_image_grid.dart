@@ -14,6 +14,7 @@ class PostImageGrid extends StatelessWidget {
     this.displayImageUrls,
     this.onImageTap,
     this.onMediaReady,
+    this.fit,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class PostImageGrid extends StatelessWidget {
   final List<String>? displayImageUrls;
   final ValueChanged<int>? onImageTap;
   final VoidCallback? onMediaReady;
+  final BoxFit? fit;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +44,7 @@ class PostImageGrid extends StatelessWidget {
           initialAspectRatio: _initialAspectRatioFor(0),
           postId: postId,
           onMediaReady: onMediaReady,
+          fit: fit,
         ),
       );
     }
@@ -356,12 +359,14 @@ class _SinglePostImage extends StatefulWidget {
     this.initialAspectRatio,
     this.postId,
     this.onMediaReady,
+    this.fit,
   });
 
   final String url;
   final double? initialAspectRatio;
   final String? postId;
   final VoidCallback? onMediaReady;
+  final BoxFit? fit;
 
   @override
   State<_SinglePostImage> createState() => _SinglePostImageState();
@@ -427,7 +432,7 @@ class _SinglePostImageState extends State<_SinglePostImage> {
   void _applyRatio(double ratio, {required bool triggerSetState}) {
     final normalizedRatio =
         ratio > _maxLandscapeAspectRatio ? _maxLandscapeAspectRatio : ratio;
-    final fit = ratio < 1 ? BoxFit.contain : BoxFit.cover;
+    final fit = widget.fit ?? (ratio < 1 ? BoxFit.contain : BoxFit.cover);
 
     if (_aspectRatio == normalizedRatio && _fit == fit) {
       return;
