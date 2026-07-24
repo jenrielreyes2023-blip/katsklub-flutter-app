@@ -1300,8 +1300,8 @@ class _FeedScreenState extends State<FeedScreen>
           },
           transitionDuration: const Duration(milliseconds: 200),
           reverseTransitionDuration: const Duration(milliseconds: 180),
-          opaque: false,
-          barrierColor: Colors.black.withValues(alpha: 0.5),
+          opaque: true,
+          barrierColor: Colors.black,
         ),
       );
       return;
