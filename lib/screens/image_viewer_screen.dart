@@ -15,6 +15,7 @@ import '../widgets/share_post_sheet.dart';
 import 'hashtag_screen.dart';
 import 'repost_post_screen.dart';
 import 'user_profile_screen.dart';
+import 'vertical_gallery_screen.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   const ImageViewerScreen({
@@ -207,6 +208,34 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     });
   }
 
+  Future<void> _openSlideComments(int slideId) async {
+    final post = _post;
+    if (post == null) {
+      return;
+    }
+
+    final slideIndex = post.slides.indexWhere((s) => s.id == slideId);
+    if (slideIndex < 0) return;
+    final slide = post.slides[slideIndex];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SlideCommentsBottomSheet(
+        postId: post.id,
+        slideId: slide.id,
+        onCommentCountUpdated: (newCount) {
+          setState(() {
+            final updatedSlides = List<PostSlide>.from(post.slides);
+            updatedSlides[slideIndex] = slide.copyWith(commentCount: newCount);
+            _post = post.copyWith(slides: updatedSlides);
+          });
+        },
+      ),
+    );
+  }
+
   Future<void> _repostPost() async {
     final post = _post;
     if (post == null) {
@@ -383,15 +412,16 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                     caption: effectivePost?.text ?? widget.caption?.trim() ?? '',
                     likeCount: slide != null ? slide.likeCount : (effectivePost?.likeCount ?? widget.likeCount ?? 0),
                     likedByMe: slide != null ? slide.likedByMe : (effectivePost?.likedByMe ?? false),
-                    commentCount:
-                        effectivePost?.commentCount ?? widget.commentCount ?? 0,
+                    commentCount: slide != null ? slide.commentCount : (effectivePost?.commentCount ?? widget.commentCount ?? 0),
                     repostCount:
                         effectivePost?.repostCount ?? widget.repostCount ?? 0,
                     withUsers: effectivePost?.withUsers ?? const <User>[],
                     onLike: effectivePost != null
                         ? (slide != null ? () => _toggleSlideLike(slide.id) : _toggleLike)
                         : null,
-                    onComment: effectivePost != null ? _openComments : null,
+                    onComment: effectivePost != null
+                        ? (slide != null ? () => _openSlideComments(slide.id) : _openComments)
+                        : null,
                     onRepost: effectivePost != null ? _repostPost : null,
                     onShare: effectivePost != null ? _sharePost : null,
                   );

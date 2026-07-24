@@ -225,7 +225,7 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _SlideCommentsBottomSheet(
+      builder: (context) => SlideCommentsBottomSheet(
         postId: post.id,
         slideId: slide.id,
         onCommentCountUpdated: (newCount) {
@@ -673,8 +673,8 @@ class _ImageAspectResolver {
   }
 }
 
-class _SlideCommentsBottomSheet extends StatefulWidget {
-  const _SlideCommentsBottomSheet({
+class SlideCommentsBottomSheet extends StatefulWidget {
+  const SlideCommentsBottomSheet({
     required this.postId,
     required this.slideId,
     required this.onCommentCountUpdated,
@@ -685,10 +685,10 @@ class _SlideCommentsBottomSheet extends StatefulWidget {
   final ValueChanged<int> onCommentCountUpdated;
 
   @override
-  State<_SlideCommentsBottomSheet> createState() => _SlideCommentsBottomSheetState();
+  State<SlideCommentsBottomSheet> createState() => SlideCommentsBottomSheetState();
 }
 
-class _SlideCommentsBottomSheetState extends State<_SlideCommentsBottomSheet> {
+class SlideCommentsBottomSheetState extends State<SlideCommentsBottomSheet> {
   final FeedService _feedService = FeedService();
   final TextEditingController _commentController = TextEditingController();
   List<Map<String, dynamic>> _comments = [];
