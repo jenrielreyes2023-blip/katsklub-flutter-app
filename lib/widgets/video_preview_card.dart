@@ -8,6 +8,7 @@ import '../models/post.dart';
 import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_overlay_controller.dart';
+import 'normal_video_overlay_host.dart';
 import 'media_post_load_registry.dart';
 import 'loading_skeletons.dart'; // For SkeletonPulse
 
@@ -42,6 +43,26 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _openFullscreenVideo(Post post, Duration initialPosition) {
+    normalVideoOverlayController.open(
+      post,
+      initialPosition: initialPosition,
+    );
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: true,
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, __) => const NormalVideoPageRoute(),
+        transitionsBuilder: (context, animation, _, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
   }
 
   void _handleVisibilityChanged(VisibilityInfo info) {
@@ -138,9 +159,9 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
                 _InlineEndActionButton(
                   icon: Icons.more_horiz_rounded,
                   label: 'More',
-                  onTap: () => normalVideoOverlayController.open(
+                  onTap: () => _openFullscreenVideo(
                     post,
-                    initialPosition: normalVideoPlaybackSession.position,
+                    normalVideoPlaybackSession.position,
                   ),
                 ),
                 _InlineEndActionButton(
@@ -202,9 +223,9 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
             return;
           }
 
-          normalVideoOverlayController.open(
+          _openFullscreenVideo(
             post,
-            initialPosition: showInlineVideo ? session.position : Duration.zero,
+            showInlineVideo ? session.position : Duration.zero,
           );
         },
         child: AspectRatio(

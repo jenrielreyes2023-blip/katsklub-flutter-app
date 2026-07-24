@@ -98,48 +98,49 @@ class _NormalVideoOverlayHostState extends State<NormalVideoOverlayHost> {
 
   @override
   Widget build(BuildContext context) {
-    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
-    final shouldHandleBack =
-        isCurrentRoute && normalVideoOverlayController.isOpen;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return widget.child;
+  }
+}
 
-    final systemUiStyle = shouldHandleBack
-        ? const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-            systemNavigationBarColor: Colors.black,
-            systemNavigationBarIconBrightness: Brightness.light,
-          )
-        : SystemUiOverlayStyle(
-            statusBarColor: isDark ? const Color(0xFF18191A) : Colors.white,
-            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-            systemNavigationBarColor: isDark ? const Color(0xFF18191A) : Colors.white,
-            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-            systemNavigationBarDividerColor: isDark ? const Color(0xFF18191A) : Colors.white,
-          );
+class NormalVideoPageRoute extends StatefulWidget {
+  const NormalVideoPageRoute({super.key});
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: systemUiStyle,
-      child: PopScope(
-        canPop: !shouldHandleBack,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) {
-            return;
-          }
+  @override
+  State<NormalVideoPageRoute> createState() => _NormalVideoPageRouteState();
+}
 
-          if (shouldHandleBack) {
-            _closeOverlayForBack();
-          }
-        },
-        child: Stack(
-          children: [
-            widget.child,
-            const NormalVideoOverlay(),
-          ],
-        ),
+class _NormalVideoPageRouteState extends State<NormalVideoPageRoute> {
+  @override
+  void initState() {
+    super.initState();
+    normalVideoOverlayController.addListener(_onOverlayChanged);
+  }
+
+  @override
+  void dispose() {
+    normalVideoOverlayController.removeListener(_onOverlayChanged);
+    if (normalVideoOverlayController.isOpen) {
+      normalVideoOverlayController.close();
+    }
+    super.dispose();
+  }
+
+  void _onOverlayChanged() {
+    if (!normalVideoOverlayController.isOpen && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          NormalVideoOverlay(),
+        ],
       ),
     );
   }
 }
+
