@@ -1239,7 +1239,6 @@ class _CommentAvatar extends StatelessWidget {
       width: size,
       height: size,
       memCacheWidth: cacheSize,
-      memCacheHeight: cacheSize,
       fit: BoxFit.cover,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,

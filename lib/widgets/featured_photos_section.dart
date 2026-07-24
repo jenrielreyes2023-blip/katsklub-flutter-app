@@ -239,7 +239,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                               imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
                               fit: BoxFit.cover,
                               memCacheWidth: 60,
-                              memCacheHeight: 60,
                               errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
                             )
                           : _buildDefaultAvatar(visitor.username),
@@ -519,7 +518,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   width: double.infinity,
                   height: double.infinity,
                   memCacheWidth: 200,
-                  memCacheHeight: 300,
                   placeholder: (context, url) => Container(
                     color: const Color(0xFFF3F4F6),
                     child: const Center(
@@ -796,7 +794,6 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                                 imageUrl: ApiConfig.assetUrl(photo.photoUrl),
                                 fit: BoxFit.cover,
                                 memCacheWidth: 200,
-                                memCacheHeight: 260,
                                 placeholder: (c, u) => Container(color: const Color(0xFFF3F4F6)),
                                 errorWidget: (c, u, e) => Container(
                                   color: const Color(0xFFF3F4F6),
@@ -1260,7 +1257,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                                 width: double.infinity,
                                 height: double.infinity,
                                 memCacheWidth: 200,
-                                memCacheHeight: 200,
                               ),
                               Positioned.fill(
                                 child: Container(
@@ -1310,14 +1306,12 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
         imageUrl: _selectedPresetUrl!,
         fit: BoxFit.cover,
         memCacheWidth: 200,
-        memCacheHeight: 200,
       );
     } else if (_urlController.text.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: _urlController.text.trim(),
         fit: BoxFit.cover,
         memCacheWidth: 200,
-        memCacheHeight: 200,
         errorWidget: (context, url, error) => const Center(
           child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: 36),
         ),

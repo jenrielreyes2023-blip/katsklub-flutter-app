@@ -214,7 +214,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         width: double.infinity,
         height: double.infinity,
         memCacheWidth: cacheSize,
-        memCacheHeight: cacheSize,
       );
     } else {
       imageWidget = Container(

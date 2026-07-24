@@ -387,7 +387,6 @@ class _TopUsersScreenState extends State<TopUsersScreen>
         width: double.infinity,
         height: double.infinity,
         memCacheWidth: cacheSize,
-        memCacheHeight: cacheSize,
       );
     } else {
       imageWidget = Container(
