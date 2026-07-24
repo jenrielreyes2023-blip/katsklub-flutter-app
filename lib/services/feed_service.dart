@@ -976,6 +976,26 @@ class FeedService {
     return updatedPost;
   }
 
+  Future<List<Map<String, dynamic>>> loadSlideComments(String postId, int slideId) async {
+    final data = await _authenticatedGet('/api/posts/$postId/slides/$slideId/comments');
+    final comments = data['comments'];
+    if (comments is! List) {
+      return [];
+    }
+    return comments.whereType<Map<String, dynamic>>().toList();
+  }
+
+  Future<Map<String, dynamic>> postSlideComment(String postId, int slideId, String body) async {
+    final data = await _authenticatedPost(
+      '/api/posts/$postId/slides/$slideId/comments',
+      body: {'body': body},
+    );
+    if (data['ok'] != true) {
+      throw StateError('Failed to post slide comment.');
+    }
+    return data;
+  }
+
   Future<Post> votePoll(Post post, int optionIndex) async {
     final data = await _authenticatedPost(
       '/api/posts/${post.id}/poll-vote',

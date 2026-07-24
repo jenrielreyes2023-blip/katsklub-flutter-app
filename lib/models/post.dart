@@ -7,6 +7,7 @@ class PostSlide {
     required this.sortOrder,
     required this.likeCount,
     required this.likedByMe,
+    required this.commentCount,
   });
 
   final int id;
@@ -14,6 +15,7 @@ class PostSlide {
   final int sortOrder;
   final int likeCount;
   final bool likedByMe;
+  final int commentCount;
 
   factory PostSlide.fromJson(Map<String, dynamic> json) {
     return PostSlide(
@@ -22,6 +24,7 @@ class PostSlide {
       sortOrder: _readInt(json['sortOrder'] ?? json['sort_order']),
       likeCount: _readInt(json['likeCount'] ?? json['like_count']),
       likedByMe: json['likedByMe'] == true || json['liked_by_me'] == true,
+      commentCount: _readInt(json['commentCount'] ?? json['comment_count']),
     );
   }
 
@@ -44,6 +47,7 @@ class PostSlide {
       'sortOrder': sortOrder,
       'likeCount': likeCount,
       'likedByMe': likedByMe,
+      'commentCount': commentCount,
     };
   }
 
@@ -53,6 +57,7 @@ class PostSlide {
     int? sortOrder,
     int? likeCount,
     bool? likedByMe,
+    int? commentCount,
   }) {
     return PostSlide(
       id: id ?? this.id,
@@ -60,6 +65,7 @@ class PostSlide {
       sortOrder: sortOrder ?? this.sortOrder,
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
+      commentCount: commentCount ?? this.commentCount,
     );
   }
 }

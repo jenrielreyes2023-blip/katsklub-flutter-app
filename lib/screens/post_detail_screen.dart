@@ -33,6 +33,7 @@ import 'image_viewer_screen.dart';
 import 'repost_post_screen.dart';
 import 'youtube_player_screen.dart';
 import 'user_profile_screen.dart';
+import 'vertical_gallery_screen.dart';
 
 enum _CommentSortMode {
   relevance,
@@ -587,9 +588,41 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       return;
     }
 
+    if (post.imageUrls.length == 1) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              ImageViewerScreen(
+            imageUrls: post.imageUrls,
+            initialIndex: index,
+            post: post,
+            currentUser: widget.currentUser,
+            postId: post.id,
+            uploaderName: post.authorFullName,
+            createdAt: post.createdAt,
+            privacyLabel: post.privacyLabel,
+            caption: post.text,
+            likeCount: post.likeCount,
+            commentCount: post.commentCount,
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 200),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
+          opaque: true,
+          barrierColor: Colors.black,
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ImageViewerScreen(
+        builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
           initialIndex: index,
           post: post,
