@@ -509,11 +509,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final targetCommentId =
         commentIdRaw == null ? null : int.tryParse(commentIdRaw);
 
+    final slideIdRaw = _readString(notification['slideId']) ??
+        _readString(notification['targetSlideId']);
+    final targetSlideId =
+        slideIdRaw == null ? null : int.tryParse(slideIdRaw);
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PostDetailScreen(
           postId: postId,
           targetCommentId: targetCommentId,
+          targetSlideId: targetSlideId,
         ),
       ),
     );

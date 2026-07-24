@@ -48,6 +48,7 @@ class PostDetailScreen extends StatefulWidget {
     this.onOpenCurrentUserProfile,
     this.onOpenUserProfile,
     this.targetCommentId,
+    this.targetSlideId,
     super.key,
   });
 
@@ -57,6 +58,7 @@ class PostDetailScreen extends StatefulWidget {
   final VoidCallback? onOpenCurrentUserProfile;
   final ValueChanged<String>? onOpenUserProfile;
   final int? targetCommentId;
+  final int? targetSlideId;
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -92,6 +94,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final Map<int, GlobalKey> _commentKeys = <int, GlobalKey>{};
   int? _highlightedCommentId;
   bool _targetDeliveryStarted = false;
+  bool _targetSlideOpened = false;
   Timer? _highlightFadeTimer;
 
   @override
@@ -184,6 +187,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       }
       _isLoadingPost = false;
       _isTextExpanded = false;
+
+      if (_post != null && widget.targetSlideId != null && !_targetSlideOpened) {
+        _targetSlideOpened = true;
+        final slideIndex = _post!.slides.indexWhere((s) => s.id == widget.targetSlideId);
+        if (slideIndex >= 0) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _openImages(slideIndex);
+          });
+        }
+      }
     });
   }
 
