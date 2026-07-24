@@ -834,7 +834,57 @@ class AuthService {
   }
 
   Future<void> saveCurrentUser(User user) async {
-    await _saveUser(user);
+    final oldUser = await getSavedUser();
+    if (oldUser != null && oldUser.username == user.username) {
+      bool hasKey(List<String> keys) {
+        return keys.any((k) => user.raw.containsKey(k));
+      }
+
+      final mergedUser = user.copyWith(
+        featuredPhotos: hasKey(['featuredPhotos', 'featured_photos'])
+            ? user.featuredPhotos
+            : oldUser.featuredPhotos,
+        profileLinks: hasKey(['profileLinks', 'profile_links'])
+            ? user.profileLinks
+            : oldUser.profileLinks,
+        achievements: hasKey(['achievements'])
+            ? user.achievements
+            : oldUser.achievements,
+        recentVisitors: hasKey(['recentVisitors', 'recent_visitors'])
+            ? user.recentVisitors
+            : oldUser.recentVisitors,
+        followersCount: hasKey(['followersCount', 'followers_count', 'followerCount', 'follower_count'])
+            ? user.followersCount
+            : oldUser.followersCount,
+        followingCount: hasKey(['followingCount', 'following_count'])
+            ? user.followingCount
+            : oldUser.followingCount,
+        postCount: hasKey(['postCount', 'post_count', 'postsCount'])
+            ? user.postCount
+            : oldUser.postCount,
+        charmPoints: hasKey(['charmPoints', 'charm_points'])
+            ? user.charmPoints
+            : oldUser.charmPoints,
+        newVisitorsCount: hasKey(['newVisitorsCount', 'new_visitors_count'])
+            ? user.newVisitorsCount
+            : oldUser.newVisitorsCount,
+        pinnedPostId: hasKey(['pinnedPostId', 'pinned_post_id'])
+            ? user.pinnedPostId
+            : oldUser.pinnedPostId,
+        profileBorder: hasKey(['profileBorder', 'profile_border'])
+            ? user.profileBorder
+            : oldUser.profileBorder,
+        postcardTheme: hasKey(['postcardTheme', 'postcard_theme'])
+            ? user.postcardTheme
+            : oldUser.postcardTheme,
+        bubbleTheme: hasKey(['bubbleTheme', 'bubble_theme'])
+            ? user.bubbleTheme
+            : oldUser.bubbleTheme,
+      );
+      await _saveUser(mergedUser);
+    } else {
+      await _saveUser(user);
+    }
   }
 
   Future<void> logout() async {

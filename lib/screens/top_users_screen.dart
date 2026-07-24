@@ -984,8 +984,7 @@ class _TopUsersScreenState extends State<TopUsersScreen>
                                 color: titleColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                fontFamily: 'Inter',
-                              ),
+                                ),
                             ),
                           );
                         }

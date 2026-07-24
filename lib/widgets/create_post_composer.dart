@@ -686,7 +686,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
               Text(
                 'How are you feeling?',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -901,7 +900,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                           label: Text(
                             u.displayName,
                             style: const TextStyle(
-                              fontFamily: 'Inter',
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF374151),
@@ -942,7 +940,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                               child: Text(
                                 _location,
                                 style: const TextStyle(
-                                  fontFamily: 'Inter',
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF1D4ED8),
@@ -970,12 +967,12 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                     Container(
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surface
+                            ? const Color(0xFF1E1F20)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2F3031)
+                              ? const Color(0xFF2D2E30)
                               : const Color(0xFFE5E7EB),
                         ),
                       ),
@@ -995,7 +992,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                           hintText: 'Title',
                           hintStyle: TextStyle(
                             decoration: TextDecoration.none,
-                            fontFamily: 'Inter',
                             color: Color(0xFF9CA3AF),
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -1012,56 +1008,75 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                       ),
                     ),
                   if (_mode != _CreateMode.poll) ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surface
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2F3031)
-                              : const Color(0xFFE5E7EB),
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        enabled: !_isPosting,
-                        inputFormatters: [EmojiPresentationFormatter()],
-                        maxLines: _mode == _CreateMode.reel ||
-                                _mode == _CreateMode.poll
-                            ? 5
-                            : 8,
-                        minLines: _mode == _CreateMode.reel ||
-                                _mode == _CreateMode.poll
-                            ? 3
-                            : 5,
-                        maxLength: 10000,
-                        cursorColor: const Color(0xFFFF7A45),
-                        textInputAction: TextInputAction.newline,
-                        style: TextStyle(
-                          decoration: TextDecoration.none,
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: _bodyPlaceholder,
-                          hintStyle: const TextStyle(
+                    Builder(
+                      builder: (context) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final bodyTextField = TextField(
+                          controller: _controller,
+                          enabled: !_isPosting,
+                          inputFormatters: [EmojiPresentationFormatter()],
+                          maxLines: _mode == _CreateMode.reel ||
+                                  _mode == _CreateMode.poll
+                              ? 5
+                              : 8,
+                          minLines: _mode == _CreateMode.reel ||
+                                  _mode == _CreateMode.poll
+                              ? 3
+                              : 5,
+                          maxLength: 10000,
+                          cursorColor: const Color(0xFFFF7A45),
+                          textInputAction: TextInputAction.newline,
+                          style: TextStyle(
                             decoration: TextDecoration.none,
-                            fontFamily: 'Inter',
-                            color: Color(0xFF9CA3AF),
                             fontSize: 16,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                          counterText: '',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                          decoration: InputDecoration(
+                            hintText: _bodyPlaceholder,
+                            hintStyle: const TextStyle(
+                              decoration: TextDecoration.none,
+                              color: Color(0xFF9CA3AF),
+                              fontSize: 16,
+                            ),
+                            counterText: '',
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+
+                        if (_isGhost) {
+                          final bubbleFill = isDark ? const Color(0xFF2B211E) : const Color(0xFFFFF3F0);
+                          final bubbleBorder = const Color(0xFFFF7A59);
+                          return CustomPaint(
+                            painter: _GhostInputBubblePainter(
+                              color: bubbleFill,
+                              borderColor: bubbleBorder,
+                              borderRadius: 22,
+                              strokeWidth: 1.5,
+                            ),
+                            child: Container(
+                              decoration: const BoxDecoration(color: Colors.transparent),
+                              child: bodyTextField,
+                            ),
+                          );
+                        } else {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E1F20) : Colors.white,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            child: bodyTextField,
+                          );
+                        }
+                      },
                     ),
                     _buildAiSuggestionButton(),
                   ],
@@ -1171,7 +1186,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                       _errorMessage!,
                       style: const TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Color(0xFFDC2626),
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -1185,7 +1199,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                         label: const Text(
                           'Update / Reset API Key',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1303,7 +1316,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 Text(
                   'Preparing media...',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF6B7280),
@@ -1343,7 +1355,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                     Text(
                       'AI is thinking...',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF6B7280),
@@ -1376,7 +1387,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                   label: const Text(
                     'Suggest Caption',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -1498,7 +1508,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
               SizedBox(width: 8),
               Text(
                 'Gemini API Key Required',
-                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
@@ -1508,7 +1518,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
             children: [
               const Text(
                 'Enter your Gemini API key to enable caption suggestions. Your key is stored safely on your device.',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF4B5563)),
+                style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1593,7 +1603,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                   Text(
                     'Gemini Caption Suggestions',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF111827),
@@ -1653,7 +1662,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
           Text(
             title,
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -1663,7 +1671,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
           Text(
             text,
             style: const TextStyle(
-              fontFamily: 'Inter',
               fontSize: 14,
               color: Color(0xFF374151),
               height: 1.4,
@@ -1684,7 +1691,6 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 style: TextButton.styleFrom(
                   foregroundColor: textColor,
                   textStyle: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1739,7 +1745,6 @@ class _ComposerHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -1750,7 +1755,6 @@ class _ComposerHeader extends StatelessWidget {
                   'KatsKlub',
                   style: TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Color(0xFF6B7280),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -1786,7 +1790,6 @@ class _ComposerHeader extends StatelessWidget {
                     submitLabel,
                     style: const TextStyle(
                       decoration: TextDecoration.none,
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1937,7 +1940,6 @@ class _ModeChip extends StatelessWidget {
                   label,
                   style: TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: foreground,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -2001,7 +2003,6 @@ class _UserRow extends StatelessWidget {
                         displayName: user.displayName,
                         style: TextStyle(
                           decoration: TextDecoration.none,
-                          fontFamily: 'Inter',
                           color: textStyleColor,
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -2014,7 +2015,6 @@ class _UserRow extends StatelessWidget {
                     'is feeling',
                     style: TextStyle(
                       decoration: TextDecoration.none,
-                      fontFamily: 'Inter',
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.normal,
                       fontSize: 13,
@@ -2028,7 +2028,6 @@ class _UserRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: textStyleColor,
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
@@ -2046,7 +2045,6 @@ class _UserRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       decoration: TextDecoration.none,
-                      fontFamily: 'Inter',
                       color: Color(0xFF6B7280),
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -2117,7 +2115,6 @@ class _AudienceDropdown extends StatelessWidget {
                       option.label,
                       style: TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Color(0xFF111827),
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -2127,7 +2124,6 @@ class _AudienceDropdown extends StatelessWidget {
                       option.description,
                       style: const TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Color(0xFF9CA3AF),
                         fontSize: 11,
                       ),
@@ -2159,7 +2155,6 @@ class _AudienceDropdown extends StatelessWidget {
               currentOption.label,
               style: const TextStyle(
                 decoration: TextDecoration.none,
-                fontFamily: 'Inter',
                 color: Color(0xFF111827),
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -2475,7 +2470,6 @@ class _ComposerCarouselPreviewState extends State<_ComposerCarouselPreview> {
                       'Choose music to enable carousel playback.',
                       style: TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Color(0xFF6B7280),
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -2554,7 +2548,6 @@ class _CarouselMusicMetadata extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Color(0xFF111827),
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
@@ -2567,7 +2560,6 @@ class _CarouselMusicMetadata extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Color(0xFF4B5563),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -2580,7 +2572,6 @@ class _CarouselMusicMetadata extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Color(0xFF9CA3AF),
                     fontWeight: FontWeight.w700,
                     fontSize: 11,
@@ -2657,7 +2648,6 @@ class _ComposerCarouselCountPill extends StatelessWidget {
           '$current/$total',
           style: const TextStyle(
             decoration: TextDecoration.none,
-            fontFamily: 'Inter',
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w800,
@@ -2918,7 +2908,6 @@ class _ReelsImagesPreviewState extends State<_ReelsImagesPreview> {
                       'Reels',
                       style: TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -2953,7 +2942,6 @@ class _ReelsImagesPreviewState extends State<_ReelsImagesPreview> {
                     '${_activeIndex + 1}/${images.length}',
                     style: const TextStyle(
                       decoration: TextDecoration.none,
-                      fontFamily: 'Inter',
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -3072,7 +3060,6 @@ class _ReelsMusicStrip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
@@ -3085,7 +3072,6 @@ class _ReelsMusicStrip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     decoration: TextDecoration.none,
-                    fontFamily: 'Inter',
                     color: Color(0xFFD1D5DB),
                     fontWeight: FontWeight.w600,
                     fontSize: 11,
@@ -3672,7 +3658,6 @@ class _ComposerMusicPickerSheetState extends State<_ComposerMusicPickerSheet> {
                     cursorColor: const Color(0xFF111827),
                     style: const TextStyle(
                       decoration: TextDecoration.none,
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       color: Color(0xFF111827),
                     ),
@@ -3680,7 +3665,6 @@ class _ComposerMusicPickerSheetState extends State<_ComposerMusicPickerSheet> {
                       hintText: 'Search Apple Music',
                       hintStyle: TextStyle(
                         decoration: TextDecoration.none,
-                        fontFamily: 'Inter',
                         color: Color(0xFF9CA3AF),
                       ),
                       prefixIcon: Icon(Icons.search),
@@ -3920,7 +3904,6 @@ class _PollFields extends StatelessWidget {
               textInputAction: TextInputAction.next,
               style: TextStyle(
                 decoration: TextDecoration.none,
-                fontFamily: 'Inter',
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: textStyleColor,
@@ -3929,7 +3912,6 @@ class _PollFields extends StatelessWidget {
                 hintText: 'Ask a poll question...',
                 hintStyle: TextStyle(
                   decoration: TextDecoration.none,
-                  fontFamily: 'Inter',
                   color: Color(0xFF9CA3AF),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -4029,7 +4011,6 @@ class _PollOptionInput extends StatelessWidget {
         onChanged: onChanged,
         style: TextStyle(
           decoration: TextDecoration.none,
-          fontFamily: 'Inter',
           fontSize: 14,
           color: textStyleColor,
         ),
@@ -4037,7 +4018,6 @@ class _PollOptionInput extends StatelessWidget {
           hintText: 'Option ${index + 1}',
           hintStyle: const TextStyle(
             decoration: TextDecoration.none,
-            fontFamily: 'Inter',
             color: Color(0xFF9CA3AF),
           ),
           counterText: '',
@@ -4112,6 +4092,7 @@ class _AttachmentBar extends StatelessWidget {
             icon: Icons.image_outlined,
             busy: isPickingImages,
             label: _imageLabel,
+            iconColor: const Color(0xFF4CAF50),
           ),
           if (onPickVideo != null)
             _AttachmentAction(
@@ -4119,6 +4100,7 @@ class _AttachmentBar extends StatelessWidget {
               onPressed: onPickVideo!,
               icon: Icons.videocam_outlined,
               label: 'Video',
+              iconColor: const Color(0xFF2196F3),
             ),
           if (onPickMusic != null)
             _AttachmentAction(
@@ -4126,12 +4108,14 @@ class _AttachmentBar extends StatelessWidget {
               onPressed: onPickMusic!,
               icon: hasMusic ? Icons.music_note : Icons.queue_music_outlined,
               label: hasMusic ? 'Change music' : 'Music',
+              iconColor: const Color(0xFF9C27B0),
             ),
           _AttachmentAction(
             enabled: !isPosting,
             onPressed: onTagFriends,
             icon: Icons.person_add_alt_1_outlined,
             label: 'With',
+            iconColor: const Color(0xFFE91E63),
           ),
           _AttachmentAction(
             enabled: !isPosting,
@@ -4139,12 +4123,14 @@ class _AttachmentBar extends StatelessWidget {
             icon: Icons.location_on_outlined,
             busy: isDetectingLocation,
             label: 'Location',
+            iconColor: const Color(0xFFFF5722),
           ),
           _AttachmentAction(
             enabled: !isPosting,
             onPressed: onPickFeeling,
             icon: Icons.sentiment_satisfied_alt_outlined,
             label: 'Feeling',
+            iconColor: const Color(0xFFFFC107),
           ),
         ],
       ),
@@ -4171,6 +4157,7 @@ class _AttachmentAction extends StatelessWidget {
     required this.onPressed,
     required this.icon,
     required this.label,
+    this.iconColor,
     this.busy = false,
   });
 
@@ -4178,6 +4165,7 @@ class _AttachmentAction extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData icon;
   final String label;
+  final Color? iconColor;
   final bool busy;
 
   @override
@@ -4191,7 +4179,7 @@ class _AttachmentAction extends StatelessWidget {
     final disabledFg = isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
 
     final bg = enabled ? enabledBg : disabledBg;
-    final fg = enabled ? enabledFg : disabledFg;
+    final fg = enabled ? (iconColor ?? enabledFg) : disabledFg;
 
     return Material(
       color: bg,
@@ -4225,7 +4213,6 @@ class _AttachmentAction extends StatelessWidget {
                 label,
                 style: TextStyle(
                   decoration: TextDecoration.none,
-                  fontFamily: 'Inter',
                   color: fg,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -4295,7 +4282,6 @@ class _AudienceHint extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: textColor,
@@ -4356,7 +4342,6 @@ class _GhostPostToggle extends StatelessWidget {
                 Text(
                   'Ghost Post',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: textColor,
@@ -4366,7 +4351,6 @@ class _GhostPostToggle extends StatelessWidget {
                 Text(
                   'Disappears in 24h. Replies go to DMs.',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: subtitleColor,
@@ -4378,8 +4362,8 @@ class _GhostPostToggle extends StatelessWidget {
           Switch(
             value: isGhost,
             onChanged: onChanged,
-            activeColor: const Color(0xFFFF7A59),
-            activeTrackColor: const Color(0xFFFF7A59).withOpacity(0.3),
+            activeThumbColor: const Color(0xFFFF7A59),
+            activeTrackColor: const Color(0xFFFF7A59).withValues(alpha: 0.3),
           ),
         ],
       ),
@@ -4455,6 +4439,87 @@ class _DashedBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
     return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+class _GhostInputBubblePainter extends CustomPainter {
+  _GhostInputBubblePainter({
+    required this.color,
+    required this.borderColor,
+    this.strokeWidth = 1.5,
+    this.borderRadius = 22.0,
+  });
+
+  final Color color;
+  final Color borderColor;
+  final double strokeWidth;
+  final double borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 1. Draw bubble background fill
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(borderRadius),
+    );
+    canvas.drawRRect(rrect, fillPaint);
+
+    // 2. Draw dashed outline
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()..addRRect(rrect);
+
+    final dashWidth = 6.0;
+    final dashSpace = 4.0;
+
+    final pms = path.computeMetrics();
+    for (final pm in pms) {
+      double distance = 0.0;
+      while (distance < pm.length) {
+        final len = dashWidth;
+        canvas.drawPath(
+          pm.extractPath(distance, distance + len),
+          borderPaint,
+        );
+        distance += len + dashSpace;
+      }
+    }
+
+    // 3. Draw cute floating bubble accent circles at the borders
+    final bubblesPaint = Paint()
+      ..color = borderColor.withValues(alpha: 0.12)
+      ..style = PaintingStyle.fill;
+
+    final bubblesBorderPaint = Paint()
+      ..color = borderColor.withValues(alpha: 0.22)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    // Top-right floating bubbles
+    canvas.drawCircle(Offset(size.width - 5, -8), 8, bubblesPaint);
+    canvas.drawCircle(Offset(size.width - 5, -8), 8, bubblesBorderPaint);
+
+    canvas.drawCircle(Offset(size.width + 6, -3), 4, bubblesPaint);
+    canvas.drawCircle(Offset(size.width + 6, -3), 4, bubblesBorderPaint);
+
+    // Bottom-left floating bubble
+    canvas.drawCircle(Offset(-6, size.height + 6), 6, bubblesPaint);
+    canvas.drawCircle(Offset(-6, size.height + 6), 6, bubblesBorderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GhostInputBubblePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.borderColor != borderColor ||
         oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.borderRadius != borderRadius;
   }

@@ -74,7 +74,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
         title: const Text(
           'Kats Arcade',
           style: TextStyle(
-            fontFamily: 'Inter',
             fontWeight: FontWeight.w900,
             fontSize: 20,
             color: Colors.white,
@@ -104,7 +103,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                     const Text(
                       'Select a Game to Play:',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF9CA3AF),
@@ -244,7 +242,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                             Text(
                               title,
                               style: const TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
@@ -259,7 +256,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                                 Text(
                                   statLabel,
                                   style: const TextStyle(
-                                    fontFamily: 'Inter',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF9CA3AF),
@@ -276,7 +272,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                   Text(
                     description,
                     style: const TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF9CA3AF),
@@ -301,7 +296,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                         Text(
                           'Play Now',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontWeight: FontWeight.w800,
                             fontSize: 14,
                           ),

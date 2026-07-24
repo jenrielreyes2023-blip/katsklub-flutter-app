@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -15,25 +16,36 @@ import 'loading_skeletons.dart';
 import 'mention_autocomplete.dart';
 import 'special_name_text.dart';
 
+enum CommentSortMode {
+  relevance,
+  newest,
+}
+
+class CommentsPageRoute<T> extends PageRouteBuilder<T> {
+  CommentsPageRoute({
+    required Widget builder,
+    super.settings,
+  }) : super(
+          pageBuilder: (context, animation, secondaryAnimation) => builder,
+          opaque: true,
+          transitionDuration: const Duration(milliseconds: 200),
+          reverseTransitionDuration: const Duration(milliseconds: 80),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return child;
+          },
+        );
+}
+
 Future<int?> showCommentsModal({
   required BuildContext context,
   required Post post,
   double? sheetHeight,
 }) {
   HapticFeedback.lightImpact();
-  return showModalBottomSheet<int>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: sheetHeight == null,
-    isDismissible: true,
-    enableDrag: true,
-    barrierColor: sheetHeight != null ? Colors.transparent : null,
-    sheetAnimationStyle: const AnimationStyle(
-      duration: Duration(milliseconds: 220),
-      reverseDuration: Duration(milliseconds: 180),
+  return Navigator.of(context).push<int>(
+    CommentsPageRoute(
+      builder: _CommentsSheet(post: post, sheetHeight: sheetHeight),
     ),
-    backgroundColor: Colors.transparent,
-    builder: (_) => _CommentsSheet(post: post, sheetHeight: sheetHeight),
   );
 }
 
@@ -78,6 +90,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
+  CommentSortMode _sortMode = CommentSortMode.relevance;
   List<PostComment> _comments = [];
   final Map<int, List<PostComment>> _repliesByComment = <int, List<PostComment>>{};
   final Set<int> _expandedReplyThreads = <int>{};
@@ -92,6 +105,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   String? _error;
 
   bool _transitionCompleted = false;
+  bool _loadTriggered = false;
+  Animation<double>? _routeAnimation;
 
   @override
   void initState() {
@@ -108,20 +123,44 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       _isLoading = true;
     }
     _scrollController.addListener(_handleScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future<void>.delayed(const Duration(milliseconds: 150), () {
-        if (mounted) {
-          setState(() {
-            _transitionCompleted = true;
-          });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && route.animation != null && _routeAnimation == null) {
+      _routeAnimation = route.animation;
+      if (_routeAnimation!.isCompleted) {
+        _transitionCompleted = true;
+        if (!_loadTriggered) {
+          _loadTriggered = true;
           _loadInitialComments();
         }
-      });
-    });
+      } else {
+        _routeAnimation!.addStatusListener(_handleRouteAnimationStatus);
+      }
+    }
+  }
+
+  void _handleRouteAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _routeAnimation?.removeStatusListener(_handleRouteAnimationStatus);
+      if (mounted) {
+        setState(() {
+          _transitionCompleted = true;
+        });
+        if (!_loadTriggered) {
+          _loadTriggered = true;
+          _loadInitialComments();
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_handleRouteAnimationStatus);
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _textController.dispose();
@@ -400,24 +439,116 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final height = widget.sheetHeight
-        ?? (mediaQuery.size.height - mediaQuery.padding.top);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  List<PostComment> get _sortedComments {
+    if (_sortMode == CommentSortMode.newest) {
+      final sorted = List<PostComment>.from(_comments);
+      sorted.sort((a, b) {
+        final dateA = a.createdAt ?? DateTime(1970);
+        final dateB = b.createdAt ?? DateTime(1970);
+        return dateB.compareTo(dateA);
+      });
+      return sorted;
+    } else {
+      final sorted = List<PostComment>.from(_comments);
+      sorted.sort((a, b) {
+        final scoreA = _calculateScore(a);
+        final scoreB = _calculateScore(b);
+        if (scoreA != scoreB) {
+          return scoreB.compareTo(scoreA);
+        }
+        final dateA = a.createdAt ?? DateTime(1970);
+        final dateB = b.createdAt ?? DateTime(1970);
+        return dateB.compareTo(dateA);
+      });
+      return sorted;
+    }
+  }
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: SizedBox(
-        height: height,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+  int _calculateScore(PostComment comment) {
+    int score = 0;
+    score += comment.likeCount * 3;
+    score += comment.replyCount * 5;
+    if (comment.authorIsAuthor) score += 100;
+    if (comment.authorIsAdmin) score += 40;
+    if (comment.authorIsVerified) score += 40;
+    return score;
+  }
+
+  Future<void> _toggleLikeComment(PostComment comment) async {
+    try {
+      final updated = await _feedService.toggleCommentLike(comment);
+      setState(() {
+        if (comment.parentCommentId == null) {
+          final idx = _comments.indexWhere((c) => c.id == comment.id);
+          if (idx != -1) {
+            _comments[idx] = updated;
+          }
+        } else {
+          final parentId = comment.parentCommentId!;
+          final replyList = _repliesByComment[parentId];
+          if (replyList != null) {
+            final idx = replyList.indexWhere((r) => r.id == comment.id);
+            if (idx != -1) {
+              replyList[idx] = updated;
+            }
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  Widget _buildSortModeBar(BuildContext context, bool isDark) {
+    if (_isLoading || _error != null || _comments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: isDark ? const Color(0xFF18191A) : const Color(0xFFF7F8FA),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => _showSortModeSelectionMenu(context),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _sortMode == CommentSortMode.relevance ? 'Most Relevant' : 'Newest First',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF65676B),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                ),
+              ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showSortModeSelectionMenu(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tileColor = isDark ? Colors.white70 : Colors.black87;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 8),
               Container(
@@ -428,22 +559,151 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
-              _CommentsHeader(
-                totalCount: _totalCount,
-                onClose: () => Navigator.of(context).pop(_totalCount),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(
+                  Icons.star_rounded,
+                  color: _sortMode == CommentSortMode.relevance ? const Color(0xFFFF7A45) : tileColor,
+                ),
+                title: Text(
+                  'Most Relevant',
+                  style: TextStyle(
+                    fontWeight: _sortMode == CommentSortMode.relevance ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                subtitle: const Text('Shows comments with more likes, replies, and author responses first.'),
+                onTap: () {
+                  setState(() {
+                    _sortMode = CommentSortMode.relevance;
+                  });
+                  Navigator.pop(context);
+                },
               ),
-              Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-              Expanded(child: _buildBody()),
-              Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-              _CommentComposer(
-                controller: _textController,
-                focusNode: _focusNode,
-                isSending: _isSending,
-                replyTarget: _activeReplyTarget,
-                onClearReplyTarget: _clearReplyTarget,
-                onSend: _sendComment,
+              ListTile(
+                leading: Icon(
+                  Icons.access_time_rounded,
+                  color: _sortMode == CommentSortMode.newest ? const Color(0xFFFF7A45) : tileColor,
+                ),
+                title: Text(
+                  'Newest First',
+                  style: TextStyle(
+                    fontWeight: _sortMode == CommentSortMode.newest ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                subtitle: const Text('Shows comments in chronological order, with the newest at the top.'),
+                onTap: () {
+                  setState(() {
+                    _sortMode = CommentSortMode.newest;
+                  });
+                  Navigator.pop(context);
+                },
               ),
+              const SizedBox(height: 12),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? const Color(0xFF0F0F10) : const Color(0xFF707276);
+    final sheetBg = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
+
+    final route = ModalRoute.of(context);
+    final animation = route?.animation ?? const AlwaysStoppedAnimation<double>(1.0);
+
+    final slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 1.0),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+
+    final systemUiStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: sheetBg,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    );
+
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          HapticFeedback.lightImpact();
+        }
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: systemUiStyle,
+        child: Scaffold(
+          backgroundColor: scaffoldBg,
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            bottom: false,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: sheetBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragEnd: (details) {
+                        if (details.primaryVelocity! > 300) {
+                          Navigator.of(context).pop(_totalCount);
+                        }
+                      },
+                      onVerticalDragUpdate: (details) {
+                        if (details.primaryDelta! > 10) {
+                          Navigator.of(context).pop(_totalCount);
+                        }
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 8),
+                          Container(
+                            width: 38,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                          _CommentsHeader(
+                            totalCount: _totalCount,
+                            onClose: () => Navigator.of(context).pop(_totalCount),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+                  _buildSortModeBar(context, isDark),
+                  Expanded(child: _buildBody()),
+                    Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+                    _CommentComposer(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      isSending: _isSending,
+                      replyTarget: _activeReplyTarget,
+                      onClearReplyTarget: _clearReplyTarget,
+                      onSend: _sendComment,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -464,7 +724,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       );
     }
 
-    if (_comments.isEmpty) {
+    final sorted = _sortedComments;
+    if (sorted.isEmpty) {
       return const Center(
         child: Text(
           'No comments yet.',
@@ -480,36 +741,35 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     return ListView.separated(
       controller: _scrollController,
       cacheExtent: 1200,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
-      itemCount: _comments.length + (_isLoadingMore ? 1 : 0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+      itemCount: sorted.length + (_isLoadingMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        if (index >= _comments.length) {
+        if (index >= sorted.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: _CommentSkeletonTile(compact: true),
           );
         }
 
-        final comment = _comments[index];
+        final comment = sorted[index];
         final replies = _repliesByComment[comment.id] ?? const <PostComment>[];
         final isRepliesExpanded = _expandedReplyThreads.contains(comment.id);
         final isLoadingReplies = _loadingReplyThreads.contains(comment.id);
 
-        return RepaintBoundary(
-          child: _CommentTile(
-            key: ValueKey('comment-${_comments[index].id}'),
-            comment: comment,
-            replies: replies,
-            isRepliesExpanded: isRepliesExpanded,
-            isLoadingReplies: isLoadingReplies,
-            onReply: () => _startReply(comment),
-            onToggleReplies:
-                comment.replyCount > 0 ? () => _toggleReplies(comment) : null,
-            onReplyToReply: (reply) => _startReplyToReply(comment, reply),
-            onHashtagTap: _openHashtag,
-            onMentionTap: _openMention,
-          ),
+        return _CommentTile(
+          key: ValueKey('comment-${_comments[index].id}'),
+          comment: comment,
+          replies: replies,
+          isRepliesExpanded: isRepliesExpanded,
+          isLoadingReplies: isLoadingReplies,
+          onReply: _startReply,
+          onToggleReplies:
+              comment.replyCount > 0 ? _toggleReplies : null,
+          onReplyToReply: _startReplyToReply,
+          onHashtagTap: _openHashtag,
+          onMentionTap: _openMention,
+          onLikeComment: _toggleLikeComment,
         );
       },
     );
@@ -570,6 +830,7 @@ class _CommentTile extends StatelessWidget {
     required this.onReplyToReply,
     required this.onHashtagTap,
     required this.onMentionTap,
+    required this.onLikeComment,
     this.onToggleReplies,
     super.key,
   });
@@ -578,17 +839,19 @@ class _CommentTile extends StatelessWidget {
   final List<PostComment> replies;
   final bool isRepliesExpanded;
   final bool isLoadingReplies;
-  final VoidCallback onReply;
-  final ValueChanged<PostComment> onReplyToReply;
+  final ValueChanged<PostComment> onReply;
+  final void Function(PostComment parent, PostComment reply) onReplyToReply;
   final ValueChanged<String> onHashtagTap;
   final ValueChanged<String> onMentionTap;
-  final VoidCallback? onToggleReplies;
+  final ValueChanged<PostComment> onLikeComment;
+  final ValueChanged<PostComment>? onToggleReplies;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final secondaryTextColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B);
     final primaryTextColor = isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF1C1E21);
+    final dotColor = isDark ? const Color(0xFF65676B) : const Color(0xFFB0B3B8);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,79 +869,85 @@ class _CommentTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF242526) : const Color(0xFFF0F2F5),
-                      borderRadius: BorderRadius.circular(18),
+                  GestureDetector(
+                    onLongPress: () => _showCommentActionsMenu(
+                      context,
+                      comment,
+                      onReply: () => onReply(comment),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _openAuthor(context, comment),
-                                  child: SpecialNameText(
-                                    username: comment.authorUsername,
-                                    displayName: comment.displayName,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF242526) : const Color(0xFFF0F2F5),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => _openAuthor(context, comment),
+                                    child: SpecialNameText(
+                                      username: comment.authorUsername,
+                                      displayName: comment.displayName,
+                                      style: TextStyle(
+                                        color: primaryTextColor,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (comment.authorIsVerified ||
+                                    comment.authorIsAdmin) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.verified,
+                                    size: 14,
+                                    color: Color(0xFF1D9BF0),
+                                  ),
+                                ],
+                                if (comment.timeAgo.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '·',
                                     style: TextStyle(
-                                      color: primaryTextColor,
+                                      color: secondaryTextColor,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                              ),
-                              if (comment.authorIsVerified ||
-                                  comment.authorIsAdmin) ...[
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified,
-                                  size: 14,
-                                  color: Color(0xFF1D9BF0),
-                                ),
-                              ],
-                              if (comment.timeAgo.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  '·',
-                                  style: TextStyle(
-                                    color: secondaryTextColor,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    comment.timeAgo,
+                                    style: TextStyle(
+                                      color: secondaryTextColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  comment.timeAgo,
-                                  style: TextStyle(
-                                    color: secondaryTextColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
+                                ],
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          HashtagText(
-                            text: comment.body,
-                            style: TextStyle(
-                              inherit: false,
-                              fontFamily: 'Inter',
-                              color: primaryTextColor,
-                              fontSize: 14,
-                              height: 1.26,
                             ),
-                            onHashtagTap: onHashtagTap,
-                            onMentionTap: onMentionTap,
-                          ),
-                        ],
+                            const SizedBox(height: 3),
+                            HashtagText(
+                              text: comment.body,
+                              style: TextStyle(
+                                inherit: false,
+                                color: primaryTextColor,
+                                fontSize: 14,
+                                height: 1.26,
+                              ),
+                              onHashtagTap: onHashtagTap,
+                              onMentionTap: onMentionTap,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -686,11 +955,12 @@ class _CommentTile extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 12),
                     child: Wrap(
-                      spacing: 12,
+                      spacing: 8,
                       runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         InkWell(
-                          onTap: onReply,
+                          onTap: () => onReply(comment),
                           child: Text(
                             'Reply',
                             style: TextStyle(
@@ -700,38 +970,41 @@ class _CommentTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (comment.replyCount > 0)
+                        if (comment.replyCount > 0 && onToggleReplies != null) ...[
+                          Text(
+                            '·',
+                            style: TextStyle(
+                              color: dotColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           InkWell(
-                            onTap: onToggleReplies,
+                            onTap: () => onToggleReplies!(comment),
                             child: Text(
                               isRepliesExpanded
                                   ? 'Hide replies'
                                   : comment.replyCount == 1
                                       ? 'View 1 reply'
                                       : 'View ${comment.replyCount} replies',
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
+                              style: const TextStyle(
+                                color: Color(0xFFFF7A45),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
-                        InkWell(
-                          onTap: () => _showReportCommentDialog(context, comment),
-                          child: Text(
-                            'Report',
-                            style: TextStyle(
-                              color: secondaryTextColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 8),
+            _CommentLikeButton(
+              comment: comment,
+              onLike: () => onLikeComment(comment),
             ),
           ],
         ),
@@ -750,9 +1023,10 @@ class _CommentTile extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _ReplyTile(
                         reply: reply,
-                        onReply: () => onReplyToReply(reply),
+                        onReply: () => onReplyToReply(comment, reply),
                         onHashtagTap: onHashtagTap,
                         onMentionTap: onMentionTap,
+                        onLikeReply: onLikeComment,
                       ),
                     ),
                   )
@@ -770,12 +1044,14 @@ class _ReplyTile extends StatelessWidget {
     required this.onReply,
     required this.onHashtagTap,
     required this.onMentionTap,
+    required this.onLikeReply,
   });
 
   final PostComment reply;
   final VoidCallback onReply;
   final ValueChanged<String> onHashtagTap;
   final ValueChanged<String> onMentionTap;
+  final ValueChanged<PostComment> onLikeReply;
 
   @override
   Widget build(BuildContext context) {
@@ -796,89 +1072,95 @@ class _ReplyTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242526) : const Color(0xFFF0F2F5),
-                  borderRadius: BorderRadius.circular(18),
+              GestureDetector(
+                onLongPress: () => _showCommentActionsMenu(
+                  context,
+                  reply,
+                  onReply: onReply,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => _openAuthor(context, reply),
-                              child: SpecialNameText(
-                                username: reply.authorUsername,
-                                displayName: reply.displayName,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF242526) : const Color(0xFFF0F2F5),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _openAuthor(context, reply),
+                                child: SpecialNameText(
+                                  username: reply.authorUsername,
+                                  displayName: reply.displayName,
+                                  style: TextStyle(
+                                    color: primaryTextColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (reply.authorIsVerified ||
+                                reply.authorIsAdmin) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.verified,
+                                size: 14,
+                                color: Color(0xFF1D9BF0),
+                              ),
+                            ],
+                            if (reply.timeAgo.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '·',
                                 style: TextStyle(
-                                  color: primaryTextColor,
+                                  color: secondaryTextColor,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                          ),
-                          if (reply.authorIsVerified ||
-                              reply.authorIsAdmin) ...[
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.verified,
-                              size: 14,
-                              color: Color(0xFF1D9BF0),
-                            ),
-                          ],
-                          if (reply.timeAgo.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              '·',
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                              const SizedBox(width: 6),
+                              Text(
+                                reply.timeAgo,
+                                style: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              reply.timeAgo,
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
+                            ],
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      HashtagText(
-                        text: reply.body,
-                        style: TextStyle(
-                          inherit: false,
-                          fontFamily: 'Inter',
-                          color: primaryTextColor,
-                          fontSize: 14,
-                          height: 1.26,
                         ),
-                        onHashtagTap: onHashtagTap,
-                        onMentionTap: onMentionTap,
-                        prefixSpans: [
-                          if ((reply.replyToFullName ?? '').trim().isNotEmpty)
-                            TextSpan(
-                              text: '${reply.replyToFullName!.trim()} ',
-                              style: TextStyle(
-                                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                fontWeight: FontWeight.w700,
+                        const SizedBox(height: 3),
+                        HashtagText(
+                          text: reply.body,
+                          style: TextStyle(
+                            inherit: false,
+                            color: primaryTextColor,
+                            fontSize: 14,
+                            height: 1.26,
+                          ),
+                          onHashtagTap: onHashtagTap,
+                          onMentionTap: onMentionTap,
+                          prefixSpans: [
+                            if ((reply.replyToFullName ?? '').trim().isNotEmpty)
+                              TextSpan(
+                                text: '${reply.replyToFullName!.trim()} ',
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -903,6 +1185,11 @@ class _ReplyTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        const SizedBox(width: 8),
+        _CommentLikeButton(
+          comment: reply,
+          onLike: () => onLikeReply(reply),
         ),
       ],
     );
@@ -1491,5 +1778,143 @@ Future<void> _showReportCommentDialog(BuildContext context, PostComment comment)
 
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Thank you for reporting this comment. We will review it shortly.')),
+  );
+}
+
+
+
+class _CommentLikeButton extends StatelessWidget {
+  const _CommentLikeButton({
+    required this.comment,
+    required this.onLike,
+  });
+
+  final PostComment comment;
+  final VoidCallback onLike;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLiked = comment.likedByMe;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 12),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onLike,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.all(4),
+            child: Icon(
+              isLiked ? Icons.favorite : Icons.favorite_border,
+              size: 15,
+              color: isLiked ? Colors.redAccent : const Color(0xFF8E8E93),
+            ),
+          ),
+        ),
+        if (comment.likeCount > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${comment.likeCount}',
+            style: const TextStyle(
+              color: Color(0xFF8E8E93),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+void _showCommentActionsMenu(BuildContext context, PostComment comment, {required VoidCallback onReply}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final tileColor = isDark ? Colors.white70 : Colors.black87;
+
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Icon(Icons.reply, color: tileColor),
+              title: const Text('Reply'),
+              onTap: () {
+                Navigator.pop(context);
+                onReply();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.copy, color: tileColor),
+              title: const Text('Copy text'),
+              onTap: () {
+                Navigator.pop(context);
+                Clipboard.setData(ClipboardData(text: comment.body));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Comment copied to clipboard'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.share, color: tileColor),
+              title: const Text('Share comment'),
+              onTap: () {
+                Navigator.pop(context);
+                Share.share(comment.body);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.history, color: tileColor),
+              title: const Text('View edit history'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No edit history available.')),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.visibility_off, color: tileColor),
+              title: const Text('Hide comment'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Comment hidden.')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report, color: Colors.redAccent),
+              title: const Text('Report comment', style: TextStyle(color: Colors.redAccent)),
+              onTap: () {
+                Navigator.pop(context);
+                _showReportCommentDialog(context, comment);
+              },
+            ),
+          ],
+        ),
+      );
+    },
   );
 }

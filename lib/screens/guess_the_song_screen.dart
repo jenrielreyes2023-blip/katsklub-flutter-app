@@ -943,7 +943,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 const Text(
                   'Kats Song Guesser',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -954,7 +953,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 Text(
                   _loadingStatus,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF9CA3AF),
@@ -1004,7 +1002,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
         title: const Text(
           'Select Mode',
           style: TextStyle(
-            fontFamily: 'Inter',
             fontWeight: FontWeight.w900,
             fontSize: 18,
             color: Colors.white,
@@ -1033,7 +1030,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
               const Text(
                 'KATS SONG GUESSER',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
@@ -1044,7 +1040,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
               const Text(
                 'Choose your game mode to start playing!',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   color: Color(0xFF9CA3AF),
                   fontWeight: FontWeight.w500,
@@ -1119,7 +1114,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       Text(
                         title,
                         style: const TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -1129,7 +1123,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       Text(
                         description,
                         style: const TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 12,
                           color: Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
@@ -1158,7 +1151,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
       title: Text(
         _gameMode == 1 ? 'Song Guesser: Solo' : 'Song Guesser: PvP Duel',
         style: const TextStyle(
-          fontFamily: 'Inter',
           fontWeight: FontWeight.w900,
           fontSize: 16,
           color: Colors.white,
@@ -1178,7 +1170,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   Text(
                     'Best: $_highScore',
                     style: const TextStyle(
-                      fontFamily: 'Inter',
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
                       color: Color(0xFF9CA3AF),
@@ -1213,7 +1204,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
             child: Text(
               'Round ${_currentRound + 1}/5',
               style: const TextStyle(
-                fontFamily: 'Inter',
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
                 color: Color(0xFFE040FB),
@@ -1229,7 +1219,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 Text(
                   'Score: $_score',
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                     color: Colors.white,
@@ -1243,7 +1232,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 Text(
                   'P1: $_p1Score',
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
                     color: Color(0xFFFF5E3A),
@@ -1253,7 +1241,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 const Text(
                   'vs',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                     color: Color(0xFF9CA3AF),
@@ -1263,7 +1250,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 Text(
                   'P2: $_p2Score',
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
                     color: Color(0xFF00D1FF),
@@ -1325,7 +1311,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                     child: Text(
                       '${_secondsRemaining}s',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
                         color: _secondsRemaining <= 10
@@ -1453,7 +1438,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
             child: Text(
               _guessResult ? 'ANSWER CORRECT!' : 'INCORRECT / TIME\'S UP',
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 color: _guessResult
@@ -1467,7 +1451,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
           Text(
             trackName,
             style: const TextStyle(
-              fontFamily: 'Inter',
               fontSize: 16,
               fontWeight: FontWeight.w900,
               color: Colors.white,
@@ -1478,7 +1461,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
           Text(
             artistName,
             style: const TextStyle(
-              fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: Color(0xFFFF8A00),
@@ -1559,7 +1541,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   Text(
                     isLastRound ? 'See Results' : 'Next Song',
                     style: const TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1589,7 +1570,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
         const Text(
           'WHO IS SINGING?',
           style: TextStyle(
-            fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w900,
             color: Colors.white,
@@ -1600,7 +1580,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
         Text(
           actionHint,
           style: TextStyle(
-            fontFamily: 'Inter',
             fontSize: 11,
             color: _gameMode == 2 && !p1Disabled && !p2Disabled
                 ? const Color(0xFFFFD700)
@@ -1628,7 +1607,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   child: const Text(
                     'P1 LEFT',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFFFF5E3A),
@@ -1655,7 +1633,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   child: const Text(
                     'P2 RIGHT',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF00D1FF),
@@ -1707,7 +1684,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   Text(
                     'GUESS',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: isGuessDisabled
@@ -1721,7 +1697,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       child: Text(
                         p1Disabled ? 'P2 MIC' : 'P1 MIC',
                         style: const TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFFFFD700),
@@ -1833,7 +1808,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                   Text(
                     headerText,
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: activeColor,
@@ -1850,7 +1824,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                     child: Text(
                       '${_buzzSecondsRemaining}s',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         color: activeColor,
@@ -1898,7 +1871,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                     ? '${_playerDisplayName(_activeGuesser ?? 1)} is guessing...'
                     : 'Tap ${_playerDisplayName(_activeGuesser ?? 1)} avatar to speak',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: _isListening ? activeColor : const Color(0xFF9CA3AF),
@@ -1923,7 +1895,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                         child: Text(
                           '"$_speechTranscription"',
                           style: const TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -1936,7 +1907,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       controller: _textController,
                       focusNode: _textFocusNode,
                       style: const TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 15,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -1944,7 +1914,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       decoration: InputDecoration(
                         hintText: 'Type your song or artist guess...',
                         hintStyle: TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.25),
                         ),
@@ -2025,7 +1994,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       child: const Text(
                         'Give Up',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF9CA3AF),
                         ),
@@ -2047,7 +2015,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                       child: const Text(
                         'Submit Guess',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -2109,7 +2076,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                 Text(
                   _gameMode == 1 ? 'GAME COMPLETED!' : 'DUEL FINISHED!',
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -2123,7 +2089,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                         ? '🎉 AMAZING! NEW HIGH SCORE! 🎉'
                         : 'Well played! Try again to beat your record.',
                     style: const TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       color: Color(0xFF2ECC71),
                       fontWeight: FontWeight.w700,
@@ -2138,7 +2103,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                             ? '🥇 PLAYER 1 VICTORY! 🏆'
                             : '🥇 PLAYER 2 VICTORY! 🏆'),
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       color: winningColor,
                       fontWeight: FontWeight.w900,
@@ -2161,7 +2125,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                             const Text(
                               'YOUR FINAL SCORE',
                               style: TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF9CA3AF),
@@ -2172,7 +2135,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                             Text(
                               '$winScore',
                               style: const TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 44,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
@@ -2190,7 +2152,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     const Text(
                                       'Personal Best',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 11,
                                         color: Color(0xFF9CA3AF),
                                         fontWeight: FontWeight.w600,
@@ -2200,7 +2161,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     Text(
                                       '${math.max(_highScore, winScore)}',
                                       style: const TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFFFFD700),
@@ -2213,7 +2173,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     const Text(
                                       'Accuracy',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 11,
                                         color: Color(0xFF9CA3AF),
                                         fontWeight: FontWeight.w600,
@@ -2223,7 +2182,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     Text(
                                       '${(_score / 800 * 100).clamp(0, 100).toInt()}%',
                                       style: const TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF00D1FF),
@@ -2240,7 +2198,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                             const Text(
                               'FINAL SCORES',
                               style: TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF9CA3AF),
@@ -2256,7 +2213,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     const Text(
                                       'Player 1 (Orange)',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 12,
                                         color: Color(0xFFFF5E3A),
                                         fontWeight: FontWeight.w700,
@@ -2266,7 +2222,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     Text(
                                       '$_p1Score',
                                       style: const TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 32,
                                         fontWeight: FontWeight.w900,
                                         color: Colors.white,
@@ -2284,7 +2239,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     const Text(
                                       'Player 2 (Cyan)',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 12,
                                         color: Color(0xFF00D1FF),
                                         fontWeight: FontWeight.w700,
@@ -2294,7 +2248,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                                     Text(
                                       '$_p2Score',
                                       style: const TextStyle(
-                                        fontFamily: 'Inter',
                                         fontSize: 32,
                                         fontWeight: FontWeight.w900,
                                         color: Colors.white,
@@ -2323,7 +2276,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                         child: Text(
                           'Arcade Lobby',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontWeight: FontWeight.w900,
                             color: winningColor,
                             fontSize: 15,
@@ -2346,7 +2298,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                         child: const Text(
                           'Play Again',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontWeight: FontWeight.w900,
                             fontSize: 15,
                           ),
@@ -2404,7 +2355,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
           const Text(
             'Empty Seat',
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 10,
               fontWeight: FontWeight.w600,
               color: Colors.white30,
@@ -2560,7 +2510,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
         Text(
           name,
           style: TextStyle(
-            fontFamily: 'Inter',
             fontSize: isGuesser ? 11 : 10,
             fontWeight: FontWeight.w800,
             color: isMuted
@@ -2583,7 +2532,6 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen>
                           ? 'Muted'
                           : (isSpeaking ? 'Speaking...' : 'Joined')),
           style: TextStyle(
-            fontFamily: 'Inter',
             fontSize: 8,
             fontWeight: FontWeight.w500,
             color: isGuesser

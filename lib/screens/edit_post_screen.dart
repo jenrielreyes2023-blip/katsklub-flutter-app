@@ -237,7 +237,6 @@ class _EditPostScreenState extends State<EditPostScreen> {
               Text(
                 'How are you feeling?',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF111827),

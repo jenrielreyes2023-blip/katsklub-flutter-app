@@ -200,7 +200,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
               const Text(
                 'Matches Complete!',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF111827),
@@ -211,7 +210,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                 'You completed the deck in $_moves moves.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   color: Color(0xFF6B7280),
                 ),
@@ -232,7 +230,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                       Text(
                         'NEW HIGH SCORE! 🏆',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF10B981),
@@ -258,7 +255,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                       child: const Text(
                         'Exit',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF4B5563),
                         ),
@@ -283,7 +279,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                       child: const Text(
                         'Play Again',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -317,7 +312,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
         title: const Text(
           'Kats Match Game',
           style: TextStyle(
-            fontFamily: 'Inter',
             fontWeight: FontWeight.w800,
             fontSize: 18,
             color: Color(0xFF1F2937),
@@ -408,7 +402,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
             Text(
               label,
               style: const TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF9CA3AF),
@@ -418,7 +411,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
             Text(
               value,
               style: const TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1F2937),
@@ -463,7 +455,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                 const Text(
                   'KATS MEMORY MATCH',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -474,7 +465,6 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                 Text(
                   _loadStatus,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF9CA3AF),

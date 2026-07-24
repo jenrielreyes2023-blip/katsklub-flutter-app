@@ -339,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final borderColor = isDark ? const Color(0xFF262626) : const Color(0x1F787878);
     return InputDecoration(
       filled: true,
-      fillColor: isDark ? Colors.black : const Color(0xFFF3F4F7),
+      fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
       hintText: hintText,
       hintStyle: TextStyle(
         fontSize: 14,
@@ -699,7 +699,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            if (!_isPhoneLogin) ...[
+                            if (!_isPhoneLogin && !_showPasswordStep) ...[
                               TextButton(
                                 onPressed: () {
                                   showModalBottomSheet(
@@ -739,7 +739,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       });
                                     },
                               style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF1D9BF0),
+                                foregroundColor: brandOrange,
                                 textStyle: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,

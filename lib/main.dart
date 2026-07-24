@@ -141,7 +141,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
             themeMode: themeProvider.themeMode,
             theme: ThemeData(
               useMaterial3: true,
-              fontFamily: 'Inter',
               fontFamilyFallback: const [
                 'Apple Color Emoji',
                 'Noto Color Emoji',
@@ -161,13 +160,11 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 backgroundColor: Colors.white,
                 surfaceTintColor: Colors.transparent,
                 titleTextStyle: TextStyle(
-                  fontFamily: 'Inter',
                   color: Color(0xFF1C1E21),
                   fontSize: 21,
                   fontWeight: FontWeight.w800,
                 ),
                 contentTextStyle: TextStyle(
-                  fontFamily: 'Inter',
                   color: Color(0xFF4B5563), // Slate gray
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -236,7 +233,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 behavior: SnackBarBehavior.fixed,
                 backgroundColor: const Color(0xFF111827),
                 contentTextStyle: const TextStyle(
-                  fontFamily: 'Inter',
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -245,7 +241,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
             ),
             darkTheme: ThemeData(
               useMaterial3: true,
-              fontFamily: 'Inter',
               fontFamilyFallback: const [
                 'Apple Color Emoji',
                 'Noto Color Emoji',
@@ -265,13 +260,11 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 backgroundColor: Color(0xFF242526),
                 surfaceTintColor: Colors.transparent,
                 titleTextStyle: TextStyle(
-                  fontFamily: 'Inter',
                   color: Colors.white,
                   fontSize: 21,
                   fontWeight: FontWeight.w800,
                 ),
                 contentTextStyle: TextStyle(
-                  fontFamily: 'Inter',
                   color: Color(0xFFB0B3B8), // Muted dark mode gray
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -340,7 +333,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 behavior: SnackBarBehavior.fixed,
                 backgroundColor: const Color(0xFF1F2937),
                 contentTextStyle: const TextStyle(
-                  fontFamily: 'Inter',
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,

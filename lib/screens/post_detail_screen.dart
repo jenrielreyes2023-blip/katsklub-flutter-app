@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -32,6 +33,11 @@ import 'image_viewer_screen.dart';
 import 'repost_post_screen.dart';
 import 'youtube_player_screen.dart';
 import 'user_profile_screen.dart';
+
+enum _CommentSortMode {
+  relevance,
+  newest,
+}
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
@@ -64,6 +70,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Post? _post;
   StreamSubscription<Post>? _postUpdatedSubscription;
   StreamSubscription<ProfileStatsChange>? _profileStatsSubscription;
+  _CommentSortMode _sortMode = _CommentSortMode.relevance;
   List<PostComment> _comments = const [];
   final Map<int, List<PostComment>> _repliesByComment =
       <int, List<PostComment>>{};
@@ -799,9 +806,356 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  void _showCommentLikePlaceholder() {
+  List<PostComment> get _sortedComments {
+    if (_sortMode == _CommentSortMode.newest) {
+      final sorted = List<PostComment>.from(_comments);
+      sorted.sort((a, b) {
+        final dateA = a.createdAt ?? DateTime(1970);
+        final dateB = b.createdAt ?? DateTime(1970);
+        return dateB.compareTo(dateA);
+      });
+      return sorted;
+    } else {
+      final sorted = List<PostComment>.from(_comments);
+      sorted.sort((a, b) {
+        final scoreA = _calculateScore(a);
+        final scoreB = _calculateScore(b);
+        if (scoreA != scoreB) {
+          return scoreB.compareTo(scoreA);
+        }
+        final dateA = a.createdAt ?? DateTime(1970);
+        final dateB = b.createdAt ?? DateTime(1970);
+        return dateB.compareTo(dateA);
+      });
+      return sorted;
+    }
+  }
+
+  int _calculateScore(PostComment comment) {
+    int score = 0;
+    score += comment.likeCount * 3;
+    score += comment.replyCount * 5;
+    if (comment.authorIsAuthor) score += 100;
+    if (comment.authorIsAdmin) score += 40;
+    if (comment.authorIsVerified) score += 40;
+    return score;
+  }
+
+  Future<void> _toggleLikeComment(PostComment comment) async {
+    try {
+      final updated = await _feedService.toggleCommentLike(comment);
+      setState(() {
+        if (comment.parentCommentId == null) {
+          final idx = _comments.indexWhere((c) => c.id == comment.id);
+          if (idx != -1) {
+            final list = List<PostComment>.from(_comments);
+            list[idx] = updated;
+            _comments = list;
+          }
+        } else {
+          final parentId = comment.parentCommentId!;
+          final replyList = _repliesByComment[parentId];
+          if (replyList != null) {
+            final idx = replyList.indexWhere((r) => r.id == comment.id);
+            if (idx != -1) {
+              final list = List<PostComment>.from(replyList);
+              list[idx] = updated;
+              _repliesByComment[parentId] = list;
+            }
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  Widget _buildSortModeBar(BuildContext context) {
+    if (_isLoadingComments || _comments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => _showSortModeSelectionMenu(context),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _sortMode == _CommentSortMode.relevance
+                      ? 'Most Relevant'
+                      : 'Newest First',
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFFE4E6EB)
+                        : const Color(0xFF65676B),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: isDark
+                      ? const Color(0xFFB0B3B8)
+                      : const Color(0xFF65676B),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSortModeSelectionMenu(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tileColor = isDark ? Colors.white70 : Colors.black87;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(
+                  Icons.star_rounded,
+                  color: _sortMode == _CommentSortMode.relevance
+                      ? const Color(0xFFFF7A45)
+                      : tileColor,
+                ),
+                title: Text(
+                  'Most Relevant',
+                  style: TextStyle(
+                    fontWeight: _sortMode == _CommentSortMode.relevance
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                subtitle: const Text(
+                    'Shows comments with more likes, replies, and author responses first.'),
+                onTap: () {
+                  setState(() {
+                    _sortMode = _CommentSortMode.relevance;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.access_time_rounded,
+                  color: _sortMode == _CommentSortMode.newest
+                      ? const Color(0xFFFF7A45)
+                      : tileColor,
+                ),
+                title: Text(
+                  'Newest First',
+                  style: TextStyle(
+                    fontWeight: _sortMode == _CommentSortMode.newest
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                subtitle: const Text(
+                    'Shows comments in chronological order, with the newest at the top.'),
+                onTap: () {
+                  setState(() {
+                    _sortMode = _CommentSortMode.newest;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCommentActionsMenu(PostComment comment,
+      {required VoidCallback onReply}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tileColor = isDark ? Colors.white70 : Colors.black87;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(Icons.reply_rounded, color: tileColor),
+                title: Text('Reply', style: TextStyle(color: tileColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onReply();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.copy_rounded, color: tileColor),
+                title: Text('Copy text', style: TextStyle(color: tileColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Clipboard.setData(ClipboardData(text: comment.body));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Comment copied to clipboard')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.share_rounded, color: tileColor),
+                title: Text('Share comment', style: TextStyle(color: tileColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Share.share(comment.body);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.history_rounded, color: tileColor),
+                title:
+                    Text('View edit history', style: TextStyle(color: tileColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'No edit history available for this comment.')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.visibility_off_rounded, color: tileColor),
+                title: Text('Hide comment', style: TextStyle(color: tileColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _comments =
+                        _comments.where((c) => c.id != comment.id).toList();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Comment hidden.')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.report_problem_rounded,
+                    color: Colors.redAccent),
+                title: const Text('Report comment',
+                    style: TextStyle(color: Colors.redAccent)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showReportCommentDialog(comment.id);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showReportCommentDialog(int commentId) async {
+    final reasons = [
+      'Spam or misleading',
+      'Harassment or hate speech',
+      'Inappropriate content',
+      'Intellectual property violation',
+      'Other'
+    ];
+    String? selectedReason;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Report Comment'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: reasons.map((reason) {
+                    return RadioListTile<String>(
+                      title: Text(reason, style: const TextStyle(fontSize: 14)),
+                      value: reason,
+                      groupValue: selectedReason,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || selectedReason == null) {
+      return;
+    }
+
+    final ok = await _feedService.reportComment(commentId, selectedReason!);
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Comment like coming soon.')),
+      const SnackBar(
+          content: Text(
+              'Thank you for reporting this comment. We will review it shortly.')),
     );
   }
 
@@ -2127,6 +2481,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     isLoadingMore: _isLoadingMoreComments,
                                   ),
                                 ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: _buildSortModeBar(context),
+                                ),
                                 const SizedBox(height: 10),
                               ],
                             ),
@@ -2158,11 +2517,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         SliverPadding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
                           sliver: SliverList.separated(
-                            itemCount: _comments.length,
+                            itemCount: _sortedComments.length,
                             separatorBuilder: (_, __) =>
                                 const SizedBox(height: 16),
                             itemBuilder: (context, index) {
-                              final comment = _comments[index];
+                              final comment = _sortedComments[index];
                               final replies = _repliesByComment[comment.id] ??
                                   const <PostComment>[];
                               final isRepliesExpanded =
@@ -2175,13 +2534,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 replies: replies,
                                 isRepliesExpanded: isRepliesExpanded,
                                 isLoadingReplies: isLoadingReplies,
-                                onLike: _showCommentLikePlaceholder,
+                                onLike: () => _toggleLikeComment(comment),
                                 onReply: () => _startReply(comment),
                                 onToggleReplies: comment.replyCount > 0
                                     ? () => _toggleReplies(comment)
                                     : null,
                                 onReplyToReply: (reply) =>
                                     _startReplyToReply(comment, reply),
+                                onLongPressComment: (c) => _showCommentActionsMenu(
+                                  c,
+                                  onReply: () => _startReply(c),
+                                ),
                                 commentKey: _commentKeys.putIfAbsent(
                                     comment.id, () => GlobalKey()),
                                 replyKeyResolver: (id) => _commentKeys
@@ -3777,6 +4140,7 @@ class _InlineCommentRow extends StatelessWidget {
     required this.comment,
     required this.onLike,
     required this.onReply,
+    required this.onLongPress,
   });
 
   static const String _authorPenSvg =
@@ -3785,6 +4149,7 @@ class _InlineCommentRow extends StatelessWidget {
   final PostComment comment;
   final VoidCallback onLike;
   final VoidCallback onReply;
+  final VoidCallback onLongPress;
 
   void _openMention(BuildContext context, String username) {
     Navigator.of(context).push(
@@ -3843,11 +4208,14 @@ class _InlineCommentRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _CommentMessageBlock(
-                comment: comment,
-                authorPenSvg: _authorPenSvg,
-                onMentionTap: (username) => _openMention(context, username),
-                onAuthorTap: () => _openAuthor(context),
+              GestureDetector(
+                onLongPress: onLongPress,
+                child: _CommentMessageBlock(
+                  comment: comment,
+                  authorPenSvg: _authorPenSvg,
+                  onMentionTap: (username) => _openMention(context, username),
+                  onAuthorTap: () => _openAuthor(context),
+                ),
               ),
               const SizedBox(height: 6),
               Row(
@@ -3861,18 +4229,6 @@ class _InlineCommentRow extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  const SizedBox(width: 14),
-                  GestureDetector(
-                    onTap: onLike,
-                    child: const Text(
-                      'Like',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
                   const SizedBox(width: 14),
                   GestureDetector(
                     onTap: onReply,
@@ -3890,6 +4246,11 @@ class _InlineCommentRow extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: 8),
+        _CommentLikeButton(
+          comment: comment,
+          onLike: onLike,
+        ),
       ],
     );
   }
@@ -3904,6 +4265,7 @@ class _CommentThreadBlock extends StatelessWidget {
     required this.onLike,
     required this.onReply,
     required this.onReplyToReply,
+    required this.onLongPressComment,
     this.onToggleReplies,
     this.commentKey,
     this.replyKeyResolver,
@@ -3917,6 +4279,7 @@ class _CommentThreadBlock extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onReply;
   final ValueChanged<PostComment> onReplyToReply;
+  final ValueChanged<PostComment> onLongPressComment;
   final VoidCallback? onToggleReplies;
   final GlobalKey? commentKey;
   final GlobalKey Function(int id)? replyKeyResolver;
@@ -3934,6 +4297,7 @@ class _CommentThreadBlock extends StatelessWidget {
             comment: comment,
             onLike: onLike,
             onReply: onReply,
+            onLongPress: () => onLongPressComment(comment),
           ),
         ),
         if (comment.replyCount > 0 || replies.isNotEmpty) ...[
@@ -3986,6 +4350,7 @@ class _CommentThreadBlock extends StatelessWidget {
                           comment: reply,
                           onLike: onLike,
                           onReply: () => onReplyToReply(reply),
+                          onLongPress: () => onLongPressComment(reply),
                         ),
                       ),
                     ),
@@ -4113,7 +4478,6 @@ class _CommentMessageBlock extends StatelessWidget {
           text: comment.body,
           style: TextStyle(
             inherit: false,
-            fontFamily: 'Inter',
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 14,
             height: 1.35,
@@ -4188,5 +4552,51 @@ IconData _getPrivacyIcon(String visibility) {
       return Icons.lock_rounded;
     default:
       return Icons.public_rounded;
+  }
+}
+
+class _CommentLikeButton extends StatelessWidget {
+  const _CommentLikeButton({
+    required this.comment,
+    required this.onLike,
+  });
+
+  final PostComment comment;
+  final VoidCallback onLike;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLiked = comment.likedByMe;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 12),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onLike,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.all(4),
+            child: Icon(
+              isLiked ? Icons.favorite : Icons.favorite_border,
+              size: 15,
+              color: isLiked ? Colors.redAccent : const Color(0xFF8E8E93),
+            ),
+          ),
+        ),
+        if (comment.likeCount > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${comment.likeCount}',
+            style: const TextStyle(
+              color: Color(0xFF8E8E93),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

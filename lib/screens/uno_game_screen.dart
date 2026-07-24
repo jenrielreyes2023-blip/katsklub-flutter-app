@@ -558,7 +558,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
           title: const Text(
             'Select Active Color',
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w900, color: Colors.white),
+            style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
           ),
           content: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -638,7 +638,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
           title: Text(
             isPlayerWon ? '🎉 Game Won! 🎉' : '😿 Game Over 😿',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w900, fontSize: 22, color: Colors.white),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.white),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -646,7 +646,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
               Text(
                 _winnerMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFFD1D5DB)),
+                style: const TextStyle(fontSize: 16, color: Color(0xFFD1D5DB)),
               ),
               const SizedBox(height: 16),
               Container(
@@ -725,7 +725,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
                 const Text(
                   'Kats Uno Duel',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -735,7 +734,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _loadStatus,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF9CA3AF)),
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                 ),
                 const SizedBox(height: 24),
                 ClipRRect(
@@ -765,7 +764,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
         ),
         title: const Text(
           'Kats Uno Duel',
-          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white),
         ),
         actions: [
           IconButton(
@@ -920,7 +919,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
                         child: Text(
                           'DRAW',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontWeight: FontWeight.w900,
                             fontSize: 9,
                             color: const Color(0xFFFF5E3A).withValues(alpha: 0.7),
@@ -984,7 +982,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
                     logText,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: logIndex == _gameLog.length - 1 ? FontWeight.w800 : FontWeight.w500,
                       color: logIndex == _gameLog.length - 1
@@ -1026,7 +1023,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
           Text(
             'Active Color: ${_colorName(_activeColor).toUpperCase()}',
             style: TextStyle(
-              fontFamily: 'Inter',
               fontWeight: FontWeight.w900,
               fontSize: 12,
               color: indicatorCol,
@@ -1060,7 +1056,7 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
           icon: const Icon(Icons.volume_up_rounded),
           label: const Text(
             'SHOUT "UNO!"',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w900),
+            style: TextStyle(fontWeight: FontWeight.w900),
           ),
         ),
       ),
@@ -1183,7 +1179,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
             child: Text(
               card.displayName.substring(0, math.min(card.displayName.length, 2)).trim(),
               style: const TextStyle(
-                fontFamily: 'Inter',
                 fontWeight: FontWeight.w900,
                 fontSize: 14,
                 color: Colors.white,
@@ -1212,7 +1207,6 @@ class _UnoGameScreenState extends State<UnoGameScreen> {
             child: Text(
               _getCardLabel(card),
               style: const TextStyle(
-                fontFamily: 'Inter',
                 fontWeight: FontWeight.w800,
                 fontSize: 9,
                 color: Colors.white70,

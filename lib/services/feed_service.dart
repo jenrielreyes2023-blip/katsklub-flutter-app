@@ -1535,6 +1535,27 @@ class FeedService {
     return data['ok'] == true;
   }
 
+  Future<PostComment> toggleCommentLike(PostComment comment) async {
+    try {
+      final data = await _authenticatedPost('/api/comments/${comment.id}/like');
+      if (data['ok'] == true) {
+        final likeCount = _readInt(data['likeCount'] ?? data['like_count']);
+        final liked = data['liked'] == true || data['liked_by_me'] == true;
+        return comment.copyWith(
+          likeCount: likeCount,
+          likedByMe: liked,
+        );
+      }
+    } catch (_) {}
+
+    final newLiked = !comment.likedByMe;
+    final newCount = comment.likeCount + (newLiked ? 1 : -1);
+    return comment.copyWith(
+      likeCount: newCount < 0 ? 0 : newCount,
+      likedByMe: newLiked,
+    );
+  }
+
   Future<void> _applyFollowStateUpdate(User targetUser) async {
     final targetUsername = targetUser.username?.trim().toLowerCase() ?? '';
     if (targetUsername.isEmpty) {

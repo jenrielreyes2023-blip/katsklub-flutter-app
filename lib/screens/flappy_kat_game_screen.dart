@@ -267,7 +267,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
               const Text(
                 'Ouch! Game Over',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF111827),
@@ -278,7 +277,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                 'You scored $_score points.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   color: Color(0xFF6B7280),
                 ),
@@ -299,7 +297,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                       Text(
                         'NEW HIGH SCORE! 🏆',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF10B981),
@@ -325,7 +322,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                       child: const Text(
                         'Exit',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF4B5563),
                         ),
@@ -350,7 +346,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                       child: const Text(
                         'Restart',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -468,7 +463,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                       child: Text(
                         '$_score',
                         style: const TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -489,7 +483,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                           Text(
                             '$_highScore',
                             style: const TextStyle(
-                              fontFamily: 'Inter',
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -524,7 +517,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                               Text(
                                 'TAP TO FLY',
                                 style: TextStyle(
-                                  fontFamily: 'Inter',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
@@ -535,7 +527,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                               Text(
                                 'Avoid the structural pipes!',
                                 style: TextStyle(
-                                  fontFamily: 'Inter',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white70,
@@ -682,7 +673,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                 const Text(
                   'FLAPPY KAT ADVENTURE',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -693,7 +683,6 @@ class _FlappyKatGameScreenState extends State<FlappyKatGameScreen> {
                 Text(
                   _loadStatus,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF9CA3AF),

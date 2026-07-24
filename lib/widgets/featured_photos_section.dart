@@ -158,7 +158,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               Text(
                 'Add Featured Photos',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : const Color(0xFF1C1E21),
@@ -168,7 +167,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               Text(
                 'Showcase up to 5 of your best moments',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 12,
                   color: textColor,
                 ),
@@ -240,6 +238,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                           ? CachedNetworkImage(
                               imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
                               fit: BoxFit.cover,
+                              memCacheWidth: 60,
+                              memCacheHeight: 60,
                               errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
                             )
                           : _buildDefaultAvatar(visitor.username),
@@ -259,8 +259,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   fontSize: 13,
                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF65676B),
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter',
-                ),
+                  ),
               ),
               if (widget.user.newVisitorsCount > 0)
                 Positioned(
@@ -341,7 +340,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   Text(
                     'Featured Photos',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : const Color(0xFF1C1E21),
@@ -379,7 +377,6 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                             Text(
                               'Add',
                               style: TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
@@ -421,156 +418,160 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
   Widget _buildAddPlaceholderCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: _showAddOptions,
-      child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-            width: 1.5,
-            style: BorderStyle.solid,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: _showAddOptions,
+        child: Container(
+          width: 100,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+              width: 1.5,
+              style: BorderStyle.solid,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF242526) : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF242526) : Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.add_a_photo_outlined,
+                  color: Color(0xFFFF8A00),
+                  size: 20,
+                ),
               ),
-              child: const Icon(
-                Icons.add_a_photo_outlined,
-                color: Color(0xFFFF8A00),
-                size: 20,
+              const SizedBox(height: 8),
+              Text(
+                'Add New',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Add New',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPhotoCard(FeaturedPhoto photo, int index) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          PageRouteBuilder(
-            opaque: false,
-            barrierColor: Colors.black.withValues(alpha: 0.9),
-            pageBuilder: (context, animation, secondaryAnimation) {
-              return _FeaturedPhotoViewer(
-                photos: _photos,
-                initialIndex: index,
-                isOwnProfile: widget.isOwnProfile,
-                onDelete: _removePhoto,
-              );
-            },
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-          ),
-        );
-      },
-      child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            PageRouteBuilder(
+              opaque: false,
+              barrierColor: Colors.black.withValues(alpha: 0.9),
+              pageBuilder: (context, animation, secondaryAnimation) {
+                return _FeaturedPhotoViewer(
+                  photos: _photos,
+                  initialIndex: index,
+                  isOwnProfile: widget.isOwnProfile,
+                  onDelete: _removePhoto,
+                );
+              },
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            children: [
-              CachedNetworkImage(
-                imageUrl: ApiConfig.assetUrl(photo.photoUrl),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                placeholder: (context, url) => Container(
-                  color: const Color(0xFFF3F4F6),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00)),
-                      ),
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: const Color(0xFFF3F4F6),
-                  child: const Center(
-                    child: Icon(Icons.broken_image_outlined, color: Colors.grey),
-                  ),
-                ),
+          );
+        },
+        child: Container(
+          width: 100,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-              if (photo.caption.isNotEmpty)
-                Positioned(
-                  left: 6,
-                  right: 6,
-                  bottom: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      photo.caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: ApiConfig.assetUrl(photo.photoUrl),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  memCacheWidth: 200,
+                  memCacheHeight: 300,
+                  placeholder: (context, url) => Container(
+                    color: const Color(0xFFF3F4F6),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00)),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (_isMutating)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.25),
+                  errorWidget: (context, url, error) => Container(
+                    color: const Color(0xFFF3F4F6),
+                    child: const Center(
+                      child: Icon(Icons.broken_image_outlined, color: Colors.grey),
+                    ),
                   ),
                 ),
-            ],
+                if (photo.caption.isNotEmpty)
+                  Positioned(
+                    left: 6,
+                    right: 6,
+                    bottom: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        photo.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_isMutating)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.25),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -703,7 +704,6 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
               Text(
                 'Manage Featured Photos',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -741,7 +741,7 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
             icon: const Icon(Icons.add_a_photo_outlined, size: 18),
             label: Text(
               _photos.length >= 5 ? 'Limit Reached (5/5)' : 'Add Featured Photo',
-              style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             ),
           ),
           const SizedBox(height: 16),
@@ -760,7 +760,6 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                         Text(
                           'No featured photos yet',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Theme.of(context).colorScheme.onSurface,
@@ -770,7 +769,6 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                         Text(
                           'Add photos to display them on your profile.',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                             color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF9CA3AF),
@@ -797,6 +795,8 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                               child: CachedNetworkImage(
                                 imageUrl: ApiConfig.assetUrl(photo.photoUrl),
                                 fit: BoxFit.cover,
+                                memCacheWidth: 200,
+                                memCacheHeight: 260,
                                 placeholder: (c, u) => Container(color: const Color(0xFFF3F4F6)),
                                 errorWidget: (c, u, e) => Container(
                                   color: const Color(0xFFF3F4F6),
@@ -842,7 +842,6 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontFamily: 'Inter',
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
@@ -1035,7 +1034,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
             Text(
               'Add Featured Photo',
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -1120,7 +1118,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                   label: const Text(
                     'Change Photo',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFFFF7A45),
@@ -1132,7 +1129,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
               Text(
                 'Add Caption (Optional)',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -1154,7 +1150,7 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   counterText: '',
                 ),
-                style: TextStyle(fontSize: 14, fontFamily: 'Inter', color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -1181,7 +1177,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                       : const Text(
                           'Done',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -1216,7 +1211,7 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
-                style: TextStyle(fontSize: 13, fontFamily: 'Inter', color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 12),
             ],
@@ -1226,7 +1221,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
               Text(
                 'Select a Preset:',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -1265,6 +1259,8 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: double.infinity,
+                                memCacheWidth: 200,
+                                memCacheHeight: 200,
                               ),
                               Positioned.fill(
                                 child: Container(
@@ -1278,7 +1274,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                                     preset['title']!,
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                      fontFamily: 'Inter',
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.white,
@@ -1314,11 +1309,15 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
       return CachedNetworkImage(
         imageUrl: _selectedPresetUrl!,
         fit: BoxFit.cover,
+        memCacheWidth: 200,
+        memCacheHeight: 200,
       );
     } else if (_urlController.text.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: _urlController.text.trim(),
         fit: BoxFit.cover,
+        memCacheWidth: 200,
+        memCacheHeight: 200,
         errorWidget: (context, url, error) => const Center(
           child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: 36),
         ),
@@ -1356,7 +1355,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -1366,7 +1364,6 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
@@ -1427,11 +1424,11 @@ class _FeaturedPhotoViewerState extends State<_FeaturedPhotoViewer> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
             'Delete Photo?',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w800, fontSize: 16),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           content: const Text(
             'Are you sure you want to remove this photo from your featured section?',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF4B5563)),
+            style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
           ),
           actions: [
             TextButton(
@@ -1523,7 +1520,6 @@ class _FeaturedPhotoViewerState extends State<_FeaturedPhotoViewer> {
                     Text(
                       widget.photos[_currentIndex].caption,
                       style: const TextStyle(
-                        fontFamily: 'Inter',
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -1534,7 +1530,6 @@ class _FeaturedPhotoViewerState extends State<_FeaturedPhotoViewer> {
                   Text(
                     'Photo ${_currentIndex + 1} of ${widget.photos.length}',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,

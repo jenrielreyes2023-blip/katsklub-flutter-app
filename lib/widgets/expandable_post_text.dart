@@ -32,7 +32,6 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
 
   static const TextStyle _textStyle = TextStyle(
     inherit: false,
-    fontFamily: 'Inter',
     fontSize: 15,
     height: 1.25,
     color: Color(0xFF1C1E21),

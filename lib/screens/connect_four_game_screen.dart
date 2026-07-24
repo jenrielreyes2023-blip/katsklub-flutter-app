@@ -321,7 +321,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
             isVictory ? '🎉 Winner! 🎉' : (isDefeat ? '😿 Game Over 😿' : '🤝 Tied Game 🤝'),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontFamily: 'Inter',
               fontWeight: FontWeight.w900,
               fontSize: 22,
               color: Colors.white,
@@ -334,7 +333,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
                 _winnerMessage,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 16,
                   color: Color(0xFFD1D5DB),
                 ),
@@ -683,7 +681,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
                 const Text(
                   'Kats Connect Four',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -694,7 +691,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
                 Text(
                   _loadStatus,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
                   ),
@@ -735,7 +731,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
         title: const Text(
           'Kats Connect 4',
           style: TextStyle(
-            fontFamily: 'Inter',
             fontWeight: FontWeight.w900,
             fontSize: 18,
             color: Colors.white,
@@ -890,7 +885,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
                     value: _difficulty,
                     icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.white),
                     style: const TextStyle(
-                      fontFamily: 'Inter',
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       color: Colors.white,
@@ -952,7 +946,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
             Text(
               label,
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 color: isSelected ? Colors.black : Colors.white,
@@ -1043,7 +1036,7 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'VS',
-              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF6B7280)),
             ),
           ),
           // Player 2 / AI widget
@@ -1097,7 +1090,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
               Text(
                 'Win Streak: $_winStreak  |  Best Streak: $_maxStreak',
                 style: const TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF9CA3AF),
@@ -1113,7 +1105,6 @@ class _ConnectFourGameScreenState extends State<ConnectFourGameScreen> {
             'Tip: Tap any column to drop your cat paw token there. Get four in a row horizontally, vertically, or diagonally to win!',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: Color(0xFF6B7280),

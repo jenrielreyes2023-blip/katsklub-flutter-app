@@ -6,12 +6,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import 'terms_of_use_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class GoogleSignupContext {
   const GoogleSignupContext({
@@ -1345,7 +1348,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final borderColor = isDark ? const Color(0xFF262626) : const Color(0x1F787878);
     return InputDecoration(
       filled: true,
-      fillColor: isDark ? Colors.black : const Color(0xFFF3F4F7),
+      fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
       hintText: hintText,
       hintStyle: TextStyle(
         fontSize: 14,
@@ -1398,15 +1401,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 child: Image.asset(
                   'assets/images/kats-logo-final.png',
-                  width: 54,
-                  height: 54,
+                  height: 64,
                   fit: BoxFit.contain,
                 ),
               )
             : Image.asset(
                 'assets/images/kats-logo-final.png',
-                width: 54,
-                height: 54,
+                height: 64,
                 fit: BoxFit.contain,
               ),
         const SizedBox(height: 10),
@@ -1657,6 +1658,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
     final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+    const brandOrange = Color(0xFFFF7A59);
 
     final Widget currentStepFields;
     switch (_stage) {
@@ -2116,7 +2118,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF1D9BF0) : Colors.transparent,
+                                color: isSelected ? brandOrange : Colors.transparent,
                                 width: 3,
                               ),
                             ),
@@ -2256,7 +2258,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 icon: const Icon(Icons.key_rounded, size: 18),
                 label: const Text('Suggest strong password'),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF1D9BF0),
+                  foregroundColor: brandOrange,
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -2306,23 +2308,31 @@ class _SignupScreenState extends State<SignupScreen> {
             ],
             if (!_otpSent) ...[
               SizedBox(
-                height: 44,
-                child: ElevatedButton(
+                height: 52,
+                child: FilledButton(
                   onPressed: _isLoading ? null : _sendOtp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1D9BF0),
-                    foregroundColor: Colors.white,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: brandOrange,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
+                    disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    elevation: 0,
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2.2,
+                            color: Colors.white,
                           ),
                         )
                       : Text(_isPhoneSignup ? 'Send Verification Code' : 'Send Code to Email'),
@@ -2347,7 +2357,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   TextButton(
                     onPressed: _isLoading ? null : _sendOtp,
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF1D9BF0),
+                      foregroundColor: brandOrange,
                     ),
                     child: const Text('Resend Code'),
                   ),
@@ -2431,6 +2441,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   color: primaryText,
                   decoration: TextDecoration.underline,
                 ),
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TermsOfUseScreen(),
+                      ),
+                    );
+                  },
               ),
               const TextSpan(text: ' and '),
               TextSpan(
@@ -2439,6 +2458,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   color: primaryText,
                   decoration: TextDecoration.underline,
                 ),
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PrivacyPolicyScreen(),
+                      ),
+                    );
+                  },
               ),
               const TextSpan(text: '.'),
             ],
@@ -2492,7 +2520,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           _buildInlineError(),
                           const SizedBox(height: 12),
                           SizedBox(
-                            height: 48,
+                            height: 52,
                             child: FilledButton(
                               onPressed: (_isLoading || _didCompleteSignup)
                                   ? null
@@ -2502,20 +2530,22 @@ class _SignupScreenState extends State<SignupScreen> {
                                 foregroundColor: isDark ? Colors.black : Colors.white,
                                 disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
                                 disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
-                                shape: const StadiumBorder(),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 elevation: 0,
                                 textStyle: const TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               child: _isLoading
                                   ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
+                                      width: 20,
+                                      height: 20,
                                       child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                                        strokeWidth: 2.2,
                                         color: Colors.white,
                                       ),
                                     )
@@ -2619,7 +2649,7 @@ class _DropdownField extends StatelessWidget {
         dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         decoration: InputDecoration(
           filled: true,
-          fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F7),
+          fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -3087,8 +3117,10 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0F1419),
                         side: const BorderSide(color: Color(0xFFD1D5DB)),
-                        shape: const StadiumBorder(),
-                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        minimumSize: const Size.fromHeight(52),
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                       label: const Text('Reset'),
@@ -3098,20 +3130,22 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                   Expanded(
                     flex: 2,
                     child: SizedBox(
-                      height: 48,
+                      height: 52,
                       child: FilledButton(
                         onPressed: _isSaving ? null : _saveAvatar,
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF0F1419),
                           foregroundColor: Colors.white,
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: _isSaving
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: 2.2,
                                   color: Colors.white,
                                 ),
                               )

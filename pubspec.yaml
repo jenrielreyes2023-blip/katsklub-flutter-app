@@ -69,26 +69,6 @@ flutter:
   - assets/sounds/message_in.mp3
   - assets/sounds/message_out.mp3
   - assets/animations/empty_status.json
-  fonts:
-  - family: Inter
-    fonts:
-    - asset: assets/fonts/Inter-Regular.ttf
-      weight: 400
-    - asset: assets/fonts/Inter-Medium.ttf
-      weight: 500
-    - asset: assets/fonts/Inter-SemiBold.ttf
-      weight: 600
-    - asset: assets/fonts/Inter-Bold.ttf
-      weight: 700
-    - asset: assets/fonts/Inter-MediumItalic.ttf
-      weight: 500
-      style: italic
-    - asset: assets/fonts/Inter-SemiBoldItalic.ttf
-      weight: 600
-      style: italic
-    - asset: assets/fonts/Inter-BoldItalic.ttf
-      weight: 700
-      style: italic
   uses-material-design: true
 name: katsklub_flutter
 publish_to: none

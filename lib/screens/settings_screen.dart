@@ -7,6 +7,10 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/feed_service.dart';
+import 'about_screen.dart';
+import 'help_center_screen.dart';
+import 'terms_of_use_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -827,7 +831,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // 5. Danger Zone / Account Deletion
+                // 5. Support & Legal
+                _buildSectionHeader(title: 'Support & Legal', icon: Icons.info_outline_rounded),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cardBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildLegalRow(
+                        icon: Icons.info_outline_rounded,
+                        title: 'About KatsKlub',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AboutScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(color: cardBorder, height: 1),
+                      _buildLegalRow(
+                        icon: Icons.help_outline_rounded,
+                        title: 'Help Center',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HelpCenterScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(color: cardBorder, height: 1),
+                      _buildLegalRow(
+                        icon: Icons.gavel_rounded,
+                        title: 'Terms of Use',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TermsOfUseScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(color: cardBorder, height: 1),
+                      _buildLegalRow(
+                        icon: Icons.shield_outlined,
+                        title: 'Privacy Policy',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PrivacyPolicyScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 6. Danger Zone / Account Deletion
                 _buildSectionHeader(title: 'Danger Zone', icon: Icons.warning_amber_rounded, color: const Color(0xFFE53935)),
                 const SizedBox(height: 8),
                 Container(
@@ -913,6 +985,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLegalRow({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textTitleColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1F2937);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFFFF7A45)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textTitleColor,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

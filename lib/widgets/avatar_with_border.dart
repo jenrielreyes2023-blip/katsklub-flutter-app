@@ -160,38 +160,21 @@ class AvatarWithBorder extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            // The Avatar Image (placed behind the frame border)
-            SizedBox(
-              width: avatarSize,
-              height: avatarSize,
-              child: ClipOval(
-                child: avatarUrl.trim().isEmpty
-                    ? Container(
-                        color: const Color(0xFFE5E7EB),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
-                            fontSize: avatarSize * 0.4,
-                          ),
-                        ),
-                      )
-                    : CachedNetworkImage(
-                        imageUrl: ApiConfig.assetUrl(avatarUrl),
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: const Color(0xFFF3F4F6),
-                        ),
-                        errorWidget: (context, url, error) => Container(
+      child: RepaintBoundary(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // The Avatar Image (placed behind the frame border)
+              SizedBox(
+                width: avatarSize,
+                height: avatarSize,
+                child: ClipOval(
+                  child: avatarUrl.trim().isEmpty
+                      ? Container(
                           color: const Color(0xFFE5E7EB),
                           alignment: Alignment.center,
                           child: Text(
@@ -202,43 +185,62 @@ class AvatarWithBorder extends StatelessWidget {
                               fontSize: avatarSize * 0.4,
                             ),
                           ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: ApiConfig.assetUrl(avatarUrl),
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: const Color(0xFFF3F4F6),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: const Color(0xFFE5E7EB),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111827),
+                                fontSize: avatarSize * 0.4,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-              ),
-            ),
-            // The Border Overlay with a circular cutout in the middle
-            // (to remove painted/dark centers in border PNGs that are not
-            // designed with a transparent inner hole).
-            Positioned(
-              left: borderOffset,
-              top: borderOffset,
-              width: borderSize,
-              height: borderSize,
-              child: ShaderMask(
-                blendMode: BlendMode.dstOut,
-                shaderCallback: (Rect bounds) {
-                  // Cutout radius matches the avatar's radius so the border
-                  // touches the avatar edge cleanly without bleed-through.
-                  final double cut = _avatarScaleMultiplier; // 0..1 along gradient radius
-                  final double feather = 0.02; // small anti-alias edge
-                  return RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.5,
-                    colors: const [
-                      Colors.black,
-                      Colors.black,
-                      Colors.transparent,
-                    ],
-                    stops: [0.0, cut, (cut + feather).clamp(0.0, 1.0)],
-                  ).createShader(bounds);
-                },
-                child: Image.asset(
-                  _borderAssetPath,
-                  fit: BoxFit.contain,
                 ),
               ),
-            ),
-          ],
+              // The Border Overlay with a circular cutout in the middle
+              // (to remove painted/dark centers in border PNGs that are not
+              // designed with a transparent inner hole).
+              Positioned(
+                left: borderOffset,
+                top: borderOffset,
+                width: borderSize,
+                height: borderSize,
+                child: ShaderMask(
+                  blendMode: BlendMode.dstOut,
+                  shaderCallback: (Rect bounds) {
+                    // Cutout radius matches the avatar's radius so the border
+                    // touches the avatar edge cleanly without bleed-through.
+                    final double cut = _avatarScaleMultiplier; // 0..1 along gradient radius
+                    final double feather = 0.02; // small anti-alias edge
+                    return RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.5,
+                      colors: const [
+                        Colors.black,
+                        Colors.black,
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, cut, (cut + feather).clamp(0.0, 1.0)],
+                    ).createShader(bounds);
+                  },
+                  child: Image.asset(
+                    _borderAssetPath,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

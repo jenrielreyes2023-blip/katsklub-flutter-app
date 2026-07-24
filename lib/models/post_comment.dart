@@ -16,6 +16,8 @@ class PostComment {
     required this.authorIsVerified,
     required this.authorIsAuthor,
     required this.authorIsAdmin,
+    this.likeCount = 0,
+    this.likedByMe = false,
   });
 
   final int id;
@@ -34,6 +36,35 @@ class PostComment {
   final bool authorIsVerified;
   final bool authorIsAuthor;
   final bool authorIsAdmin;
+  final int likeCount;
+  final bool likedByMe;
+
+  PostComment copyWith({
+    int? replyCount,
+    int? likeCount,
+    bool? likedByMe,
+  }) {
+    return PostComment(
+      id: id,
+      postId: postId,
+      body: body,
+      createdAt: createdAt,
+      parentCommentId: parentCommentId,
+      replyToUserId: replyToUserId,
+      replyToUsername: replyToUsername,
+      replyToFullName: replyToFullName,
+      replyCount: replyCount ?? this.replyCount,
+      authorId: authorId,
+      authorFullName: authorFullName,
+      authorUsername: authorUsername,
+      authorAvatarUrl: authorAvatarUrl,
+      authorIsVerified: authorIsVerified,
+      authorIsAuthor: authorIsAuthor,
+      authorIsAdmin: authorIsAdmin,
+      likeCount: likeCount ?? this.likeCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+    );
+  }
 
   factory PostComment.fromJson(Map<String, dynamic> json) {
     return PostComment(
@@ -66,6 +97,8 @@ class PostComment {
           json['authorIsAuthor'] == true || json['author_is_author'] == true,
       authorIsAdmin:
           json['authorIsAdmin'] == true || json['author_is_admin'] == true,
+      likeCount: _readInt(json['likeCount'] ?? json['like_count']),
+      likedByMe: json['likedByMe'] == true || json['liked_by_me'] == true || json['liked'] == true,
     );
   }
 

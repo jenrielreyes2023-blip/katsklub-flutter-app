@@ -41,7 +41,6 @@ class KatsTopBar extends StatelessWidget {
                     'Home',
                     style: TextStyle(
                       inherit: false,
-                      fontFamily: 'Inter',
                       color: Color(0xFFFF7A45),
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -150,7 +149,6 @@ class NotificationBellButton extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             inherit: false,
-                            fontFamily: 'Inter',
                             color: Colors.white,
                             fontSize: 9,
                             fontWeight: FontWeight.w700,

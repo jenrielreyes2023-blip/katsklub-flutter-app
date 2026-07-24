@@ -89,7 +89,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> with SingleTickerProv
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 22,
-            fontFamily: 'Inter',
             color: titleColor,
           ),
         ),
@@ -105,12 +104,10 @@ class _BookmarksScreenState extends State<BookmarksScreen> with SingleTickerProv
               unselectedLabelColor: unselectedLabelColor,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Inter',
                 fontSize: 14,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontWeight: FontWeight.w500,
-                fontFamily: 'Inter',
                 fontSize: 14,
               ),
               tabs: const [
@@ -234,7 +231,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> with SingleTickerProv
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Inter',
                 color: titleColor,
               ),
             ),
@@ -244,7 +240,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> with SingleTickerProv
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                fontFamily: 'Inter',
                 color: subtitleColor,
               ),
             ),
@@ -410,8 +405,7 @@ class _BookmarkItemRow extends StatelessWidget {
                         style: TextStyle(
                           color: titleColor,
                           fontWeight: FontWeight.w800,
-                          fontFamily: 'Inter',
-                        ),
+                          ),
                       )
                     : null,
               ),
@@ -433,7 +427,6 @@ class _BookmarkItemRow extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter',
                               color: titleColor,
                             ),
                             maxLines: 1,
@@ -446,7 +439,6 @@ class _BookmarkItemRow extends StatelessWidget {
                             '@${post.authorUsername}',
                             style: TextStyle(
                               fontSize: 12,
-                              fontFamily: 'Inter',
                               color: subtitleColor,
                             ),
                             maxLines: 1,
@@ -463,7 +455,6 @@ class _BookmarkItemRow extends StatelessWidget {
                           _relativeTimestamp(post.createdAt),
                           style: TextStyle(
                             fontSize: 12,
-                            fontFamily: 'Inter',
                             color: subtitleColor,
                           ),
                         ),
@@ -481,7 +472,6 @@ class _BookmarkItemRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.4,
-                      fontFamily: 'Inter',
                       color: snippetColor,
                     ),
                   ),
@@ -500,7 +490,6 @@ class _BookmarkItemRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter',
                           color: subtitleColor,
                         ),
                       ),

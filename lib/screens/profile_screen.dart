@@ -455,56 +455,58 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ],
               ),
               SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _ProfileHeader(
-                      user: _profileUser,
-                      stories: _stories,
-                      isOwnProfile: isOwnProfile,
-                      onTapStory: () => _openUserStories(_profileUser.username ?? ''),
-                    ),
-                    const SizedBox(height: 12),
-                    _ProfileBio(
-                      user: _profileUser,
-                      isOwnProfile: isOwnProfile,
-                    ),
-                    const SizedBox(height: 10),
-                    _ProfileMetadataRow(user: _profileUser),
-                    const SizedBox(height: 10),
-                    _ProfileInlineCounters(
-                      user: _profileUser,
-                      postCount: displayedPostCount,
-                      onTapFollowing: () => _openUserList(false),
-                      onTapFollowers: () => _openUserList(true),
-                      isOwnProfile: isOwnProfile,
-                    ),
-                    const SizedBox(height: 14),
-                    _ProfileActionRow(
-                      user: _profileUser,
-                      isOwnProfile: isOwnProfile,
-                      isUpdatingFollow: _isUpdatingFollow,
-                      onToggleFollow: _toggleFollow,
-                      isOpeningMessage: _isOpeningMessage,
-                      onMessage: _openMessage,
-                    ),
-                    const SizedBox(height: 20),
-                    FeaturedPhotosSection(
-                      key: ValueKey(
-                          'featured_photos_${_profileUser.username}_$_featuredPhotosVersion'),
-                      user: _profileUser,
-                      isOwnProfile: isOwnProfile,
-                      onUpdated: (updatedUser) {
-                        if (!mounted) return;
-                        setState(() {
-                          _profileUser = updatedUser;
-                          _featuredPhotosVersion++;
-                        });
-                        widget.onUserUpdated?.call(updatedUser);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                child: RepaintBoundary(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _ProfileHeader(
+                        user: _profileUser,
+                        stories: _stories,
+                        isOwnProfile: isOwnProfile,
+                        onTapStory: () => _openUserStories(_profileUser.username ?? ''),
+                      ),
+                      const SizedBox(height: 12),
+                      _ProfileBio(
+                        user: _profileUser,
+                        isOwnProfile: isOwnProfile,
+                      ),
+                      const SizedBox(height: 10),
+                      _ProfileMetadataRow(user: _profileUser),
+                      const SizedBox(height: 10),
+                      _ProfileInlineCounters(
+                        user: _profileUser,
+                        postCount: displayedPostCount,
+                        onTapFollowing: () => _openUserList(false),
+                        onTapFollowers: () => _openUserList(true),
+                        isOwnProfile: isOwnProfile,
+                      ),
+                      const SizedBox(height: 14),
+                      _ProfileActionRow(
+                        user: _profileUser,
+                        isOwnProfile: isOwnProfile,
+                        isUpdatingFollow: _isUpdatingFollow,
+                        onToggleFollow: _toggleFollow,
+                        isOpeningMessage: _isOpeningMessage,
+                        onMessage: _openMessage,
+                      ),
+                      const SizedBox(height: 20),
+                      FeaturedPhotosSection(
+                        key: ValueKey(
+                            'featured_photos_${_profileUser.username}_$_featuredPhotosVersion'),
+                        user: _profileUser,
+                        isOwnProfile: isOwnProfile,
+                        onUpdated: (updatedUser) {
+                          if (!mounted) return;
+                          setState(() {
+                            _profileUser = updatedUser;
+                            _featuredPhotosVersion++;
+                          });
+                          widget.onUserUpdated?.call(updatedUser);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
               ),
               SliverPersistentHeader(
@@ -1407,7 +1409,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               const Text(
                 'No reels yet',
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF6B7280),
@@ -1424,7 +1425,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Text(
                         'Suggested Reels',
                         style: TextStyle(
-                          fontFamily: 'Inter',
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF111827),
@@ -1521,7 +1521,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             Text(
               emptyMessage,
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
@@ -1538,7 +1537,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Text(
                       'Suggested for you',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
@@ -1615,7 +1613,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF1F2937),
@@ -1627,7 +1624,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontFamily: 'Inter',
                 fontSize: 10,
                 color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF9CA3AF),
               ),
@@ -2131,13 +2127,53 @@ class _ProfileBio extends StatelessWidget {
             ),
           ],
           if (user.profileLinks.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
-              spacing: 12,
+              spacing: 8,
               runSpacing: 8,
               children: user.profileLinks.map((link) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
-                final linkColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+                final lowerUrl = link.url.toLowerCase();
+
+                IconData linkIcon = Icons.link_rounded;
+                Color brandColor = const Color(0xFFFF7A59); // brandOrange
+                String linkTitle = link.title.isNotEmpty ? link.title : 'Web Link';
+
+                if (lowerUrl.contains('instagram.com')) {
+                  linkIcon = Icons.camera_alt_rounded;
+                  brandColor = const Color(0xFFE1306C);
+                  if (link.title.isEmpty) linkTitle = 'Instagram';
+                } else if (lowerUrl.contains('facebook.com') || lowerUrl.contains('fb.com')) {
+                  linkIcon = Icons.facebook_rounded;
+                  brandColor = const Color(0xFF1877F2);
+                  if (link.title.isEmpty) linkTitle = 'Facebook';
+                } else if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) {
+                  linkIcon = Icons.close_rounded;
+                  brandColor = isDark ? Colors.white70 : const Color(0xFF0F1419);
+                  if (link.title.isEmpty) linkTitle = 'X / Twitter';
+                } else if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) {
+                  linkIcon = Icons.play_circle_fill_rounded;
+                  brandColor = const Color(0xFFFF0000);
+                  if (link.title.isEmpty) linkTitle = 'YouTube';
+                } else if (lowerUrl.contains('github.com')) {
+                  linkIcon = Icons.code_rounded;
+                  brandColor = isDark ? Colors.white70 : const Color(0xFF24292E);
+                  if (link.title.isEmpty) linkTitle = 'GitHub';
+                } else if (lowerUrl.contains('linkedin.com')) {
+                  linkIcon = Icons.work_rounded;
+                  brandColor = const Color(0xFF0A66C2);
+                  if (link.title.isEmpty) linkTitle = 'LinkedIn';
+                } else if (lowerUrl.contains('tiktok.com')) {
+                  linkIcon = Icons.music_note_rounded;
+                  brandColor = const Color(0xFFFE2C55);
+                  if (link.title.isEmpty) linkTitle = 'TikTok';
+                } else if (lowerUrl.contains('discord.gg') || lowerUrl.contains('discord.com')) {
+                  linkIcon = Icons.forum_rounded;
+                  brandColor = const Color(0xFF5865F2);
+                  if (link.title.isEmpty) linkTitle = 'Discord';
+                } else {
+                  if (link.title.isEmpty) linkTitle = 'Website';
+                }
 
                 return GestureDetector(
                   onTap: () {
@@ -2151,33 +2187,40 @@ class _ProfileBio extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => WebViewScreen(
                           url: urlStr,
-                          title:
-                              link.title.isNotEmpty ? link.title : 'Web Link',
+                          title: linkTitle,
                         ),
                       ),
                     );
                   },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.string(
-                        '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.0598 10.9399c2.25 2.25 2.25 5.89.0 8.13-2.25 2.24-5.88995 2.25-8.12995.0s-2.25-5.89.0-8.13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M10.5909 13.4099c-2.33996-2.34-2.33996-6.14002.0-8.49002 2.34-2.35 6.14-2.34 8.49.0s2.34 6.14002.0 8.49002" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
-                        width: 14,
-                        height: 14,
-                        colorFilter: ColorFilter.mode(linkColor, BlendMode.srcIn),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: brandColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: brandColor.withValues(alpha: 0.2),
+                        width: 1,
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        link.title.isNotEmpty ? link.title : link.url,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: linkColor,
-                          decoration: TextDecoration.underline,
-                          decorationColor: linkColor,
-                          decorationThickness: 1.2,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          linkIcon,
+                          size: 14,
+                          color: brandColor,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          linkTitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: brandColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),

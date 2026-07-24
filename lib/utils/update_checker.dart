@@ -90,7 +90,6 @@ class UpdateChecker {
                 Text(
                   'Update Available',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     color: Color(0xFF111827),
                     fontWeight: FontWeight.w800,
                   ),
@@ -104,7 +103,6 @@ class UpdateChecker {
                 Text(
                   'Version $latestVersion is now available.',
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
@@ -114,7 +112,6 @@ class UpdateChecker {
                 const Text(
                   'What\'s New:',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF4B5563),
@@ -124,7 +121,6 @@ class UpdateChecker {
                 Text(
                   releaseNotes,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 14,
                     height: 1.4,
                     color: Color(0xFF4B5563),
@@ -140,7 +136,6 @@ class UpdateChecker {
                   child: const Text(
                     'Later',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       color: Color(0xFF6B7280),
                       fontWeight: FontWeight.w600,
                     ),
@@ -167,7 +162,6 @@ class UpdateChecker {
                 child: const Text(
                   'Update Now',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w700,
                   ),
                 ),

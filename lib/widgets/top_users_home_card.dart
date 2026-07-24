@@ -607,7 +607,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
                           'Top Outstanding Users',
                           style: TextStyle(
                             color: titleColor,
-                            fontFamily: 'Inter',
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.3,

@@ -58,7 +58,6 @@ class UserRelationsScreen extends StatelessWidget {
                     Text(
                       '@$username',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         color: titleColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -67,7 +66,6 @@ class UserRelationsScreen extends StatelessWidget {
                     Text(
                       'Connections',
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         color: subtitleColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -85,8 +83,8 @@ class UserRelationsScreen extends StatelessWidget {
                       indicatorColor: tabIndicatorColor,
                       labelColor: titleColor,
                       unselectedLabelColor: subtitleColor,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Inter', fontSize: 14),
-                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'Inter', fontSize: 14),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                       tabs: const [
                         Tab(text: 'Followers'),
                         Tab(text: 'Following'),
