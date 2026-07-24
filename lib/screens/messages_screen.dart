@@ -482,7 +482,6 @@ class _MessagesScreenState extends State<MessagesScreen>
                           )
                         : _buildMessagesList(),
           ),
-          _typingBar(),
           _composer(),
         ],
       ),
@@ -1985,11 +1984,26 @@ class _MessagesScreenState extends State<MessagesScreen>
     final theme = _getTheme();
     final isKatswipeBot = _thread?.otherUser.username?.toLowerCase() == 'katswipe';
 
+    final t = _thread;
+    final showTyping = t != null &&
+        _typingUserIds.isNotEmpty &&
+        _typingUserIds.contains(t.otherUser.id) &&
+        !isKatswipeBot;
+
+    final itemCount = _messages.length + (showTyping ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
-      itemCount: _messages.length,
+      itemCount: itemCount,
       itemBuilder: (context, index) {
+        if (showTyping && index == _messages.length) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 8),
+            child: _TypingRow(otherUser: t.otherUser),
+          );
+        }
+
         final message = _messages[index];
         final prev = index > 0 ? _messages[index - 1] : null;
         final next = index < _messages.length - 1 ? _messages[index + 1] : null;
@@ -2073,25 +2087,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  Widget _typingBar() {
-    final t = _thread;
-    final showTyping = t != null &&
-        _typingUserIds.isNotEmpty &&
-        _typingUserIds.contains(t.otherUser.id);
-    final theme = _getTheme();
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOut,
-      alignment: Alignment.topCenter,
-      child: showTyping
-          ? Container(
-              color: theme.background,
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-              child: _TypingRow(otherUser: t.otherUser),
-            )
-          : const SizedBox(width: double.infinity),
-    );
-  }
+  // Typing indicator is now rendered as a list item at the bottom of ListView.builder.
 
   Future<void> _acceptRequest(MessageThread thread) async {
     try {
