@@ -476,8 +476,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
         onTap: () {
           Navigator.of(context).push(
             PageRouteBuilder(
-              opaque: false,
-              barrierColor: Colors.black.withValues(alpha: 0.9),
+              opaque: true,
+              barrierColor: Colors.black,
               pageBuilder: (context, animation, secondaryAnimation) {
                 return _FeaturedPhotoViewer(
                   photos: _photos,
@@ -1458,7 +1458,7 @@ class _FeaturedPhotoViewerState extends State<_FeaturedPhotoViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.9),
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           Positioned.fill(
