@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -2404,21 +2405,36 @@ class _ProfileAchievementPillGroupState
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: widget.achievements
-          .map(
-            (achievement) => RepaintBoundary(
-              child: _ProfileAchievementPill(
-                title: achievement.title,
-                theme: achievement.theme,
-                sparkAnimation: _sparkAnimation,
-                motionAnimation: _controller,
+    return VisibilityDetector(
+      key: const Key('profile_achievements_pills_visibility'),
+      onVisibilityChanged: (info) {
+        if (!mounted) return;
+        if (info.visibleFraction == 0) {
+          if (_controller.isAnimating) {
+            _controller.stop();
+          }
+        } else {
+          if (!_controller.isAnimating) {
+            _controller.repeat();
+          }
+        }
+      },
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: widget.achievements
+            .map(
+              (achievement) => RepaintBoundary(
+                child: _ProfileAchievementPill(
+                  title: achievement.title,
+                  theme: achievement.theme,
+                  sparkAnimation: _sparkAnimation,
+                  motionAnimation: _controller,
+                ),
               ),
-            ),
-          )
-          .toList(),
+            )
+            .toList(),
+      ),
     );
   }
 }
