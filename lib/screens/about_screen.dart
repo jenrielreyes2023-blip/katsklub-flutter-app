@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -44,8 +45,8 @@ class AboutScreen extends StatelessWidget {
                             )
                           ],
                   ),
-                  child: Image.asset(
-                    'assets/images/kats-logo-final.png',
+                  child: SvgPicture.asset(
+                    'assets/images/kb.svg',
                     height: 96,
                     fit: BoxFit.contain,
                   ),

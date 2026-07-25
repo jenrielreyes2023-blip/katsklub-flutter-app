@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -1399,14 +1400,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Image.asset(
-                  'assets/images/kats-logo-final.png',
+                child: SvgPicture.asset(
+                  'assets/images/kb.svg',
                   height: 64,
                   fit: BoxFit.contain,
                 ),
               )
-            : Image.asset(
-                'assets/images/kats-logo-final.png',
+            : SvgPicture.asset(
+                'assets/images/kb.svg',
                 height: 64,
                 fit: BoxFit.contain,
               ),

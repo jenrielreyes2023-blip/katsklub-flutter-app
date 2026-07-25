@@ -411,14 +411,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Image.asset(
-                                        'assets/images/kats-logo-final.png',
+                                      child: SvgPicture.asset(
+                                        'assets/images/kb.svg',
                                         height: 64,
                                         fit: BoxFit.contain,
                                       ),
                                     )
-                                  : Image.asset(
-                                      'assets/images/kats-logo-final.png',
+                                  : SvgPicture.asset(
+                                      'assets/images/kb.svg',
                                       height: 64,
                                       fit: BoxFit.contain,
                                     ),
