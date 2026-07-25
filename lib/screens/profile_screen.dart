@@ -2463,8 +2463,8 @@ class _ProfileAchievementPill extends StatelessWidget {
     }
     if (theme == _ProfileAchievementTheme.risingPaw) {
       return SvgPicture.asset(
-        'assets/images/rp.svg',
-        height: 48,
+        'assets/images/rp1.svg',
+        height: 36,
         fit: BoxFit.contain,
       );
     }
