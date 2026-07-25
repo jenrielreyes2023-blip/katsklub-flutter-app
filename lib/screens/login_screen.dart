@@ -404,24 +404,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const SizedBox(height: 24),
                             Center(
-                              child: isDark
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: SvgPicture.asset(
-                                        'assets/images/kb.svg',
-                                        height: 64,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    )
-                                  : SvgPicture.asset(
-                                      'assets/images/kb.svg',
-                                      height: 64,
-                                      fit: BoxFit.contain,
-                                    ),
+                              child: SvgPicture.asset(
+                                'assets/images/kb.svg',
+                                height: 64,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                             const SizedBox(height: 32),
                             Text(

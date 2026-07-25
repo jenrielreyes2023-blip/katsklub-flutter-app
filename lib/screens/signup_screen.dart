@@ -1393,24 +1393,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return Column(
       children: <Widget>[
-        isDark
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SvgPicture.asset(
-                  'assets/images/kb.svg',
-                  height: 64,
-                  fit: BoxFit.contain,
-                ),
-              )
-            : SvgPicture.asset(
-                'assets/images/kb.svg',
-                height: 64,
-                fit: BoxFit.contain,
-              ),
+        SvgPicture.asset(
+          'assets/images/kb.svg',
+          height: 64,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(height: 10),
         Text(
           'KatsKlub',
