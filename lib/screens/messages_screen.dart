@@ -2755,8 +2755,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      minLines: 1,
-                      maxLines: 4,
+                      maxLines: 1,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       onChanged: _onComposerChanged,
