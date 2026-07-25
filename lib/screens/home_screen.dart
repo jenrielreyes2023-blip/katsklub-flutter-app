@@ -132,9 +132,38 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didUpdateWidget(HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshToken != widget.refreshToken) {
-      _loadHomeFeed();
+    final userChanged = oldWidget.user.id != widget.user.id;
+    final tokenChanged = oldWidget.refreshToken != widget.refreshToken;
+
+    if (userChanged || tokenChanged) {
+      if (userChanged) {
+        _resetForUserSwitch();
+      } else {
+        _loadHomeFeed();
+      }
     }
+  }
+
+  void _resetForUserSwitch() {
+    setState(() {
+      _posts = [];
+      _promotions = [];
+      _pendingNewPosts = [];
+      _storyGroups = [];
+      _ownStories = [];
+      _suggestions = [];
+      _followingUsernames.clear();
+      _isInitialLoading = true;
+      _hasLoadedInitialContent = false;
+      _hasLoadedNetworkFeed = false;
+      _nextOffset = 0;
+      _hasMore = true;
+      _isLoadingMore = false;
+    });
+
+    _loadHomeFeed();
+    _loadSuggestions();
+    _loadPromotions();
   }
 
   @override

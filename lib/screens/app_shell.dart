@@ -61,6 +61,18 @@ class _AppShellState extends State<AppShell> {
   }
 
   @override
+  void didUpdateWidget(AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id) {
+      setState(() {
+        _currentUser = widget.user;
+        _feedRefreshToken++;
+      });
+      FeedService.clearUserFeedCache();
+    }
+  }
+
+  @override
   void dispose() {
     normalVideoOverlayController.removeListener(_syncNormalVideoOverlayHistory);
     _normalVideoOverlayHistoryEntry?.remove();

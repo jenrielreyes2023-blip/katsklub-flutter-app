@@ -764,7 +764,17 @@ class FeedService {
       unreadNotificationsNotifier.value = 0;
       _unreadByThread.clear();
       unreadMessagesNotifier.value = 0;
+      await clearUserFeedCache();
     }
+  }
+
+  static Future<void> clearUserFeedCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cachedHomePostsKey);
+      await prefs.remove(_cachedDiscoverPostsKey);
+      await prefs.remove(_cachedStoriesKey);
+    } catch (_) {}
   }
 
   Future<HomeFeedData> loadHomeFeed() async {

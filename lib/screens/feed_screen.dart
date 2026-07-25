@@ -240,7 +240,21 @@ class _FeedScreenState extends State<FeedScreen>
   @override
   void didUpdateWidget(FeedScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshToken != widget.refreshToken) {
+    final userChanged = oldWidget.user.id != widget.user.id;
+    final tokenChanged = oldWidget.refreshToken != widget.refreshToken;
+
+    if (userChanged || tokenChanged) {
+      if (userChanged) {
+        setState(() {
+          _posts = [];
+          _railReels = [];
+          _isInitialLoading = true;
+          _hasLoadedInitialContent = false;
+          _nextOffset = 0;
+          _hasMore = true;
+          _isLoadingMore = false;
+        });
+      }
       _loadInitialFeed();
       _loadFollowedUsers();
     }
