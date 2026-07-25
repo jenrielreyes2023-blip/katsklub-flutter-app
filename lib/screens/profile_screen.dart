@@ -2464,7 +2464,7 @@ class _ProfileAchievementPill extends StatelessWidget {
     if (theme == _ProfileAchievementTheme.risingPaw) {
       return SvgPicture.asset(
         'assets/images/rp.svg',
-        height: 34,
+        height: 48,
         fit: BoxFit.contain,
       );
     }
