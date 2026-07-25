@@ -1394,7 +1394,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return Column(
       children: <Widget>[
         SvgPicture.asset(
-          'assets/images/kb.svg',
+          isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
           height: 64,
           fit: BoxFit.contain,
         ),

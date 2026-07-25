@@ -46,7 +46,7 @@ class AboutScreen extends StatelessWidget {
                           ],
                   ),
                   child: SvgPicture.asset(
-                    'assets/images/kb.svg',
+                    isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
                     height: 96,
                     fit: BoxFit.contain,
                   ),
