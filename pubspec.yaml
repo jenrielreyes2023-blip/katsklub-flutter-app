@@ -39,6 +39,8 @@ flutter:
   assets:
   - assets/images/kb.svg
   - assets/images/kb_light.svg
+  - assets/images/rp.svg
+  - assets/images/RP.svg
   - assets/images/kats-logo-final.png
   - assets/images/default_avatar_cat.jpg
   - assets/images/default_avatar_dog.jpg

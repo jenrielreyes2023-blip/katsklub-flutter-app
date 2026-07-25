@@ -2461,6 +2461,13 @@ class _ProfileAchievementPill extends StatelessWidget {
     if (theme == _ProfileAchievementTheme.googleWorkspace) {
       return const _RawSvgAchievement(svgString: _googleWorkspaceSvg);
     }
+    if (theme == _ProfileAchievementTheme.risingPaw) {
+      return SvgPicture.asset(
+        'assets/images/rp.svg',
+        height: 26,
+        fit: BoxFit.contain,
+      );
+    }
     final borderRadius = BorderRadius.circular(999);
     final isSpringHerald = theme == _ProfileAchievementTheme.springHeraldPink ||
         theme == _ProfileAchievementTheme.springHeraldPurple ||
