@@ -2476,7 +2476,7 @@ class _ProfileAchievementPill extends StatelessWidget {
         animation: motionAnimation,
         child: Image.asset(
           'assets/images/top2.png',
-          height: 32,
+          height: 26,
           fit: BoxFit.contain,
         ),
       );
