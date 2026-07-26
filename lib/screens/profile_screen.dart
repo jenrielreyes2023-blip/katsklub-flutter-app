@@ -2464,9 +2464,9 @@ class _ProfileAchievementPill extends StatelessWidget {
     if (theme == _ProfileAchievementTheme.risingPaw) {
       return _SvgSweepShimmer(
         animation: motionAnimation,
-        child: SvgPicture.asset(
-          'assets/images/rp3.svg',
-          height: 36,
+        child: Image.asset(
+          'assets/images/rp4.png',
+          height: 35,
           fit: BoxFit.contain,
         ),
       );
