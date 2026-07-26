@@ -2476,7 +2476,7 @@ class _ProfileAchievementPill extends StatelessWidget {
         animation: motionAnimation,
         child: SvgPicture.asset(
           'assets/images/top1.svg',
-          height: 30,
+          height: 36,
           fit: BoxFit.contain,
         ),
       );
