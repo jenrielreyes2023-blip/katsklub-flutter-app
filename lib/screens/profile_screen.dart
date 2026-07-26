@@ -2471,6 +2471,16 @@ class _ProfileAchievementPill extends StatelessWidget {
         ),
       );
     }
+    if (theme == _ProfileAchievementTheme.top50) {
+      return _SvgSweepShimmer(
+        animation: motionAnimation,
+        child: SvgPicture.asset(
+          'assets/images/top.svg',
+          height: 48,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
     final borderRadius = BorderRadius.circular(999);
     final isSpringHerald = theme == _ProfileAchievementTheme.springHeraldPink ||
         theme == _ProfileAchievementTheme.springHeraldPurple ||
