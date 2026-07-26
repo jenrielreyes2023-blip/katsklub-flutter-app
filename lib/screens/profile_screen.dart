@@ -2469,7 +2469,7 @@ class _ProfileAchievementPill extends StatelessWidget {
           children: [
             SvgPicture.asset(
               'assets/images/rp1.svg',
-              height: 36,
+              height: 48,
               fit: BoxFit.contain,
             ),
             Positioned.fill(
