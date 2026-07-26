@@ -3842,26 +3842,35 @@ class _SvgSweepShimmer extends StatelessWidget {
         }
 
         final progress = value / activeUntil;
-        final travel = -0.8 + (progress * 2.6);
-        final opacity = 0.25 + (((math.sin(progress * math.pi) + 1) / 2) * 0.25);
+        final pulse = 0.24 + (((math.sin(progress * math.pi) + 1) / 2) * 0.16);
 
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              begin: Alignment(travel - 0.3, -1.0),
-              end: Alignment(travel + 0.3, 1.0),
-              colors: [
-                Colors.white,
-                Color.lerp(Colors.white, const Color(0xFFFFF0D0), opacity)!,
-                Colors.white.withValues(alpha: 1.0 + opacity * 0.6),
-                Color.lerp(Colors.white, const Color(0xFFFFF0D0), opacity)!,
-                Colors.white,
-              ],
-              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
-            ).createShader(bounds);
-          },
-          child: child,
+        return Stack(
+          children: [
+            child,
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ShaderMask(
+                  blendMode: BlendMode.srcATop,
+                  shaderCallback: (bounds) {
+                    final travel = -1.2 + (progress * 3.4);
+                    return LinearGradient(
+                      begin: Alignment(travel - 0.35, -1.0),
+                      end: Alignment(travel + 0.35, 1.0),
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: pulse * 0.6),
+                        Colors.white.withValues(alpha: pulse * 1.5),
+                        Colors.white.withValues(alpha: pulse * 0.6),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                    ).createShader(bounds);
+                  },
+                  child: child,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
