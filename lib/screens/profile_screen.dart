@@ -2475,8 +2475,8 @@ class _ProfileAchievementPill extends StatelessWidget {
       return _SvgSweepShimmer(
         animation: motionAnimation,
         child: SvgPicture.asset(
-          'assets/images/top.svg',
-          height: 36,
+          'assets/images/top1.svg',
+          height: 30,
           fit: BoxFit.contain,
         ),
       );
