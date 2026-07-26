@@ -2462,20 +2462,12 @@ class _ProfileAchievementPill extends StatelessWidget {
       return const _RawSvgAchievement(svgString: _googleWorkspaceSvg);
     }
     if (theme == _ProfileAchievementTheme.risingPaw) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(999),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/images/rp1.svg',
-              height: 48,
-              fit: BoxFit.contain,
-            ),
-            Positioned.fill(
-              child: _AchievementSweepShimmer(animation: motionAnimation),
-            ),
-          ],
+      return _SvgSweepShimmer(
+        animation: motionAnimation,
+        child: SvgPicture.asset(
+          'assets/images/rp1.svg',
+          height: 48,
+          fit: BoxFit.contain,
         ),
       );
     }
@@ -3824,6 +3816,54 @@ class _WarlordFireBand extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _SvgSweepShimmer extends StatelessWidget {
+  const _SvgSweepShimmer({
+    required this.animation,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final value = animation.value;
+        const activeUntil = 0.67;
+        final isActive = value < activeUntil;
+        if (!isActive) {
+          return child;
+        }
+
+        final progress = value / activeUntil;
+        final travel = -0.8 + (progress * 2.6);
+        final opacity = 0.25 + (((math.sin(progress * math.pi) + 1) / 2) * 0.25);
+
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(travel - 0.3, -1.0),
+              end: Alignment(travel + 0.3, 1.0),
+              colors: [
+                Colors.white,
+                Color.lerp(Colors.white, const Color(0xFFFFF0D0), opacity)!,
+                Colors.white.withValues(alpha: 1.0 + opacity * 0.6),
+                Color.lerp(Colors.white, const Color(0xFFFFF0D0), opacity)!,
+                Colors.white,
+              ],
+              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
     );
   }
 }
