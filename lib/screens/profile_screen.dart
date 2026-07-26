@@ -2462,10 +2462,21 @@ class _ProfileAchievementPill extends StatelessWidget {
       return const _RawSvgAchievement(svgString: _googleWorkspaceSvg);
     }
     if (theme == _ProfileAchievementTheme.risingPaw) {
-      return SvgPicture.asset(
-        'assets/images/rp1.svg',
-        height: 36,
-        fit: BoxFit.contain,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SvgPicture.asset(
+              'assets/images/rp1.svg',
+              height: 36,
+              fit: BoxFit.contain,
+            ),
+            Positioned.fill(
+              child: _AchievementSweepShimmer(animation: motionAnimation),
+            ),
+          ],
+        ),
       );
     }
     final borderRadius = BorderRadius.circular(999);
