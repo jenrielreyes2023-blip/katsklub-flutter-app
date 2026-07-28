@@ -70,6 +70,8 @@ class StoryAvatar extends StatelessWidget {
                             : CachedNetworkImage(
                                 imageUrl: ApiConfig.assetUrl(avatarUrl),
                                 fit: BoxFit.cover,
+                                memCacheWidth: 200,
+                                maxWidthDiskCache: 200,
                                 fadeInDuration: Duration.zero,
                                 fadeOutDuration: Duration.zero,
                                 placeholderFadeInDuration: Duration.zero,

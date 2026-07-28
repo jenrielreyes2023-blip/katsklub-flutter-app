@@ -29,6 +29,7 @@ import '../widgets/loading_skeletons.dart';
 import '../widgets/presence_avatar_dot.dart';
 import '../widgets/special_name_text.dart';
 import '../services/presence_service.dart';
+import '../services/webrtc_call_service.dart';
 
 enum _MessagesPageState { general, groups, requests, archived }
 
@@ -455,7 +456,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               color: theme.accent,
               size: 22,
             ),
-            onPressed: () {},
+            onPressed: _startAudioCall,
           ),
           IconButton(
             tooltip: 'More',
@@ -2159,6 +2160,24 @@ class _MessagesScreenState extends State<MessagesScreen>
     } catch (_) {}
   }
 
+  void _startAudioCall() {
+    final t = _thread;
+    if (t == null || t.isGroup || t.otherUser.id == null || t.otherUser.id!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Audio calls are available in 1-on-1 chats.')),
+      );
+      return;
+    }
+
+    WebRTCCallService().startAudioCall(
+      targetUserId: t.otherUser.id!,
+      targetUsername: t.otherUser.username ?? '',
+      targetFullName: t.otherUser.fullName ?? t.otherUser.username ?? '',
+      targetAvatarUrl: t.otherUser.avatarUrl ?? '',
+      threadId: t.id,
+    );
+  }
+
   void _openMoreMenu() {
     final t = _thread;
     if (t == null) return;
@@ -3817,15 +3836,23 @@ class _MessageBubble extends StatelessWidget {
             ),
           if (attachments.isNotEmpty && body.isNotEmpty)
             const SizedBox(height: 7),
-          if (body.isNotEmpty)
-            LinkifiedText(
-              text: body,
-              style: TextStyle(
-                color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                fontSize: 15,
-                height: 1.3,
+          if (body.isNotEmpty) ...[
+            if (body.startsWith('📞'))
+              _CallLogChip(
+                body: body,
+                sentByMe: sentByMe,
+                theme: theme,
+              )
+            else
+              LinkifiedText(
+                text: body,
+                style: TextStyle(
+                  color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
+                  fontSize: 15,
+                  height: 1.3,
+                ),
               ),
-            ),
+          ],
         ],
       ),
     );
@@ -3902,6 +3929,53 @@ class _MessageBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: children,
+    );
+  }
+}
+
+class _CallLogChip extends StatelessWidget {
+  const _CallLogChip({
+    required this.body,
+    required this.sentByMe,
+    required this.theme,
+  });
+
+  final String body;
+  final bool sentByMe;
+  final ConversationTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMissed = body.toLowerCase().contains('missed');
+    final icon = isMissed ? Icons.phone_missed_rounded : Icons.phone_in_talk_rounded;
+    final color = isMissed ? const Color(0xFFEF4444) : const Color(0xFF10B981);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              body,
+              style: TextStyle(
+                color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

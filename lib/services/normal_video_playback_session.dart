@@ -19,6 +19,7 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
   bool _viewerOpen = false;
   bool _lastNotifiedInitialized = false;
   bool _lastNotifiedPlaying = false;
+  bool _userRequestedPause = false;
   int _generation = 0;
 
   Post? get post => _post;
@@ -53,6 +54,7 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
       return;
     }
 
+    _userRequestedPause = !play;
     final samePost = _post?.id == post.id;
     final existingController = _controller;
 
@@ -154,7 +156,7 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
       _hasError = false;
       notifyListeners();
 
-      if (play) {
+      if (play && !_userRequestedPause) {
         await controller.play();
       } else {
         await controller.pause();
@@ -210,6 +212,7 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
   }
 
   Future<void> play({bool muted = false}) async {
+    _userRequestedPause = false;
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
       return;
@@ -222,9 +225,10 @@ class NormalVideoPlaybackSession extends ChangeNotifier {
   }
 
   Future<void> pause() async {
+    _userRequestedPause = true;
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
-      debugLog('pause skipped');
+      debugLog('pause recorded while initializing');
       return;
     }
     await controller.pause();

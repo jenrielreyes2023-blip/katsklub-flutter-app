@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _handleCreatedPost(Post createdPost) {
-    if (!mounted || createdPost.isReel) {
+    if (!mounted) {
       return;
     }
 
@@ -489,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: CustomScrollView(
                 controller: _scrollController,
                 key: const PageStorageKey<String>('home-post-list'),
-                cacheExtent: 600,
+                cacheExtent: 1500,
                 physics: const FeedMomentumScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
@@ -866,11 +866,10 @@ class _HomeScreenState extends State<HomeScreen>
     final filtered = posts
         .where(
           (post) =>
-              !post.isReel &&
-              (post.ownedByMe ||
-                  post.isFollowingAuthor ||
-                  post.authorIsAuthor ||
-                  post.authorIsAdmin),
+              post.ownedByMe ||
+              post.isFollowingAuthor ||
+              post.authorIsAuthor ||
+              post.authorIsAdmin,
         )
         .toList();
 

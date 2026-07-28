@@ -1,18 +1,17 @@
 import 'package:flutter/widgets.dart';
 
-// Keep the initial fling feeling quick, but make downward flings decelerate
-// sooner so the feed lands within the next few rendered cards instead of
-// flying far past them. Upward flings stay looser because that content was
-// already visited and is more likely to be ready in memory.
+// FB-style high velocity, low-friction momentum scroll physics.
+// Enables fast, buttery smooth fling scrolling in both directions while maintaining
+// pre-rendered cache extent ahead of the viewport.
 class FeedMomentumScrollPhysics extends ClampingScrollPhysics {
   const FeedMomentumScrollPhysics({
     super.parent,
-    this.downwardMaxBallisticVelocity = 5200,
-    this.upwardMaxBallisticVelocity = 8000,
-    this.downwardFriction = 0.026,
-    this.upwardFriction = 0.014,
-    this.downwardMomentumFactor = 0.12,
-    this.upwardMomentumFactor = 0.9,
+    this.downwardMaxBallisticVelocity = 12000,
+    this.upwardMaxBallisticVelocity = 12000,
+    this.downwardFriction = 0.012,
+    this.upwardFriction = 0.010,
+    this.downwardMomentumFactor = 0.85,
+    this.upwardMomentumFactor = 0.90,
   });
 
   final double downwardMaxBallisticVelocity;

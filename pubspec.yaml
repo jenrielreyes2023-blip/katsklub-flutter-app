@@ -28,6 +28,7 @@ dependencies:
   package_info_plus: ^9.0.1
   url_launcher: ^6.3.2
   wakelock_plus: ^1.5.2
+  flutter_webrtc: ^0.12.5
 description: Flutter mobile app for KatsKlub
 dev_dependencies:
   flutter_lints: ^5.0.0

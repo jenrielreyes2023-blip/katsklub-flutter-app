@@ -244,6 +244,7 @@ class Post {
     this.isGhost = false,
     this.slides = const [],
     this.repostedByText,
+    this.likePreview = const [],
     this.isPromotion = false,
     this.promotionUrl = '',
     this.promotionButtonText = '',
@@ -302,6 +303,7 @@ class Post {
   final int commentCount;
   final int repostCount;
   final List<User> withUsers;
+  final List<LikePreviewUser> likePreview;
   final String pollQuestion;
   final List<String> pollOptions;
   final List<int> pollOptionVotes;
@@ -457,6 +459,12 @@ class Post {
       isPinned: json['isPinned'] == true || json['is_pinned'] == true,
       slides: _readSlides(json),
       repostedByText: _readString(json['repostedByText'] ?? json['reposted_by_text']),
+      likePreview: _readLikePreview(
+        json['likePreviewUsers'] ??
+            json['like_preview_users'] ??
+            json['likePreview'] ??
+            json['like_preview'],
+      ),
     );
   }
 
@@ -1055,5 +1063,35 @@ class Post {
     }
     final muted = json['videoMuted'] == true || json['video_muted'] == true;
     return muted ? 0.0 : 1.0;
+  }
+
+  static List<LikePreviewUser> _readLikePreview(Object? value) {
+    if (value is! List) {
+      return const <LikePreviewUser>[];
+    }
+    return value
+        .whereType<Map>()
+        .map((item) => LikePreviewUser.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
+  }
+}
+
+class LikePreviewUser {
+  const LikePreviewUser({
+    required this.username,
+    required this.fullName,
+    required this.avatarUrl,
+  });
+
+  final String username;
+  final String fullName;
+  final String avatarUrl;
+
+  factory LikePreviewUser.fromJson(Map<String, dynamic> json) {
+    return LikePreviewUser(
+      username: (json['username'] ?? json['liker_username'] ?? json['likerUsername'] ?? '').toString().trim(),
+      fullName: (json['fullName'] ?? json['full_name'] ?? json['liker_full_name'] ?? json['likerFullName'] ?? '').toString().trim(),
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url'] ?? json['liker_avatar_url'] ?? json['likerAvatarUrl'] ?? '').toString().trim(),
+    );
   }
 }

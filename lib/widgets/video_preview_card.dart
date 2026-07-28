@@ -295,6 +295,39 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
                     },
                   ),
                 ),
+              if (post.isReel)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white24, width: 0.8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.video_library_rounded,
+                          color: Colors.white,
+                          size: 13,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'REEL',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

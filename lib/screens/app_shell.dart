@@ -22,6 +22,7 @@ import 'user_profile_screen.dart';
 import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import '../services/push_notification_service.dart';
+import '../services/webrtc_call_service.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -58,6 +59,7 @@ class _AppShellState extends State<AppShell> {
     PushNotificationService().initialize();
     _notificationClickSubscription =
         PushNotificationService().clickStream.listen(_handleNotificationClick);
+    WebRTCCallService().initSocketListeners();
   }
 
   @override

@@ -535,6 +535,8 @@ class FeedService {
     }
   }
 
+  static io.Socket? getSocket() => _socket;
+
   static void notifyProfileStatsChanged({
     required String username,
     int? followersCount,
@@ -1111,7 +1113,7 @@ class FeedService {
     }
 
     final repostedPost = Post.fromJson(postJson);
-    await _prependCachedHomePost(repostedPost);
+    await prependCachedHomePost(repostedPost);
     notifyPostCreated(repostedPost);
 
     final updatedOriginalPost = repostedPost.originalPost;
@@ -2162,7 +2164,7 @@ class FeedService {
     await prefs.setString(key, jsonEncode(normalized));
   }
 
-  Future<void> _prependCachedHomePost(Post createdPost) async {
+  Future<void> prependCachedHomePost(Post createdPost) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_cachedHomePostsKey);
     final nextItems = <dynamic>[createdPost.toJson()];

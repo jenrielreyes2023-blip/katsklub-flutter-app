@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
 import 'loading_skeletons.dart';
+import 'media_post_load_registry.dart';
 
 class PostImageGrid extends StatelessWidget {
   const PostImageGrid({
@@ -49,8 +50,9 @@ class PostImageGrid extends StatelessWidget {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
+    return RepaintBoundary(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.of(context).size.width;
@@ -286,7 +288,8 @@ class PostImageGrid extends StatelessWidget {
           ),
         );
       },
-    );
+    ),
+  );
   }
 
   Widget _buildTile(
@@ -294,31 +297,35 @@ class PostImageGrid extends StatelessWidget {
     int index, {
     int? extraCount,
   }) {
-    return GestureDetector(
-      onTap: () => onImageTap?.call(index),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _AdaptiveImageTile(
-            url: url,
-            sampleIndex: index,
-            fit: BoxFit.cover,
-            onMediaReady: onMediaReady,
-          ),
-          if (extraCount != null)
-            Container(
-              color: Colors.black.withOpacity(0.45),
-              alignment: Alignment.center,
-              child: Text(
-                '+$extraCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: () => onImageTap?.call(index),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _AdaptiveImageTile(
+              url: url,
+              sampleIndex: index,
+              fit: BoxFit.cover,
+              cacheWidth: 400,
+              postId: postId,
+              onMediaReady: onMediaReady,
+            ),
+            if (extraCount != null)
+              Container(
+                color: Colors.black.withOpacity(0.45),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$extraCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -451,13 +458,7 @@ class _SinglePostImageState extends State<_SinglePostImage> {
   }
 
   Widget _buildImageContent() {
-    final ratio = _aspectRatio;
-    if (ratio == null) {
-      return const AspectRatio(
-        aspectRatio: _placeholderAspectRatio,
-        child: _ImagePlaceholder(),
-      );
-    }
+    final ratio = _aspectRatio ?? _placeholderAspectRatio;
 
     return AspectRatio(
       aspectRatio: ratio,
@@ -465,6 +466,8 @@ class _SinglePostImageState extends State<_SinglePostImage> {
         url: widget.url,
         sampleIndex: 0,
         fit: _fit,
+        cacheWidth: 800,
+        postId: widget.postId,
         onMediaReady: widget.onMediaReady,
       ),
     );
@@ -505,45 +508,69 @@ class _SinglePostImageState extends State<_SinglePostImage> {
   }
 }
 
-class _AdaptiveImageTile extends StatelessWidget {
+class _AdaptiveImageTile extends StatefulWidget {
   const _AdaptiveImageTile({
     required this.url,
     required this.sampleIndex,
     required this.fit,
+    this.cacheWidth = 400,
+    this.postId,
     this.onMediaReady,
   });
 
   final String url;
   final int sampleIndex;
   final BoxFit fit;
+  final int cacheWidth;
+  final String? postId;
   final VoidCallback? onMediaReady;
 
   @override
+  State<_AdaptiveImageTile> createState() => _AdaptiveImageTileState();
+}
+
+class _AdaptiveImageTileState extends State<_AdaptiveImageTile> {
+  bool _mediaReadyFired = false;
+
+  void _notifyMediaReady() {
+    if (_mediaReadyFired) return;
+    final pid = widget.postId;
+    if (pid != null && MediaPostLoadRegistry.isReady(pid)) {
+      _mediaReadyFired = true;
+      return;
+    }
+    _mediaReadyFired = true;
+    widget.onMediaReady?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (url.startsWith('sample://')) {
-      return _SampleImage(index: sampleIndex);
+    if (widget.url.startsWith('sample://')) {
+      return _SampleImage(index: widget.sampleIndex);
     }
 
     return CachedNetworkImage(
-      imageUrl: ApiConfig.assetUrl(url),
+      imageUrl: ApiConfig.assetUrl(widget.url),
       imageBuilder: (context, imageProvider) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          onMediaReady?.call();
-        });
+        if (!_mediaReadyFired) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _notifyMediaReady();
+          });
+        }
         return Image(
           image: imageProvider,
-          fit: fit,
+          fit: widget.fit,
           width: double.infinity,
           height: double.infinity,
         );
       },
-      fit: fit,
+      fit: widget.fit,
       width: double.infinity,
       height: double.infinity,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
-      memCacheWidth: 800,
-      maxWidthDiskCache: 800,
+      memCacheWidth: widget.cacheWidth,
+      maxWidthDiskCache: widget.cacheWidth,
       placeholder: (context, url) => const SkeletonPulse(
         child: ColoredBox(
           color: Color(0xFFE6EBF2),

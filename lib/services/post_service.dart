@@ -12,6 +12,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../config/api_config.dart';
 import '../models/post.dart';
 import 'auth_service.dart';
+import 'feed_service.dart';
 
 enum SelectedPostImageStatus {
   preparing,
@@ -522,6 +523,8 @@ class PostService {
             progress: 1,
           ),
         );
+        FeedService.notifyPostCreated(post);
+        unawaited(FeedService().prependCachedHomePost(post));
         completer.complete(CreatePostResult(ok: true, post: post));
       }
 
@@ -587,10 +590,14 @@ class PostService {
                     progress: 1,
                   ),
                 );
+                final createdPost =
+                    Post.fromJson(Map<String, dynamic>.from(rawPost));
+                FeedService.notifyPostCreated(createdPost);
+                unawaited(FeedService().prependCachedHomePost(createdPost));
                 completer.complete(
                   CreatePostResult(
                     ok: true,
-                    post: Post.fromJson(Map<String, dynamic>.from(rawPost)),
+                    post: createdPost,
                   ),
                 );
                 return;

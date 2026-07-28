@@ -440,7 +440,7 @@ class _FeedScreenState extends State<FeedScreen>
               child: CustomScrollView(
                 key: const PageStorageKey<String>('feed-post-list'),
                 controller: _scrollController,
-                cacheExtent: 600,
+                cacheExtent: 1500,
                 physics: const FeedMomentumScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
@@ -667,9 +667,7 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   List<Post> _visiblePosts(List<Post> posts) {
-    final nonReelPosts = posts.where((post) => !post.isReel);
-
-    return nonReelPosts
+    return posts
         .where(
           (post) =>
               !_isOwnPost(post) &&
