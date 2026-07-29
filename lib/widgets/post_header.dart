@@ -5,6 +5,7 @@ import '../models/post.dart';
 import '../screens/user_profile_screen.dart';
 import 'custom_icons.dart';
 import 'post_with_users_line.dart';
+import 'smooth_bottom_sheet.dart';
 import 'special_name_text.dart';
 
 class PostHeader extends StatelessWidget {
@@ -469,48 +470,28 @@ class PostOptionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBgColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surface,
-                child: Column(
-                  children: [
-                    for (var index = 0; index < actions.length; index++) ...[
-                      PostOptionsRow(action: actions[index]),
-                      if (index != actions.length - 1)
-                        Divider(
-                          height: 1,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2F3031)
-                              : const Color(0xFFE5E7EB),
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return SmoothSheetContainer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ColoredBox(
+          color: cardBgColor,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < actions.length; index++) ...[
+                PostOptionsRow(action: actions[index]),
+                if (index != actions.length - 1)
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF3E4042)
+                        : const Color(0xFFE5E7EB),
+                  ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -587,102 +568,78 @@ class DeletePostSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerBg = isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7);
-    final handleBg = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
-    final innerBg = isDark ? const Color(0xFF242526) : Colors.white;
-    final titleColor = Theme.of(context).colorScheme.onSurface;
+    final innerBg = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
     final bodyColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B);
     final cancelFg = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1C1E21);
     final cancelBorder = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: containerBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: handleBg,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const SizedBox(height: 18),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: ColoredBox(
-                color: innerBg,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Delete post?',
-                        style: TextStyle(
-                          color: titleColor,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This post will be permanently deleted. This can\'t be undone.',
-                        style: TextStyle(
-                          color: bodyColor,
-                          fontSize: 14,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: cancelFg,
-                                side: BorderSide(color: cancelBorder),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: const Text('Cancel'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFFDC2626),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: const Text('Delete'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+    return SmoothSheetContainer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ColoredBox(
+          color: innerBg,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Delete post?',
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'This post will be permanently deleted. This can\'t be undone.',
+                  style: TextStyle(
+                    color: bodyColor,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: cancelFg,
+                          side: BorderSide(color: cancelBorder),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
