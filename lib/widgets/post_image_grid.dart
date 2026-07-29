@@ -64,9 +64,9 @@ class PostImageGrid extends StatelessWidget {
 
         if (visibleImages.length == 2) {
           if (isLandscape) {
-            final tileHeight = (width - spacing) / 2;
+            final double height = width * 0.72;
             return SizedBox(
-              height: tileHeight * 1.5,
+              height: height,
               child: Column(
                 children: [
                   Expanded(child: _buildTile(visibleImages[0], 0)),
@@ -77,7 +77,7 @@ class PostImageGrid extends StatelessWidget {
             );
           } else {
             final tileWidth = (width - spacing) / 2;
-            final double height = isPortrait ? tileWidth * 1.25 : tileWidth;
+            final double height = isPortrait ? tileWidth * 1.38 : tileWidth * 1.32;
             return SizedBox(
               height: height,
               child: Row(
@@ -93,8 +93,8 @@ class PostImageGrid extends StatelessWidget {
 
         if (visibleImages.length == 3) {
           if (isLandscape) {
-            final topHeight = width * 0.5625;
-            final bottomHeight = (width - spacing) / 2;
+            final topHeight = width * 0.52;
+            final bottomHeight = (width - spacing) / 2 * 0.75;
             return SizedBox(
               height: topHeight + spacing + bottomHeight,
               child: Column(
@@ -121,7 +121,7 @@ class PostImageGrid extends StatelessWidget {
           } else {
             final leftWidth = width * 0.6;
             final rightWidth = width - leftWidth - spacing;
-            final double height = leftWidth * 1.1;
+            final double height = leftWidth * 1.25;
             return SizedBox(
               height: height,
               child: Row(
