@@ -37,8 +37,8 @@ class FriendPostActivity {
       isReposted.hashCode;
 }
 
-/// A lightweight, 120fps butter-smooth floating draggable Top-3 friend reaction overlay.
-/// Displays up to 3 avatars in a clean horizontal row with proper spacing and plain circles (no white border).
+/// A lightweight, 120fps butter-smooth floating draggable Top-3 Mountain Arch friend reaction overlay.
+/// Features a non-overlapping Mountain Peak elevation and gentle floating zero-g bobbing motion.
 class FloatingFriendReactionOverlay extends StatefulWidget {
   const FloatingFriendReactionOverlay({
     required this.activities,
@@ -55,12 +55,32 @@ class FloatingFriendReactionOverlay extends StatefulWidget {
 }
 
 class _FloatingFriendReactionOverlayState
-    extends State<FloatingFriendReactionOverlay> {
+    extends State<FloatingFriendReactionOverlay>
+    with SingleTickerProviderStateMixin {
   final ValueNotifier<Offset?> _customOffsetNotifier =
       ValueNotifier<Offset?>(null);
+  late final AnimationController _floatController;
+  late final Animation<double> _floatAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
+    _floatAnimation = Tween<double>(begin: -3.5, end: 3.5).animate(
+      CurvedAnimation(
+        parent: _floatController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _floatController.repeat(reverse: true);
+  }
 
   @override
   void dispose() {
+    _floatController.dispose();
     _customOffsetNotifier.dispose();
     super.dispose();
   }
@@ -109,17 +129,60 @@ class _FloatingFriendReactionOverlayState
     );
   }
 
-  Widget _buildAvatarRow(List<FriendPostActivity> items) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < items.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
+  Widget _buildMountainCluster(List<FriendPostActivity> items) {
+    if (items.length == 1) {
+      return _SingleAvatarBadge(
+        key: ValueKey('avatar_${items.first.username}'),
+        activity: items.first,
+      );
+    }
+
+    if (items.length == 2) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
           _SingleAvatarBadge(
-            key: ValueKey('avatar_${items[i].username}'),
-            activity: items[i],
+            key: ValueKey('avatar_${items[0].username}'),
+            activity: items[0],
+          ),
+          const SizedBox(width: 8),
+          Transform.translate(
+            offset: const Offset(0, -8),
+            child: _SingleAvatarBadge(
+              key: ValueKey('avatar_${items[1].username}'),
+              activity: items[1],
+            ),
           ),
         ],
+      );
+    }
+
+    // Top 3 Mountain Peak 🏔️ Formation (Non-overlapping with horizontal spacing + peak elevation)
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // 1. Left Avatar (Base elevation)
+        _SingleAvatarBadge(
+          key: ValueKey('avatar_${items[0].username}'),
+          activity: items[0],
+        ),
+        const SizedBox(width: 8),
+        // 2. Center Peak Avatar 🏔️ (Elevated Peak)
+        Transform.translate(
+          offset: const Offset(0, -12),
+          child: _SingleAvatarBadge(
+            key: ValueKey('avatar_${items[1].username}'),
+            activity: items[1],
+          ),
+        ),
+        const SizedBox(width: 8),
+        // 3. Right Avatar (Base elevation)
+        _SingleAvatarBadge(
+          key: ValueKey('avatar_${items[2].username}'),
+          activity: items[2],
+        ),
       ],
     );
   }
@@ -151,8 +214,20 @@ class _FloatingFriendReactionOverlayState
         widget.onTap?.call();
         _showInfoToast(context);
       },
-      child: RepaintBoundary(
-        child: _buildAvatarRow(activeItems),
+      child: AnimatedBuilder(
+        animation: _floatAnimation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, _floatAnimation.value),
+            child: child,
+          );
+        },
+        child: RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 14), // Margin for peak elevation
+            child: _buildMountainCluster(activeItems),
+          ),
+        ),
       ),
     );
 
@@ -174,7 +249,7 @@ class _FloatingFriendReactionOverlayState
 }
 
 /// Standalone, GPU-cached plain circular avatar badge.
-/// Plain circle without outer white border, with subtle shadow and 8px spacing.
+/// Plain circle without outer white border, with subtle shadow.
 class _SingleAvatarBadge extends StatelessWidget {
   const _SingleAvatarBadge({
     required this.activity,
