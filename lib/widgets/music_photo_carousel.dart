@@ -226,6 +226,46 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
         final ratio = _carouselAspectRatio();
         final height = width / ratio;
 
+        final hasMusic = post.musicPreviewUrl.trim().isNotEmpty;
+
+        if (!hasMusic) {
+          return SizedBox(
+            height: height,
+            child: CarouselView.weighted(
+              flexWeights: const [7, 1],
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              onTap: (index) => widget.onImageTap?.call(index),
+              children: [
+                for (int i = 0; i < images.length; i++)
+                  CachedNetworkImage(
+                    imageUrl: ApiConfig.assetUrl(images[i]),
+                    fit: BoxFit.cover,
+                    imageBuilder: (context, provider) {
+                      widget.onMediaReady?.call();
+                      _resolveImageRatio(i, provider);
+                      return Image(
+                        image: provider,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      );
+                    },
+                    placeholder: (_, __) => const _ImageLoadingPlaceholder(),
+                    errorWidget: (_, __, ___) => Container(
+                      color: const Color(0xFFEDEFF3),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.broken_image_outlined,
+                        color: Color(0xFF8A8D91),
+                        size: 34,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+
         return VisibilityDetector(
           key: ValueKey('music-carousel-${post.id}'),
           onVisibilityChanged: _handleVisibility,
