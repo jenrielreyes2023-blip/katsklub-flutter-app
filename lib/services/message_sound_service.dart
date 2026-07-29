@@ -7,21 +7,27 @@ class MessageSoundService {
   static const String _incomingAsset = 'sounds/message_in.mp3';
   static const String _outgoingAsset = 'sounds/message_out.mp3';
 
+  static AudioPlayer? _incomingPlayer;
+  static AudioPlayer? _outgoingPlayer;
   static bool _initialized = false;
 
   static Future<void> ensureInitialized() async {
     if (_initialized) return;
     _initialized = true;
-    debugPrint("MessageSoundService: Initialized");
+    try {
+      _incomingPlayer = AudioPlayer();
+      _outgoingPlayer = AudioPlayer();
+      debugPrint("MessageSoundService: Initialized");
+    } catch (e) {
+      debugPrint("MessageSoundService init error: $e");
+    }
   }
 
   static Future<void> playIncoming() async {
     try {
-      final player = AudioPlayer();
-      await player.setPlayerMode(PlayerMode.lowLatency);
-      await player.setVolume(1.5);
-      await player.setReleaseMode(ReleaseMode.release);
-      await player.play(AssetSource(_incomingAsset), mode: PlayerMode.lowLatency);
+      final player = _incomingPlayer ?? AudioPlayer();
+      await player.stop();
+      await player.play(AssetSource(_incomingAsset));
       debugPrint("MessageSoundService: Playing incoming sound");
     } catch (e, stack) {
       debugPrint("MessageSoundService.playIncoming error: $e\n$stack");
@@ -30,11 +36,9 @@ class MessageSoundService {
 
   static Future<void> playOutgoing() async {
     try {
-      final player = AudioPlayer();
-      await player.setPlayerMode(PlayerMode.lowLatency);
-      await player.setVolume(1.5);
-      await player.setReleaseMode(ReleaseMode.release);
-      await player.play(AssetSource(_outgoingAsset), mode: PlayerMode.lowLatency);
+      final player = _outgoingPlayer ?? AudioPlayer();
+      await player.stop();
+      await player.play(AssetSource(_outgoingAsset));
       debugPrint("MessageSoundService: Playing outgoing sound");
     } catch (e, stack) {
       debugPrint("MessageSoundService.playOutgoing error: $e\n$stack");
