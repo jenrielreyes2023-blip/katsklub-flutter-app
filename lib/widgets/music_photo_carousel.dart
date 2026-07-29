@@ -55,6 +55,11 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
       initialItem: widget.activeIndex,
     );
     _maybeShowSwipeHint();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _carouselController.hasClients) {
+        _carouselController.jumpTo(0.0);
+      }
+    });
   }
 
   Future<void> _maybeShowSwipeHint() async {
@@ -241,45 +246,52 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
           return VisibilityDetector(
             key: ValueKey('carousel-vis-${post.id}'),
             onVisibilityChanged: (info) {
-              if (info.visibleFraction < 0.1 && _carouselController.hasClients) {
-                _carouselController.jumpTo(0.0);
+              if (info.visibleFraction > 0.1) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && _carouselController.hasClients && _carouselController.offset != 0.0) {
+                    _carouselController.jumpTo(0.0);
+                  }
+                });
               }
             },
             child: SizedBox(
               height: height,
-              child: CarouselView.weighted(
-                key: ValueKey('carousel-view-${post.id}'),
-                controller: _carouselController,
-                flexWeights: const [7, 1],
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                onTap: (index) => widget.onImageTap?.call(index),
-                children: [
-                  for (int i = 0; i < images.length; i++)
-                    CachedNetworkImage(
-                      imageUrl: ApiConfig.assetUrl(images[i]),
-                      fit: BoxFit.cover,
-                      imageBuilder: (context, provider) {
-                        widget.onMediaReady?.call();
-                        _resolveImageRatio(i, provider);
-                        return Image(
-                          image: provider,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                        );
-                      },
-                      placeholder: (_, __) => const _ImageLoadingPlaceholder(),
-                      errorWidget: (_, __, ___) => Container(
-                        color: const Color(0xFFEDEFF3),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          color: Color(0xFF8A8D91),
-                          size: 34,
+              child: PageStorage(
+                bucket: PageStorageBucket(),
+                child: CarouselView.weighted(
+                  key: ObjectKey(post.id),
+                  controller: _carouselController,
+                  flexWeights: const [7, 1],
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  onTap: (index) => widget.onImageTap?.call(index),
+                  children: [
+                    for (int i = 0; i < images.length; i++)
+                      CachedNetworkImage(
+                        imageUrl: ApiConfig.assetUrl(images[i]),
+                        fit: BoxFit.cover,
+                        imageBuilder: (context, provider) {
+                          widget.onMediaReady?.call();
+                          _resolveImageRatio(i, provider);
+                          return Image(
+                            image: provider,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          );
+                        },
+                        placeholder: (_, __) => const _ImageLoadingPlaceholder(),
+                        errorWidget: (_, __, ___) => Container(
+                          color: const Color(0xFFEDEFF3),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.broken_image_outlined,
+                            color: Color(0xFF8A8D91),
+                            size: 34,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
