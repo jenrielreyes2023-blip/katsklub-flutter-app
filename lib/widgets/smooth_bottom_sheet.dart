@@ -12,7 +12,15 @@ class SmoothBottomSheetRoute<T> extends PageRouteBuilder<T> {
           barrierColor: barrierColor,
           transitionDuration: const Duration(milliseconds: 280),
           reverseTransitionDuration: const Duration(milliseconds: 240),
-          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return Material(
+              type: MaterialType.transparency,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: builder(context),
+              ),
+            );
+          },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curvedAnimation = CurvedAnimation(
               parent: animation,
