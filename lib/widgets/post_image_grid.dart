@@ -85,18 +85,17 @@ class PostImageGrid extends StatelessWidget {
           children: [
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.55,
+              mainAxisCellCount: 0.5,
               child: _buildTile(visibleImages[0], 0),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.55,
+              mainAxisCellCount: 0.5,
               child: _buildTile(visibleImages[1], 1),
             ),
           ],
         );
       } else {
-        final mainCellRatio = isPortrait ? 1.38 : 1.32;
         return StaggeredGrid.count(
           crossAxisCount: 2,
           mainAxisSpacing: spacing,
@@ -104,12 +103,12 @@ class PostImageGrid extends StatelessWidget {
           children: [
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: mainCellRatio,
+              mainAxisCellCount: 2.0,
               child: _buildTile(visibleImages[0], 0),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: mainCellRatio,
+              mainAxisCellCount: 2.0,
               child: _buildTile(visibleImages[1], 1),
             ),
           ],
@@ -126,17 +125,17 @@ class PostImageGrid extends StatelessWidget {
           children: [
             StaggeredGridTile.count(
               crossAxisCellCount: 2,
-              mainAxisCellCount: 1.1,
+              mainAxisCellCount: 1.2,
               child: _buildTile(visibleImages[0], 0),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.75,
+              mainAxisCellCount: 0.8,
               child: _buildTile(visibleImages[1], 1),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.75,
+              mainAxisCellCount: 0.8,
               child: _buildTile(visibleImages[2], 2),
             ),
           ],
@@ -149,17 +148,17 @@ class PostImageGrid extends StatelessWidget {
           children: [
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 1.3,
+              mainAxisCellCount: 2.0,
               child: _buildTile(visibleImages[0], 0),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.64,
+              mainAxisCellCount: 1.0,
               child: _buildTile(visibleImages[1], 1),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
-              mainAxisCellCount: 0.64,
+              mainAxisCellCount: 1.0,
               child: _buildTile(visibleImages[2], 2),
             ),
           ],
