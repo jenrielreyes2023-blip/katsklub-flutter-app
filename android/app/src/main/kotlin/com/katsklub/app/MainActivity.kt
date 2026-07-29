@@ -2,8 +2,11 @@ package com.katsklub.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import com.ryanheise.audioservice.AudioServiceActivity
@@ -61,10 +64,17 @@ class MainActivity : AudioServiceActivity() {
             val channelDescription = "Used for urgent notifications like messages and comments"
             val importance = NotificationManager.IMPORTANCE_HIGH
 
+            val soundUri = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${packageName}/raw/message_in")
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = channelDescription
                 enableLights(true)
                 enableVibration(true)
+                setSound(soundUri, audioAttributes)
             }
 
             val notificationManager =
