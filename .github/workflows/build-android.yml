@@ -8,7 +8,7 @@ on:
       - rescue-lost-1d1b
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
   JAVA_OPTS: "-Xmx2048m"
 
 jobs:
@@ -23,6 +23,34 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
+
+      - name: Cache Flutter SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/hostedtoolcache/flutter
+          key: ${{ runner.os }}-flutter-sdk-${{ runner.arch }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-sdk-
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Cache Gradle wrapper and caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Show Flutter version
         run: flutter --version
@@ -37,38 +65,31 @@ jobs:
             sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
           fi
           grep -q 'android.permission.INTERNET' "$manifest"
-      
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build split APKs
-        run: flutter build apk --split-per-abi --release
+      - name: Build Android APK (Single Arch)
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
+      - name: Deploy APK to VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          name: katsklub-flutter-apks
-          path: build/app/outputs/flutter-apk/*.apk
-          retention-days: 1
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          target: "/var/www/katsklub/"
+          strip_components: 4
 
-      - name: Upload APK fallback to tmpfiles.org
-        if: always()
-        run: |
-          for apk in build/app/outputs/flutter-apk/*.apk; do
-            if [ -f "$apk" ]; then
-              filename=$(basename "$apk")
-              echo "Uploading $filename..."
-              response=$(curl -s -F "file=@$apk" https://tmpfiles.org/api/v1/upload)
-              url=$(echo "$response" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
-              if [ -n "$url" ]; then
-                dl_url=$(echo "$url" | sed 's/tmpfiles.org/tmpfiles.org\/dl/')
-                echo "--------------------------------------------------------"
-                echo "DOWNLOAD LINK for $filename:"
-                echo "$dl_url"
-                echo "--------------------------------------------------------"
-              else
-                echo "Failed to upload $filename. Response: $response"
-              fi
-            fi
-          done
+      - name: Update APK link on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            mv -f /var/www/katsklub/app-arm64-v8a-release.apk /var/www/katsklub/katsklub-latest.apk
+            chmod 644 /var/www/katsklub/katsklub-latest.apk
