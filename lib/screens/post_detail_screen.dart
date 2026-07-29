@@ -29,6 +29,7 @@ import '../widgets/post_with_users_line.dart';
 import '../widgets/repost_source_preview.dart';
 import '../widgets/share_post_sheet.dart';
 import '../widgets/sensitive_content_wrapper.dart';
+import '../widgets/smooth_bottom_sheet.dart';
 import 'image_viewer_screen.dart';
 import 'repost_post_screen.dart';
 import 'youtube_player_screen.dart';
@@ -962,12 +963,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tileColor = isDark ? Colors.white70 : Colors.black87;
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -1045,12 +1042,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tileColor = isDark ? Colors.white70 : Colors.black87;
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (context) {
         return SafeArea(
           child: Column(

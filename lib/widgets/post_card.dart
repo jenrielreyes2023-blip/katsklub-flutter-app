@@ -21,6 +21,9 @@ import 'post_image_grid.dart';
 import 'custom_icons.dart';
 import 'repost_source_preview.dart';
 import 'sensitive_content_wrapper.dart';
+import 'share_post_sheet.dart';
+import 'smooth_bottom_sheet.dart';
+import 'special_name_text.dart';
 import 'post_poll.dart';
 import 'music_photo_carousel.dart';
 import 'video_preview_card.dart';
@@ -314,11 +317,8 @@ class _PostCardState extends State<PostCard> {
   }
 
   Future<void> _openMoreOptions() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.52),
-      isScrollControlled: true,
+    await SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (context) => PostOptionsSheet(
         actions: _buildPostActions(context),
       ),
@@ -421,11 +421,8 @@ class _PostCardState extends State<PostCard> {
   }
 
   Future<void> _confirmDeletePost() async {
-    final shouldDelete = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.52),
-      isScrollControlled: true,
+    final shouldDelete = await SmoothBottomSheetRoute.show<bool>(
+      context,
       builder: (context) => const DeletePostSheet(),
     );
 
