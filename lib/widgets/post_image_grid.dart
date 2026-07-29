@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../config/api_config.dart';
-import 'loading_skeletons.dart';
 import 'media_post_load_registry.dart';
 
 class PostImageGrid extends StatelessWidget {
@@ -50,246 +50,156 @@ class PostImageGrid extends StatelessWidget {
       );
     }
 
+    final firstRatio = _initialAspectRatioFor(0);
+    final isLandscape = firstRatio != null && firstRatio > 1.2;
+    final isPortrait = firstRatio != null && firstRatio < 0.8;
+    const spacing = 2.0;
+
     return RepaintBoundary(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width;
-        const spacing = 2.0;
+      child: _buildStaggeredGrid(
+        context: context,
+        visibleImages: visibleImages,
+        isLandscape: isLandscape,
+        isPortrait: isPortrait,
+        spacing: spacing,
+      ),
+    );
+  }
 
-        final firstRatio = _initialAspectRatioFor(0);
-        final isLandscape = firstRatio != null && firstRatio > 1.2;
-        final isPortrait = firstRatio != null && firstRatio < 0.8;
+  Widget _buildStaggeredGrid({
+    required BuildContext context,
+    required List<String> visibleImages,
+    required bool isLandscape,
+    required bool isPortrait,
+    required double spacing,
+  }) {
+    final count = visibleImages.length;
+    final totalCount = imageUrls.length;
 
-        if (visibleImages.length == 2) {
-          if (isLandscape) {
-            final double height = width * 0.72;
-            return SizedBox(
-              height: height,
-              child: Column(
-                children: [
-                  Expanded(child: _buildTile(visibleImages[0], 0)),
-                  const SizedBox(height: spacing),
-                  Expanded(child: _buildTile(visibleImages[1], 1)),
-                ],
-              ),
-            );
-          } else {
-            final tileWidth = (width - spacing) / 2;
-            final double height = isPortrait ? tileWidth * 1.38 : tileWidth * 1.32;
-            return SizedBox(
-              height: height,
-              child: Row(
-                children: [
-                  Expanded(child: _buildTile(visibleImages[0], 0)),
-                  const SizedBox(width: spacing),
-                  Expanded(child: _buildTile(visibleImages[1], 1)),
-                ],
-              ),
-            );
-          }
-        }
-
-        if (visibleImages.length == 3) {
-          if (isLandscape) {
-            final topHeight = width * 0.52;
-            final bottomHeight = (width - spacing) / 2 * 0.75;
-            return SizedBox(
-              height: topHeight + spacing + bottomHeight,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: topHeight,
-                    width: double.infinity,
-                    child: _buildTile(visibleImages[0], 0),
-                  ),
-                  const SizedBox(height: spacing),
-                  SizedBox(
-                    height: bottomHeight,
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[1], 1)),
-                        const SizedBox(width: spacing),
-                        Expanded(child: _buildTile(visibleImages[2], 2)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            final leftWidth = width * 0.6;
-            final rightWidth = width - leftWidth - spacing;
-            final double height = leftWidth * 1.25;
-            return SizedBox(
-              height: height,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: leftWidth,
-                    height: double.infinity,
-                    child: _buildTile(visibleImages[0], 0),
-                  ),
-                  const SizedBox(width: spacing),
-                  SizedBox(
-                    width: rightWidth,
-                    child: Column(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[1], 1)),
-                        const SizedBox(height: spacing),
-                        Expanded(child: _buildTile(visibleImages[2], 2)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-
-        if (visibleImages.length == 4) {
-          if (isLandscape) {
-            final topHeight = width * 0.55;
-            final bottomHeight = (width - 2 * spacing) / 3;
-            return SizedBox(
-              height: topHeight + spacing + bottomHeight,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: topHeight,
-                    width: double.infinity,
-                    child: _buildTile(visibleImages[0], 0),
-                  ),
-                  const SizedBox(height: spacing),
-                  SizedBox(
-                    height: bottomHeight,
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[1], 1)),
-                        const SizedBox(width: spacing),
-                        Expanded(child: _buildTile(visibleImages[2], 2)),
-                        const SizedBox(width: spacing),
-                        Expanded(child: _buildTile(visibleImages[3], 3)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else if (isPortrait) {
-            final leftWidth = width * 0.6;
-            final rightWidth = width - leftWidth - spacing;
-            final double height = leftWidth * 1.35;
-            return SizedBox(
-              height: height,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: leftWidth,
-                    height: double.infinity,
-                    child: _buildTile(visibleImages[0], 0),
-                  ),
-                  const SizedBox(width: spacing),
-                  SizedBox(
-                    width: rightWidth,
-                    child: Column(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[1], 1)),
-                        const SizedBox(height: spacing),
-                        Expanded(child: _buildTile(visibleImages[2], 2)),
-                        const SizedBox(height: spacing),
-                        Expanded(child: _buildTile(visibleImages[3], 3)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            final tileHeight = (width - spacing) / 2;
-            final extraCount = imageUrls.length - 4;
-            return SizedBox(
-              height: width,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: tileHeight,
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[0], 0)),
-                        const SizedBox(width: spacing),
-                        Expanded(child: _buildTile(visibleImages[1], 1)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: spacing),
-                  SizedBox(
-                    height: tileHeight,
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildTile(visibleImages[2], 2)),
-                        const SizedBox(width: spacing),
-                        Expanded(
-                          child: _buildTile(
-                            visibleImages[3],
-                            3,
-                            extraCount: extraCount > 0 ? extraCount : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-
-        final topRowHeight = (width - spacing) / 2;
-        final bottomRowHeight = (width - 2 * spacing) / 3;
-        final totalHeight = topRowHeight + spacing + bottomRowHeight;
-        final extraCount = imageUrls.length - 5;
-
-        return SizedBox(
-          height: totalHeight,
-          child: Column(
-            children: [
-              SizedBox(
-                height: topRowHeight,
-                child: Row(
-                  children: [
-                    Expanded(child: _buildTile(visibleImages[0], 0)),
-                    const SizedBox(width: spacing),
-                    Expanded(child: _buildTile(visibleImages[1], 1)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: spacing),
-              SizedBox(
-                height: bottomRowHeight,
-                child: Row(
-                  children: [
-                    Expanded(child: _buildTile(visibleImages[2], 2)),
-                    const SizedBox(width: spacing),
-                    Expanded(child: _buildTile(visibleImages[3], 3)),
-                    const SizedBox(width: spacing),
-                    Expanded(
-                      child: _buildTile(
-                        visibleImages[4],
-                        4,
-                        extraCount: extraCount > 0 ? extraCount : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    if (count == 2) {
+      if (isLandscape) {
+        return StaggeredGrid.count(
+          crossAxisCount: 1,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          children: [
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.55,
+              child: _buildTile(visibleImages[0], 0),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.55,
+              child: _buildTile(visibleImages[1], 1),
+            ),
+          ],
         );
-      },
-    ),
-  );
+      } else {
+        final mainCellRatio = isPortrait ? 1.38 : 1.32;
+        return StaggeredGrid.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          children: [
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: mainCellRatio,
+              child: _buildTile(visibleImages[0], 0),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: mainCellRatio,
+              child: _buildTile(visibleImages[1], 1),
+            ),
+          ],
+        );
+      }
+    }
+
+    if (count == 3) {
+      if (isLandscape) {
+        return StaggeredGrid.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          children: [
+            StaggeredGridTile.count(
+              crossAxisCellCount: 2,
+              mainAxisCellCount: 1.1,
+              child: _buildTile(visibleImages[0], 0),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.75,
+              child: _buildTile(visibleImages[1], 1),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.75,
+              child: _buildTile(visibleImages[2], 2),
+            ),
+          ],
+        );
+      } else {
+        return StaggeredGrid.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          children: [
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 1.3,
+              child: _buildTile(visibleImages[0], 0),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.64,
+              child: _buildTile(visibleImages[1], 1),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 0.64,
+              child: _buildTile(visibleImages[2], 2),
+            ),
+          ],
+        );
+      }
+    }
+
+    // 4 or more photos (2x2 grid with overflow badge on 4th tile)
+    final extraCount = totalCount - 4;
+    return StaggeredGrid.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: spacing,
+      crossAxisSpacing: spacing,
+      children: [
+        StaggeredGridTile.count(
+          crossAxisCellCount: 1,
+          mainAxisCellCount: 1,
+          child: _buildTile(visibleImages[0], 0),
+        ),
+        StaggeredGridTile.count(
+          crossAxisCellCount: 1,
+          mainAxisCellCount: 1,
+          child: _buildTile(visibleImages[1], 1),
+        ),
+        StaggeredGridTile.count(
+          crossAxisCellCount: 1,
+          mainAxisCellCount: 1,
+          child: _buildTile(visibleImages[2], 2),
+        ),
+        StaggeredGridTile.count(
+          crossAxisCellCount: 1,
+          mainAxisCellCount: 1,
+          child: _buildTile(
+            visibleImages[3],
+            3,
+            extraCount: extraCount > 0 ? extraCount : null,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildTile(
@@ -298,6 +208,7 @@ class PostImageGrid extends StatelessWidget {
     int? extraCount,
   }) {
     return RepaintBoundary(
+      key: ValueKey('grid-tile-$index-$url'),
       child: GestureDetector(
         onTap: () => onImageTap?.call(index),
         child: Stack(
@@ -307,19 +218,19 @@ class PostImageGrid extends StatelessWidget {
               url: url,
               sampleIndex: index,
               fit: BoxFit.cover,
-              cacheWidth: 400,
+              cacheWidth: 600,
               postId: postId,
               onMediaReady: onMediaReady,
             ),
             if (extraCount != null)
               Container(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withOpacity(0.55),
                 alignment: Alignment.center,
                 child: Text(
                   '+$extraCount',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -458,36 +369,31 @@ class _SinglePostImageState extends State<_SinglePostImage> {
   }
 
   Widget _buildImageContent() {
-    final ratio = _aspectRatio ?? _placeholderAspectRatio;
-
-    return AspectRatio(
-      aspectRatio: ratio,
-      child: _AdaptiveImageTile(
-        url: widget.url,
-        sampleIndex: 0,
-        fit: _fit,
-        cacheWidth: 800,
-        postId: widget.postId,
-        onMediaReady: widget.onMediaReady,
-      ),
+    return _AdaptiveImageTile(
+      url: widget.url,
+      sampleIndex: 0,
+      fit: _fit,
+      cacheWidth: 600,
+      postId: widget.postId,
+      onMediaReady: widget.onMediaReady,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final effectivePostId = widget.postId?.trim();
-    final useHero = effectivePostId != null && effectivePostId.isNotEmpty;
-    final heroTag = useHero ? '${effectivePostId}_0' : null;
-    final content = _buildImageContent();
+    final ratio = _aspectRatio;
 
-    if (!useHero) {
-      return content;
-    }
+    Widget content = AspectRatio(
+      aspectRatio: ratio ?? _placeholderAspectRatio,
+      child: _buildImageContent(),
+    );
+
+    final heroTag = widget.postId != null
+        ? 'post-image-${widget.postId}-0'
+        : 'image-${widget.url}';
 
     return Hero(
-      tag: heroTag!,
-      placeholderBuilder: (context, size, child) =>
-          SizedBox.fromSize(size: size),
+      tag: heroTag,
       flightShuttleBuilder: (
         flightContext,
         animation,
@@ -495,8 +401,9 @@ class _SinglePostImageState extends State<_SinglePostImage> {
         fromHeroContext,
         toHeroContext,
       ) {
-        if (flightDirection == HeroFlightDirection.pop) {
-          return toHeroContext.widget;
+        final toHero = toHeroContext.widget as Hero;
+        if (flightDirection == HeroFlightDirection.push) {
+          return toHero.child;
         }
         return fromHeroContext.widget;
       },
@@ -513,7 +420,7 @@ class _AdaptiveImageTile extends StatefulWidget {
     required this.url,
     required this.sampleIndex,
     required this.fit,
-    this.cacheWidth = 400,
+    this.cacheWidth = 600,
     this.postId,
     this.onMediaReady,
   });
@@ -571,15 +478,15 @@ class _AdaptiveImageTileState extends State<_AdaptiveImageTile> {
       fadeOutDuration: Duration.zero,
       memCacheWidth: widget.cacheWidth,
       maxWidthDiskCache: widget.cacheWidth,
-      placeholder: (context, url) => const SkeletonPulse(
-        child: ColoredBox(
-          color: Color(0xFFE6EBF2),
-          child: SizedBox.expand(),
-        ),
+      placeholder: (context, url) => const ColoredBox(
+        color: Color(0xFF252627),
       ),
       errorWidget: (context, url, error) => Container(
-        color: const Color(0xFFE5E7EB),
-        child: const Icon(Icons.image_not_supported_outlined),
+        color: const Color(0xFF252627),
+        child: const Icon(
+          Icons.image_not_supported_outlined,
+          color: Color(0xFF8A8D91),
+        ),
       ),
     );
   }
@@ -614,31 +521,6 @@ class _SampleImage extends StatelessWidget {
         Icons.image_outlined,
         color: Colors.white.withOpacity(0.82),
         size: 34,
-      ),
-    );
-  }
-}
-
-class _ImagePlaceholder extends StatelessWidget {
-  const _ImagePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF3F4F6),
-      alignment: Alignment.center,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.72),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Icon(
-          Icons.image_outlined,
-          color: Color(0xFF9CA3AF),
-          size: 20,
-        ),
       ),
     );
   }
