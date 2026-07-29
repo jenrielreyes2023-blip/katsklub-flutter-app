@@ -2471,7 +2471,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         if (post.imageUrls.isNotEmpty) ...[
-                                          (post.imageUrls.length > 1 || post.isAlbum)
+                                          (post.imageUrls.length > 1 &&
+                                                  (post.hasMusicPreview || post.isAlbum))
                                               ? MusicPhotoCarousel(
                                                   post: post,
                                                   activeIndex: _musicCarouselIndex.clamp(0, post.imageUrls.length - 1).toInt(),

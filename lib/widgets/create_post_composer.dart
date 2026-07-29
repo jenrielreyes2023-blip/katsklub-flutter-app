@@ -497,7 +497,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         withUserIds: _withUsers.map((u) => u.id!).toList(),
         location: _location,
         feeling: _feeling,
-        albumTitle: null,
+        albumTitle: _mode == _CreateMode.album ? 'Carousel' : null,
         isDiscussion: _mode == _CreateMode.discussion,
         discussionTitle: _mode == _CreateMode.discussion ? title : null,
         discussionCoverDataUrl:
