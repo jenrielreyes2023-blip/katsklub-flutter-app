@@ -123,8 +123,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
           body.isNotEmpty &&
           (_discussionCover == null || _discussionCover!.isReady),
       _CreateMode.album => imagesReady &&
-          _images.where((image) => image.isReady).length >= 2 &&
-          _selectedMusic != null,
+          _images.where((image) => image.isReady).length >= 2,
       _CreateMode.poll => body.isNotEmpty && _cleanPollOptions().length >= 2,
       _CreateMode.reel => _reelImages.every((image) => image.isReady) &&
           (_reelImages.any((image) => image.isReady) ||
@@ -463,10 +462,9 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     }
 
     if (_mode == _CreateMode.album &&
-        (_images.where((image) => image.isReady).length < 2 ||
-            _selectedMusic == null)) {
+        _images.where((image) => image.isReady).length < 2) {
       setState(() {
-        _errorMessage = 'Add at least two photos and music for a carousel.';
+        _errorMessage = 'Add at least two photos for a carousel.';
       });
       return;
     }
@@ -2377,41 +2375,68 @@ class _ComposerCarouselPreviewState extends State<_ComposerCarouselPreview> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  PageView.builder(
-                    controller: _pageController,
-                    itemCount: images.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _activeIndex = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final image = images[index];
-                      return Image.memory(
-                        image.previewBytes,
-                        fit: BoxFit.cover,
-                        gaplessPlayback: true,
-                      );
-                    },
-                  ),
-                  Positioned(
-                    top: 10,
-                    right: 12,
-                    child: _ComposerCarouselCountPill(
-                      current: _activeIndex + 1,
-                      total: images.length,
+                  if (music == null)
+                    CarouselView.weighted(
+                      flexWeights: const [7, 1],
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      children: [
+                        for (int i = 0; i < images.length; i++)
+                          Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(
+                                images[i].previewBytes,
+                                fit: BoxFit.cover,
+                                gaplessPlayback: true,
+                              ),
+                              if (widget.onRemoveImage != null)
+                                Positioned(
+                                  top: 10,
+                                  left: 12,
+                                  child: _ComposerCarouselIconButton(
+                                    icon: Icons.close_rounded,
+                                    onTap: () => widget.onRemoveImage?.call(i),
+                                  ),
+                                ),
+                            ],
+                          ),
+                      ],
+                    )
+                  else ...[
+                    PageView.builder(
+                      controller: _pageController,
+                      itemCount: images.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _activeIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final image = images[index];
+                        return Image.memory(
+                          image.previewBytes,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                        );
+                      },
                     ),
-                  ),
-                  if (widget.onRemoveImage != null)
                     Positioned(
                       top: 10,
-                      left: 12,
-                      child: _ComposerCarouselIconButton(
-                        icon: Icons.close_rounded,
-                        onTap: () => widget.onRemoveImage?.call(_activeIndex),
+                      right: 12,
+                      child: _ComposerCarouselCountPill(
+                        current: _activeIndex + 1,
+                        total: images.length,
                       ),
                     ),
-                  if (music != null)
+                    if (widget.onRemoveImage != null)
+                      Positioned(
+                        top: 10,
+                        left: 12,
+                        child: _ComposerCarouselIconButton(
+                          icon: Icons.close_rounded,
+                          onTap: () => widget.onRemoveImage?.call(_activeIndex),
+                        ),
+                      ),
                     Positioned(
                       left: 12,
                       bottom: 12,
@@ -2426,16 +2451,17 @@ class _ComposerCarouselPreviewState extends State<_ComposerCarouselPreview> {
                             : () => unawaited(_toggleMusicPreview()),
                       ),
                     ),
-                  if (images.length > 1)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 14,
-                      child: _ComposerCarouselDots(
-                        count: images.length,
-                        activeIndex: _activeIndex,
+                    if (images.length > 1)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 14,
+                        child: _ComposerCarouselDots(
+                          count: images.length,
+                          activeIndex: _activeIndex,
+                        ),
                       ),
-                    ),
+                  ],
                 ],
               ),
             )
