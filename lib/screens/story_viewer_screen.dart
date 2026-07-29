@@ -586,11 +586,9 @@ class _ShareStorySheet extends StatelessWidget {
 
   void _repostToFeed(BuildContext context) {
     Navigator.of(context).pop();
-    FeedService().createPost(
-      text: 'Check out @${story.authorUsername}\'s story! 🌟\n\n$_storyLink',
-    );
+    Clipboard.setData(ClipboardData(text: _storyLink));
     ScaffoldMessenger.of(hostContext).showSnackBar(
-      const SnackBar(content: Text('Shared story to your feed!')),
+      const SnackBar(content: Text('Story link copied! Paste it in Create Post to share with your followers.')),
     );
   }
 
