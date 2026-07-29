@@ -218,18 +218,9 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
             return;
           }
 
-          if (showInlineVideo) {
-            if (session.isPlaying) {
-              normalVideoPlaybackSession.pause();
-            } else {
-              normalVideoPlaybackSession.play(muted: normalVideoMuted());
-            }
-            return;
-          }
-
           _openFullscreenVideo(
             post,
-            Duration.zero,
+            showInlineVideo ? session.position : Duration.zero,
           );
         },
         child: AspectRatio(
