@@ -42,6 +42,7 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
   bool _userPaused = false;
   bool _showSwipeHint = false;
   late PageController _pageController;
+  late CarouselController _carouselController;
 
   @override
   void initState() {
@@ -49,6 +50,9 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
     _pageController = PageController(
       initialPage: widget.activeIndex,
       keepPage: false,
+    );
+    _carouselController = CarouselController(
+      initialItem: widget.activeIndex,
     );
     _maybeShowSwipeHint();
   }
@@ -84,10 +88,14 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
       _userPaused = false;
       unawaited(_disposePlayer());
     }
-    if (widget.activeIndex != oldWidget.activeIndex &&
-        _pageController.hasClients &&
-        _pageController.page?.round() != widget.activeIndex) {
-      _pageController.jumpToPage(widget.activeIndex);
+    if (widget.activeIndex != oldWidget.activeIndex) {
+      if (_pageController.hasClients &&
+          _pageController.page?.round() != widget.activeIndex) {
+        _pageController.jumpToPage(widget.activeIndex);
+      }
+      if (_carouselController.hasClients) {
+        _carouselController.jumpTo(0.0);
+      }
     }
   }
 
@@ -174,6 +182,7 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
   @override
   void dispose() {
     _pageController.dispose();
+    _carouselController.dispose();
     unawaited(_disposePlayer());
     super.dispose();
   }
@@ -232,6 +241,8 @@ class _MusicPhotoCarouselState extends State<MusicPhotoCarousel> {
           return SizedBox(
             height: height,
             child: CarouselView.weighted(
+              key: ValueKey('carousel-view-${post.id}'),
+              controller: _carouselController,
               flexWeights: const [7, 1],
               padding: const EdgeInsets.symmetric(horizontal: 4),
               onTap: (index) => widget.onImageTap?.call(index),
