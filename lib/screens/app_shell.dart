@@ -12,6 +12,9 @@ import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../widgets/global_audio_mini_player.dart';
 import '../widgets/normal_video_overlay.dart';
+import '../widgets/normal_video_overlay_host.dart';
+import '../widgets/smooth_bottom_sheet.dart';
+import 'admin_dashboard_screen.dart';
 import 'create_post_screen.dart';
 import 'create_story_screen.dart';
 import 'feed_screen.dart';
@@ -285,18 +288,17 @@ class _AppShellState extends State<AppShell> {
 
   void _navigateToCreatePost() {
     _pauseNormalVideoForTabChange();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CreatePostScreen(
-          user: _currentUser,
-          onPostCreated: () {
-            _pauseNormalVideoForTabChange();
-            setState(() {
-              _selectedIndex = 0;
-              _feedRefreshToken++;
-            });
-          },
-        ),
+    SmoothBottomSheetRoute.show<void>(
+      context,
+      builder: (_) => CreatePostScreen(
+        user: _currentUser,
+        onPostCreated: () {
+          _pauseNormalVideoForTabChange();
+          setState(() {
+            _selectedIndex = 0;
+            _feedRefreshToken++;
+          });
+        },
       ),
     );
   }
