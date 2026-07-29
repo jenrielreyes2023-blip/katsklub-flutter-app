@@ -37,9 +37,8 @@ class FriendPostActivity {
       isReposted.hashCode;
 }
 
-/// A lightweight, 120fps butter-smooth floating draggable Top-3 Mountain Arch friend reaction overlay.
-/// Layouts up to 3 avatars in an elevated 3D mountain/arch cluster (Left, Center Peak, Right).
-/// Uses ValueNotifier + RepaintBoundary + zero-saveLayer shadow caching for zero-jank performance.
+/// A lightweight, 120fps butter-smooth floating draggable Top-3 friend reaction overlay.
+/// Displays up to 3 avatars in a clean horizontal row with proper spacing and plain circles (no white border).
 class FloatingFriendReactionOverlay extends StatefulWidget {
   const FloatingFriendReactionOverlay({
     required this.activities,
@@ -110,81 +109,18 @@ class _FloatingFriendReactionOverlayState
     );
   }
 
-  Widget _buildArchCluster(List<FriendPostActivity> items) {
-    if (items.length == 1) {
-      return _SingleAvatarBadge(
-        key: ValueKey('avatar_${items.first.username}'),
-        activity: items.first,
-      );
-    }
-
-    if (items.length == 2) {
-      return SizedBox(
-        width: 60,
-        height: 48,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Left Avatar
-            Positioned(
-              left: 0,
-              bottom: 2,
-              child: _SingleAvatarBadge(
-                key: ValueKey('avatar_${items[0].username}'),
-                activity: items[0],
-              ),
-            ),
-            // Right Avatar (Elevated Peak)
-            Positioned(
-              left: 22,
-              bottom: 10,
-              child: _SingleAvatarBadge(
-                key: ValueKey('avatar_${items[1].username}'),
-                activity: items[1],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Top 3 Arch / Mountain 🏔️ Formation:
-    // Left (Y=2), Center Peak (Y=14), Right (Y=2)
-    return SizedBox(
-      width: 82,
-      height: 54,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // 1. Left Avatar (drawn 1st, bottom left)
-          Positioned(
-            left: 0,
-            bottom: 2,
-            child: _SingleAvatarBadge(
-              key: ValueKey('avatar_${items[0].username}'),
-              activity: items[0],
-            ),
-          ),
-          // 2. Right Avatar (drawn 2nd, bottom right)
-          Positioned(
-            left: 44,
-            bottom: 2,
-            child: _SingleAvatarBadge(
-              key: ValueKey('avatar_${items[2].username}'),
-              activity: items[2],
-            ),
-          ),
-          // 3. Center Peak Avatar 🏔️ (drawn last, sits on top in center peak!)
-          Positioned(
-            left: 22,
-            bottom: 14,
-            child: _SingleAvatarBadge(
-              key: ValueKey('avatar_${items[1].username}'),
-              activity: items[1],
-            ),
+  Widget _buildAvatarRow(List<FriendPostActivity> items) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          _SingleAvatarBadge(
+            key: ValueKey('avatar_${items[i].username}'),
+            activity: items[i],
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -216,7 +152,7 @@ class _FloatingFriendReactionOverlayState
         _showInfoToast(context);
       },
       child: RepaintBoundary(
-        child: _buildArchCluster(activeItems),
+        child: _buildAvatarRow(activeItems),
       ),
     );
 
@@ -237,8 +173,8 @@ class _FloatingFriendReactionOverlayState
   }
 }
 
-/// Standalone, GPU-cached single avatar badge.
-/// Uses crisp borders and GPU-friendly shadows for 120fps smooth scrolling.
+/// Standalone, GPU-cached plain circular avatar badge.
+/// Plain circle without outer white border, with subtle shadow and 8px spacing.
 class _SingleAvatarBadge extends StatelessWidget {
   const _SingleAvatarBadge({
     required this.activity,
@@ -251,8 +187,8 @@ class _SingleAvatarBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isReposted = activity.isReposted;
     final badgeColor = isReposted
-        ? const Color(0xFF10B981) // Emerald Green for Repost (Priority 1)
-        : const Color(0xFFFF2D55); // Pink/Red for Like (Priority 2)
+        ? const Color(0xFF10B981) // Emerald Green for Repost
+        : const Color(0xFFFF2D55); // Pink/Red for Like
     final badgeIcon = isReposted
         ? Icons.repeat_rounded
         : Icons.favorite_rounded;
@@ -261,17 +197,16 @@ class _SingleAvatarBadge extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Circular Avatar
+          // Plain Circular Avatar (no white border)
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
                   color: Color(0x33000000),
-                  blurRadius: 2,
+                  blurRadius: 3,
                   offset: Offset(0, 1.5),
                 ),
               ],
@@ -319,7 +254,7 @@ class _SingleAvatarBadge extends StatelessWidget {
                     ),
             ),
           ),
-          // Mini Reaction Badge (Bottom-Right corner)
+          // Mini Reaction Badge (Bottom-Right corner, plain circle)
           Positioned(
             right: -2,
             bottom: -2,
@@ -328,7 +263,6 @@ class _SingleAvatarBadge extends StatelessWidget {
               decoration: BoxDecoration(
                 color: badgeColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x33000000),
