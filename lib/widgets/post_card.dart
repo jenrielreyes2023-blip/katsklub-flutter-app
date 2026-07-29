@@ -895,7 +895,7 @@ class _PostCardState extends State<PostCard> {
     final isGlobalDark = Theme.of(context).brightness == Brightness.dark;
     final displayTitle = _post.displayTitle;
     final shouldUseMusicCarousel =
-        _post.hasMusicPreview && _post.imageUrls.length > 1 && !_post.isAlbum;
+        _post.imageUrls.length > 1 || _post.isAlbum;
     final musicCarouselIndex = _post.imageUrls.isEmpty
         ? 0
         : _musicCarouselIndex.clamp(0, _post.imageUrls.length - 1).toInt();
