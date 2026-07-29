@@ -1,0 +1,51 @@
+========================================================================
+KATSKLUB FLUTTER - CI/CD & DIRECT VPS DEPLOYMENT HANDOFF (HANDOFF V3)
+========================================================================
+
+Date updated: 2026-07-29
+Scope: Direct VPS Deployment, Build Time Acceleration (~4-5 mins), GitHub Cache Setup, & Storage Quota Elimination.
+
+------------------------------------------------------------------------
+1. GITHUB ACTIONS BUILD & DEPLOY PIPELINE (.github/workflows/build-android.yml)
+------------------------------------------------------------------------
+- Repository: https://github.com/Katsklub2022/katsklub-flutter-wip-test.git
+- Main Branch: `main` / `rescue-lost-1d1b`
+- Workflow File: `.github/workflows/build-android.yml`
+
+Key Configurations Implemented:
+1. Caching Stack (actions/cache@v4 & subosito/flutter-action@v2):
+   - Flutter SDK: Cached at `/opt/hostedtoolcache/flutter` (`cache: true`).
+   - Pub Dependencies: Cached at `~/.pub-cache` (keyed by `pubspec.lock`).
+   - Gradle Wrapper & Caches: Cached at `~/.gradle/caches` & `~/.gradle/wrapper` (keyed by `**/*.gradle*`).
+
+2. Single-Arch Build Speed Optimization:
+   - Command: `flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons`
+   - Target Architecture: `android-arm64` (Generates `app-arm64-v8a-release.apk`).
+   - GRADLE_OPTS: `-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true`
+   - Build Duration: ~4-5 minutes on cached runs.
+
+3. Storage Quota Elimination & Direct VPS Deployment:
+   - `actions/upload-artifact` was REMOVED completely (0 bytes used on GitHub storage).
+   - Added SCP transfer via `appleboy/scp-action@v0.1.7`:
+     * Source: `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`
+     * Destination: `/var/www/katsklub/`
+   - Added SSH rename & permission setup via `appleboy/ssh-action@v1.0.3`:
+     * Renames file to `/var/www/katsklub/katsklub-latest.apk`
+     * Sets `chmod 644` permissions
+
+------------------------------------------------------------------------
+2. SSH & GITHUB SECRETS CONFIGURATION
+------------------------------------------------------------------------
+- SSH Keypair: Generated `ed25519` key at `~/.ssh/id_ed25519` on VPS.
+- Public Key: Appended to `~/.ssh/authorized_keys` with `chmod 600`.
+- GitHub Repository Secrets Configured via `gh secret set`:
+  * `VPS_SSH_KEY`: Private key from `~/.ssh/id_ed25519`.
+  * `VPS_HOST`: `149.118.147.105` (VPS IP address).
+  * `VPS_USERNAME`: `ubuntu`
+
+------------------------------------------------------------------------
+3. VERIFICATION & RUN HISTORY
+------------------------------------------------------------------------
+- Run #30416118335: Initial cold build successful (Populated GitHub Cache).
+- Run #30421690360: Fast cached build & automatic VPS deployment triggered.
+- VPS Direct APK URL: `https://katsklub.top/katsklub-latest.apk` or `/var/www/katsklub/katsklub-latest.apk`.
