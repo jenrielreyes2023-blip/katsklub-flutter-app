@@ -11,6 +11,7 @@ import '../models/story.dart';
 import '../screens/messages_screen.dart';
 import '../services/feed_service.dart';
 import '../widgets/sensitive_content_wrapper.dart';
+import '../widgets/smooth_bottom_sheet.dart';
 import '../widgets/special_name_text.dart';
 
 class StoryViewerScreen extends StatefulWidget {
@@ -243,10 +244,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
 
   void _openReplyModal() {
     _pause();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (bottomContext) => _StoryReplySheet(
         story: _currentStory,
         onSend: (text) async {
@@ -268,10 +267,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
 
   void _openViewersModal() {
     _pause();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (_) => _StoryViewersSheet(storyId: _currentStory.id),
     ).then((_) {
       if (mounted) _resume();
@@ -280,10 +277,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
 
   void _openShareModal() {
     _pause();
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (sheetContext) => _ShareStorySheet(
         story: _currentStory,
         hostContext: context,
@@ -296,9 +291,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
   void _openOptionsMenu() {
     _pause();
     final story = _currentStory;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
+    SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (sheetContext) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);

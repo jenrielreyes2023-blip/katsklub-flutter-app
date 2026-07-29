@@ -8,17 +8,16 @@ import '../models/user.dart';
 import '../screens/create_story_screen.dart';
 import '../screens/messages_screen.dart';
 
+import 'smooth_bottom_sheet.dart';
+
 class SharePostSheet {
   static Future<void> show(
     BuildContext context, {
     required Post post,
     User? currentUser,
   }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.52),
-      isScrollControlled: true,
+    await SmoothBottomSheetRoute.show<void>(
+      context,
       builder: (sheetContext) => _SharePostSheetBody(
         hostContext: context,
         post: post,
