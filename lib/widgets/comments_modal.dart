@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
@@ -726,13 +727,35 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 
     final sorted = _sortedComments;
     if (sorted.isEmpty) {
-      return const Center(
-        child: Text(
-          'No comments yet.',
-          style: TextStyle(
-            color: Color(0xFF65676B),
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset(
+                'assets/images/nocomment.svg',
+                width: 96,
+                height: 96,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'No comments yet.',
+                style: TextStyle(
+                  color: Color(0xFF9CA3AF),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Be the first one to start the conversation!',
+                style: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       );

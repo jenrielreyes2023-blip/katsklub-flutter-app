@@ -38,6 +38,7 @@ environment:
   sdk: '>=3.3.0 <4.0.0'
 flutter:
   assets:
+  - assets/images/nocomment.svg
   - assets/images/kb.svg
   - assets/images/kb_light.svg
   - assets/images/rp.svg
