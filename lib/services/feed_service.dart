@@ -618,7 +618,7 @@ class FeedService {
       if (notification['isRead'] != true) {
         unreadNotificationsNotifier.value =
             unreadNotificationsNotifier.value + 1;
-        MessageSoundService.playIncoming();
+        MessageSoundService.playNotification();
       }
     });
 

@@ -6,9 +6,11 @@ class MessageSoundService {
 
   static const String _incomingAsset = 'sounds/message_in.mp3';
   static const String _outgoingAsset = 'sounds/message_out.mp3';
+  static const String _notificationAsset = 'sounds/notification_in.mp3';
 
   static AudioPlayer? _incomingPlayer;
   static AudioPlayer? _outgoingPlayer;
+  static AudioPlayer? _notificationPlayer;
   static bool _initialized = false;
 
   static Future<void> ensureInitialized() async {
@@ -17,6 +19,7 @@ class MessageSoundService {
     try {
       _incomingPlayer = AudioPlayer();
       _outgoingPlayer = AudioPlayer();
+      _notificationPlayer = AudioPlayer();
       debugPrint("MessageSoundService: Initialized");
     } catch (e) {
       debugPrint("MessageSoundService init error: $e");
@@ -42,6 +45,17 @@ class MessageSoundService {
       debugPrint("MessageSoundService: Playing outgoing sound");
     } catch (e, stack) {
       debugPrint("MessageSoundService.playOutgoing error: $e\n$stack");
+    }
+  }
+
+  static Future<void> playNotification() async {
+    try {
+      final player = _notificationPlayer ?? AudioPlayer();
+      await player.stop();
+      await player.play(AssetSource(_notificationAsset));
+      debugPrint("MessageSoundService: Playing notification sound");
+    } catch (e, stack) {
+      debugPrint("MessageSoundService.playNotification error: $e\n$stack");
     }
   }
 }

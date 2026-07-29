@@ -64,7 +64,7 @@ class MainActivity : AudioServiceActivity() {
             val channelDescription = "Used for urgent notifications like messages and comments"
             val importance = NotificationManager.IMPORTANCE_HIGH
 
-            val soundUri = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${packageName}/raw/message_in")
+            val soundUri = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${packageName}/raw/notification_in")
             val audioAttributes = AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
