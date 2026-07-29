@@ -12,6 +12,7 @@ import '../screens/edit_post_screen.dart';
 import '../screens/youtube_player_screen.dart';
 import '../screens/messages_screen.dart';
 import '../screens/shop_screen.dart';
+import '../services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/feed_service.dart';
 import 'expandable_post_text.dart';
@@ -2387,13 +2388,22 @@ class _PostCardState extends State<PostCard> {
 
     final activities = <FriendPostActivity>[];
     final authorName = post.authorUsername.trim().toLowerCase();
+    final currentUserName = (AuthService().currentUser?.username ?? '').trim().toLowerCase();
 
-    // 1. Real Likers from backend likePreview (excluding post author)
+    bool isSelf(String name) {
+      final clean = name.trim().toLowerCase();
+      if (clean.isEmpty) return true;
+      if (clean == authorName) return true;
+      if (currentUserName.isNotEmpty && clean == currentUserName) return true;
+      return false;
+    }
+
+    // 1. Real Likers from backend likePreview (excluding post author & current user)
     if (post.likePreview.isNotEmpty) {
       for (final liker in post.likePreview) {
         if (activities.length >= 3) break;
         final name = (liker.username.isNotEmpty ? liker.username : liker.fullName).trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2405,12 +2415,12 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 2. Tagged / Mentioned Friends (excluding post author)
+    // 2. Tagged / Mentioned Friends (excluding post author & current user)
     if (activities.length < 3 && post.withUsers.isNotEmpty) {
       for (final user in post.withUsers) {
         if (activities.length >= 3) break;
         final name = (user.username ?? user.fullName ?? '').trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2422,12 +2432,12 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 3. Poll Voters (excluding post author)
+    // 3. Poll Voters (excluding post author & current user)
     if (activities.length < 3 && post.pollVoters.isNotEmpty) {
       for (final voter in post.pollVoters) {
         if (activities.length >= 3) break;
         final name = voter.username.trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2439,10 +2449,10 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 4. Repost Author (excluding post author)
+    // 4. Repost Author (excluding post author & current user)
     if (activities.length < 3 && isRepost && post.repostedByText != null) {
       final reposter = post.repostedByText!.trim();
-      if (reposter.isNotEmpty && reposter.toLowerCase() != authorName) {
+      if (!isSelf(reposter)) {
         activities.add(
           FriendPostActivity(
             username: reposter,
@@ -2452,18 +2462,6 @@ class _PostCardState extends State<PostCard> {
           ),
         );
       }
-    }
-
-    // 5. Fallback for testing if reel is liked but likePreview is empty
-    if (activities.isEmpty && (post.likeCount > 0 || post.likedByMe)) {
-      activities.add(
-        const FriendPostActivity(
-          username: 'alex',
-          avatarUrl: '',
-          isLiked: true,
-          isReposted: false,
-        ),
-      );
     }
 
     return activities;

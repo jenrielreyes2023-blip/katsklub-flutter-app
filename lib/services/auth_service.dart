@@ -151,6 +151,8 @@ class AuthService {
   static String? _memoryCookie;
   static User? _memoryUser;
 
+  User? get currentUser => _memoryUser;
+
   final http.Client _client;
 
   AuthService({http.Client? client}) : _client = client ?? http.Client();

@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../services/auth_service.dart';
 import '../services/feed_service.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/comments_modal.dart';
@@ -826,13 +827,22 @@ class _ReelPageState extends State<_ReelPage> {
 
     final activities = <FriendPostActivity>[];
     final authorName = reel.authorUsername.trim().toLowerCase();
+    final currentUserName = (AuthService().currentUser?.username ?? '').trim().toLowerCase();
 
-    // 1. Real Likers from backend likePreview (excluding post author)
+    bool isSelf(String name) {
+      final clean = name.trim().toLowerCase();
+      if (clean.isEmpty) return true;
+      if (clean == authorName) return true;
+      if (currentUserName.isNotEmpty && clean == currentUserName) return true;
+      return false;
+    }
+
+    // 1. Real Likers from backend likePreview (excluding post author & current user)
     if (reel.likePreview.isNotEmpty) {
       for (final liker in reel.likePreview) {
         if (activities.length >= 3) break;
         final name = (liker.username.isNotEmpty ? liker.username : liker.fullName).trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -844,12 +854,12 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 2. Tagged / Mentioned Friends (excluding post author)
+    // 2. Tagged / Mentioned Friends (excluding post author & current user)
     if (activities.length < 3 && reel.withUsers.isNotEmpty) {
       for (final user in reel.withUsers) {
         if (activities.length >= 3) break;
         final name = (user.username ?? user.fullName ?? '').trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -861,12 +871,12 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 3. Poll Voters (excluding post author)
+    // 3. Poll Voters (excluding post author & current user)
     if (activities.length < 3 && reel.pollVoters.isNotEmpty) {
       for (final voter in reel.pollVoters) {
         if (activities.length >= 3) break;
         final name = voter.username.trim();
-        if (name.isEmpty || name.toLowerCase() == authorName) continue;
+        if (isSelf(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -878,10 +888,10 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 4. Repost Author (excluding post author)
+    // 4. Repost Author (excluding post author & current user)
     if (activities.length < 3 && isRepost && reel.repostedByText != null) {
       final reposter = reel.repostedByText!.trim();
-      if (reposter.isNotEmpty && reposter.toLowerCase() != authorName) {
+      if (!isSelf(reposter)) {
         activities.add(
           FriendPostActivity(
             username: reposter,
@@ -891,18 +901,6 @@ class _ReelPageState extends State<_ReelPage> {
           ),
         );
       }
-    }
-
-    // 5. Fallback for testing/demonstration if reel is liked but likePreview list is empty
-    if (activities.isEmpty && (reel.likeCount > 0 || reel.likedByMe)) {
-      activities.add(
-        const FriendPostActivity(
-          username: 'alex',
-          avatarUrl: '',
-          isLiked: true,
-          isReposted: false,
-        ),
-      );
     }
 
     return activities;
