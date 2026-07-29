@@ -18,6 +18,9 @@ class Story {
     this.musicPreviewUrl,
     this.musicSource,
     this.isSensitive = false,
+    this.viewCount = 0,
+    this.reactionCount = 0,
+    this.hasReacted = false,
   });
 
   final String id;
@@ -38,6 +41,39 @@ class Story {
   final String? musicPreviewUrl;
   final String? musicSource;
   final bool isSensitive;
+  final int viewCount;
+  final int reactionCount;
+  final bool hasReacted;
+
+  Story copyWith({
+    int? viewCount,
+    int? reactionCount,
+    bool? hasReacted,
+  }) {
+    return Story(
+      id: id,
+      authorFullName: authorFullName,
+      authorUsername: authorUsername,
+      authorAvatarUrl: authorAvatarUrl,
+      ownedByMe: ownedByMe,
+      text: text,
+      imageUrl: imageUrl,
+      videoUrl: videoUrl,
+      videoPosterUrl: videoPosterUrl,
+      createdAt: createdAt,
+      backgroundStartColor: backgroundStartColor,
+      backgroundEndColor: backgroundEndColor,
+      musicTitle: musicTitle,
+      musicArtist: musicArtist,
+      musicArtworkUrl: musicArtworkUrl,
+      musicPreviewUrl: musicPreviewUrl,
+      musicSource: musicSource,
+      isSensitive: isSensitive,
+      viewCount: viewCount ?? this.viewCount,
+      reactionCount: reactionCount ?? this.reactionCount,
+      hasReacted: hasReacted ?? this.hasReacted,
+    );
+  }
 
   factory Story.fromJson(Map<String, dynamic> json) {
     return Story(
@@ -67,6 +103,9 @@ class Story {
       musicPreviewUrl: _readString(json['musicPreviewUrl']) ?? _readString(json['music_preview_url']),
       musicSource: _readString(json['musicSource']) ?? _readString(json['music_source']),
       isSensitive: json['isSensitive'] == true || json['is_sensitive'] == true,
+      viewCount: json['viewCount'] is int ? json['viewCount'] as int : int.tryParse(json['viewCount']?.toString() ?? '') ?? 0,
+      reactionCount: json['reactionCount'] is int ? json['reactionCount'] as int : int.tryParse(json['reactionCount']?.toString() ?? '') ?? 0,
+      hasReacted: json['hasReacted'] == true || json['has_reacted'] == true,
     );
   }
 

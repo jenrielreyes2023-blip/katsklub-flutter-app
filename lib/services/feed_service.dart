@@ -1547,6 +1547,39 @@ class FeedService {
     return data['ok'] == true;
   }
 
+  Future<bool> deleteStory(String storyId) async {
+    final data = await _authenticatedDelete('/api/stories/$storyId');
+    return data['ok'] == true;
+  }
+
+  Future<bool> recordStoryView(String storyId) async {
+    final data = await _authenticatedPost('/api/stories/$storyId/view');
+    return data['ok'] == true;
+  }
+
+  Future<Map<String, dynamic>> reactToStory(String storyId, {String reaction = 'heart'}) async {
+    return await _authenticatedPost(
+      '/api/stories/$storyId/react',
+      body: {'reaction': reaction},
+    );
+  }
+
+  Future<bool> replyToStory(String storyId, String text) async {
+    final data = await _authenticatedPost(
+      '/api/stories/$storyId/reply',
+      body: {'text': text},
+    );
+    return data['ok'] == true;
+  }
+
+  Future<List<Map<String, dynamic>>> getStoryViewers(String storyId) async {
+    final data = await _authenticatedGet('/api/stories/$storyId/viewers');
+    if (data['ok'] == true && data['viewers'] is List) {
+      return List<Map<String, dynamic>>.from(data['viewers']);
+    }
+    return [];
+  }
+
   Future<bool> reportUser(String username, String reason) async {
     final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
     if (cleanUsername.isEmpty) {
