@@ -3244,13 +3244,22 @@ class _PostDetailVideoPreviewState extends State<_PostDetailVideoPreview> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (showInlineVideo && !session.isPlaying) {
-          normalVideoPlaybackSession.play(muted: normalVideoMuted());
+        if (session.viewerOpen) {
+          session.setViewerOpen(false);
+        }
+        if (session.isActivePost(post.id) && controller != null && controller.value.isInitialized) {
+          if (session.isPlaying) {
+            session.pause();
+          } else {
+            session.play(muted: normalVideoMuted());
+          }
           return;
         }
-        normalVideoOverlayController.open(
+        session.activate(
           post,
-          initialPosition: showInlineVideo ? session.position : Duration.zero,
+          play: true,
+          muted: normalVideoMuted(),
+          reason: 'post detail inline tap',
         );
       },
       child: AspectRatio(
