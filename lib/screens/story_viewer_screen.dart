@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../config/api_config.dart';
 import '../models/story.dart';
+import '../screens/messages_screen.dart';
 import '../services/feed_service.dart';
 import '../widgets/sensitive_content_wrapper.dart';
 import '../widgets/special_name_text.dart';
@@ -276,6 +278,21 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
     });
   }
 
+  void _openShareModal() {
+    _pause();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => _ShareStorySheet(
+        story: _currentStory,
+        hostContext: context,
+      ),
+    ).then((_) {
+      if (mounted) _resume();
+    });
+  }
+
   void _openOptionsMenu() {
     _pause();
     final story = _currentStory;
@@ -283,87 +300,106 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1F1F23),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
+        final cardColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
+        final textColor = isDark ? Colors.white : const Color(0xFF111827);
+
+        return SafeArea(
+          top: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              if (story.ownedByMe) ...[
-                ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  title: const Text('Delete story', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
-                  onTap: () async {
-                    Navigator.of(sheetContext).pop();
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogCtx) => AlertDialog(
-                        backgroundColor: const Color(0xFF242526),
-                        title: const Text('Delete story?', style: TextStyle(color: Colors.white)),
-                        content: const Text('This story will be permanently removed.', style: TextStyle(color: Colors.white70)),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(dialogCtx).pop(false),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ColoredBox(
+                    color: cardColor,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (story.ownedByMe) ...[
+                          ListTile(
+                            leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            title: const Text('Delete story', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                            onTap: () async {
+                              Navigator.of(sheetContext).pop();
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (dialogCtx) => AlertDialog(
+                                  backgroundColor: const Color(0xFF242526),
+                                  title: const Text('Delete story?', style: TextStyle(color: Colors.white)),
+                                  content: const Text('This story will be permanently removed.', style: TextStyle(color: Colors.white70)),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(dialogCtx).pop(false),
+                                      child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(dialogCtx).pop(true),
+                                      child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true && mounted) {
+                                await FeedService().deleteStory(story.id);
+                                FeedService.notifyStoryCreated();
+                                _currentGroup.removeAt(_currentStoryIndex);
+                                if (_currentGroup.isEmpty) {
+                                  widget.storyGroups.removeAt(_currentGroupIndex);
+                                  if (widget.storyGroups.isEmpty) {
+                                    _close();
+                                    return;
+                                  }
+                                  if (_currentGroupIndex >= widget.storyGroups.length) {
+                                    _currentGroupIndex = widget.storyGroups.length - 1;
+                                  }
+                                  _currentStoryIndex = 0;
+                                } else if (_currentStoryIndex >= _currentGroup.length) {
+                                  _currentStoryIndex = _currentGroup.length - 1;
+                                }
+                                _startAutoAdvance();
+                                _syncMusicPreview();
+                              }
+                            },
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.of(dialogCtx).pop(true),
-                            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                        ] else ...[
+                          ListTile(
+                            leading: Icon(Icons.flag_outlined, color: textColor),
+                            title: Text('Report story', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                            onTap: () async {
+                              Navigator.of(sheetContext).pop();
+                              final success = await FeedService().reportStory(int.tryParse(story.id) ?? 0, 'Reported from viewer');
+                              if (mounted && success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Story reported. Thank you.')),
+                                );
+                              }
+                            },
                           ),
                         ],
-                      ),
-                    );
-
-                    if (confirm == true && mounted) {
-                      await FeedService().deleteStory(story.id);
-                      FeedService.notifyStoryCreated();
-                      _currentGroup.removeAt(_currentStoryIndex);
-                      if (_currentGroup.isEmpty) {
-                        widget.storyGroups.removeAt(_currentGroupIndex);
-                        if (widget.storyGroups.isEmpty) {
-                          _close();
-                          return;
-                        }
-                        if (_currentGroupIndex >= widget.storyGroups.length) {
-                          _currentGroupIndex = widget.storyGroups.length - 1;
-                        }
-                        _currentStoryIndex = 0;
-                      } else if (_currentStoryIndex >= _currentGroup.length) {
-                        _currentStoryIndex = _currentGroup.length - 1;
-                      }
-                      _startAutoAdvance();
-                      _syncMusicPreview();
-                    }
-                  },
-                ),
-              ] else ...[
-                ListTile(
-                  leading: const Icon(Icons.flag_outlined, color: Colors.white),
-                  title: const Text('Report story', style: TextStyle(color: Colors.white)),
-                  onTap: () async {
-                    Navigator.of(sheetContext).pop();
-                    final success = await FeedService().reportStory(int.tryParse(story.id) ?? 0, 'Reported from viewer');
-                    if (mounted && success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Story reported. Thank you.')),
-                      );
-                    }
-                  },
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ],
+            ),
           ),
         );
       },
@@ -434,9 +470,16 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                         ),
                       ),
                       const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        onPressed: _openOptionsMenu,
+                      GestureDetector(
+                        onTap: _openShareModal,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.ios_share, color: Colors.white, size: 22),
+                        ),
                       ),
                     ] else ...[
                       Expanded(
@@ -475,9 +518,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        onPressed: _openOptionsMenu,
+                      GestureDetector(
+                        onTap: _openShareModal,
+                        child: const Icon(Icons.ios_share, color: Colors.white, size: 26),
                       ),
                     ],
                   ],
@@ -485,6 +528,229 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareStorySheet extends StatelessWidget {
+  const _ShareStorySheet({
+    required this.story,
+    required this.hostContext,
+  });
+
+  final Story story;
+  final BuildContext hostContext;
+
+  String get _storyLink {
+    final baseUrl = ApiConfig.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
+    return '$baseUrl/stories/${story.id}';
+  }
+
+  String get _shareText {
+    final snippet = story.text?.trim() ?? '';
+    final author = '@${story.authorUsername}';
+    if (snippet.isNotEmpty) {
+      return 'Check out $author\'s story on KatsKlub: "$snippet"\n\n$_storyLink';
+    }
+    return 'Check out $author\'s story on KatsKlub!\n\n$_storyLink';
+  }
+
+  Future<void> _systemShare(BuildContext context) async {
+    Navigator.of(context).pop();
+    await Share.share(
+      _shareText,
+      subject: 'KatsKlub Story by @${story.authorUsername}',
+    );
+  }
+
+  void _copyLink(BuildContext context) {
+    Navigator.of(context).pop();
+    Clipboard.setData(ClipboardData(text: _storyLink));
+    ScaffoldMessenger.of(hostContext).showSnackBar(
+      const SnackBar(content: Text('Story link copied to clipboard.')),
+    );
+  }
+
+  void _sendInMessage(BuildContext context) {
+    Navigator.of(context).pop();
+    Clipboard.setData(ClipboardData(text: _storyLink));
+    Navigator.of(hostContext).push(
+      MaterialPageRoute(builder: (_) => const MessagesScreen()),
+    );
+    ScaffoldMessenger.of(hostContext).showSnackBar(
+      const SnackBar(content: Text('Story link copied. Open a chat to paste it.')),
+    );
+  }
+
+  void _repostToFeed(BuildContext context) {
+    Navigator.of(context).pop();
+    FeedService().createPost(
+      text: 'Check out @${story.authorUsername}\'s story! 🌟\n\n$_storyLink',
+    );
+    ScaffoldMessenger.of(hostContext).showSnackBar(
+      const SnackBar(content: Text('Shared story to your feed!')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
+    final handleColor = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
+    final cardColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final subtitleColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: handleColor,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ColoredBox(
+                  color: cardColor,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Share story',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Story by ${story.authorFullName} (@${story.authorUsername})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: subtitleColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _StoryShareActionButton(
+                                icon: Icons.share_outlined,
+                                label: 'Share app',
+                                onTap: () => _systemShare(context),
+                              ),
+                              const SizedBox(width: 18),
+                              _StoryShareActionButton(
+                                icon: Icons.repeat_rounded,
+                                label: 'Post to feed',
+                                onTap: () => _repostToFeed(context),
+                              ),
+                              const SizedBox(width: 18),
+                              _StoryShareActionButton(
+                                icon: Icons.content_copy_rounded,
+                                label: 'Copy link',
+                                onTap: () => _copyLink(context),
+                              ),
+                              const SizedBox(width: 18),
+                              _StoryShareActionButton(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                label: 'Message',
+                                onTap: () => _sendInMessage(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryShareActionButton extends StatelessWidget {
+  const _StoryShareActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final buttonBgColor = isDark ? const Color(0xFF3A3B3C) : const Color(0xFFF3F4F6);
+    final iconColor = isDark ? Colors.white : const Color(0xFF111827);
+    final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 78,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: buttonBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -512,69 +778,95 @@ class _StoryReplySheetState extends State<_StoryReplySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
+    final handleColor = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
+    final cardColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF1F1F23),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+                  color: handleColor,
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Reply to @${widget.story.authorUsername}',
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    autofocus: true,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Send a message...',
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.08),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ColoredBox(
+                  color: cardColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Reply to @${widget.story.authorUsername}',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _textController,
+                                autofocus: true,
+                                style: TextStyle(color: textColor),
+                                decoration: InputDecoration(
+                                  hintText: 'Send a message...',
+                                  hintStyle: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF9CA3AF)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFF3F4F6),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.send_rounded, color: Color(0xFFFF7A59)),
+                              onPressed: () {
+                                final text = _textController.text.trim();
+                                if (text.isNotEmpty) {
+                                  Navigator.of(context).pop();
+                                  widget.onSend(text);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send_rounded, color: Color(0xFFFF7A59)),
-                  onPressed: () {
-                    final text = _textController.text.trim();
-                    if (text.isNotEmpty) {
-                      Navigator.of(context).pop();
-                      widget.onSend(text);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -612,94 +904,116 @@ class _StoryViewersSheetState extends State<_StoryViewersSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.55),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1F1F23),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
+    final handleColor = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
+    final cardColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.55),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
               decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
+                color: handleColor,
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Story Viewers (${_viewers.length})',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                : _viewers.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No viewers yet.',
-                          style: TextStyle(color: Colors.white54, fontSize: 14),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ColoredBox(
+                  color: cardColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.remove_red_eye_outlined, color: textColor, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Story Viewers (${_viewers.length})',
+                              style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w800),
+                            ),
+                          ],
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: _viewers.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = _viewers[index];
-                          final fullName = item['fullName']?.toString() ?? 'User';
-                          final username = item['username']?.toString() ?? '';
-                          final avatarUrl = item['avatarUrl']?.toString() ?? '';
-                          return Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.white24,
-                                backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(ApiConfig.assetUrl(avatarUrl)) : null,
-                                child: avatarUrl.isEmpty
-                                    ? Text(
-                                        fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SpecialNameText(
-                                      username: username,
-                                      displayName: fullName,
-                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                                    ),
-                                    if (username.isNotEmpty)
-                                      Text(
-                                        '@$username',
-                                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: _isLoading
+                              ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF7A59)))
+                              : _viewers.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'No viewers yet.',
+                                        style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
                                       ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-          ),
-        ],
+                                    )
+                                  : ListView.separated(
+                                      itemCount: _viewers.length,
+                                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        final item = _viewers[index];
+                                        final fullName = item['fullName']?.toString() ?? 'User';
+                                        final username = item['username']?.toString() ?? '';
+                                        final avatarUrl = item['avatarUrl']?.toString() ?? '';
+                                        return Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 20,
+                                              backgroundColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+                                              backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(ApiConfig.assetUrl(avatarUrl)) : null,
+                                              child: avatarUrl.isEmpty
+                                                  ? Text(
+                                                      fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+                                                      style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                                                    )
+                                                  : null,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  SpecialNameText(
+                                                    username: username,
+                                                    displayName: fullName,
+                                                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w700),
+                                                  ),
+                                                  if (username.isNotEmpty)
+                                                    Text(
+                                                      '@$username',
+                                                      style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
