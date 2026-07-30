@@ -23,6 +23,7 @@ import 'repost_source_preview.dart';
 import 'sensitive_content_wrapper.dart';
 import 'share_post_sheet.dart';
 import 'smooth_bottom_sheet.dart';
+import 'user_avatar_with_frame.dart';
 import 'special_name_text.dart';
 import 'post_poll.dart';
 import 'music_photo_carousel.dart';
@@ -638,22 +639,11 @@ class _PostCardState extends State<PostCard> {
                   children: [
                     // Avatar Image
                     if (hasTargetProfile)
-                      CircleAvatar(
+                      UserAvatarWithFrame(
+                        avatarUrl: _targetProfileUser?.avatarUrl ?? '',
+                        initials: _getUserInitials(displayHeaderName),
                         radius: 18,
-                        backgroundColor: const Color(0xFFE5E7EB),
-                        backgroundImage: _targetProfileUser!.avatarUrl == null || _targetProfileUser!.avatarUrl!.trim().isEmpty
-                            ? null
-                            : CachedNetworkImageProvider(ApiConfig.assetUrl(_targetProfileUser!.avatarUrl!)),
-                        child: _targetProfileUser!.avatarUrl == null || _targetProfileUser!.avatarUrl!.trim().isEmpty
-                            ? Text(
-                                _getUserInitials(displayHeaderName),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1C1E21),
-                                  fontSize: 12,
-                                ),
-                              )
-                            : null,
+                        isAdmin: _targetProfileUser?.isAdmin ?? false,
                       )
                     else if (_post.promotionTargetUsername.isNotEmpty)
                       // Loader or general icon during loading

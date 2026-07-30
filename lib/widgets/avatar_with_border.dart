@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/api_config.dart';
+import 'user_avatar_with_frame.dart';
 
 enum AvatarBorderType {
   none,
@@ -52,6 +53,8 @@ class AvatarWithBorder extends StatelessWidget {
   final String initials;
   final AvatarBorderType borderType;
   final double size;
+  final bool isAdmin;
+  final String? framePath;
   final VoidCallback? onTap;
 
   const AvatarWithBorder({
@@ -59,6 +62,8 @@ class AvatarWithBorder extends StatelessWidget {
     required this.initials,
     this.borderType = AvatarBorderType.none,
     this.size = 80,
+    this.isAdmin = false,
+    this.framePath,
     this.onTap,
     super.key,
   });
@@ -110,48 +115,13 @@ class AvatarWithBorder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (borderType == AvatarBorderType.none) {
-      // Return simple circular avatar
-      return GestureDetector(
+      return UserAvatarWithFrame(
+        avatarUrl: avatarUrl,
+        initials: initials,
+        radius: size / 2,
+        isAdmin: isAdmin,
+        framePath: framePath,
         onTap: onTap,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: avatarUrl.trim().isEmpty
-              ? CircleAvatar(
-                  backgroundColor: const Color(0xFFE5E7EB),
-                  child: Text(
-                    initials,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
-                      fontSize: size * 0.4,
-                    ),
-                  ),
-                )
-              : CachedNetworkImage(
-                  imageUrl: ApiConfig.assetUrl(avatarUrl),
-                  memCacheWidth: 200,
-                  maxWidthDiskCache: 200,
-                  imageBuilder: (context, imageProvider) => CircleAvatar(
-                    backgroundColor: const Color(0xFFE5E7EB),
-                    backgroundImage: imageProvider,
-                  ),
-                  placeholder: (context, url) => const CircleAvatar(
-                    backgroundColor: Color(0xFFF3F4F6),
-                  ),
-                  errorWidget: (context, url, error) => CircleAvatar(
-                    backgroundColor: const Color(0xFFE5E7EB),
-                    child: Text(
-                      initials,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF111827),
-                        fontSize: size * 0.4,
-                      ),
-                    ),
-                  ),
-                ),
-        ),
       );
     }
 

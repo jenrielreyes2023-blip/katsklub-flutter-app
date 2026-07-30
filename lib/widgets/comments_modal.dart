@@ -16,6 +16,7 @@ import 'hashtag_text.dart';
 import 'loading_skeletons.dart';
 import 'mention_autocomplete.dart';
 import 'special_name_text.dart';
+import 'user_avatar_with_frame.dart';
 
 enum CommentSortMode {
   relevance,
@@ -1251,34 +1252,11 @@ class _CommentAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = comment.authorAvatarUrl.trim();
-    if (avatarUrl.isEmpty) {
-      return _InitialsAvatar(initials: comment.authorInitials);
-    }
-
-    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
-    return CachedNetworkImage(
-      imageUrl: ApiConfig.assetUrl(avatarUrl),
-      width: size,
-      height: size,
-      memCacheWidth: cacheSize,
-      fit: BoxFit.cover,
-      fadeInDuration: Duration.zero,
-      fadeOutDuration: Duration.zero,
-      placeholderFadeInDuration: Duration.zero,
-      placeholder: (_, __) =>
-          _InitialsAvatar(initials: comment.authorInitials, size: size),
-      errorWidget: (_, __, ___) =>
-          _InitialsAvatar(initials: comment.authorInitials, size: size),
-      imageBuilder: (context, imageProvider) => Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          image: DecorationImage(
-            image: imageProvider,
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
+    return UserAvatarWithFrame(
+      avatarUrl: comment.authorAvatarUrl,
+      initials: comment.authorInitials,
+      radius: size / 2,
+      isAdmin: comment.authorIsAdmin,
     );
   }
 }

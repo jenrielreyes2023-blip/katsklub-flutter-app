@@ -11,6 +11,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     required this.avatarUrl,
     this.radius = 40.0,
     this.framePath,
+    this.isAdmin = false,
     this.initials = '',
     this.onTap,
   });
@@ -18,6 +19,7 @@ class UserAvatarWithFrame extends StatelessWidget {
   final String avatarUrl;
   final double radius;
   final String? framePath;
+  final bool isAdmin;
   final String initials;
   final VoidCallback? onTap;
 
@@ -25,20 +27,6 @@ class UserAvatarWithFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
-    final pathLower = (framePath ?? '').trim().toLowerCase();
-    final isLottie = pathLower.endsWith('.json');
-    final isWingFrame = pathLower.contains('wing_frame');
-    final isTestFrame = pathLower.contains('test_frame');
-
-    // Wing frame needs 1.85x for wide wings; test_frame Lottie needs 1.48x to match aframe/bframe/cframe PNG sizes perfectly; PNGs use 1.25x
-    final double frameSize;
-    if (isWingFrame) {
-      frameSize = size * 1.85;
-    } else if (isTestFrame) {
-      frameSize = size * 1.48;
-    } else {
-      frameSize = size * 1.25;
-    }
 
     final avatarChild = cleanUrl.isEmpty
         ? CircleAvatar(
@@ -80,47 +68,70 @@ class UserAvatarWithFrame extends StatelessWidget {
             ),
           );
 
-    final widgetStack = SizedBox(
-      width: framePath != null ? frameSize : size,
-      height: framePath != null ? frameSize : size,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          // Layer 1 (Bottom): The CircleAvatar displaying the user photo
-          avatarChild,
+    return ValueListenableBuilder<String>(
+      valueListenable: equippedAdminFrameNotifier,
+      builder: (context, globalEquippedFrame, _) {
+        final String? effectiveFrame = framePath ?? (isAdmin ? globalEquippedFrame : null);
+        final cleanFrame = (effectiveFrame == 'none' || effectiveFrame == null) ? null : effectiveFrame.trim();
+        final pathLower = (cleanFrame ?? '').toLowerCase();
+        final hasFrame = cleanFrame != null && cleanFrame.isNotEmpty;
 
-          // Layer 2 (Top): The frame image or Lottie overlay wrapped in IgnorePointer and RepaintBoundary
-          if (framePath != null && framePath!.trim().isNotEmpty)
-            IgnorePointer(
-              child: RepaintBoundary(
-                child: isLottie
-                    ? _LottieFrameOverlay(
-                        framePath: framePath!.trim(),
-                        frameSize: frameSize,
-                      )
-                    : Image.asset(
-                        framePath!.trim(),
-                        width: frameSize,
-                        height: frameSize,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const SizedBox.shrink(),
-                      ),
-              ),
-            ),
-        ],
-      ),
+        final isLottie = pathLower.endsWith('.json');
+        final isWingFrame = pathLower.contains('wing_frame');
+        final isTestFrame = pathLower.contains('test_frame');
+
+        final double frameSize;
+        if (isWingFrame) {
+          frameSize = size * 1.85;
+        } else if (isTestFrame) {
+          frameSize = size * 1.48;
+        } else {
+          frameSize = size * 1.25;
+        }
+
+        final widgetStack = SizedBox(
+          width: hasFrame ? frameSize : size,
+          height: hasFrame ? frameSize : size,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Layer 1 (Bottom): The CircleAvatar displaying the user photo
+              avatarChild,
+
+              // Layer 2 (Top): The frame image or Lottie overlay wrapped in IgnorePointer and RepaintBoundary
+              if (hasFrame)
+                IgnorePointer(
+                  child: RepaintBoundary(
+                    child: isLottie
+                        ? _LottieFrameOverlay(
+                            framePath: cleanFrame,
+                            frameSize: frameSize,
+                          )
+                        : Image.asset(
+                            cleanFrame,
+                            width: frameSize,
+                            height: frameSize,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                  ),
+                ),
+            ],
+          ),
+        );
+
+        if (onTap != null) {
+          return GestureDetector(
+            onTap: onTap,
+            child: widgetStack,
+          );
+        }
+
+        return widgetStack;
+      },
     );
-
-    if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: widgetStack,
-      );
-    }
-
-    return widgetStack;
   }
 }
 
