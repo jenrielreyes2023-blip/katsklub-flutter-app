@@ -28,9 +28,17 @@ class UserAvatarWithFrame extends StatelessWidget {
     final pathLower = (framePath ?? '').trim().toLowerCase();
     final isLottie = pathLower.endsWith('.json');
     final isWingFrame = pathLower.contains('wing_frame');
+    final isTestFrame = pathLower.contains('test_frame');
 
-    // Wing frame needs 1.85x for wide wings; standard circular frames use 1.25x for snug avatar alignment without air gaps
-    final frameSize = isWingFrame ? size * 1.85 : size * 1.25;
+    // Wing frame needs 1.85x for wide wings; test_frame Lottie needs 1.48x to match aframe/bframe/cframe PNG sizes perfectly; PNGs use 1.25x
+    final double frameSize;
+    if (isWingFrame) {
+      frameSize = size * 1.85;
+    } else if (isTestFrame) {
+      frameSize = size * 1.48;
+    } else {
+      frameSize = size * 1.25;
+    }
 
     final avatarChild = cleanUrl.isEmpty
         ? CircleAvatar(
