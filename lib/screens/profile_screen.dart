@@ -21,6 +21,7 @@ import '../widgets/share_post_sheet.dart';
 import '../widgets/avatar_with_border.dart';
 import '../widgets/profile_music_panel.dart';
 import '../widgets/presence_avatar_dot.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
@@ -1863,68 +1864,18 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderType = AvatarBorderType.parse(user.profileBorder);
     final Widget avatar;
 
     final profileUsername = user.username?.trim().toLowerCase() ?? '';
     final userStories = stories.where((s) => s.authorUsername.trim().toLowerCase() == profileUsername).toList();
     final hasStories = userStories.isNotEmpty;
 
-    if (borderType == AvatarBorderType.none) {
-      final avatarUrl = user.avatarUrl;
-      avatar = Container(
-        width: 86,
-        height: 86,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: hasStories
-              ? LinearGradient(
-                  colors: isOwnProfile
-                      ? const [Color(0xFF2563EB), Color(0xFF06B6D4)]
-                      : const [Color(0xFFF97316), Color(0xFFEC4899)],
-                )
-              : null,
-          border: !hasStories
-              ? Border.all(color: const Color(0xFFE5E7EB), width: 1)
-              : null,
-        ),
-        padding: const EdgeInsets.all(2),
-        child: Container(
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          padding: const EdgeInsets.all(2),
-          child: CircleAvatar(
-            radius: 39,
-            backgroundColor: const Color(0xFFE5E7EB),
-            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                ? CachedNetworkImageProvider(
-                    ApiConfig.assetUrl(avatarUrl),
-                    maxWidth: 180,
-                  )
-                : null,
-            child: avatarUrl == null || avatarUrl.isEmpty
-                ? Text(
-                    user.initials,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 28,
-                      color: Color(0xFF111827),
-                    ),
-                  )
-                : null,
-          ),
-        ),
-      );
-    } else {
-      avatar = AvatarWithBorder(
-        avatarUrl: user.avatarUrl ?? '',
-        initials: user.initials,
-        borderType: borderType,
-        size: 86,
-      );
-    }
+    avatar = UserAvatarWithFrame(
+      avatarUrl: user.avatarUrl ?? '',
+      initials: user.initials,
+      radius: 40.0,
+      framePath: 'assets/frames/aframe.png',
+    );
 
     return GestureDetector(
       onTap: hasStories ? onTapStory : null,
