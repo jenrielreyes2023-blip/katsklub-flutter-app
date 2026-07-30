@@ -1,119 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/api_config.dart';
-import 'avatar_with_border.dart';
 
 class UserAvatarWithFrame extends StatelessWidget {
   const UserAvatarWithFrame({
     super.key,
     required this.avatarUrl,
-    required this.initials,
-    this.frameAsset = 'assets/frames/aframe.png',
-    this.borderType = AvatarBorderType.none,
-    this.size = 56.0,
-    this.frameScale = 1.25,
-    this.showFrame = true,
+    this.radius = 40.0,
+    this.framePath = 'assets/frames/aframe.png',
+    this.initials = '',
     this.onTap,
   });
 
   final String avatarUrl;
+  final double radius;
+  final String? framePath;
   final String initials;
-  final String? frameAsset;
-  final AvatarBorderType borderType;
-  final double size;
-  final double frameScale;
-  final bool showFrame;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final cleanAvatarUrl = avatarUrl.trim();
-    final hasFrame = showFrame && frameAsset != null && frameAsset!.trim().isNotEmpty;
+    final cleanUrl = avatarUrl.trim();
+    final size = radius * 2;
+    final frameSize = size * 1.25;
 
-    final avatarWidget = ClipOval(
-      child: cleanAvatarUrl.isEmpty
-          ? Container(
-              width: size,
-              height: size,
-              color: const Color(0xFFE5E7EB),
-              alignment: Alignment.center,
+    final avatarChild = cleanUrl.isEmpty
+        ? CircleAvatar(
+            radius: radius,
+            backgroundColor: const Color(0xFFE5E7EB),
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF111827),
+                fontSize: radius * 0.7,
+              ),
+            ),
+          )
+        : CachedNetworkImage(
+            imageUrl: ApiConfig.assetUrl(cleanUrl),
+            memCacheWidth: 300,
+            maxWidthDiskCache: 300,
+            imageBuilder: (context, imageProvider) => CircleAvatar(
+              radius: radius,
+              backgroundColor: const Color(0xFFE5E7EB),
+              backgroundImage: imageProvider,
+            ),
+            placeholder: (context, url) => CircleAvatar(
+              radius: radius,
+              backgroundColor: const Color(0xFFF3F4F6),
+            ),
+            errorWidget: (context, url, error) => CircleAvatar(
+              radius: radius,
+              backgroundColor: const Color(0xFFE5E7EB),
               child: Text(
                 initials,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
-                  fontSize: size * 0.38,
-                ),
-              ),
-            )
-          : CachedNetworkImage(
-              imageUrl: ApiConfig.assetUrl(cleanAvatarUrl),
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              memCacheWidth: 300,
-              maxWidthDiskCache: 300,
-              placeholder: (context, url) => Container(
-                width: size,
-                height: size,
-                color: const Color(0xFFF3F4F6),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: size,
-                height: size,
-                color: const Color(0xFFE5E7EB),
-                alignment: Alignment.center,
-                child: Text(
-                  initials,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF111827),
-                    fontSize: size * 0.38,
-                  ),
+                  fontSize: radius * 0.7,
                 ),
               ),
             ),
+          );
+
+    final widgetStack = SizedBox(
+      width: framePath != null ? frameSize : size,
+      height: framePath != null ? frameSize : size,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Layer 1 (Bottom): The CircleAvatar displaying the user photo
+          avatarChild,
+
+          // Layer 2 (Top): The frame image overlay wrapped in IgnorePointer and RepaintBoundary
+          if (framePath != null && framePath!.trim().isNotEmpty)
+            IgnorePointer(
+              child: RepaintBoundary(
+                child: Image.asset(
+                  framePath!,
+                  width: frameSize,
+                  height: frameSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
 
-    // If borderType is specified (e.g. unicorn, rabbit, crown, etc.), delegate to AvatarWithBorder
-    if (borderType != AvatarBorderType.none) {
-      return AvatarWithBorder(
-        avatarUrl: avatarUrl,
-        initials: initials,
-        borderType: borderType,
-        size: size,
+    if (onTap != null) {
+      return GestureDetector(
         onTap: onTap,
+        child: widgetStack,
       );
     }
 
-    final frameSize = size * frameScale;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: RepaintBoundary(
-        child: SizedBox(
-          width: hasFrame ? frameSize : size,
-          height: hasFrame ? frameSize : size,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              // Base User Avatar
-              avatarWidget,
-
-              // Overlay Animated/PNG Frame
-              if (hasFrame)
-                Positioned.fill(
-                  child: Image.asset(
-                    frameAsset!,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return widgetStack;
   }
 }
