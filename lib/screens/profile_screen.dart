@@ -123,14 +123,25 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (_) {}
   }
 
-  String _equippedAdminFrame = 'assets/frames/bframe.png';
+  String _equippedAdminFrame = equippedAdminFrameNotifier.value;
+
+  void _handleAdminFrameChanged() {
+    if (mounted) {
+      setState(() {
+        _equippedAdminFrame = equippedAdminFrameNotifier.value;
+      });
+    }
+  }
 
   Future<void> _loadEquippedAdminFrame() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('admin_equipped_frame');
-    if (mounted && saved != null) {
+    if (saved != null) {
+      equippedAdminFrameNotifier.value = saved;
+    }
+    if (mounted) {
       setState(() {
-        _equippedAdminFrame = saved;
+        _equippedAdminFrame = equippedAdminFrameNotifier.value;
       });
     }
   }
@@ -138,6 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    equippedAdminFrameNotifier.addListener(_handleAdminFrameChanged);
     _profileUser = widget.user;
     _profilePostCount =
         widget.user.postCount > 0 ? widget.user.postCount : null;
@@ -178,6 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   void dispose() {
+    equippedAdminFrameNotifier.removeListener(_handleAdminFrameChanged);
     _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     _scrollController.removeListener(_handleScroll);

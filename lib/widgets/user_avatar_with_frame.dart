@@ -3,6 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
 import '../config/api_config.dart';
 
+final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('assets/frames/bframe.png');
+
 class UserAvatarWithFrame extends StatelessWidget {
   const UserAvatarWithFrame({
     super.key,

@@ -526,6 +526,10 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> _equipAdminFrame(String framePath, String frameName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('admin_equipped_frame', framePath);
+
+    // Instantly notify ProfileScreen and all avatar frame listeners in real time!
+    equippedAdminFrameNotifier.value = framePath;
+
     if (!mounted) return;
 
     setState(() {
