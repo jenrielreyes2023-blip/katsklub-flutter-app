@@ -1692,7 +1692,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Option 4: Remove Avatar Frame (none)
+          // Option 4: Cyber Crystal Frame (cframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Cyber Crystal Frame',
+            description: 'Exclusive Cyber Crystal VIP frame overlay (cframe.png).',
+            framePath: 'assets/frames/cframe.png',
+            badgeText: 'CYBER VIP',
+            badgeGradient: const [Color(0xFF06B6D4), Color(0xFF0284C7)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/cframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/cframe.png', 'Cyber Crystal Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Cyber Crystal Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 5: Remove Avatar Frame (none)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
             initials: initials,
@@ -1880,7 +1895,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    (_currentUser?.isAdmin ?? false) ? '3' : '0',
+                                    (_currentUser?.isAdmin ?? false) ? '4' : '0',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
