@@ -88,9 +88,10 @@ flutter:
   - assets/frames/bframe.png
   - assets/frames/cframe.png
   - assets/frames/wing_frame.json
+  - assets/frames/test_frame.json
   - assets/frames/images/
   - assets/animations/empty_status.json
   uses-material-design: true
 name: katsklub_flutter
 publish_to: none
-version: 1.0.12+46
+version: 1.0.12+47

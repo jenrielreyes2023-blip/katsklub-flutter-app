@@ -1677,6 +1677,21 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option 3: Neon Sparkle Lottie Frame (test_frame.json)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Neon Sparkle Lottie Frame',
+            description: 'Exclusive Lottie animated sparkle frame (test_frame.json).',
+            framePath: 'assets/frames/test_frame.json',
+            badgeText: 'NEON LOTTIE',
+            badgeGradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/test_frame.json',
+            onEquip: () => _equipAdminFrame('assets/frames/test_frame.json', 'Neon Sparkle Lottie Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Neon Sparkle Lottie Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 3: Classic Frame (aframe.png)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
@@ -1895,7 +1910,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    (_currentUser?.isAdmin ?? false) ? '4' : '0',
+                                    (_currentUser?.isAdmin ?? false) ? '5' : '0',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
