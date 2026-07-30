@@ -80,15 +80,9 @@ class UserAvatarWithFrame extends StatelessWidget {
             IgnorePointer(
               child: RepaintBoundary(
                 child: framePath!.trim().toLowerCase().endsWith('.json')
-                    ? Lottie.asset(
-                        framePath!.trim(),
-                        width: frameSize,
-                        height: frameSize,
-                        fit: BoxFit.contain,
-                        repeat: true,
-                        animate: true,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const SizedBox.shrink(),
+                    ? _LottieFrameOverlay(
+                        framePath: framePath!.trim(),
+                        frameSize: frameSize,
                       )
                     : Image.asset(
                         framePath!.trim(),
@@ -112,5 +106,52 @@ class UserAvatarWithFrame extends StatelessWidget {
     }
 
     return widgetStack;
+  }
+}
+
+class _LottieFrameOverlay extends StatefulWidget {
+  const _LottieFrameOverlay({
+    required this.framePath,
+    required this.frameSize,
+  });
+
+  final String framePath;
+  final double frameSize;
+
+  @override
+  State<_LottieFrameOverlay> createState() => _LottieFrameOverlayState();
+}
+
+class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Lottie.asset(
+      widget.framePath,
+      width: widget.frameSize,
+      height: widget.frameSize,
+      fit: BoxFit.contain,
+      controller: _controller,
+      onLoaded: (composition) {
+        _controller.duration = composition.duration;
+        // Skips the initial circle morph state and continuously loops ONLY on the fully expanded wings segment
+        _controller.repeat(min: 0.44, max: 1.0);
+      },
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    );
   }
 }
