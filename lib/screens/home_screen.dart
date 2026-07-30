@@ -1720,6 +1720,7 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
             child: ListView.separated(
               key: const PageStorageKey<String>('home-suggestions-rail'),
               padding: const EdgeInsets.symmetric(horizontal: 12),
+              physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: widget.users.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -1727,12 +1728,14 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
                 final user = widget.users[index];
                 final username = (user.username ?? '').trim();
                 final normalized = username.toLowerCase();
-                return _SuggestionCard(
-                  user: user,
-                  isFollowing: widget.followingUsernames.contains(normalized),
-                  isLoading: widget.followingInFlight.contains(normalized),
-                  onFollowTap: () => widget.onFollowTap(normalized),
-                  onTap: () => widget.onOpenProfile(username),
+                return RepaintBoundary(
+                  child: _SuggestionCard(
+                    user: user,
+                    isFollowing: widget.followingUsernames.contains(normalized),
+                    isLoading: widget.followingInFlight.contains(normalized),
+                    onFollowTap: () => widget.onFollowTap(normalized),
+                    onTap: () => widget.onOpenProfile(username),
+                  ),
                 );
               },
             ),
@@ -1800,6 +1803,8 @@ class _SuggestionCard extends StatelessWidget {
                     )
                   : CachedNetworkImage(
                       imageUrl: ApiConfig.assetUrl(avatarUrl),
+                      memCacheWidth: 300,
+                      maxWidthDiskCache: 300,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => ColoredBox(
                         color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
