@@ -85,8 +85,9 @@ flutter:
   - assets/sounds/message_out.mp3
   - assets/sounds/notification_in.mp3
   - assets/frames/aframe.png
+  - assets/frames/bframe.png
   - assets/animations/empty_status.json
   uses-material-design: true
 name: katsklub_flutter
 publish_to: none
-version: 1.0.12+31
+version: 1.0.12+32

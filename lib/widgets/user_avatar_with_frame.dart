@@ -7,7 +7,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     super.key,
     required this.avatarUrl,
     this.radius = 40.0,
-    this.framePath = 'assets/frames/aframe.png',
+    this.framePath = 'assets/frames/bframe.png',
     this.initials = '',
     this.onTap,
   });
