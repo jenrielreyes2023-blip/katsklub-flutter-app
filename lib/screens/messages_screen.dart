@@ -6,6 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
+import 'package:flutter_chat_ui/flutter_chat_ui.dart' as flyer;
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'webview_screen.dart';
 import 'story_viewer_screen.dart';
 import 'post_detail_screen.dart';
@@ -110,6 +113,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _hasLoadedThreadsOnce = false;
   bool _isSending = false;
   bool _isRecording = false;
+  bool _useFlyerChatUI = false;
   DirectMessage? _replyTarget;
   Post? _replyingGhostPost;
   final List<_PendingMessageAttachment> _pendingAttachments =
@@ -450,11 +454,45 @@ class _MessagesScreenState extends State<MessagesScreen>
           ],
         ),
         actions: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _useFlyerChatUI = !_useFlyerChatUI;
+              });
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _useFlyerChatUI ? const Color(0xFF6366F1) : Colors.grey.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _useFlyerChatUI ? Icons.auto_awesome : Icons.chat_bubble_outline_rounded,
+                    size: 13,
+                    color: _useFlyerChatUI ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _useFlyerChatUI ? 'Flyer UI' : 'Original',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _useFlyerChatUI ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           IconButton(
-            tooltip: 'Call',
+            tooltip: 'Audio Call',
             icon: Icon(
-              Icons.call_outlined,
-              color: theme.accent,
+              Icons.phone_outlined,
+              color: isDark ? Colors.white : const Color(0xFF111827),
               size: 22,
             ),
             onPressed: _startAudioCall,
@@ -471,22 +509,24 @@ class _MessagesScreenState extends State<MessagesScreen>
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child:
-                _isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty
-                    ? const _MessageThreadSkeleton()
-                    : _messages.isEmpty && _typingUserIds.isEmpty
-                        ? _NewConversationIntro(
-                            thread: _thread!,
-                            accent: theme.accent,
-                          )
-                        : _buildMessagesList(),
-          ),
-          _composer(),
-        ],
-      ),
+      body: _useFlyerChatUI
+          ? _buildFlyerChatView()
+          : Column(
+              children: [
+                Expanded(
+                  child:
+                      _isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty
+                          ? const _MessageThreadSkeleton()
+                          : _messages.isEmpty && _typingUserIds.isEmpty
+                              ? _NewConversationIntro(
+                                  thread: _thread!,
+                                  accent: theme.accent,
+                                )
+                              : _buildMessagesList(),
+                ),
+                _composer(),
+              ],
+            ),
     );
   }
 
@@ -1979,6 +2019,92 @@ class _MessagesScreenState extends State<MessagesScreen>
         _feedService.markThreadRead(threadId);
       } catch (_) {}
     });
+  }
+
+  List<types.Message> _buildFlyerMessagesList() {
+    final list = <types.Message>[];
+
+    for (final msg in _messages) {
+      final senderId = msg.sender.id.toString();
+      final author = types.User(
+        id: senderId,
+        firstName: msg.sender.displayName.isNotEmpty
+            ? msg.sender.displayName
+            : msg.sender.username,
+        imageUrl: msg.sender.avatarUrl != null && msg.sender.avatarUrl!.isNotEmpty
+            ? ApiConfig.assetUrl(msg.sender.avatarUrl!)
+            : null,
+      );
+
+      final timestamp = DateTime.tryParse(msg.createdAt)?.millisecondsSinceEpoch ??
+          DateTime.now().millisecondsSinceEpoch;
+
+      if (msg.attachments.isNotEmpty && msg.attachments.first.isImage) {
+        list.add(
+          types.ImageMessage(
+            author: author,
+            createdAt: timestamp,
+            id: msg.id.toString(),
+            name: msg.attachments.first.name.isNotEmpty
+                ? msg.attachments.first.name
+                : 'Image',
+            size: msg.attachments.first.size,
+            uri: ApiConfig.assetUrl(msg.attachments.first.url),
+          ),
+        );
+      } else {
+        list.add(
+          types.TextMessage(
+            author: author,
+            createdAt: timestamp,
+            id: msg.id.toString(),
+            text: msg.body.isNotEmpty
+                ? msg.body
+                : (msg.attachments.isNotEmpty ? '[Attachment]' : ''),
+          ),
+        );
+      }
+    }
+
+    return list.reversed.toList();
+  }
+
+  Widget _buildFlyerChatView() {
+    final currentUserId = _currentUser?.id.toString() ?? 'me';
+    final flyerMessages = _buildFlyerMessagesList();
+    final chatController = core.InMemoryChatController(messages: flyerMessages.cast<core.Message>());
+
+    return flyer.Chat(
+      currentUserId: currentUserId,
+      chatController: chatController,
+      resolveUser: (userId) async {
+        if (userId == currentUserId) {
+          return core.User(
+            id: currentUserId,
+            name: _currentUser?.displayName ?? 'Me',
+            imageSource: _currentUser?.avatarUrl != null
+                ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
+                : null,
+          );
+        }
+        final other = _thread?.otherUser;
+        return core.User(
+          id: userId,
+          name: other?.displayName ?? 'User',
+          imageSource: other?.avatarUrl != null
+              ? ApiConfig.assetUrl(other!.avatarUrl!)
+              : null,
+        );
+      },
+      onMessageSend: (text) async {
+        if (text.trim().isEmpty) return;
+        _controller.text = text;
+        await _send();
+      },
+      onAttachmentTap: () {
+        _pickGalleryImages();
+      },
+    );
   }
 
   Widget _buildMessagesList() {
