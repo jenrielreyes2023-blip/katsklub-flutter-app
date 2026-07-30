@@ -2078,40 +2078,70 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _buildFlyerChatView() {
-    if (_isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty) {
-      return const _MessageThreadSkeleton();
-    }
+    final mockCurrentUser = core.User(
+      id: 'me',
+      name: _currentUser?.displayName ?? 'Me',
+      imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
+          ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
+          : null,
+    );
 
-    final currentUserId = _currentUser?.id.toString() ?? 'me';
-    final flyerMessages = _buildFlyerMessagesList().cast<core.Message>();
-    final lastId = _messages.isNotEmpty ? _messages.last.id : 0;
-    final chatController = core.InMemoryChatController(messages: flyerMessages);
+    final mockOtherUser = core.User(
+      id: 'other',
+      name: _thread?.otherUser.displayName ?? 'KatsKlub User',
+      imageSource: _thread?.otherUser.avatarUrl != null && _thread!.otherUser.avatarUrl!.isNotEmpty
+          ? ApiConfig.assetUrl(_thread!.otherUser.avatarUrl!)
+          : null,
+    );
+
+    final mockFlyerUserMe = types.User(
+      id: 'me',
+      firstName: mockCurrentUser.name ?? 'Me',
+      imageUrl: mockCurrentUser.imageSource,
+    );
+
+    final mockFlyerUserOther = types.User(
+      id: 'other',
+      firstName: mockOtherUser.name ?? 'KatsKlub User',
+      imageUrl: mockOtherUser.imageSource,
+    );
+
+    final realMessages = _buildFlyerMessagesList().cast<core.Message>();
+
+    final mockSampleMessages = <types.Message>[
+      types.TextMessage(
+        author: mockFlyerUserOther,
+        createdAt: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        id: 'mock_1',
+        text: 'Welcome to Flyer Chat UI Experiment! 🎉',
+      ),
+      types.TextMessage(
+        author: mockFlyerUserMe,
+        createdAt: DateTime.now().subtract(const Duration(minutes: 8)).millisecondsSinceEpoch,
+        id: 'mock_2',
+        text: 'This is a mock message test view 🚀',
+      ),
+      types.TextMessage(
+        author: mockFlyerUserOther,
+        createdAt: DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        id: 'mock_3',
+        text: 'Type a message below or tap Original to switch back anytime! ✨',
+      ),
+    ];
+
+    final displayMessages = realMessages.isNotEmpty ? realMessages : mockSampleMessages.cast<core.Message>();
+    final chatController = core.InMemoryChatController(messages: displayMessages);
 
     return KeyedSubtree(
-      key: ValueKey('flyer_chat_${_thread?.id}_${_messages.length}_$lastId'),
+      key: ValueKey('flyer_chat_mock_${_thread?.id}_${displayMessages.length}'),
       child: flyer.Chat(
-        currentUserId: currentUserId,
+        currentUserId: 'me',
         chatController: chatController,
         theme: core.ChatTheme.fromThemeData(Theme.of(context)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         resolveUser: (userId) async {
-          if (userId == currentUserId) {
-            return core.User(
-              id: currentUserId,
-              name: _currentUser?.displayName ?? 'Me',
-              imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
-                  ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
-                  : null,
-            );
-          }
-          final other = _thread?.otherUser;
-          return core.User(
-            id: userId,
-            name: other?.displayName ?? 'User',
-            imageSource: other?.avatarUrl != null && other!.avatarUrl!.isNotEmpty
-                ? ApiConfig.assetUrl(other.avatarUrl!)
-                : null,
-          );
+          if (userId == 'me') return mockCurrentUser;
+          return mockOtherUser;
         },
         onMessageSend: (text) async {
           if (text.trim().isEmpty) return;
