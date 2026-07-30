@@ -1874,7 +1874,7 @@ class _ProfileAvatar extends StatelessWidget {
       avatarUrl: user.avatarUrl ?? '',
       initials: user.initials,
       radius: 40.0,
-      framePath: user.isAdmin ? 'assets/frames/wing_frame.json' : null,
+      framePath: user.isAdmin ? 'assets/frames/bframe.png' : null,
     );
 
     return GestureDetector(

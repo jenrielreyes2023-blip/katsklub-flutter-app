@@ -1441,6 +1441,7 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
         if (isAdmin) ...[
+          // Item 1: Golden Admin Frame (bframe.png) - Active
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1451,6 +1452,102 @@ class _ShopScreenState extends State<ShopScreen> {
                   color: const Color(0xFFF59E0B).withOpacity(0.12),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                UserAvatarWithFrame(
+                  avatarUrl: avatarUrl,
+                  initials: initials,
+                  radius: 34.0,
+                  framePath: 'assets/frames/bframe.png',
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Golden Admin Frame',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'ADMIN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Exclusive VIP animated frame (bframe.png). Active on your profile!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFF16A34A),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'OWNED & ACTIVE',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Item 2: Angel Wings Lottie Frame (wing_frame.json) - Owned
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -1486,12 +1583,12 @@ class _ShopScreenState extends State<ShopScreen> {
                             ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
                               ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
-                              'ADMIN',
+                              'VIP LOTTIE',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
@@ -1503,7 +1600,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Exclusive VIP Lottie animated wing frame (wing_frame.json). Active on your profile!',
+                        'Exclusive Lottie animated wing frame (wing_frame.json).',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
@@ -1514,17 +1611,17 @@ class _ShopScreenState extends State<ShopScreen> {
                       Row(
                         children: [
                           const Icon(
-                            Icons.check_circle_rounded,
-                            color: Color(0xFF16A34A),
+                            Icons.check_circle_outline_rounded,
+                            color: Color(0xFF3B82F6),
                             size: 16,
                           ),
                           const SizedBox(width: 4),
                           const Text(
-                            'OWNED & ACTIVE',
+                            'OWNED IN INVENTORY',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF16A34A),
+                              color: Color(0xFF3B82F6),
                             ),
                           ),
                         ],
@@ -1710,7 +1807,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    (_currentUser?.isAdmin ?? false) ? '1' : '0',
+                                    (_currentUser?.isAdmin ?? false) ? '2' : '0',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
