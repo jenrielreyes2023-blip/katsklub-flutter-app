@@ -114,7 +114,6 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _isSending = false;
   bool _isRecording = false;
   bool _useFlyerChatUI = false;
-  core.InMemoryChatController? _flyerChatController;
   DirectMessage? _replyTarget;
   Post? _replyingGhostPost;
   final List<_PendingMessageAttachment> _pendingAttachments =
@@ -2078,52 +2077,51 @@ class _MessagesScreenState extends State<MessagesScreen>
     return list.reversed.toList();
   }
 
-  core.InMemoryChatController _getFlyerChatController() {
-    final flyerMessages = _buildFlyerMessagesList().cast<core.Message>();
-    if (_flyerChatController == null) {
-      _flyerChatController = core.InMemoryChatController(messages: flyerMessages);
-    } else {
-      _flyerChatController!.setMessages(flyerMessages);
-    }
-    return _flyerChatController!;
-  }
-
   Widget _buildFlyerChatView() {
-    final currentUserId = _currentUser?.id.toString() ?? 'me';
-    final controller = _getFlyerChatController();
+    if (_isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty) {
+      return const _MessageThreadSkeleton();
+    }
 
-    return flyer.Chat(
-      currentUserId: currentUserId,
-      chatController: controller,
-      theme: core.ChatTheme.fromThemeData(Theme.of(context)),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      resolveUser: (userId) async {
-        if (userId == currentUserId) {
+    final currentUserId = _currentUser?.id.toString() ?? 'me';
+    final flyerMessages = _buildFlyerMessagesList().cast<core.Message>();
+    final lastId = _messages.isNotEmpty ? _messages.last.id : 0;
+    final chatController = core.InMemoryChatController(messages: flyerMessages);
+
+    return KeyedSubtree(
+      key: ValueKey('flyer_chat_${_thread?.id}_${_messages.length}_$lastId'),
+      child: flyer.Chat(
+        currentUserId: currentUserId,
+        chatController: chatController,
+        theme: core.ChatTheme.fromThemeData(Theme.of(context)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        resolveUser: (userId) async {
+          if (userId == currentUserId) {
+            return core.User(
+              id: currentUserId,
+              name: _currentUser?.displayName ?? 'Me',
+              imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
+                  ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
+                  : null,
+            );
+          }
+          final other = _thread?.otherUser;
           return core.User(
-            id: currentUserId,
-            name: _currentUser?.displayName ?? 'Me',
-            imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
-                ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
+            id: userId,
+            name: other?.displayName ?? 'User',
+            imageSource: other?.avatarUrl != null && other!.avatarUrl!.isNotEmpty
+                ? ApiConfig.assetUrl(other.avatarUrl!)
                 : null,
           );
-        }
-        final other = _thread?.otherUser;
-        return core.User(
-          id: userId,
-          name: other?.displayName ?? 'User',
-          imageSource: other?.avatarUrl != null && other!.avatarUrl!.isNotEmpty
-              ? ApiConfig.assetUrl(other.avatarUrl!)
-              : null,
-        );
-      },
-      onMessageSend: (text) async {
-        if (text.trim().isEmpty) return;
-        _controller.text = text;
-        await _send();
-      },
-      onAttachmentTap: () {
-        _pickGalleryImages();
-      },
+        },
+        onMessageSend: (text) async {
+          if (text.trim().isEmpty) return;
+          _controller.text = text;
+          await _send();
+        },
+        onAttachmentTap: () {
+          _pickGalleryImages();
+        },
+      ),
     );
   }
 
