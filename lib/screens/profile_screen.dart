@@ -122,6 +122,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (_) {}
   }
 
+  String _equippedAdminFrame = 'assets/frames/bframe.png';
+
+  Future<void> _loadEquippedAdminFrame() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('admin_equipped_frame');
+    if (mounted && saved != null) {
+      setState(() {
+        _equippedAdminFrame = saved;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -141,6 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _loadStories();
     _loadSuggestions();
     _loadReelsSuggestions();
+    _loadEquippedAdminFrame();
   }
 
   @override
@@ -158,6 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       _loadStories();
       _loadSuggestions();
       _loadReelsSuggestions();
+      _loadEquippedAdminFrame();
     }
   }
 
@@ -466,6 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         stories: _stories,
                         isOwnProfile: isOwnProfile,
                         onTapStory: () => _openUserStories(_profileUser.username ?? ''),
+                        equippedAdminFrame: _equippedAdminFrame,
                       ),
                       const SizedBox(height: 12),
                       _ProfileBio(
@@ -1855,12 +1870,14 @@ class _ProfileAvatar extends StatelessWidget {
     required this.stories,
     required this.isOwnProfile,
     required this.onTapStory,
+    this.equippedAdminFrame,
   });
 
   final User user;
   final List<Story> stories;
   final bool isOwnProfile;
   final VoidCallback onTapStory;
+  final String? equippedAdminFrame;
 
   @override
   Widget build(BuildContext context) {
@@ -1870,11 +1887,19 @@ class _ProfileAvatar extends StatelessWidget {
     final userStories = stories.where((s) => s.authorUsername.trim().toLowerCase() == profileUsername).toList();
     final hasStories = userStories.isNotEmpty;
 
+    final String? activeFrame;
+    if (user.isAdmin) {
+      final selected = equippedAdminFrame ?? 'assets/frames/bframe.png';
+      activeFrame = (selected == 'none' || selected.trim().isEmpty) ? null : selected;
+    } else {
+      activeFrame = null;
+    }
+
     avatar = UserAvatarWithFrame(
       avatarUrl: user.avatarUrl ?? '',
       initials: user.initials,
       radius: 40.0,
-      framePath: user.isAdmin ? 'assets/frames/bframe.png' : null,
+      framePath: activeFrame,
     );
 
     return GestureDetector(

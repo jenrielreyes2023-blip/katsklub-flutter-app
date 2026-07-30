@@ -521,6 +521,31 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isThemeStateLoading = true;
   List<ThemeProductData> _visibleProducts = [];
   ThemeProductData? _selectedTheme;
+  String _equippedAdminFrame = 'assets/frames/bframe.png';
+
+  Future<void> _equipAdminFrame(String framePath, String frameName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('admin_equipped_frame', framePath);
+    if (!mounted) return;
+
+    setState(() {
+      _equippedAdminFrame = framePath;
+    });
+
+    final isRemoved = framePath == 'none';
+    final msg = isRemoved
+        ? 'Avatar frame removed from your profile!'
+        : '$frameName equipped successfully!';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isRemoved ? const Color(0xFF4B5563) : const Color(0xFF16A34A),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -626,6 +651,15 @@ class _ShopScreenState extends State<ShopScreen> {
       _appliedBubbleTheme = (user?.bubbleTheme ?? '').trim().toLowerCase();
       _currentUsername = (user?.username ?? '').trim().toLowerCase();
       _visibleProducts = visible;
+
+      final prefs = SharedPreferences.getInstance().then((p) {
+        final saved = p.getString('admin_equipped_frame');
+        if (mounted && saved != null) {
+          setState(() {
+            _equippedAdminFrame = saved;
+          });
+        }
+      });
 
       // Initialize selected theme for live preview
       ThemeProductData? selected;
@@ -1421,6 +1455,178 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Widget _buildAdminFrameCard({
+    required String avatarUrl,
+    required String initials,
+    required String title,
+    required String description,
+    required String? framePath,
+    required String badgeText,
+    required List<Color> badgeGradient,
+    required bool isEquipped,
+    required VoidCallback onEquip,
+    required VoidCallback onUnequip,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEquipped ? const Color(0xFFFDE68A) : const Color(0xFFE5E7EB),
+          width: isEquipped ? 1.8 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isEquipped
+                ? const Color(0xFFF59E0B).withOpacity(0.15)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isEquipped ? 16 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          UserAvatarWithFrame(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            radius: 32.0,
+            framePath: framePath,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: badgeGradient),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (isEquipped) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF16A34A),
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'EQUIPPED',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF16A34A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: onUnequip,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
+                          ),
+                          child: const Text(
+                            'Unequip',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      ElevatedButton(
+                        onPressed: onEquip,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFA855F7),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Equip Frame',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOwnedItemsTab() {
     final isAdmin = _currentUser?.isAdmin ?? false;
     final avatarUrl = _currentUser?.avatarUrl ?? '';
@@ -1441,196 +1647,63 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
         if (isAdmin) ...[
-          // Item 1: Golden Admin Frame (bframe.png) - Active
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFF59E0B).withOpacity(0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                UserAvatarWithFrame(
-                  avatarUrl: avatarUrl,
-                  initials: initials,
-                  radius: 34.0,
-                  framePath: 'assets/frames/bframe.png',
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Golden Admin Frame',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'ADMIN',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Exclusive VIP animated frame (bframe.png). Active on your profile!',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            color: Color(0xFF16A34A),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'OWNED & ACTIVE',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF16A34A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          // Option 1: Golden Admin Frame (bframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Golden Admin Frame',
+            description: 'Exclusive VIP animated frame (bframe.png).',
+            framePath: 'assets/frames/bframe.png',
+            badgeText: 'GOLDEN VIP',
+            badgeGradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/bframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Golden Admin Frame'),
           ),
           const SizedBox(height: 12),
-          // Item 2: Angel Wings Lottie Frame (wing_frame.json) - Owned
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                UserAvatarWithFrame(
-                  avatarUrl: avatarUrl,
-                  initials: initials,
-                  radius: 34.0,
-                  framePath: 'assets/frames/wing_frame.json',
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Angel Wings Lottie Frame',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'VIP LOTTIE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Exclusive Lottie animated wing frame (wing_frame.json).',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle_outline_rounded,
-                            color: Color(0xFF3B82F6),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'OWNED IN INVENTORY',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF3B82F6),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+
+          // Option 2: Angel Wings Lottie Frame (wing_frame.json)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Angel Wings Lottie Frame',
+            description: 'Exclusive Lottie animated wing frame (wing_frame.json).',
+            framePath: 'assets/frames/wing_frame.json',
+            badgeText: 'LOTTIE WINGS',
+            badgeGradient: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/wing_frame.json',
+            onEquip: () => _equipAdminFrame('assets/frames/wing_frame.json', 'Angel Wings Lottie Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Angel Wings Lottie Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 3: Classic Frame (aframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Classic Frame',
+            description: 'Classic animated frame overlay (aframe.png).',
+            framePath: 'assets/frames/aframe.png',
+            badgeText: 'CLASSIC',
+            badgeGradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/aframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/aframe.png', 'Classic Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Classic Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 4: Remove Avatar Frame (none)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'No Avatar Frame',
+            description: 'Display profile photo without any frame overlay.',
+            framePath: null,
+            badgeText: 'NORMAL',
+            badgeGradient: const [Color(0xFF6B7280), Color(0xFF4B5563)],
+            isEquipped: _equippedAdminFrame == 'none',
+            onEquip: () => _equipAdminFrame('none', 'No Frame'),
+            onUnequip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
           ),
         ] else ...[
           Container(
@@ -1807,7 +1880,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    (_currentUser?.isAdmin ?? false) ? '2' : '0',
+                                    (_currentUser?.isAdmin ?? false) ? '3' : '0',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
