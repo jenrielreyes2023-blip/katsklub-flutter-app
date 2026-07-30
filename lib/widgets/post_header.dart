@@ -7,6 +7,7 @@ import 'custom_icons.dart';
 import 'post_with_users_line.dart';
 import 'smooth_bottom_sheet.dart';
 import 'special_name_text.dart';
+import 'user_avatar_with_frame.dart';
 
 class PostHeader extends StatelessWidget {
   const PostHeader({
@@ -51,25 +52,12 @@ class PostHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
+        UserAvatarWithFrame(
+          avatarUrl: post.authorAvatarUrl,
+          initials: post.authorInitials,
+          radius: 20,
+          isAdmin: post.authorIsAdmin,
           onTap: onOpenAuthor,
-          child: CircleAvatar(
-            radius: 20,
-            backgroundColor: const Color(0xFFE5E7EB),
-            backgroundImage: post.authorAvatarUrl.trim().isEmpty
-                ? null
-                : CachedNetworkImageProvider(
-                    ApiConfig.assetUrl(post.authorAvatarUrl)),
-            child: post.authorAvatarUrl.trim().isEmpty
-                ? Text(
-                    post.authorInitials,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1C1E21),
-                    ),
-                  )
-                : null,
-          ),
         ),
         const SizedBox(width: 10),
         Expanded(
