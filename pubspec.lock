@@ -399,7 +399,7 @@ packages:
     source: hosted
     version: "3.4.2"
   flutter_chat_core:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_chat_core
       sha256: "8c46790f64f106bf6e610e2a7324b3844320e9e295867c06d45d9deb134d848d"
