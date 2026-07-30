@@ -1521,16 +1521,19 @@ class _ReelsRailState extends State<_ReelsRail>
               'feed-reels-rail-list-${widget.reels.map((reel) => reel.id).join('-')}',
             ),
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             itemCount: widget.reels.length,
             itemBuilder: (context, index) {
               final reel = widget.reels[index];
-              return _ReelPreviewCard(
-                key: ValueKey<String>('feed-reel-preview-${reel.id}'),
-                reel: reel,
-                width: cardWidth,
-                height: cardHeight,
-                onTap: () => widget.onReelTap(reel, index),
+              return RepaintBoundary(
+                child: _ReelPreviewCard(
+                  key: ValueKey<String>('feed-reel-preview-${reel.id}'),
+                  reel: reel,
+                  width: cardWidth,
+                  height: cardHeight,
+                  onTap: () => widget.onReelTap(reel, index),
+                ),
               );
             },
           ),
@@ -1576,6 +1579,8 @@ class _ReelPreviewCard extends StatelessWidget {
               if (posterUrl.isNotEmpty)
                 CachedNetworkImage(
                   imageUrl: ApiConfig.assetUrl(posterUrl),
+                  memCacheWidth: 400,
+                  maxWidthDiskCache: 400,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
                   fadeOutDuration: Duration.zero,
