@@ -1461,7 +1461,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   avatarUrl: avatarUrl,
                   initials: initials,
                   radius: 34.0,
-                  framePath: 'assets/frames/bframe.png',
+                  framePath: 'assets/frames/wing_frame.json',
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1471,7 +1471,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       Row(
                         children: [
                           const Text(
-                            'Golden Admin Frame',
+                            'Angel Wings Lottie Frame',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -1503,7 +1503,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Exclusive VIP animated frame (bframe.png). Active on your profile!',
+                        'Exclusive VIP Lottie animated wing frame (wing_frame.json). Active on your profile!',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),

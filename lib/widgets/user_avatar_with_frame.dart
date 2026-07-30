@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lottie/lottie.dart';
 import '../config/api_config.dart';
 
 class UserAvatarWithFrame extends StatelessWidget {
@@ -74,18 +75,29 @@ class UserAvatarWithFrame extends StatelessWidget {
           // Layer 1 (Bottom): The CircleAvatar displaying the user photo
           avatarChild,
 
-          // Layer 2 (Top): The frame image overlay wrapped in IgnorePointer and RepaintBoundary
+          // Layer 2 (Top): The frame image or Lottie overlay wrapped in IgnorePointer and RepaintBoundary
           if (framePath != null && framePath!.trim().isNotEmpty)
             IgnorePointer(
               child: RepaintBoundary(
-                child: Image.asset(
-                  framePath!,
-                  width: frameSize,
-                  height: frameSize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const SizedBox.shrink(),
-                ),
+                child: framePath!.trim().toLowerCase().endsWith('.json')
+                    ? Lottie.asset(
+                        framePath!.trim(),
+                        width: frameSize,
+                        height: frameSize,
+                        fit: BoxFit.contain,
+                        repeat: true,
+                        animate: true,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        framePath!.trim(),
+                        width: frameSize,
+                        height: frameSize,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      ),
               ),
             ),
         ],
