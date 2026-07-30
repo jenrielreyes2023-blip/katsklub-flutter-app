@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/conversation_theme.dart';
 import '../services/feed_service.dart';
+import '../models/user.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_config.dart';
@@ -511,6 +513,8 @@ class _ShopScreenState extends State<ShopScreen> {
   final AuthService _authService = AuthService();
   final FeedService _feedService = FeedService();
 
+  User? _currentUser;
+  int _activeTabIndex = 0; // 0 = Themes, 1 = Owned Items
   String _appliedPostcardTheme = '';
   String _appliedBubbleTheme = '';
   String _currentUsername = '';
@@ -617,6 +621,7 @@ class _ShopScreenState extends State<ShopScreen> {
     }
 
     setState(() {
+      _currentUser = user;
       _appliedPostcardTheme = (user?.postcardTheme ?? '').trim().toLowerCase();
       _appliedBubbleTheme = (user?.bubbleTheme ?? '').trim().toLowerCase();
       _currentUsername = (user?.username ?? '').trim().toLowerCase();
@@ -1416,6 +1421,171 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Widget _buildOwnedItemsTab() {
+    final isAdmin = _currentUser?.isAdmin ?? false;
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final initials = _currentUser?.initials ?? 'U';
+
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        const Text(
+          'Avatar Frames & Accessories',
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (isAdmin) ...[
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFF59E0B).withOpacity(0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                UserAvatarWithFrame(
+                  avatarUrl: avatarUrl,
+                  initials: initials,
+                  radius: 34.0,
+                  framePath: 'assets/frames/bframe.png',
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Golden Admin Frame',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'ADMIN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Exclusive VIP animated frame (bframe.png). Active on your profile!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFF16A34A),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'OWNED & ACTIVE',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.8)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.interests_outlined,
+                    size: 32,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No owned avatar frames yet',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your inventory currently has 0 avatar frames. Check out KatShop for exclusive upcoming drops!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1464,85 +1634,189 @@ class _ShopScreenState extends State<ShopScreen> {
           bottom: false,
           child: Column(
             children: [
-              // Live Preview Section
+              // Segmented Tab Selector
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Live Interactive Preview',
-                      style: TextStyle(
-                        color: Color(0xFF111827),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildLivePreviewCard(_selectedTheme),
-                  ],
-                ),
-              ),
-
-              // Themes List Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Available Themes',
-                      style: TextStyle(
-                        color: Color(0xFF111827),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_visibleProducts.length} themes',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Themes List
-              Expanded(
-                child: _isThemeStateLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFA855F7),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: Colors.white.withOpacity(0.9)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _activeTabIndex = 0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 0
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Available Themes',
+                              style: TextStyle(
+                                color: _activeTabIndex == 0
+                                    ? Colors.white
+                                    : const Color(0xFF4B5563),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        itemCount: _visibleProducts.length,
-                        itemBuilder: (context, index) {
-                          final theme = _visibleProducts[index];
-                          final isSelected =
-                              _selectedTheme?.type == theme.type;
-                          return _ThemeListItem(
-                            theme: theme,
-                            isSelected: isSelected,
-                            isApplied: _isApplied(theme.type),
-                            isLocked: !_canApplyTheme(theme.type),
-                            onTap: () => _onSelectTheme(theme),
-                          );
-                        },
                       ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _activeTabIndex = 1),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 1
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Owned Items',
+                                  style: TextStyle(
+                                    color: _activeTabIndex == 1
+                                        ? Colors.white
+                                        : const Color(0xFF4B5563),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _activeTabIndex == 1
+                                        ? Colors.white.withOpacity(0.3)
+                                        : const Color(0xFFE5E7EB),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    (_currentUser?.isAdmin ?? false) ? '1' : '0',
+                                    style: TextStyle(
+                                      color: _activeTabIndex == 1
+                                          ? Colors.white
+                                          : const Color(0xFF374151),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
-              // Bottom Action Bar
-              if (_selectedTheme != null)
-                _buildBottomActionBar(context, _selectedTheme!),
+              // Tab 0: Themes (Live Preview + Available Themes List)
+              if (_activeTabIndex == 0) ...[
+                // Live Preview Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Live Interactive Preview',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildLivePreviewCard(_selectedTheme),
+                    ],
+                  ),
+                ),
+
+                // Themes List Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Available Themes',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_visibleProducts.length} themes',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Themes List
+                Expanded(
+                  child: _isThemeStateLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFA855F7),
+                          ),
+                        )
+                      : ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          itemCount: _visibleProducts.length,
+                          itemBuilder: (context, index) {
+                            final theme = _visibleProducts[index];
+                            final isSelected =
+                                _selectedTheme?.type == theme.type;
+                            return _ThemeListItem(
+                              theme: theme,
+                              isSelected: isSelected,
+                              isApplied: _isApplied(theme.type),
+                              isLocked: !_canApplyTheme(theme.type),
+                              onTap: () => _onSelectTheme(theme),
+                            );
+                          },
+                        ),
+                ),
+
+                // Bottom Action Bar
+                if (_selectedTheme != null)
+                  _buildBottomActionBar(context, _selectedTheme!),
+              ] else ...[
+                // Tab 1: Owned Items
+                Expanded(
+                  child: _buildOwnedItemsTab(),
+                ),
+              ],
             ],
           ),
         ),
