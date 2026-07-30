@@ -23,7 +23,8 @@ class UserAvatarWithFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
-    final frameSize = size * 1.25;
+    final isLottie = framePath != null && framePath!.trim().toLowerCase().endsWith('.json');
+    final frameSize = isLottie ? size * 1.85 : size * 1.25;
 
     final avatarChild = cleanUrl.isEmpty
         ? CircleAvatar(
@@ -79,7 +80,7 @@ class UserAvatarWithFrame extends StatelessWidget {
           if (framePath != null && framePath!.trim().isNotEmpty)
             IgnorePointer(
               child: RepaintBoundary(
-                child: framePath!.trim().toLowerCase().endsWith('.json')
+                child: isLottie
                     ? _LottieFrameOverlay(
                         framePath: framePath!.trim(),
                         frameSize: frameSize,
@@ -149,7 +150,7 @@ class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
       onLoaded: (composition) {
         _controller.duration = composition.duration;
         // Skips the initial circle morph state and continuously loops ONLY on the fully expanded wings segment
-        _controller.repeat(min: 0.44, max: 1.0);
+        _controller.repeat(min: 0.35, max: 1.0);
       },
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
