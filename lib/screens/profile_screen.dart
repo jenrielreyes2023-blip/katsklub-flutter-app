@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:visibility_detector/visibility_detector.dart';
@@ -1725,12 +1726,14 @@ class _ProfileHeader extends StatelessWidget {
     required this.stories,
     required this.isOwnProfile,
     required this.onTapStory,
+    this.equippedAdminFrame,
   });
 
   final User user;
   final List<Story> stories;
   final bool isOwnProfile;
   final VoidCallback onTapStory;
+  final String? equippedAdminFrame;
 
   @override
   Widget build(BuildContext context) {
@@ -1743,6 +1746,7 @@ class _ProfileHeader extends StatelessWidget {
           stories: stories,
           isOwnProfile: isOwnProfile,
           onTapStory: onTapStory,
+          equippedAdminFrame: equippedAdminFrame,
         ),
       ),
     );
