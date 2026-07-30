@@ -2078,14 +2078,24 @@ class _MessagesScreenState extends State<MessagesScreen>
     return list.reversed.toList();
   }
 
+  core.InMemoryChatController _getFlyerChatController() {
+    final flyerMessages = _buildFlyerMessagesList().cast<core.Message>();
+    if (_flyerChatController == null) {
+      _flyerChatController = core.InMemoryChatController(messages: flyerMessages);
+    } else {
+      _flyerChatController!.setMessages(flyerMessages);
+    }
+    return _flyerChatController!;
+  }
+
   Widget _buildFlyerChatView() {
     final currentUserId = _currentUser?.id.toString() ?? 'me';
-    final flyerMessages = _buildFlyerMessagesList();
-    _flyerChatController = core.InMemoryChatController(messages: flyerMessages.cast<core.Message>());
+    final controller = _getFlyerChatController();
 
     return flyer.Chat(
       currentUserId: currentUserId,
-      chatController: _flyerChatController!,
+      chatController: controller,
+      theme: core.ChatTheme.fromThemeData(Theme.of(context)),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resolveUser: (userId) async {
         if (userId == currentUserId) {
