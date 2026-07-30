@@ -114,6 +114,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _isSending = false;
   bool _isRecording = false;
   bool _useFlyerChatUI = false;
+  core.InMemoryChatController? _flyerChatController;
   DirectMessage? _replyTarget;
   Post? _replyingGhostPost;
   final List<_PendingMessageAttachment> _pendingAttachments =
@@ -2023,14 +2024,16 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   List<types.Message> _buildFlyerMessagesList() {
     final list = <types.Message>[];
+    final seenIds = <String>{};
 
-    for (final msg in _messages) {
+    for (int i = 0; i < _messages.length; i++) {
+      final msg = _messages[i];
       final senderId = msg.sender.id.toString();
       final author = types.User(
         id: senderId,
         firstName: msg.sender.displayName.isNotEmpty
             ? msg.sender.displayName
-            : msg.sender.username,
+            : (msg.sender.username != null && msg.sender.username!.isNotEmpty ? msg.sender.username! : 'User'),
         imageUrl: msg.sender.avatarUrl != null && msg.sender.avatarUrl!.isNotEmpty
             ? ApiConfig.assetUrl(msg.sender.avatarUrl!)
             : null,
@@ -2039,12 +2042,18 @@ class _MessagesScreenState extends State<MessagesScreen>
       final timestamp = DateTime.tryParse(msg.createdAt)?.millisecondsSinceEpoch ??
           DateTime.now().millisecondsSinceEpoch;
 
+      String msgId = msg.id > 0 ? msg.id.toString() : 'msg_${i}_$timestamp';
+      if (seenIds.contains(msgId)) {
+        msgId = '${msgId}_$i';
+      }
+      seenIds.add(msgId);
+
       if (msg.attachments.isNotEmpty && msg.attachments.first.isImage) {
         list.add(
           types.ImageMessage(
             author: author,
             createdAt: timestamp,
-            id: msg.id.toString(),
+            id: msgId,
             name: msg.attachments.first.name.isNotEmpty
                 ? msg.attachments.first.name
                 : 'Image',
@@ -2057,10 +2066,10 @@ class _MessagesScreenState extends State<MessagesScreen>
           types.TextMessage(
             author: author,
             createdAt: timestamp,
-            id: msg.id.toString(),
+            id: msgId,
             text: msg.body.isNotEmpty
                 ? msg.body
-                : (msg.attachments.isNotEmpty ? '[Attachment]' : ''),
+                : (msg.attachments.isNotEmpty ? '[Attachment]' : ' '),
           ),
         );
       }
@@ -2072,17 +2081,18 @@ class _MessagesScreenState extends State<MessagesScreen>
   Widget _buildFlyerChatView() {
     final currentUserId = _currentUser?.id.toString() ?? 'me';
     final flyerMessages = _buildFlyerMessagesList();
-    final chatController = core.InMemoryChatController(messages: flyerMessages.cast<core.Message>());
+    _flyerChatController = core.InMemoryChatController(messages: flyerMessages.cast<core.Message>());
 
     return flyer.Chat(
       currentUserId: currentUserId,
-      chatController: chatController,
+      chatController: _flyerChatController!,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resolveUser: (userId) async {
         if (userId == currentUserId) {
           return core.User(
             id: currentUserId,
             name: _currentUser?.displayName ?? 'Me',
-            imageSource: _currentUser?.avatarUrl != null
+            imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
                 ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
                 : null,
           );
@@ -2091,8 +2101,8 @@ class _MessagesScreenState extends State<MessagesScreen>
         return core.User(
           id: userId,
           name: other?.displayName ?? 'User',
-          imageSource: other?.avatarUrl != null
-              ? ApiConfig.assetUrl(other!.avatarUrl!)
+          imageSource: other?.avatarUrl != null && other!.avatarUrl!.isNotEmpty
+              ? ApiConfig.assetUrl(other.avatarUrl!)
               : null,
         );
       },
