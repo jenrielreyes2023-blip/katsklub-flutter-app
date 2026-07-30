@@ -130,6 +130,8 @@ class AvatarWithBorder extends StatelessWidget {
                 )
               : CachedNetworkImage(
                   imageUrl: ApiConfig.assetUrl(avatarUrl),
+                  memCacheWidth: 200,
+                  maxWidthDiskCache: 200,
                   imageBuilder: (context, imageProvider) => CircleAvatar(
                     backgroundColor: const Color(0xFFE5E7EB),
                     backgroundImage: imageProvider,
@@ -188,6 +190,8 @@ class AvatarWithBorder extends StatelessWidget {
                         )
                       : CachedNetworkImage(
                           imageUrl: ApiConfig.assetUrl(avatarUrl),
+                          memCacheWidth: 200,
+                          maxWidthDiskCache: 200,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             color: const Color(0xFFF3F4F6),

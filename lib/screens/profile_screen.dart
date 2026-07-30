@@ -1550,13 +1550,16 @@ class _ProfileScreenState extends State<ProfileScreen>
               SizedBox(
                 height: 195,
                 child: ListView.builder(
+                  key: const PageStorageKey<String>('profile-follow-suggestions-rail'),
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   physics: const BouncingScrollPhysics(),
                   itemCount: _followSuggestions.length,
                   itemBuilder: (context, index) {
                     final suggestedUser = _followSuggestions[index];
-                    return _buildSuggestionCard(suggestedUser);
+                    return RepaintBoundary(
+                      child: _buildSuggestionCard(suggestedUser),
+                    );
                   },
                 ),
               ),
