@@ -18,6 +18,7 @@ import '../services/auth_service.dart';
 import '../utils/emoji_presentation.dart';
 import 'post_with_users_picker.dart';
 import 'special_name_text.dart';
+import 'user_avatar_with_frame.dart';
 
 enum _CreateMode {
   post,
@@ -2178,52 +2179,11 @@ class _AuthorAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = user.avatarUrl?.trim() ?? '';
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFFE5E7EB),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: avatarUrl.isEmpty
-          ? Center(
-              child: Text(
-                user.initials,
-                style: const TextStyle(
-                  decoration: TextDecoration.none,
-                  color: Color(0xFF111827),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            )
-          : CachedNetworkImage(
-              imageUrl: ApiConfig.assetUrl(avatarUrl),
-              fit: BoxFit.cover,
-              fadeInDuration: Duration.zero,
-              fadeOutDuration: Duration.zero,
-              placeholderFadeInDuration: Duration.zero,
-              placeholder: (context, url) => const ColoredBox(
-                color: Color(0xFFE5E7EB),
-              ),
-              errorWidget: (context, url, error) => ColoredBox(
-                color: const Color(0xFFE5E7EB),
-                child: Center(
-                  child: Text(
-                    user.initials,
-                    style: const TextStyle(
-                      decoration: TextDecoration.none,
-                      color: Color(0xFF111827),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    return UserAvatarWithFrame(
+      avatarUrl: user.avatarUrl ?? '',
+      initials: user.initials,
+      radius: 24.0,
+      isAdmin: user.isAdmin,
     );
   }
 }

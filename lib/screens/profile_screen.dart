@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:visibility_detector/visibility_detector.dart';
@@ -21,6 +22,7 @@ import '../widgets/share_post_sheet.dart';
 import '../widgets/avatar_with_border.dart';
 import '../widgets/profile_music_panel.dart';
 import '../widgets/presence_avatar_dot.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
@@ -121,9 +123,33 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (_) {}
   }
 
+  String _equippedAdminFrame = equippedAdminFrameNotifier.value;
+
+  void _handleAdminFrameChanged() {
+    if (mounted) {
+      setState(() {
+        _equippedAdminFrame = equippedAdminFrameNotifier.value;
+      });
+    }
+  }
+
+  Future<void> _loadEquippedAdminFrame() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('admin_equipped_frame');
+    if (saved != null) {
+      equippedAdminFrameNotifier.value = saved;
+    }
+    if (mounted) {
+      setState(() {
+        _equippedAdminFrame = equippedAdminFrameNotifier.value;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    equippedAdminFrameNotifier.addListener(_handleAdminFrameChanged);
     _profileUser = widget.user;
     _profilePostCount =
         widget.user.postCount > 0 ? widget.user.postCount : null;
@@ -140,6 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _loadStories();
     _loadSuggestions();
     _loadReelsSuggestions();
+    _loadEquippedAdminFrame();
   }
 
   @override
@@ -157,11 +184,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       _loadStories();
       _loadSuggestions();
       _loadReelsSuggestions();
+      _loadEquippedAdminFrame();
     }
   }
 
   @override
   void dispose() {
+    equippedAdminFrameNotifier.removeListener(_handleAdminFrameChanged);
     _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     _scrollController.removeListener(_handleScroll);
@@ -465,6 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         stories: _stories,
                         isOwnProfile: isOwnProfile,
                         onTapStory: () => _openUserStories(_profileUser.username ?? ''),
+                        equippedAdminFrame: _equippedAdminFrame,
                       ),
                       const SizedBox(height: 12),
                       _ProfileBio(
@@ -1709,12 +1739,14 @@ class _ProfileHeader extends StatelessWidget {
     required this.stories,
     required this.isOwnProfile,
     required this.onTapStory,
+    this.equippedAdminFrame,
   });
 
   final User user;
   final List<Story> stories;
   final bool isOwnProfile;
   final VoidCallback onTapStory;
+  final String? equippedAdminFrame;
 
   @override
   Widget build(BuildContext context) {
@@ -1727,6 +1759,7 @@ class _ProfileHeader extends StatelessWidget {
           stories: stories,
           isOwnProfile: isOwnProfile,
           onTapStory: onTapStory,
+          equippedAdminFrame: equippedAdminFrame,
         ),
       ),
     );
@@ -1854,77 +1887,37 @@ class _ProfileAvatar extends StatelessWidget {
     required this.stories,
     required this.isOwnProfile,
     required this.onTapStory,
+    this.equippedAdminFrame,
   });
 
   final User user;
   final List<Story> stories;
   final bool isOwnProfile;
   final VoidCallback onTapStory;
+  final String? equippedAdminFrame;
 
   @override
   Widget build(BuildContext context) {
-    final borderType = AvatarBorderType.parse(user.profileBorder);
     final Widget avatar;
 
     final profileUsername = user.username?.trim().toLowerCase() ?? '';
     final userStories = stories.where((s) => s.authorUsername.trim().toLowerCase() == profileUsername).toList();
     final hasStories = userStories.isNotEmpty;
 
-    if (borderType == AvatarBorderType.none) {
-      final avatarUrl = user.avatarUrl;
-      avatar = Container(
-        width: 86,
-        height: 86,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: hasStories
-              ? LinearGradient(
-                  colors: isOwnProfile
-                      ? const [Color(0xFF2563EB), Color(0xFF06B6D4)]
-                      : const [Color(0xFFF97316), Color(0xFFEC4899)],
-                )
-              : null,
-          border: !hasStories
-              ? Border.all(color: const Color(0xFFE5E7EB), width: 1)
-              : null,
-        ),
-        padding: const EdgeInsets.all(2),
-        child: Container(
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          padding: const EdgeInsets.all(2),
-          child: CircleAvatar(
-            radius: 39,
-            backgroundColor: const Color(0xFFE5E7EB),
-            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                ? CachedNetworkImageProvider(
-                    ApiConfig.assetUrl(avatarUrl),
-                    maxWidth: 180,
-                  )
-                : null,
-            child: avatarUrl == null || avatarUrl.isEmpty
-                ? Text(
-                    user.initials,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 28,
-                      color: Color(0xFF111827),
-                    ),
-                  )
-                : null,
-          ),
-        ),
-      );
+    final String? activeFrame;
+    if (user.isAdmin) {
+      final selected = equippedAdminFrame ?? 'assets/frames/bframe.png';
+      activeFrame = (selected == 'none' || selected.trim().isEmpty) ? null : selected;
     } else {
-      avatar = AvatarWithBorder(
-        avatarUrl: user.avatarUrl ?? '',
-        initials: user.initials,
-        borderType: borderType,
-        size: 86,
-      );
+      activeFrame = null;
     }
+
+    avatar = UserAvatarWithFrame(
+      avatarUrl: user.avatarUrl ?? '',
+      initials: user.initials,
+      radius: 40.0,
+      framePath: activeFrame,
+    );
 
     return GestureDetector(
       onTap: hasStories ? onTapStory : null,

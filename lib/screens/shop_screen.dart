@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/conversation_theme.dart';
 import '../services/feed_service.dart';
+import '../models/user.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_config.dart';
@@ -511,12 +513,43 @@ class _ShopScreenState extends State<ShopScreen> {
   final AuthService _authService = AuthService();
   final FeedService _feedService = FeedService();
 
+  User? _currentUser;
+  int _activeTabIndex = 0; // 0 = Themes, 1 = Owned Items
   String _appliedPostcardTheme = '';
   String _appliedBubbleTheme = '';
   String _currentUsername = '';
   bool _isThemeStateLoading = true;
   List<ThemeProductData> _visibleProducts = [];
   ThemeProductData? _selectedTheme;
+  String _equippedAdminFrame = 'assets/frames/bframe.png';
+
+  Future<void> _equipAdminFrame(String framePath, String frameName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('admin_equipped_frame', framePath);
+
+    // Instantly notify ProfileScreen and all avatar frame listeners in real time!
+    equippedAdminFrameNotifier.value = framePath;
+
+    if (!mounted) return;
+
+    setState(() {
+      _equippedAdminFrame = framePath;
+    });
+
+    final isRemoved = framePath == 'none';
+    final msg = isRemoved
+        ? 'Avatar frame removed from your profile!'
+        : '$frameName equipped successfully!';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isRemoved ? const Color(0xFF4B5563) : const Color(0xFF16A34A),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -617,10 +650,20 @@ class _ShopScreenState extends State<ShopScreen> {
     }
 
     setState(() {
+      _currentUser = user;
       _appliedPostcardTheme = (user?.postcardTheme ?? '').trim().toLowerCase();
       _appliedBubbleTheme = (user?.bubbleTheme ?? '').trim().toLowerCase();
       _currentUsername = (user?.username ?? '').trim().toLowerCase();
       _visibleProducts = visible;
+
+      final prefs = SharedPreferences.getInstance().then((p) {
+        final saved = p.getString('admin_equipped_frame');
+        if (mounted && saved != null) {
+          setState(() {
+            _equippedAdminFrame = saved;
+          });
+        }
+      });
 
       // Initialize selected theme for live preview
       ThemeProductData? selected;
@@ -1416,6 +1459,337 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Widget _buildAdminFrameCard({
+    required String avatarUrl,
+    required String initials,
+    required String title,
+    required String description,
+    required String? framePath,
+    required String badgeText,
+    required List<Color> badgeGradient,
+    required bool isEquipped,
+    required VoidCallback onEquip,
+    required VoidCallback onUnequip,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEquipped ? const Color(0xFFFDE68A) : const Color(0xFFE5E7EB),
+          width: isEquipped ? 1.8 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isEquipped
+                ? const Color(0xFFF59E0B).withOpacity(0.15)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isEquipped ? 16 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          UserAvatarWithFrame(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            radius: 32.0,
+            framePath: framePath,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: badgeGradient),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (isEquipped) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF16A34A),
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'EQUIPPED',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF16A34A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: onUnequip,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
+                          ),
+                          child: const Text(
+                            'Unequip',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      ElevatedButton(
+                        onPressed: onEquip,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFA855F7),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Equip Frame',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOwnedItemsTab() {
+    final isAdmin = _currentUser?.isAdmin ?? false;
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final initials = _currentUser?.initials ?? 'U';
+
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        const Text(
+          'Avatar Frames & Accessories',
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (isAdmin) ...[
+          // Option 1: Golden Admin Frame (bframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Golden Admin Frame',
+            description: 'Exclusive VIP animated frame (bframe.png).',
+            framePath: 'assets/frames/bframe.png',
+            badgeText: 'GOLDEN VIP',
+            badgeGradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/bframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Golden Admin Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 2: Angel Wings Lottie Frame (wing_frame.json)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Angel Wings Lottie Frame',
+            description: 'Exclusive Lottie animated wing frame (wing_frame.json).',
+            framePath: 'assets/frames/wing_frame.json',
+            badgeText: 'LOTTIE WINGS',
+            badgeGradient: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/wing_frame.json',
+            onEquip: () => _equipAdminFrame('assets/frames/wing_frame.json', 'Angel Wings Lottie Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Angel Wings Lottie Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 3: Neon Sparkle Lottie Frame (test_frame.json)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Neon Sparkle Lottie Frame',
+            description: 'Exclusive Lottie animated sparkle frame (test_frame.json).',
+            framePath: 'assets/frames/test_frame.json',
+            badgeText: 'NEON LOTTIE',
+            badgeGradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/test_frame.json',
+            onEquip: () => _equipAdminFrame('assets/frames/test_frame.json', 'Neon Sparkle Lottie Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Neon Sparkle Lottie Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 3: Classic Frame (aframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Classic Frame',
+            description: 'Classic animated frame overlay (aframe.png).',
+            framePath: 'assets/frames/aframe.png',
+            badgeText: 'CLASSIC',
+            badgeGradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/aframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/aframe.png', 'Classic Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Classic Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 4: Cyber Crystal Frame (cframe.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Cyber Crystal Frame',
+            description: 'Exclusive Cyber Crystal VIP frame overlay (cframe.png).',
+            framePath: 'assets/frames/cframe.png',
+            badgeText: 'CYBER VIP',
+            badgeGradient: const [Color(0xFF06B6D4), Color(0xFF0284C7)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/cframe.png',
+            onEquip: () => _equipAdminFrame('assets/frames/cframe.png', 'Cyber Crystal Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Cyber Crystal Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 5: Remove Avatar Frame (none)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'No Avatar Frame',
+            description: 'Display profile photo without any frame overlay.',
+            framePath: null,
+            badgeText: 'NORMAL',
+            badgeGradient: const [Color(0xFF6B7280), Color(0xFF4B5563)],
+            isEquipped: _equippedAdminFrame == 'none',
+            onEquip: () => _equipAdminFrame('none', 'No Frame'),
+            onUnequip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
+          ),
+        ] else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.8)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.interests_outlined,
+                    size: 32,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No owned avatar frames yet',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your inventory currently has 0 avatar frames. Check out KatShop for exclusive upcoming drops!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1464,85 +1838,189 @@ class _ShopScreenState extends State<ShopScreen> {
           bottom: false,
           child: Column(
             children: [
-              // Live Preview Section
+              // Segmented Tab Selector
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Live Interactive Preview',
-                      style: TextStyle(
-                        color: Color(0xFF111827),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildLivePreviewCard(_selectedTheme),
-                  ],
-                ),
-              ),
-
-              // Themes List Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Available Themes',
-                      style: TextStyle(
-                        color: Color(0xFF111827),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_visibleProducts.length} themes',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Themes List
-              Expanded(
-                child: _isThemeStateLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFA855F7),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: Colors.white.withOpacity(0.9)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _activeTabIndex = 0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 0
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Available Themes',
+                              style: TextStyle(
+                                color: _activeTabIndex == 0
+                                    ? Colors.white
+                                    : const Color(0xFF4B5563),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        itemCount: _visibleProducts.length,
-                        itemBuilder: (context, index) {
-                          final theme = _visibleProducts[index];
-                          final isSelected =
-                              _selectedTheme?.type == theme.type;
-                          return _ThemeListItem(
-                            theme: theme,
-                            isSelected: isSelected,
-                            isApplied: _isApplied(theme.type),
-                            isLocked: !_canApplyTheme(theme.type),
-                            onTap: () => _onSelectTheme(theme),
-                          );
-                        },
                       ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _activeTabIndex = 1),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 1
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Owned Items',
+                                  style: TextStyle(
+                                    color: _activeTabIndex == 1
+                                        ? Colors.white
+                                        : const Color(0xFF4B5563),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _activeTabIndex == 1
+                                        ? Colors.white.withOpacity(0.3)
+                                        : const Color(0xFFE5E7EB),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    (_currentUser?.isAdmin ?? false) ? '5' : '0',
+                                    style: TextStyle(
+                                      color: _activeTabIndex == 1
+                                          ? Colors.white
+                                          : const Color(0xFF374151),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
-              // Bottom Action Bar
-              if (_selectedTheme != null)
-                _buildBottomActionBar(context, _selectedTheme!),
+              // Tab 0: Themes (Live Preview + Available Themes List)
+              if (_activeTabIndex == 0) ...[
+                // Live Preview Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Live Interactive Preview',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildLivePreviewCard(_selectedTheme),
+                    ],
+                  ),
+                ),
+
+                // Themes List Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Available Themes',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_visibleProducts.length} themes',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Themes List
+                Expanded(
+                  child: _isThemeStateLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFA855F7),
+                          ),
+                        )
+                      : ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          itemCount: _visibleProducts.length,
+                          itemBuilder: (context, index) {
+                            final theme = _visibleProducts[index];
+                            final isSelected =
+                                _selectedTheme?.type == theme.type;
+                            return _ThemeListItem(
+                              theme: theme,
+                              isSelected: isSelected,
+                              isApplied: _isApplied(theme.type),
+                              isLocked: !_canApplyTheme(theme.type),
+                              onTap: () => _onSelectTheme(theme),
+                            );
+                          },
+                        ),
+                ),
+
+                // Bottom Action Bar
+                if (_selectedTheme != null)
+                  _buildBottomActionBar(context, _selectedTheme!),
+              ] else ...[
+                // Tab 1: Owned Items
+                Expanded(
+                  child: _buildOwnedItemsTab(),
+                ),
+              ],
             ],
           ),
         ),

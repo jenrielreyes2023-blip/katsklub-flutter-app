@@ -23,6 +23,7 @@ import '../models/post.dart';
 import '../services/auth_service.dart';
 import '../services/conversation_theme.dart';
 import '../services/feed_service.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import '../services/message_sound_service.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/loading_skeletons.dart';
@@ -4545,22 +4546,11 @@ class _SmallUserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = avatarUrl?.trim() ?? '';
-    return CircleAvatar(
+    return UserAvatarWithFrame(
+      avatarUrl: avatarUrl ?? '',
+      initials: initials,
       radius: 11,
-      backgroundColor: const Color(0xFFE5E7EB),
-      backgroundImage:
-          url.isNotEmpty ? NetworkImage(ApiConfig.assetUrl(url)) : null,
-      child: url.isEmpty
-          ? Text(
-              initials,
-              style: const TextStyle(
-                color: Color(0xFF111827),
-                fontWeight: FontWeight.w800,
-                fontSize: 10,
-              ),
-            )
-          : null,
+      isAdmin: false,
     );
   }
 }

@@ -15,6 +15,8 @@ import 'services/feed_service.dart';
 import 'services/global_audio_player_service.dart';
 import 'utils/update_checker.dart';
 import 'providers/theme_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'widgets/user_avatar_with_frame.dart';
 
 void _configureImageCache() {
   PaintingBinding.instance.imageCache.maximumSize = 1000;
@@ -55,6 +57,13 @@ Future<void> main() async {
   );
   _configureImageCache();
   configureHttpOverrides();
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final savedFrame = prefs.getString('admin_equipped_frame');
+    if (savedFrame != null && savedFrame.isNotEmpty) {
+      equippedAdminFrameNotifier.value = savedFrame;
+    }
+  } catch (_) {}
   final authService = AuthService();
   final currentUser = await authService.getCurrentUser();
 

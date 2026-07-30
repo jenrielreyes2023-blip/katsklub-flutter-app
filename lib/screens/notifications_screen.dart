@@ -8,6 +8,7 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/hashtag_text.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'hashtag_screen.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
@@ -1179,23 +1180,11 @@ class _NotificationAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
+    return UserAvatarWithFrame(
+      avatarUrl: avatarUrl ?? '',
+      initials: label.isEmpty ? 'K' : label.characters.first.toUpperCase(),
       radius: 24,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF2D2E30)
-          : const Color(0xFFE5E7EB),
-      backgroundImage: avatarUrl == null
-          ? null
-          : NetworkImage(ApiConfig.assetUrl(avatarUrl!)),
-      child: avatarUrl == null
-          ? Text(
-              label.isEmpty ? 'K' : label.characters.first.toUpperCase(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w800,
-              ),
-            )
-          : null,
+      isAdmin: false,
     );
   }
 }
