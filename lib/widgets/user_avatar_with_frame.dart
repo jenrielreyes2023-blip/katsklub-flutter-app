@@ -23,8 +23,12 @@ class UserAvatarWithFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
-    final isLottie = framePath != null && framePath!.trim().toLowerCase().endsWith('.json');
-    final frameSize = isLottie ? size * 1.85 : size * 1.25;
+    final pathLower = (framePath ?? '').trim().toLowerCase();
+    final isLottie = pathLower.endsWith('.json');
+    final isWingFrame = pathLower.contains('wing_frame');
+
+    // Wing frame needs 1.85x for wide wings; standard circular frames use 1.25x for snug avatar alignment without air gaps
+    final frameSize = isWingFrame ? size * 1.85 : size * 1.25;
 
     final avatarChild = cleanUrl.isEmpty
         ? CircleAvatar(
@@ -149,8 +153,14 @@ class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
       controller: _controller,
       onLoaded: (composition) {
         _controller.duration = composition.duration;
-        // Skips the initial circle morph state and continuously loops ONLY on the fully expanded wings segment
-        _controller.repeat(min: 0.35, max: 1.0);
+        final pathLower = widget.framePath.toLowerCase();
+        if (pathLower.contains('wing_frame')) {
+          // Wing frame skips initial circle morph state and continuously loops expanded wings segment
+          _controller.repeat(min: 0.35, max: 1.0);
+        } else {
+          // Full uncut animation loop for standard Lottie frames
+          _controller.repeat();
+        }
       },
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
