@@ -79,12 +79,15 @@ class UserAvatarWithFrame extends StatelessWidget {
         final isLottie = pathLower.endsWith('.json');
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
+        final isSpringFrame = pathLower.contains('spring_blossom_frame');
 
         final double frameSize;
         if (isWingFrame) {
           frameSize = size * 1.85;
         } else if (isTestFrame) {
           frameSize = size * 1.48;
+        } else if (isSpringFrame) {
+          frameSize = size * 1.35;
         } else {
           frameSize = size * 1.25;
         }

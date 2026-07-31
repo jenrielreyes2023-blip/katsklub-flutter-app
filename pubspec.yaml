@@ -90,6 +90,7 @@ flutter:
   - assets/frames/cframe.png
   - assets/frames/wing_frame.json
   - assets/frames/test_frame.json
+  - assets/frames/spring_blossom_frame.png
   - assets/frames/images/
   - assets/animations/empty_status.json
   - assets/images/erhai_bg.png

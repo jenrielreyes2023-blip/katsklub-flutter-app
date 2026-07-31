@@ -1651,6 +1651,21 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
         if (isAdmin) ...[
+          // Option 0: Spring Master Blossom Frame (spring_blossom_frame.png)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Spring Master Blossom Frame',
+            description: 'Exclusive floral & golden antlers frame (spring_blossom_frame.png).',
+            framePath: 'assets/frames/spring_blossom_frame.png',
+            badgeText: 'SPRING SPECIAL',
+            badgeGradient: const [Color(0xFF10B981), Color(0xFFF59E0B)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/spring_blossom_frame.png',
+            onEquip: () => _equipAdminFrame('assets/frames/spring_blossom_frame.png', 'Spring Master Blossom Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Spring Master Blossom Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 1: Golden Admin Frame (bframe.png)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
