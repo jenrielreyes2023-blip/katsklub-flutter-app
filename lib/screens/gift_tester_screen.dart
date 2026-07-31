@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svga/flutter_svga.dart';
-import '../config/api_config.dart';
 
 /// A remote-loading Virtual Gift Tester Screen.
 /// Loads SVGA animations dynamically via URLs without bloating the APK bundle size!
@@ -21,27 +20,27 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
 
   final List<Map<String, String>> _remoteGifts = [
     {
-      'name': '🚀 Rocket Gift (With Audio - VPS)',
+      'name': '🚀 Rocket Gift (With Sound)',
       'icon': 'assets/gifts/rocket_icon.png',
-      'url': '${ApiConfig.apiBaseUrl}/gifts/rocket_audio.svga',
+      'url': 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/rocket_audio.svga',
       'desc': 'Remote SVGA flying rocket with launch sound effect',
     },
     {
-      'name': '🚀 Rocket Gift (Silent - VPS)',
+      'name': '🚀 Rocket Gift (Silent)',
       'icon': 'assets/gifts/rocket_icon.png',
-      'url': '${ApiConfig.apiBaseUrl}/gifts/rocket.svga',
+      'url': 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/rocket.svga',
       'desc': 'Remote SVGA flying rocket (No audio)',
     },
     {
-      'name': '🎆 Fireworks Oath (With Audio - VPS)',
+      'name': '🎆 Fireworks Oath (With Sound)',
       'icon': 'assets/gifts/fireworks_icon.png',
-      'url': '${ApiConfig.apiBaseUrl}/gifts/fireworks_audio.svga',
+      'url': 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/fireworks_audio.svga',
       'desc': 'Grand fireworks display with audio effect',
     },
     {
-      'name': '🎆 Fireworks Oath (Silent - VPS)',
+      'name': '🎆 Fireworks Oath (Silent)',
       'icon': 'assets/gifts/fireworks_icon.png',
-      'url': '${ApiConfig.apiBaseUrl}/gifts/fireworks.svga',
+      'url': 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/fireworks.svga',
       'desc': 'Grand fireworks display (No audio)',
     },
   ];
