@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_svga/flutter_svga.dart';
 import '../config/api_config.dart';
 
 final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('assets/frames/bframe.png');
@@ -77,6 +78,7 @@ class UserAvatarWithFrame extends StatelessWidget {
         final hasFrame = cleanFrame != null && cleanFrame.isNotEmpty;
 
         final isLottie = pathLower.endsWith('.json');
+        final isSvga = pathLower.endsWith('.svga');
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
         final isSpringFrame = pathLower.contains('spring_blossom_frame');
@@ -102,7 +104,7 @@ class UserAvatarWithFrame extends StatelessWidget {
               // Layer 1 (Bottom): The CircleAvatar displaying the user photo
               avatarChild,
 
-              // Layer 2 (Top): The frame image or Lottie overlay wrapped in IgnorePointer and RepaintBoundary
+              // Layer 2 (Top): The frame image, Lottie, or SVGA overlay wrapped in IgnorePointer and RepaintBoundary
               if (hasFrame)
                 IgnorePointer(
                   child: RepaintBoundary(
@@ -111,14 +113,19 @@ class UserAvatarWithFrame extends StatelessWidget {
                             framePath: cleanFrame,
                             frameSize: frameSize,
                           )
-                        : Image.asset(
-                            cleanFrame,
-                            width: frameSize,
-                            height: frameSize,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const SizedBox.shrink(),
-                          ),
+                        : isSvga
+                            ? _SvgaFrameOverlay(
+                                framePath: cleanFrame,
+                                frameSize: frameSize,
+                              )
+                            : Image.asset(
+                                cleanFrame,
+                                width: frameSize,
+                                height: frameSize,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const SizedBox.shrink(),
+                              ),
                   ),
                 ),
             ],
@@ -187,6 +194,69 @@ class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
         }
       },
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _SvgaFrameOverlay extends StatefulWidget {
+  const _SvgaFrameOverlay({
+    required this.framePath,
+    required this.frameSize,
+  });
+
+  final String framePath;
+  final double frameSize;
+
+  @override
+  State<_SvgaFrameOverlay> createState() => _SvgaFrameOverlayState();
+}
+
+class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
+    with SingleTickerProviderStateMixin {
+  SVGAAnimationController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SVGAAnimationController(vsync: this);
+    _loadSvga();
+  }
+
+  Future<void> _loadSvga() async {
+    try {
+      final videoItem = await SVGAParser.shared.decodeFromAssets(widget.framePath);
+      if (mounted) {
+        setState(() {
+          _controller?.videoItem = videoItem;
+          _controller?.repeat();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading SVGA frame ${widget.framePath}: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_controller?.videoItem == null) {
+      return SizedBox(
+        width: widget.frameSize,
+        height: widget.frameSize,
+      );
+    }
+    return SizedBox(
+      width: widget.frameSize,
+      height: widget.frameSize,
+      child: SVGAImage(
+        _controller!,
+        fit: BoxFit.contain,
+      ),
     );
   }
 }
