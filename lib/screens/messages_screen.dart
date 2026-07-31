@@ -343,25 +343,21 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _scrollToBottomSoon({bool animate = false}) {
     void doScroll() {
       if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
       if (animate) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          target,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
         );
       } else {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        _scrollController.jumpTo(target);
       }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       doScroll();
-      Future.delayed(const Duration(milliseconds: 60), () {
-        if (mounted) doScroll();
-      });
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) doScroll();
-      });
     });
   }
 
