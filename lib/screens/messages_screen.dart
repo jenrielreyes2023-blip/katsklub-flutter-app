@@ -2734,9 +2734,8 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     return SafeArea(
       top: false,
-      child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -3952,18 +3951,11 @@ class _MessageBubble extends StatelessWidget {
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
-                final Color checkColor;
-                if (useGradient) {
-                  checkColor = seenByOther ? Colors.white : Colors.white70;
-                } else if (isDark) {
-                  checkColor = seenByOther ? const Color(0xFF60A5FA) : const Color(0xFF9CA3AF);
-                } else {
-                  checkColor = seenByOther ? const Color(0xFF2563EB) : const Color(0xFF6B7280);
-                }
+                final checkColor = seenByOther ? Colors.white : Colors.white70;
 
                 return Row(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       _formatBubbleTime(_createdAt!),
@@ -3971,9 +3963,7 @@ class _MessageBubble extends StatelessWidget {
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: sentByMe
-                            ? (useGradient
-                                ? Colors.white70
-                                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)))
+                            ? Colors.white70
                             : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
                       ),
                     ),
