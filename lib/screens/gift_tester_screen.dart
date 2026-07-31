@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svga/flutter_svga.dart';
 
-/// A dedicated screen to test and preview virtual gift animations.
+/// A remote-loading Virtual Gift Tester Screen.
+/// Loads SVGA animations dynamically via URLs without bloating the APK bundle size!
 class GiftTesterScreen extends StatefulWidget {
   const GiftTesterScreen({super.key});
 
@@ -12,21 +13,29 @@ class GiftTesterScreen extends StatefulWidget {
 class _GiftTesterScreenState extends State<GiftTesterScreen>
     with SingleTickerProviderStateMixin {
   SVGAAnimationController? _svgaController;
+  bool _isLoading = false;
   bool _isPlayingGift = false;
   String? _activeGiftName;
+  final TextEditingController _customUrlController = TextEditingController();
 
-  final List<Map<String, String>> _availableGifts = [
+  final List<Map<String, String>> _remoteGifts = [
     {
-      'name': 'Rocket Gift',
+      'name': 'Rocket Gift (Remote)',
       'icon': 'assets/gifts/rocket_icon.png',
-      'svga': 'assets/svga/rocket_gift.svga',
-      'desc': 'Interactive flying rocket animation',
+      'url': 'https://raw.githubusercontent.com/yyued/SVGAPlayer-Android/master/samples/assets/posche.svga',
+      'desc': 'Dynamic remote SVGA gift animation',
     },
     {
-      'name': 'Fireworks Oath',
+      'name': 'Fireworks Gift (Remote)',
       'icon': 'assets/gifts/fireworks_icon.png',
-      'svga': 'assets/svga/fireworks_gift.svga',
-      'desc': 'Grand fireworks animation effect',
+      'url': 'https://raw.githubusercontent.com/yyued/SVGAPlayer-Android/master/samples/assets/angel.svga',
+      'desc': 'Grand remote SVGA gift display',
+    },
+    {
+      'name': 'Rose Celebration (Remote)',
+      'icon': 'assets/gifts/rocket_icon.png',
+      'url': 'https://raw.githubusercontent.com/yyued/SVGAPlayer-Android/master/samples/assets/rose.svga',
+      'desc': 'Animated gift overlay effect',
     },
   ];
 
@@ -36,16 +45,22 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
     _svgaController = SVGAAnimationController(vsync: this);
   }
 
-  Future<void> _playGiftAnimation(String svgaPath, String giftName) async {
+  Future<void> _playGiftFromUrl(String url, String giftName) async {
+    if (url.trim().isEmpty) return;
+
     try {
       setState(() {
+        _isLoading = true;
         _isPlayingGift = true;
         _activeGiftName = giftName;
       });
 
-      final videoItem = await SVGAParser.shared.decodeFromAssets(svgaPath);
+      // Load SVGA animation dynamically from Remote URL (keeps APK small!)
+      final videoItem = await SVGAParser.shared.decodeFromURL(url.trim());
+      
       if (mounted) {
         setState(() {
+          _isLoading = false;
           _svgaController?.videoItem = videoItem;
           _svgaController?.reset();
           _svgaController?.forward().then((_) {
@@ -59,12 +74,19 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error playing gift animation $svgaPath: $e');
+      debugPrint('Error downloading/playing SVGA from $url: $e');
       if (mounted) {
         setState(() {
+          _isLoading = false;
           _isPlayingGift = false;
           _activeGiftName = null;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load SVGA: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     }
   }
@@ -74,11 +96,13 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
     setState(() {
       _isPlayingGift = false;
       _activeGiftName = null;
+      _isLoading = false;
     });
   }
 
   @override
   void dispose() {
+    _customUrlController.dispose();
     _svgaController?.dispose();
     super.dispose();
   }
@@ -86,12 +110,12 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark live-room aesthetic
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         title: const Text(
-          '🎁 Virtual Gift Animation Tester',
+          '🎁 Dynamic SVGA Gift Tester',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         leading: IconButton(
@@ -101,7 +125,7 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
       ),
       body: Stack(
         children: [
-          // 1. Main Controls UI
+          // 1. Controls & URL Input UI
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -109,22 +133,58 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Select a Gift to Trigger Animation:',
+                    'Remote SVGA Loading (Keeps APK Slim!):',
                     style: TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // Gift Cards List
+                  // Custom URL Input Box
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.link_rounded, color: Color(0xFFFF7A45)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _customUrlController,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              hintText: 'Paste custom SVGA URL here...',
+                              hintStyle: TextStyle(color: Color(0xFF64748B)),
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.play_circle_fill, color: Color(0xFFFF7A45), size: 28),
+                          onPressed: () {
+                            if (_customUrlController.text.isNotEmpty) {
+                              _playGiftFromUrl(_customUrlController.text, 'Custom URL Gift');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Preset Remote Gifts List
                   Expanded(
                     child: ListView.separated(
-                      itemCount: _availableGifts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemCount: _remoteGifts.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
-                        final gift = _availableGifts[index];
+                        final gift = _remoteGifts[index];
                         return Card(
                           color: const Color(0xFF1E293B),
                           shape: RoundedRectangleBorder(
@@ -132,13 +192,12 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                             side: const BorderSide(color: Color(0xFF334155)),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(14.0),
                             child: Row(
                               children: [
-                                // Gift Icon
                                 Container(
-                                  width: 64,
-                                  height: 64,
+                                  width: 56,
+                                  height: 56,
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF0F172A),
                                     borderRadius: BorderRadius.circular(12),
@@ -152,9 +211,8 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 14),
 
-                                // Gift Details
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +221,7 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                                         gift['name']!,
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -179,19 +237,18 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                                   ),
                                 ),
 
-                                // Play Button
                                 ElevatedButton.icon(
-                                  onPressed: () => _playGiftAnimation(gift['svga']!, gift['name']!),
+                                  onPressed: () => _playGiftFromUrl(gift['url']!, gift['name']!),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFFFF7A45),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                   ),
-                                  icon: const Icon(Icons.play_arrow, size: 20),
-                                  label: const Text('Send Gift'),
+                                  icon: const Icon(Icons.cloud_download_rounded, size: 18),
+                                  label: const Text('Stream Gift'),
                                 ),
                               ],
                             ),
@@ -204,7 +261,7 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                   if (_isPlayingGift) ...[
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(12),
@@ -213,16 +270,26 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Playing: $_activeGiftName',
-                            style: const TextStyle(
-                              color: Color(0xFFFF7A45),
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              if (_isLoading)
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF7A45)),
+                                )
+                              else
+                                const Icon(Icons.play_circle, color: Color(0xFFFF7A45), size: 20),
+                              const SizedBox(width: 10),
+                              Text(
+                                _isLoading ? 'Downloading SVGA...' : 'Playing: $_activeGiftName',
+                                style: const TextStyle(color: Color(0xFFFF7A45), fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                           TextButton(
                             onPressed: _stopGiftAnimation,
-                            child: const Text('Stop Animation', style: TextStyle(color: Colors.redAccent)),
+                            child: const Text('Stop', style: TextStyle(color: Colors.redAccent)),
                           ),
                         ],
                       ),
@@ -234,7 +301,7 @@ class _GiftTesterScreenState extends State<GiftTesterScreen>
           ),
 
           // 2. Full-Screen SVGA Gift Overlay Layer
-          if (_isPlayingGift && _svgaController?.videoItem != null)
+          if (_isPlayingGift && !_isLoading && _svgaController?.videoItem != null)
             Positioned.fill(
               child: IgnorePointer(
                 child: SVGAImage(

@@ -93,7 +93,6 @@ flutter:
   - assets/frames/images/
   - assets/animations/empty_status.json
   - assets/images/erhai_bg.png
-  - assets/svga/
   - assets/gifts/
   uses-material-design: true
 name: katsklub_flutter
