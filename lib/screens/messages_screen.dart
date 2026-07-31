@@ -113,7 +113,6 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _hasLoadedThreadsOnce = false;
   bool _isSending = false;
   bool _isRecording = false;
-  bool _useFlyerChatUI = true;
   DirectMessage? _replyTarget;
   Post? _replyingGhostPost;
   final List<_PendingMessageAttachment> _pendingAttachments =
@@ -454,40 +453,6 @@ class _MessagesScreenState extends State<MessagesScreen>
           ],
         ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _useFlyerChatUI = !_useFlyerChatUI;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _useFlyerChatUI ? const Color(0xFF6366F1) : Colors.grey.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _useFlyerChatUI ? Icons.auto_awesome : Icons.chat_bubble_outline_rounded,
-                    size: 13,
-                    color: _useFlyerChatUI ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _useFlyerChatUI ? 'Flyer UI' : 'Original',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _useFlyerChatUI ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
           IconButton(
             tooltip: 'Audio Call',
             icon: Icon(
@@ -509,24 +474,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           const SizedBox(width: 4),
         ],
       ),
-      body: _useFlyerChatUI
-          ? _buildFlyerChatView()
-          : Column(
-              children: [
-                Expanded(
-                  child:
-                      _isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty
-                          ? const _MessageThreadSkeleton()
-                          : _messages.isEmpty && _typingUserIds.isEmpty
-                              ? _NewConversationIntro(
-                                  thread: _thread!,
-                                  accent: theme.accent,
-                                )
-                              : _buildMessagesList(),
-                ),
-                _composer(),
-              ],
-            ),
+      body: _buildFlyerChatView(),
     );
   }
 
