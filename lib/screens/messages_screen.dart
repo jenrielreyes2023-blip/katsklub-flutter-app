@@ -341,7 +341,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   void _scrollToBottomSoon({bool animate = false}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    void doScroll() {
       if (!_scrollController.hasClients) return;
       if (animate) {
         _scrollController.animateTo(
@@ -352,6 +352,16 @@ class _MessagesScreenState extends State<MessagesScreen>
       } else {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      doScroll();
+      Future.delayed(const Duration(milliseconds: 60), () {
+        if (mounted) doScroll();
+      });
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) doScroll();
+      });
     });
   }
 
