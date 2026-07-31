@@ -3997,24 +3997,6 @@ class _MessageBubble extends StatelessWidget {
       padding: EdgeInsets.only(top: topGap),
       child: row,
     ));
-    if (isLastOwn && seenByOther) {
-      children.add(
-        const Padding(
-          padding: EdgeInsets.only(top: 4, right: 4),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              'Seen',
-              style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -4399,6 +4381,10 @@ class _MessageImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final cacheW = (width * dpr).toInt();
+    final cacheH = (height * dpr).toInt();
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -4409,6 +4395,8 @@ class _MessageImageTile extends StatelessWidget {
             ApiConfig.assetUrl(attachment.url),
             width: width,
             height: height,
+            cacheWidth: cacheW > 0 ? cacheW : null,
+            cacheHeight: cacheH > 0 ? cacheH : null,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
               width: width,
@@ -4433,12 +4421,17 @@ void _openMessagePhotoViewer(
 ) {
   if (attachments.isEmpty) return;
   final startIndex = initialIndex.clamp(0, attachments.length - 1).toInt();
-  showDialog<void>(
-    context: context,
-    barrierColor: Colors.black,
-    builder: (_) => _MessagePhotoViewer(
-      attachments: attachments,
-      initialIndex: startIndex,
+  Navigator.of(context).push(
+    PageRouteBuilder<void>(
+      opaque: false,
+      barrierColor: Colors.black,
+      pageBuilder: (_, __, ___) => _MessagePhotoViewer(
+        attachments: attachments,
+        initialIndex: startIndex,
+      ),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
     ),
   );
 }
