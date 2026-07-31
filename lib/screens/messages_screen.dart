@@ -2718,168 +2718,192 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
 
     final isDarkComposer = Theme.of(context).brightness == Brightness.dark;
+    final hasText = _controller.text.trim().isNotEmpty;
 
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: isDarkComposer ? const Color(0xFF1E1E2E) : const Color(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDarkComposer ? const Color(0xFF2D2D3F) : const Color(0xFFE2E8F0),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDarkComposer ? 0.25 : 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_replyTarget != null)
+              _ReplyingToBar(
+                target: _replyTarget!,
+                accent: theme.accent,
+                onClose: _isSending ? null : _clearReplyTarget,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_replyTarget != null)
-                _ReplyingToBar(
-                  target: _replyTarget!,
-                  accent: theme.accent,
-                  onClose: _isSending ? null : _clearReplyTarget,
-                ),
-              if (_replyingGhostPost != null)
-                _GhostPostReplyBar(
-                  post: _replyingGhostPost!,
-                  accent: theme.accent,
-                  onClose: _isSending
-                      ? null
-                      : () {
-                          setState(() {
-                            _replyingGhostPost = null;
-                          });
-                        },
-                ),
-              if (_pendingAttachments.isNotEmpty)
-                _AttachmentPreviewStrip(
-                  attachments: _pendingAttachments,
-                  onRemove: _isSending
-                      ? null
-                      : (index) {
-                          setState(() => _pendingAttachments.removeAt(index));
-                        },
-                ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _ComposerActionButton(
-                    icon: Icons.add_circle_outline_rounded,
-                    tooltip: 'Add file',
-                    color: theme.accent,
-                    onPressed: _isSending ? null : _pickFiles,
-                  ),
-                  _ComposerActionButton(
-                    icon: Icons.image_outlined,
-                    tooltip: 'Photos',
-                    color: theme.accent,
-                    onPressed: _isSending ? null : _pickGalleryImages,
-                  ),
-                  _ComposerActionButton(
-                    icon: Icons.camera_alt_outlined,
-                    tooltip: 'Camera',
-                    color: theme.accent,
-                    onPressed: _isSending ? null : _pickCameraImage,
-                  ),
-                  _ComposerActionButton(
-                    icon: _isRecording
-                        ? Icons.stop_circle_outlined
-                        : Icons.mic_none_rounded,
-                    tooltip: _isRecording ? 'Stop recording' : 'Record',
-                    color: _isRecording ? const Color(0xFFDC2626) : theme.accent,
-                    onPressed: _isSending ? null : _toggleRecording,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: 1,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      onChanged: _onComposerChanged,
-                      inputFormatters: [EmojiPresentationFormatter()],
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14.5,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: _isRecording
-                            ? 'Recording... tap stop when done'
-                            : 'Message...',
-                        hintMaxLines: 1,
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: isDarkComposer ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF),
-                        ),
-                        filled: true,
-                        fillColor: isDarkComposer
-                            ? const Color(0xFF2B2B3D)
-                            : const Color(0xFFF1F5F9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 9,
-                        ),
+            if (_replyingGhostPost != null)
+              _GhostPostReplyBar(
+                post: _replyingGhostPost!,
+                accent: theme.accent,
+                onClose: _isSending
+                    ? null
+                    : () {
+                        setState(() {
+                          _replyingGhostPost = null;
+                        });
+                      },
+              ),
+            if (_pendingAttachments.isNotEmpty)
+              _AttachmentPreviewStrip(
+                attachments: _pendingAttachments,
+                onRemove: _isSending
+                    ? null
+                    : (index) {
+                        setState(() => _pendingAttachments.removeAt(index));
+                      },
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDarkComposer
+                          ? const Color(0xFF242535)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDarkComposer
+                            ? const Color(0xFF32344A)
+                            : const Color(0xFFE2E8F0),
+                        width: 1,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF7A45).withOpacity(0.35),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _ComposerActionButton(
+                          icon: Icons.add_circle_outline_rounded,
+                          tooltip: 'Add file',
+                          color: isDarkComposer
+                              ? const Color(0xFFFF7A45)
+                              : const Color(0xFF475569),
+                          onPressed: _isSending ? null : _pickFiles,
+                        ),
+                        if (!hasText) ...[
+                          _ComposerActionButton(
+                            icon: Icons.image_outlined,
+                            tooltip: 'Photos',
+                            color: isDarkComposer
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF64748B),
+                            onPressed: _isSending ? null : _pickGalleryImages,
+                          ),
+                          _ComposerActionButton(
+                            icon: Icons.camera_alt_outlined,
+                            tooltip: 'Camera',
+                            color: isDarkComposer
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF64748B),
+                            onPressed: _isSending ? null : _pickCameraImage,
+                          ),
+                          _ComposerActionButton(
+                            icon: _isRecording
+                                ? Icons.stop_circle_outlined
+                                : Icons.mic_none_rounded,
+                            tooltip: _isRecording ? 'Stop' : 'Record',
+                            color: _isRecording
+                                ? const Color(0xFFDC2626)
+                                : (isDarkComposer
+                                    ? const Color(0xFF9CA3AF)
+                                    : const Color(0xFF64748B)),
+                            onPressed: _isSending ? null : _toggleRecording,
+                          ),
+                        ],
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: TextField(
+                              controller: _controller,
+                              minLines: 1,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.newline,
+                              onChanged: (val) {
+                                _onComposerChanged(val);
+                                setState(() {});
+                              },
+                              inputFormatters: [EmojiPresentationFormatter()],
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 14.5,
+                                height: 1.3,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: _isRecording
+                                    ? 'Recording...'
+                                    : 'Write a message...',
+                                hintStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkComposer
+                                      ? const Color(0xFF9CA3AF)
+                                      : const Color(0xFF94A3B8),
+                                ),
+                                isDense: true,
+                                border: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: IconButton(
-                      onPressed: _isSending ? null : _send,
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: Colors.white,
-                        disabledForegroundColor: Colors.white.withOpacity(0.6),
-                        fixedSize: const Size(40, 40),
-                        minimumSize: const Size(40, 40),
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.send_rounded, size: 20),
-                    ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF7A45).withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: _isSending ? null : _send,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      disabledForegroundColor: Colors.white.withOpacity(0.6),
+                      fixedSize: const Size(44, 44),
+                      minimumSize: const Size(44, 44),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: _isSending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.send_rounded, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
