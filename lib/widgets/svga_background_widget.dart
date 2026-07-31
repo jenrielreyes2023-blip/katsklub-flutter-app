@@ -72,12 +72,14 @@ class _DynamicBackgroundWidgetState extends State<DynamicBackgroundWidget>
             ),
           ),
 
-        // 2. SVGA Animation Layer
+        // 2. SVGA Animation Layer (floating overlay, pointer events ignored)
         if (widget.svgaPath != null && _animationController?.videoItem != null)
           Positioned.fill(
-            child: SVGAImage(
-              _animationController!,
-              fit: BoxFit.cover,
+            child: IgnorePointer(
+              child: SVGAImage(
+                _animationController!,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 

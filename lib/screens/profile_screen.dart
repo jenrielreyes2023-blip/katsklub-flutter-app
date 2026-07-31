@@ -27,6 +27,7 @@ import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
 import '../widgets/special_name_text.dart';
+import '../widgets/svga_background_widget.dart';
 import 'image_viewer_screen.dart';
 import 'post_detail_screen.dart';
 import 'repost_post_screen.dart';
@@ -374,8 +375,11 @@ class _ProfileScreenState extends State<ProfileScreen>
             : _profilePosts.length);
     final canGoBack = widget.onBack != null || Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    return DynamicBackgroundWidget(
+      bgImagePath: 'assets/images/erhai_bg.png',
+      svgaPath: 'assets/svga/bg_1334.svga',
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -556,6 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         ),
       ),
+    ),
     );
   }
 
