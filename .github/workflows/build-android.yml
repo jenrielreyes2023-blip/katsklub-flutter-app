@@ -72,7 +72,14 @@ jobs:
       - name: Build Android APK (Single Arch)
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: katsklub-release-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+
       - name: Deploy APK to VPS via SCP
+        continue-on-error: true
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -84,6 +91,7 @@ jobs:
           strip_components: 4
 
       - name: Update APK link on VPS
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
