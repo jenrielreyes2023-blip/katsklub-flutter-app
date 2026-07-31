@@ -11,6 +11,7 @@ import 'about_screen.dart';
 import 'help_center_screen.dart';
 import 'terms_of_use_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'gift_tester_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -843,6 +844,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   child: Column(
                     children: [
+                      _buildLegalRow(
+                        icon: Icons.card_giftcard_rounded,
+                        title: 'Gift Animation Tester',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const GiftTesterScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(color: cardBorder, height: 1),
                       _buildLegalRow(
                         icon: Icons.info_outline_rounded,
                         title: 'About KatsKlub',
