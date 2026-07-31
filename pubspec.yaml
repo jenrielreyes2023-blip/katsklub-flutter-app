@@ -92,6 +92,7 @@ flutter:
   - assets/frames/test_frame.json
   - assets/frames/spring_blossom_frame.png
   - assets/frames/spring_blossom_frame.svga
+  - assets/frames/spring_blossom_frame.webp
   - assets/frames/images/
   - assets/animations/empty_status.json
   - assets/images/erhai_bg.png
