@@ -2113,11 +2113,11 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     final customFlyerTheme = core.ChatTheme(
       colors: core.ChatColors(
-        primary: convTheme.bubbleSentColor,
-        onPrimary: convTheme.bubbleSentTextColor,
+        primary: convTheme.ownBubble,
+        onPrimary: convTheme.ownBubbleText,
         surface: Colors.transparent,
-        onSurface: convTheme.bubbleReceivedTextColor,
-        surfaceContainer: convTheme.bubbleReceivedColor,
+        onSurface: convTheme.otherBubbleText,
+        surfaceContainer: convTheme.otherBubble,
         surfaceContainerLow: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF2F4F7),
         surfaceContainerHigh: isDark ? const Color(0xFF2D2D3F) : const Color(0xFFE4E7EC),
       ),
@@ -2125,12 +2125,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       shape: const BorderRadius.all(Radius.circular(18)),
     );
 
-    BoxDecoration containerDecoration;
-    if (convTheme.backgroundGradient != null) {
-      containerDecoration = BoxDecoration(gradient: convTheme.backgroundGradient);
-    } else {
-      containerDecoration = BoxDecoration(color: convTheme.backgroundColor);
-    }
+    final containerDecoration = BoxDecoration(color: convTheme.background);
 
     return KeyedSubtree(
       key: ValueKey('flyer_chat_${_thread?.id}_${displayMessages.length}'),
