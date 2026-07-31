@@ -2030,8 +2030,9 @@ class _MessagesScreenState extends State<MessagesScreen>
         final prev = index > 0 ? _messages[index - 1] : null;
         final next = index < _messages.length - 1 ? _messages[index + 1] : null;
         final isLastOwn = index == ownLastIndex;
-        final seenByOther =
-            isLastOwn && (_thread?.lastMessage?.seenByOther ?? false);
+        final threadSeen = _thread?.lastMessage?.seenByOther ?? false;
+        final messageSeen = message.seenByOther;
+        final seenByOther = message.sentByMe && (messageSeen || (index <= ownLastIndex && threadSeen));
 
         final bubble = GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -3819,6 +3820,14 @@ class _MessageBubble extends StatelessWidget {
     return b.difference(a).abs() >= _timeLabelGap;
   }
 
+  String _formatBubbleTime(DateTime t) {
+    final h = t.hour;
+    final m = t.minute.toString().padLeft(2, '0');
+    final period = h >= 12 ? 'PM' : 'AM';
+    final hour12 = ((h + 11) % 12) + 1;
+    return '$hour12:$m $period';
+  }
+
   String _formatTimeLabel(DateTime t) {
     final now = DateTime.now();
     final h = t.hour;
@@ -3927,19 +3936,32 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
           ],
-          if (sentByMe && _createdAt != null) ...[
-            const SizedBox(height: 2),
+          if (_createdAt != null) ...[
+            const SizedBox(height: 3),
             Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(
-                  seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
-                  size: 14,
-                  color: seenByOther
-                      ? (useGradient ? Colors.white : const Color(0xFF60A5FA))
-                      : theme.ownBubbleText.withOpacity(0.7),
+                Text(
+                  _formatBubbleTime(_createdAt!),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: sentByMe
+                        ? theme.ownBubbleText.withOpacity(0.7)
+                        : theme.otherBubbleText.withOpacity(0.6),
+                  ),
                 ),
+                if (sentByMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 14,
+                    color: seenByOther
+                        ? (useGradient ? Colors.white : const Color(0xFF60A5FA))
+                        : theme.ownBubbleText.withOpacity(0.7),
+                  ),
+                ],
               ],
             ),
           ],
@@ -4398,6 +4420,16 @@ class _MessageImageTile extends StatelessWidget {
             cacheWidth: cacheW > 0 ? cacheW : null,
             cacheHeight: cacheH > 0 ? cacheH : null,
             fit: BoxFit.cover,
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded || frame != null) {
+                return child;
+              }
+              return _ImageTileSkeleton(
+                width: width,
+                height: height,
+                borderRadius: borderRadius,
+              );
+            },
             errorBuilder: (_, __, ___) => Container(
               width: width,
               height: height,
@@ -4410,6 +4442,70 @@ class _MessageImageTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ImageTileSkeleton extends StatefulWidget {
+  const _ImageTileSkeleton({
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+  });
+
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  @override
+  State<_ImageTileSkeleton> createState() => _ImageTileSkeletonState();
+}
+
+class _ImageTileSkeletonState extends State<_ImageTileSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF2A2B3D) : const Color(0xFFE2E8F0);
+    final highlightColor = isDark ? const Color(0xFF383A52) : const Color(0xFFF1F5F9);
+
+    return AnimatedBuilder(
+      animation: _animController,
+      builder: (context, child) {
+        final color = Color.lerp(baseColor, highlightColor, _animController.value);
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: isDark ? const Color(0xFF4B4D68) : const Color(0xFFCBD5E1),
+              size: 28,
+            ),
+          ),
+        );
+      },
     );
   }
 }
