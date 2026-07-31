@@ -128,6 +128,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   Timer? _searchDebounce;
 
   int? _pendingThreadId;
+  int _highestSeenOwnMessageIndex = -1;
 
   StreamSubscription<DirectMessageEvent>? _dmMessageSub;
   StreamSubscription<MessageThread>? _dmThreadSub;
@@ -2005,6 +2006,13 @@ class _MessagesScreenState extends State<MessagesScreen>
     final ownLastIndex = _findLastOwnIndex();
     final theme = _getTheme();
     final isKatswipeBot = _thread?.otherUser.username?.toLowerCase() == 'katswipe';
+    final threadSeen = _thread?.lastMessage?.seenByOther ?? false;
+
+    if (threadSeen && ownLastIndex >= 0) {
+      if (ownLastIndex > _highestSeenOwnMessageIndex) {
+        _highestSeenOwnMessageIndex = ownLastIndex;
+      }
+    }
 
     final t = _thread;
     final showTyping = t != null &&
@@ -2030,9 +2038,12 @@ class _MessagesScreenState extends State<MessagesScreen>
         final prev = index > 0 ? _messages[index - 1] : null;
         final next = index < _messages.length - 1 ? _messages[index + 1] : null;
         final isLastOwn = index == ownLastIndex;
-        final threadSeen = _thread?.lastMessage?.seenByOther ?? false;
         final messageSeen = message.seenByOther;
-        final seenByOther = message.sentByMe && (messageSeen || (index <= ownLastIndex && threadSeen));
+        final seenByOther = message.sentByMe && (
+          messageSeen ||
+          index <= _highestSeenOwnMessageIndex ||
+          (index <= ownLastIndex && threadSeen)
+        );
 
         final bubble = GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -3938,31 +3949,45 @@ class _MessageBubble extends StatelessWidget {
           ],
           if (_createdAt != null) ...[
             const SizedBox(height: 3),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  _formatBubbleTime(_createdAt!),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: sentByMe
-                        ? theme.ownBubbleText.withOpacity(0.7)
-                        : theme.otherBubbleText.withOpacity(0.6),
-                  ),
-                ),
-                if (sentByMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
-                    size: 14,
-                    color: seenByOther
-                        ? (useGradient ? Colors.white : const Color(0xFF60A5FA))
-                        : theme.ownBubbleText.withOpacity(0.7),
-                  ),
-                ],
-              ],
+            Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final Color checkColor;
+                if (useGradient) {
+                  checkColor = seenByOther ? Colors.white : Colors.white70;
+                } else if (isDark) {
+                  checkColor = seenByOther ? const Color(0xFF60A5FA) : const Color(0xFF9CA3AF);
+                } else {
+                  checkColor = seenByOther ? const Color(0xFF2563EB) : const Color(0xFF6B7280);
+                }
+
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatBubbleTime(_createdAt!),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: sentByMe
+                            ? (useGradient
+                                ? Colors.white70
+                                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)))
+                            : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                      ),
+                    ),
+                    if (sentByMe) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
+                        size: 14,
+                        color: checkColor,
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ],
         ],
