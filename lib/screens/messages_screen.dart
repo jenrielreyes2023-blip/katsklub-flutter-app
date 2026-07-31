@@ -2066,6 +2066,8 @@ class _MessagesScreenState extends State<MessagesScreen>
   Widget _buildFlyerChatView() {
     final currentUserId = _currentUser?.id.toString() ?? 'me';
     final otherUserId = _thread?.otherUser.id.toString() ?? 'other';
+    final convTheme = _getTheme();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final mockCurrentUser = core.User(
       id: currentUserId,
@@ -2109,13 +2111,34 @@ class _MessagesScreenState extends State<MessagesScreen>
     final displayMessages = realMessages.isNotEmpty ? realMessages : mockSampleMessages;
     final chatController = core.InMemoryChatController(messages: displayMessages);
 
+    final customFlyerTheme = core.ChatTheme(
+      colors: core.ChatColors(
+        primary: convTheme.bubbleSentColor,
+        onPrimary: convTheme.bubbleSentTextColor,
+        surface: Colors.transparent,
+        onSurface: convTheme.bubbleReceivedTextColor,
+        surfaceContainer: convTheme.bubbleReceivedColor,
+        surfaceContainerLow: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF2F4F7),
+        surfaceContainerHigh: isDark ? const Color(0xFF2D2D3F) : const Color(0xFFE4E7EC),
+      ),
+      typography: core.ChatTypography.fromThemeData(Theme.of(context)),
+      shape: const BorderRadius.all(Radius.circular(18)),
+    );
+
+    BoxDecoration containerDecoration;
+    if (convTheme.backgroundGradient != null) {
+      containerDecoration = BoxDecoration(gradient: convTheme.backgroundGradient);
+    } else {
+      containerDecoration = BoxDecoration(color: convTheme.backgroundColor);
+    }
+
     return KeyedSubtree(
       key: ValueKey('flyer_chat_${_thread?.id}_${displayMessages.length}'),
       child: flyer.Chat(
         currentUserId: currentUserId,
         chatController: chatController,
-        theme: core.ChatTheme.fromThemeData(Theme.of(context)),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        theme: customFlyerTheme,
+        decoration: containerDecoration,
         resolveUser: (userId) async {
           if (userId == currentUserId) return mockCurrentUser;
           return mockOtherUser;
