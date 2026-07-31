@@ -531,14 +531,19 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _statePicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 40,
-      padding: const EdgeInsets.all(3),
+      height: 44,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF242526)
-            : const Color(0xFFE5E7EB),
-        borderRadius: BorderRadius.circular(999),
+        color: isDark
+            ? const Color(0xFF1E1E2E)
+            : const Color(0xFFEEF2F6),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2D2D3F) : const Color(0xFFE2E8F0),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -580,16 +585,31 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => setState(() => _state = state),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected
-                ? const Color(0xFFFF7A45) // Solid orange when selected!
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
+            gradient: selected
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: selected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF7A45).withOpacity(0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -602,15 +622,15 @@ class _MessagesScreenState extends State<MessagesScreen>
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: selected
-                        ? Colors.white // White text when selected!
-                        : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
+                        ? Colors.white
+                        : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 12.5,
                   ),
                 ),
               ),
               if (badge > 0) ...[
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Container(
                   constraints: const BoxConstraints(minWidth: 16),
                   height: 16,
@@ -625,7 +645,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     style: TextStyle(
                       color: selected ? const Color(0xFFFF7A45) : Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 10.5,
+                      fontSize: 10,
                       height: 1.0,
                     ),
                   ),
@@ -2701,17 +2721,28 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     return SafeArea(
       top: false,
-      child: DecoratedBox(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: isDarkComposer ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB),
-            ),
-          ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isDarkComposer ? const Color(0xFF1E1E2E) : const Color(0xFFFFFFFF),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDarkComposer ? const Color(0xFF2D2D3F) : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDarkComposer ? 0.25 : 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -2743,7 +2774,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         },
                 ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _ComposerActionButton(
                     icon: Icons.add_circle_outline_rounded,
@@ -2752,16 +2783,16 @@ class _MessagesScreenState extends State<MessagesScreen>
                     onPressed: _isSending ? null : _pickFiles,
                   ),
                   _ComposerActionButton(
-                    icon: Icons.photo_camera_outlined,
-                    tooltip: 'Camera',
-                    color: theme.accent,
-                    onPressed: _isSending ? null : _pickCameraImage,
-                  ),
-                  _ComposerActionButton(
                     icon: Icons.image_outlined,
                     tooltip: 'Photos',
                     color: theme.accent,
                     onPressed: _isSending ? null : _pickGalleryImages,
+                  ),
+                  _ComposerActionButton(
+                    icon: Icons.camera_alt_outlined,
+                    tooltip: 'Camera',
+                    color: theme.accent,
+                    onPressed: _isSending ? null : _pickCameraImage,
                   ),
                   _ComposerActionButton(
                     icon: _isRecording
@@ -2782,21 +2813,23 @@ class _MessagesScreenState extends State<MessagesScreen>
                       inputFormatters: [EmojiPresentationFormatter()],
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14.5,
                       ),
                       decoration: InputDecoration(
                         hintText: _isRecording
                             ? 'Recording... tap stop when done'
-                            : 'Write a message...',
+                            : 'Message...',
                         hintMaxLines: 1,
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           fontSize: 14,
+                          color: isDarkComposer ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF),
                         ),
                         filled: true,
                         fillColor: isDarkComposer
-                            ? const Color(0xFF2D2E30)
-                            : const Color(0xFFF3F4F6),
+                            ? const Color(0xFF2B2B3D)
+                            : const Color(0xFFF1F5F9),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(22),
+                          borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -2804,37 +2837,53 @@ class _MessagesScreenState extends State<MessagesScreen>
                           vertical: 9,
                         ),
                       ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  onPressed: _isSending ? null : _send,
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.accent,
-                    disabledBackgroundColor: const Color(0xFFE5E7EB),
-                    foregroundColor: Colors.white,
-                    disabledForegroundColor: const Color(0xFF9CA3AF),
-                    fixedSize: const Size(38, 38),
-                    minimumSize: const Size(38, 38),
-                    padding: EdgeInsets.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  const SizedBox(width: 6),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF7A45).withOpacity(0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      onPressed: _isSending ? null : _send,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: Colors.white.withOpacity(0.6),
+                        fixedSize: const Size(40, 40),
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.send_rounded, size: 20),
+                    ),
                   ),
-                  icon: _isSending
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send_rounded),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
@@ -3854,6 +3903,22 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
           ],
+          if (sentByMe && _createdAt != null) ...[
+            const SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
+                  size: 14,
+                  color: seenByOther
+                      ? (useGradient ? Colors.white : const Color(0xFF60A5FA))
+                      : theme.ownBubbleText.withOpacity(0.7),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -4664,6 +4729,22 @@ class _MessagesThreadList extends StatelessWidget {
     return attachment.name.isEmpty ? 'Attachment' : attachment.name;
   }
 
+  String _formatRelativeTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    final dt = DateTime.tryParse(dateStr)?.toLocal();
+    if (dt == null) return '';
+
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+
+    return '${dt.month}/${dt.day}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -4684,6 +4765,8 @@ class _MessagesThreadList extends StatelessWidget {
         itemBuilder: (context, index) {
             final thread = threads[index];
             final isTyping = typingThreadIds.contains(thread.id);
+            final timeLabel = _formatRelativeTime(thread.lastMessage?.createdAt);
+
             return InkWell(
               onTap: () => onOpenThread(thread),
               child: Padding(
@@ -4719,7 +4802,7 @@ class _MessagesThreadList extends StatelessWidget {
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           if (isTyping)
                             const _ThreadTypingPreview()
                           else
@@ -4734,20 +4817,41 @@ class _MessagesThreadList extends StatelessWidget {
                                 fontSize: 13,
                                 fontWeight: thread.unreadCount > 0
                                     ? FontWeight.w700
-                                    : FontWeight.w500,
+                                    : FontWeight.w400,
                               ),
                             ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (thread.unreadCount > 0)
-                      _UnreadBadge(count: thread.unreadCount)
-                    else
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF111827),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (timeLabel.isNotEmpty)
+                          Text(
+                            timeLabel,
+                            style: TextStyle(
+                              color: thread.unreadCount > 0
+                                  ? const Color(0xFFFF7A45)
+                                  : const Color(0xFF9CA3AF),
+                              fontSize: 11.5,
+                              fontWeight: thread.unreadCount > 0
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        if (thread.unreadCount > 0)
+                          _UnreadBadge(count: thread.unreadCount)
+                        else
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -4971,32 +5075,32 @@ class _UnreadBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = count > 99 ? '+99' : count.toString();
+    final label = count > 99 ? '99+' : count.toString();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
       decoration: BoxDecoration(
-        color: const Color(0xFF111827),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.mark_chat_unread_rounded,
-            color: Colors.white,
-            size: 13,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF7A45).withOpacity(0.35),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w900,
+          height: 1.0,
+        ),
       ),
     );
   }
