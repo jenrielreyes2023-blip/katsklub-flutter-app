@@ -2021,27 +2021,16 @@ class _MessagesScreenState extends State<MessagesScreen>
     });
   }
 
-  List<types.Message> _buildFlyerMessagesList() {
-    final list = <types.Message>[];
+  List<core.Message> _buildFlyerMessagesList() {
+    final list = <core.Message>[];
     final seenIds = <String>{};
 
     for (int i = 0; i < _messages.length; i++) {
       final msg = _messages[i];
       final senderId = msg.sender.id.toString();
-      final author = types.User(
-        id: senderId,
-        firstName: msg.sender.displayName.isNotEmpty
-            ? msg.sender.displayName
-            : (msg.sender.username != null && msg.sender.username!.isNotEmpty ? msg.sender.username! : 'User'),
-        imageUrl: msg.sender.avatarUrl != null && msg.sender.avatarUrl!.isNotEmpty
-            ? ApiConfig.assetUrl(msg.sender.avatarUrl!)
-            : null,
-      );
+      final createdAtDate = DateTime.tryParse(msg.createdAt) ?? DateTime.now();
 
-      final timestamp = DateTime.tryParse(msg.createdAt)?.millisecondsSinceEpoch ??
-          DateTime.now().millisecondsSinceEpoch;
-
-      String msgId = msg.id > 0 ? msg.id.toString() : 'msg_${i}_$timestamp';
+      String msgId = msg.id > 0 ? msg.id.toString() : 'msg_${i}_${createdAtDate.millisecondsSinceEpoch}';
       if (seenIds.contains(msgId)) {
         msgId = '${msgId}_$i';
       }
@@ -2049,26 +2038,23 @@ class _MessagesScreenState extends State<MessagesScreen>
 
       if (msg.attachments.isNotEmpty && msg.attachments.first.isImage) {
         list.add(
-          types.ImageMessage(
-            author: author,
-            createdAt: timestamp,
+          core.Message.image(
             id: msgId,
-            name: msg.attachments.first.name.isNotEmpty
-                ? msg.attachments.first.name
-                : 'Image',
-            size: msg.attachments.first.size,
-            uri: ApiConfig.assetUrl(msg.attachments.first.url),
+            authorId: senderId,
+            source: ApiConfig.assetUrl(msg.attachments.first.url),
+            text: msg.body.isNotEmpty ? msg.body : null,
+            createdAt: createdAtDate,
           ),
         );
       } else {
         list.add(
-          types.TextMessage(
-            author: author,
-            createdAt: timestamp,
+          core.Message.text(
             id: msgId,
+            authorId: senderId,
             text: msg.body.isNotEmpty
                 ? msg.body
                 : (msg.attachments.isNotEmpty ? '[Attachment]' : ' '),
+            createdAt: createdAtDate,
           ),
         );
       }
@@ -2078,8 +2064,11 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _buildFlyerChatView() {
+    final currentUserId = _currentUser?.id.toString() ?? 'me';
+    final otherUserId = _thread?.otherUser.id.toString() ?? 'other';
+
     final mockCurrentUser = core.User(
-      id: 'me',
+      id: currentUserId,
       name: _currentUser?.displayName ?? 'Me',
       imageSource: _currentUser?.avatarUrl != null && _currentUser!.avatarUrl!.isNotEmpty
           ? ApiConfig.assetUrl(_currentUser!.avatarUrl!)
@@ -2087,60 +2076,48 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
 
     final mockOtherUser = core.User(
-      id: 'other',
+      id: otherUserId,
       name: _thread?.otherUser.displayName ?? 'KatsKlub User',
       imageSource: _thread?.otherUser.avatarUrl != null && _thread!.otherUser.avatarUrl!.isNotEmpty
           ? ApiConfig.assetUrl(_thread!.otherUser.avatarUrl!)
           : null,
     );
 
-    final mockFlyerUserMe = types.User(
-      id: 'me',
-      firstName: mockCurrentUser.name ?? 'Me',
-      imageUrl: mockCurrentUser.imageSource,
-    );
+    final realMessages = _buildFlyerMessagesList();
 
-    final mockFlyerUserOther = types.User(
-      id: 'other',
-      firstName: mockOtherUser.name ?? 'KatsKlub User',
-      imageUrl: mockOtherUser.imageSource,
-    );
-
-    final realMessages = _buildFlyerMessagesList().cast<core.Message>();
-
-    final mockSampleMessages = <types.Message>[
-      types.TextMessage(
-        author: mockFlyerUserOther,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
+    final mockSampleMessages = <core.Message>[
+      core.Message.text(
         id: 'mock_1',
-        text: 'Welcome to Flyer Chat UI Experiment! 🎉',
+        authorId: otherUserId,
+        text: 'Welcome to Flyer Chat UI! 🎉',
+        createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
       ),
-      types.TextMessage(
-        author: mockFlyerUserMe,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 8)).millisecondsSinceEpoch,
+      core.Message.text(
         id: 'mock_2',
-        text: 'This is a mock message test view 🚀',
+        authorId: currentUserId,
+        text: 'Checking out the new chat view 🚀',
+        createdAt: DateTime.now().subtract(const Duration(minutes: 8)),
       ),
-      types.TextMessage(
-        author: mockFlyerUserOther,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+      core.Message.text(
         id: 'mock_3',
-        text: 'Type a message below or tap Original to switch back anytime! ✨',
+        authorId: otherUserId,
+        text: 'Type a message or tap Original to toggle back anytime! ✨',
+        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
       ),
     ];
 
-    final displayMessages = realMessages.isNotEmpty ? realMessages : mockSampleMessages.cast<core.Message>();
+    final displayMessages = realMessages.isNotEmpty ? realMessages : mockSampleMessages;
     final chatController = core.InMemoryChatController(messages: displayMessages);
 
     return KeyedSubtree(
-      key: ValueKey('flyer_chat_mock_${_thread?.id}_${displayMessages.length}'),
+      key: ValueKey('flyer_chat_${_thread?.id}_${displayMessages.length}'),
       child: flyer.Chat(
-        currentUserId: 'me',
+        currentUserId: currentUserId,
         chatController: chatController,
         theme: core.ChatTheme.fromThemeData(Theme.of(context)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         resolveUser: (userId) async {
-          if (userId == 'me') return mockCurrentUser;
+          if (userId == currentUserId) return mockCurrentUser;
           return mockOtherUser;
         },
         onMessageSend: (text) async {
