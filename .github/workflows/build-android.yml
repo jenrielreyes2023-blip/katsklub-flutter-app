@@ -8,8 +8,8 @@ on:
       - rescue-lost-1d1b
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_OPTS: "-Xmx2048m"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  JAVA_OPTS: "-Xmx3072m"
 
 jobs:
   build-android:
@@ -19,20 +19,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
-      - name: Cache Flutter SDK
-        uses: actions/cache@v4
-        with:
-          path: |
-            /opt/hostedtoolcache/flutter
-          key: ${{ runner.os }}-flutter-sdk-${{ runner.arch }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-sdk-
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:-:hash:"
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -42,29 +41,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pub-
 
-      - name: Cache Gradle wrapper and caches
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Show Flutter version
-        run: flutter --version
-
-      - name: Generate Flutter Android files
-        run: flutter create . --platforms=android --org com.katsklub --project-name katsklub_flutter
+      - name: Ensure Android folder exists
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create . --platforms=android --org com.katsklub --project-name katsklub_flutter
+          fi
 
       - name: Add Android internet permission
         run: |
           manifest="android/app/src/main/AndroidManifest.xml"
-          if ! grep -q 'android.permission.INTERNET' "$manifest"; then
-            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
+          if [ -f "$manifest" ]; then
+            if ! grep -q 'android.permission.INTERNET' "$manifest"; then
+              sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
+            fi
           fi
-          grep -q 'android.permission.INTERNET' "$manifest"
 
       - name: Install dependencies
         run: flutter pub get
