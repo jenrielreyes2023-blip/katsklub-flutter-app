@@ -1000,9 +1000,6 @@ class _ShopScreenState extends State<ShopScreen> {
                                   selected.type == ThemeProductType.elsa
                               ? Alignment.centerRight
                               : Alignment.center,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const SizedBox();
-                          },
                         ),
                       ),
                     ),
