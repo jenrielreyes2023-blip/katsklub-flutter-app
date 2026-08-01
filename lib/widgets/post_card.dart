@@ -981,7 +981,8 @@ class _PostCardState extends State<PostCard> {
     final backdropFadeTop = (activeBackdropHeight - 14).clamp(0.0, 10000.0);
 
     final isGhost = _post.isGhost;
-    final ghostBgColor = Theme.of(context).colorScheme.surface;
+    final cardSurfaceColor = Theme.of(context).colorScheme.surface;
+    final ghostBgColor = cardSurfaceColor;
     final ghostBorderColor = const Color(0xFFFF7A59);
 
     final mainCard = Container(
@@ -1014,7 +1015,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1022,8 +1023,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFF8FAFC),
                           Color(0xFFE2E8F0),
                           Color(0xFFDCE7F2),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.62, 0.86, 1.0],
                       ),
@@ -1037,7 +1038,7 @@ class _PostCardState extends State<PostCard> {
                   height: hunterStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1070,7 +1071,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1078,8 +1079,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFF8FAFC),
                           Color(0xFFDBEAFE),
                           Color(0xFFD9EAFE),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.62, 0.86, 1.0],
                       ),
@@ -1093,7 +1094,7 @@ class _PostCardState extends State<PostCard> {
                   height: wolfStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1126,7 +1127,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1135,7 +1136,7 @@ class _PostCardState extends State<PostCard> {
                           Color(
                               0xFFFFE082), // Warm Sunrise Gold (mid sky/sun glow)
                           Color(0xFFFFF9C4), // Soft Yellow
-                          Colors.white, // Fades smoothly to white at the bottom
+                          cardSurfaceColor, // Fades smoothly to white at the bottom
                         ],
                       ),
                     ),
@@ -1148,7 +1149,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1174,7 +1175,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1182,8 +1183,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFF0F3D6E),
                           Color(0xFF1D6FA5),
                           Color(0xFFBFEAF2),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.38, 0.68, 0.88, 1.0],
                       ),
@@ -1197,7 +1198,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1223,7 +1224,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1231,8 +1232,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFCF0),
                           Color(0xFFFFF7D6),
                           Color(0xFFFFF4CC),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1246,7 +1247,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1272,7 +1273,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1280,8 +1281,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFCF6),
                           Color(0xFFF6E9D1),
                           Color(0xFFEFD7B0),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1295,7 +1296,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1321,7 +1322,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1329,8 +1330,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFCFD),
                           Color(0xFFFCE7F3),
                           Color(0xFFFBCFE8),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1344,7 +1345,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1370,7 +1371,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1378,8 +1379,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFDF7),
                           Color(0xFFFEF9C3),
                           Color(0xFFECFCCB),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1393,7 +1394,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1419,7 +1420,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1427,8 +1428,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFCF8),
                           Color(0xFFFCE7F3),
                           Color(0xFFCCFBF1),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1442,7 +1443,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1468,7 +1469,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1476,8 +1477,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFCFD),
                           Color(0xFFFDE2E8),
                           Color(0xFFFECACA),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1491,7 +1492,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1517,7 +1518,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1525,8 +1526,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFFFBF8),
                           Color(0xFFF8E8F7),
                           Color(0xFFEAF7F3),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1540,7 +1541,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1566,7 +1567,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1574,8 +1575,8 @@ class _PostCardState extends State<PostCard> {
                           Color(0xFFFAF8FF),
                           Color(0xFFF1E9FF),
                           Color(0xFFE3D3FF),
-                          Colors.white,
-                          Colors.white,
+                          cardSurfaceColor,
+                          cardSurfaceColor,
                         ],
                         stops: [0.0, 0.34, 0.64, 0.86, 1.0],
                       ),
@@ -1589,7 +1590,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1615,7 +1616,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1637,7 +1638,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1663,7 +1664,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1685,7 +1686,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1711,7 +1712,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1733,7 +1734,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1766,7 +1767,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1788,7 +1789,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1821,7 +1822,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1843,7 +1844,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1876,7 +1877,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1898,7 +1899,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -1956,7 +1957,7 @@ class _PostCardState extends State<PostCard> {
                   right: 0,
                   height: gradientHeight,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -1978,7 +1979,7 @@ class _PostCardState extends State<PostCard> {
                   height: daisyStickerHeight,
                   child: ShaderMask(
                     shaderCallback: (rect) {
-                      return const LinearGradient(
+                      return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
@@ -2018,9 +2019,9 @@ class _PostCardState extends State<PostCard> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.white.withValues(alpha: 0.0),
-                            Colors.white.withValues(alpha: 0.82),
-                            Colors.white,
+                            cardSurfaceColor.withValues(alpha: 0.0),
+                            cardSurfaceColor.withValues(alpha: 0.82),
+                            cardSurfaceColor,
                           ],
                           stops: const [0.0, 0.58, 1.0],
                         ),
