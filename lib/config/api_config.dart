@@ -74,4 +74,9 @@ class ApiConfig {
 
     return uri.scheme == 'https' ? 443 : 80;
   }
+
+  static String postcardUrl(String fileName) {
+    final name = fileName.split('/').last.trim();
+    return 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/$name';
+  }
 }

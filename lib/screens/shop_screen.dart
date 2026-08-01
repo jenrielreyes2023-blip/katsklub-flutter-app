@@ -988,7 +988,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         },
                         blendMode: BlendMode.dstIn,
                         child: CachedNetworkImage(
-                          imageUrl: '${ApiConfig.apiBaseUrl}/postcards/${selected.assetPath.split("/").last}',
+                          imageUrl: '${ApiConfig.postcardUrl(selected.assetPath)}',
                           placeholder: (context, url) => const SizedBox(),
                           errorWidget: (context, url, error) => Image.asset(selected.assetPath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox()),
                           fit: BoxFit.cover,
@@ -2134,7 +2134,7 @@ class _ThemeListItem extends StatelessWidget {
                       else if (theme.assetPath.isNotEmpty)
                         Positioned.fill(
                           child: CachedNetworkImage(
-                            imageUrl: '${ApiConfig.apiBaseUrl}/postcards/${theme.assetPath.split("/").last}',
+                            imageUrl: '${ApiConfig.postcardUrl(theme.assetPath)}',
                             fit: BoxFit.cover,
                             alignment: Alignment.center,
                             placeholder: (context, url) => const SizedBox(),
