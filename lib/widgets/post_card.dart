@@ -1008,7 +1008,11 @@ class _PostCardState extends State<PostCard> {
         child: Stack(
           children: [
 
-              if (showGeminiRogerHunter) ...[
+              if (showThemeBackdrop)
+                RepaintBoundary(
+                  child: Stack(
+                    children: [
+                      if (showGeminiRogerHunter) ...[
                 Positioned(
                   top: 0,
                   left: 0,
@@ -1165,7 +1169,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/sunrise_sticker.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sunrise_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/sunrise_sticker.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sunrise_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showOcean) ...[
@@ -1214,7 +1218,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/ocean_sticker_v3.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ocean_sticker_v3.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/ocean_sticker_v3.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ocean_sticker_v3.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showBee) ...[
@@ -1263,7 +1267,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/bee_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/bee_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/bee_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/bee_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showEagle) ...[
@@ -1312,7 +1316,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/eagle_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/eagle_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/eagle_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/eagle_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showPinkSwan) ...[
@@ -1361,7 +1365,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/pinkswan_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pinkswan_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/pinkswan_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pinkswan_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showDandelion) ...[
@@ -1410,7 +1414,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/dandelion_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/dandelion_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/dandelion_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/dandelion_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showGtaPastel) ...[
@@ -1459,7 +1463,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/gta_pastel_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/gta_pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/gta_pastel_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/gta_pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showSharinganEyes) ...[
@@ -1508,7 +1512,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/sharingan_eyes_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sharingan_eyes_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/sharingan_eyes_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sharingan_eyes_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showPastel) ...[
@@ -1557,7 +1561,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/pastel_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/pastel_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showLavender) ...[
@@ -1606,7 +1610,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/lavender_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/lavender_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/lavender_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/lavender_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showPhFlag) ...[
@@ -1654,7 +1658,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/ph_flag_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ph_flag_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/ph_flag_sticker_v1.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ph_flag_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showXmasCozy) ...[
@@ -1702,7 +1706,7 @@ class _PostCardState extends State<PostCard> {
                       ).createShader(rect);
                     },
                     blendMode: BlendMode.dstIn,
-                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/xmas_cozy_sticker.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/xmas_cozy_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
+                    child: CachedNetworkImage(imageUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/xmas_cozy_sticker.png', memCacheWidth: 600, memCacheHeight: 300, fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/xmas_cozy_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                   ),
                 ),
               ] else if (showXmasSnowy) ...[
@@ -2006,6 +2010,9 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
               ],
+                    ],
+                  ),
+                ),
               if (showThemeBackdrop)
                 Positioned(
                   left: 0,
