@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_service.dart';
@@ -986,8 +987,10 @@ class _ShopScreenState extends State<ShopScreen> {
                           ).createShader(rect);
                         },
                         blendMode: BlendMode.dstIn,
-                        child: Image.asset(
-                          selected.assetPath,
+                        child: CachedNetworkImage(
+                          imageUrl: '${ApiConfig.apiBaseUrl}/postcards/${selected.assetPath.split("/").last}',
+                          placeholder: (context, url) => const SizedBox(),
+                          errorWidget: (context, url, error) => Image.asset(selected.assetPath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox()),
                           fit: BoxFit.cover,
                            alignment: selected.type == ThemeProductType.xmasSnowy ||
                                   selected.type == ThemeProductType.bees ||
@@ -2133,12 +2136,17 @@ class _ThemeListItem extends StatelessWidget {
                         )
                       else if (theme.assetPath.isNotEmpty)
                         Positioned.fill(
-                          child: Image.asset(
-                            theme.assetPath,
+                          child: CachedNetworkImage(
+                            imageUrl: '${ApiConfig.apiBaseUrl}/postcards/${theme.assetPath.split("/").last}',
                             fit: BoxFit.cover,
                             alignment: Alignment.center,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const SizedBox(),
+                            placeholder: (context, url) => const SizedBox(),
+                            errorWidget: (context, url, error) => Image.asset(
+                              theme.assetPath,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                              errorBuilder: (_, __, ___) => const SizedBox(),
+                            ),
                           ),
                         ),
                     ],

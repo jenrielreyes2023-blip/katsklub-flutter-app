@@ -1490,13 +1490,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/sunrise_sticker.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/sunrise_sticker.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sunrise_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showOcean) ...[
@@ -1545,13 +1539,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/ocean_sticker_v3.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/ocean_sticker_v3.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ocean_sticker_v3.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showBee) ...[
@@ -1600,13 +1588,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/bee_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/bee_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/bee_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showEagle) ...[
@@ -1655,13 +1637,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/eagle_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/eagle_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/eagle_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showPinkSwan) ...[
@@ -1710,13 +1686,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/pinkswan_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/pinkswan_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pinkswan_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showDandelion) ...[
@@ -1765,13 +1735,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/dandelion_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/dandelion_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/dandelion_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showGtaPastel) ...[
@@ -1820,13 +1784,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/gta_pastel_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/gta_pastel_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/gta_pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showSharinganEyes) ...[
@@ -1875,13 +1833,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/sharingan_eyes_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/sharingan_eyes_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/sharingan_eyes_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showPastel) ...[
@@ -1930,13 +1882,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/pastel_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/pastel_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/pastel_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showLavender) ...[
@@ -1985,13 +1931,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/lavender_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/lavender_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/lavender_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showPhFlag) ...[
@@ -2040,13 +1980,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/ph_flag_sticker_v1.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/ph_flag_sticker_v1.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/ph_flag_sticker_v1.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showXmasCozy) ...[
@@ -2095,13 +2029,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    'assets/images/xmas_cozy_sticker.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox();
-                                    },
-                                  ),
+                                  child: CachedNetworkImage(imageUrl: '${ApiConfig.apiBaseUrl}/postcards/xmas_cozy_sticker.png', fit: BoxFit.cover, fadeInDuration: Duration.zero, fadeOutDuration: Duration.zero, placeholder: (context, url) => const SizedBox(), errorWidget: (context, url, error) => Image.asset('assets/images/xmas_cozy_sticker.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())),
                                 ),
                               ),
                             ] else if (showXmasSnowy) ...[
