@@ -3904,100 +3904,127 @@ class _MessageBubble extends StatelessWidget {
     final attachments = message.attachments;
     final body = message.body.trim();
     final imageOnly =
-        attachments.length == 1 && attachments.first.isImage && body.isEmpty;
+        attachments.length == 1 && attachments.first.isImage && body.isEmpty && message.replyTo == null;
+
+    final bubbleTimestamp = _createdAt != null
+        ? Builder(
+            builder: (context) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final checkColor = seenByOther ? Colors.white : Colors.white70;
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    _formatBubbleTime(_createdAt!),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: imageOnly
+                          ? Colors.white
+                          : (sentByMe
+                              ? Colors.white70
+                              : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280))),
+                    ),
+                  ),
+                  if (sentByMe) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
+                      size: 14,
+                      color: imageOnly ? Colors.white : checkColor,
+                    ),
+                  ],
+                ],
+              );
+            },
+          )
+        : null;
 
     final bubble = Container(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.72,
+        maxWidth: MediaQuery.of(context).size.width * 0.74,
       ),
       padding: imageOnly
-          ? const EdgeInsets.all(4)
+          ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
-        color: useGradient
+        color: imageOnly
+            ? Colors.transparent
+            : (useGradient
+                ? null
+                : (sentByMe ? theme.ownBubble : theme.otherBubble)),
+        gradient: imageOnly
             ? null
-            : (sentByMe ? theme.ownBubble : theme.otherBubble),
-        gradient: useGradient
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: theme.ownBubbleGradient!,
-              )
-            : null,
+            : (useGradient
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: theme.ownBubbleGradient!,
+                  )
+                : null),
         borderRadius: borderRadius,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          if (message.replyTo != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _QuotedReplyChip(
-                reply: message.replyTo!,
-                sentByMe: sentByMe,
-                theme: theme,
-              ),
-            ),
-          if (attachments.isNotEmpty)
-            _MessageAttachmentsView(
-              attachments: attachments,
-              sentByMe: sentByMe,
-              theme: theme,
-            ),
-          if (attachments.isNotEmpty && body.isNotEmpty)
-            const SizedBox(height: 7),
-          if (body.isNotEmpty) ...[
-            if (body.startsWith('📞'))
-              _CallLogChip(
-                body: body,
-                sentByMe: sentByMe,
-                theme: theme,
-              )
-            else
-              LinkifiedText(
-                text: body,
-                style: TextStyle(
-                  color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 15,
-                  height: 1.3,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (message.replyTo != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _QuotedReplyChip(
+                    reply: message.replyTo!,
+                    sentByMe: sentByMe,
+                    theme: theme,
+                  ),
                 ),
-              ),
-          ],
-          if (_createdAt != null) ...[
-            const SizedBox(height: 3),
-            Builder(
-              builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final checkColor = seenByOther ? Colors.white : Colors.white70;
-
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      _formatBubbleTime(_createdAt!),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: sentByMe
-                            ? Colors.white70
-                            : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
-                      ),
+              if (attachments.isNotEmpty)
+                _MessageAttachmentsView(
+                  attachments: attachments,
+                  sentByMe: sentByMe,
+                  theme: theme,
+                ),
+              if (attachments.isNotEmpty && body.isNotEmpty)
+                const SizedBox(height: 7),
+              if (body.isNotEmpty) ...[
+                if (body.startsWith('📞'))
+                  _CallLogChip(
+                    body: body,
+                    sentByMe: sentByMe,
+                    theme: theme,
+                  )
+                else
+                  LinkifiedText(
+                    text: body,
+                    style: TextStyle(
+                      color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
+                      fontSize: 15,
+                      height: 1.3,
                     ),
-                    if (sentByMe) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
-                        size: 14,
-                        color: checkColor,
-                      ),
-                    ],
-                  ],
-                );
-              },
+                  ),
+              ],
+              if (!imageOnly && bubbleTimestamp != null) ...[
+                const SizedBox(height: 3),
+                bubbleTimestamp,
+              ],
+            ],
+          ),
+          if (imageOnly && bubbleTimestamp != null)
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0x77000000),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: bubbleTimestamp,
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -4497,12 +4524,11 @@ class _MessageImageTileState extends State<_MessageImageTile> {
     double calcHeight = widget.height;
 
     if (widget.autoAspectRatio && _aspectRatio != null) {
-      final clampedRatio = _aspectRatio!.clamp(0.70, 1.65);
-      calcHeight = (calcWidth / clampedRatio).clamp(140.0, 340.0);
+      final clampedRatio = _aspectRatio!.clamp(0.52, 1.85);
+      calcHeight = (calcWidth / clampedRatio).clamp(120.0, 360.0);
     }
 
     final cacheW = (calcWidth * dpr).toInt();
-    final cacheH = (calcHeight * dpr).toInt();
 
     return Material(
       color: Colors.transparent,
@@ -4515,7 +4541,8 @@ class _MessageImageTileState extends State<_MessageImageTile> {
             width: calcWidth,
             height: calcHeight,
             cacheWidth: cacheW > 0 ? cacheW : null,
-            cacheHeight: cacheH > 0 ? cacheH : null,
+            cacheHeight: null,
+            filterQuality: FilterQuality.medium,
             fit: BoxFit.cover,
             frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
               if (wasSynchronouslyLoaded || frame != null) {
