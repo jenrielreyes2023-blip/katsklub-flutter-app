@@ -2950,14 +2950,20 @@ class _MessagesScreenState extends State<MessagesScreen>
   Future<void> _pickCameraImage() async {
     final image = await _imagePicker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 92,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 82,
     );
     if (image == null) return;
     await _addXFileAttachment(image, type: 'image');
   }
 
   Future<void> _pickGalleryImages() async {
-    final images = await _imagePicker.pickMultiImage(imageQuality: 92);
+    final images = await _imagePicker.pickMultiImage(
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 82,
+    );
     for (final image in images) {
       await _addXFileAttachment(image, type: 'image');
     }
@@ -3324,25 +3330,27 @@ class _PendingAttachmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = attachment.isAudio ? 'Voice message' : attachment.name;
+    final isImage = attachment.isImage;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: 132,
+          width: isImage ? 66 : 132,
           height: 66,
-          padding: const EdgeInsets.all(8),
+          padding: isImage ? EdgeInsets.zero : const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
-          child: attachment.isImage
+          child: isImage
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(13),
                   child: Image.file(
                     File(attachment.path),
-                    width: 116,
-                    height: 50,
+                    width: 66,
+                    height: 66,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const _AttachmentIconLabel(
                       icon: Icons.image_outlined,
@@ -4294,13 +4302,14 @@ class _SingleMessageAttachmentView extends StatelessWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth.isFinite
-              ? constraints.maxWidth.clamp(190.0, 280.0).toDouble()
-              : 280.0;
+              ? constraints.maxWidth.clamp(190.0, 270.0).toDouble()
+              : 260.0;
           return _MessageImageTile(
             attachment: attachment,
             width: width,
-            height: width * 1.05,
+            height: width * 0.95,
             borderRadius: 14,
+            autoAspectRatio: true,
             onTap: () => _openMessagePhotoViewer(
               context,
               imageAttachments,
@@ -4371,6 +4380,7 @@ class _MessageImageGallery extends StatelessWidget {
                       width: tile,
                       height: threeUp && i == 0 ? height : tile,
                       borderRadius: 0,
+                      autoAspectRatio: false,
                       onTap: () => _openMessagePhotoViewer(
                         context,
                         attachments,
@@ -4411,13 +4421,14 @@ class _MessageImageGallery extends StatelessWidget {
   }
 }
 
-class _MessageImageTile extends StatelessWidget {
+class _MessageImageTile extends StatefulWidget {
   const _MessageImageTile({
     required this.attachment,
     required this.width,
     required this.height,
     required this.borderRadius,
     required this.onTap,
+    this.autoAspectRatio = false,
   });
 
   final DirectMessageAttachment attachment;
@@ -4425,23 +4436,84 @@ class _MessageImageTile extends StatelessWidget {
   final double height;
   final double borderRadius;
   final VoidCallback onTap;
+  final bool autoAspectRatio;
+
+  @override
+  State<_MessageImageTile> createState() => _MessageImageTileState();
+}
+
+class _MessageImageTileState extends State<_MessageImageTile> {
+  double? _aspectRatio;
+  ImageStreamListener? _listener;
+  ImageStream? _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoAspectRatio) {
+      _resolveImageAspect();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MessageImageTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autoAspectRatio && oldWidget.attachment.url != widget.attachment.url) {
+      _resolveImageAspect();
+    }
+  }
+
+  void _resolveImageAspect() {
+    final url = ApiConfig.assetUrl(widget.attachment.url);
+    final provider = NetworkImage(url);
+    _stream = provider.resolve(const ImageConfiguration());
+    _listener = ImageStreamListener((info, _) {
+      if (mounted) {
+        final w = info.image.width.toDouble();
+        final h = info.image.height.toDouble();
+        if (w > 0 && h > 0) {
+          setState(() {
+            _aspectRatio = w / h;
+          });
+        }
+      }
+    });
+    _stream?.addListener(_listener!);
+  }
+
+  @override
+  void dispose() {
+    if (_stream != null && _listener != null) {
+      _stream!.removeListener(_listener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.of(context).devicePixelRatio;
-    final cacheW = (width * dpr).toInt();
-    final cacheH = (height * dpr).toInt();
+    
+    double calcWidth = widget.width;
+    double calcHeight = widget.height;
+
+    if (widget.autoAspectRatio && _aspectRatio != null) {
+      final clampedRatio = _aspectRatio!.clamp(0.70, 1.65);
+      calcHeight = (calcWidth / clampedRatio).clamp(140.0, 340.0);
+    }
+
+    final cacheW = (calcWidth * dpr).toInt();
+    final cacheH = (calcHeight * dpr).toInt();
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
           child: Image.network(
-            ApiConfig.assetUrl(attachment.url),
-            width: width,
-            height: height,
+            ApiConfig.assetUrl(widget.attachment.url),
+            width: calcWidth,
+            height: calcHeight,
             cacheWidth: cacheW > 0 ? cacheW : null,
             cacheHeight: cacheH > 0 ? cacheH : null,
             fit: BoxFit.cover,
@@ -4450,14 +4522,14 @@ class _MessageImageTile extends StatelessWidget {
                 return child;
               }
               return _ImageTileSkeleton(
-                width: width,
-                height: height,
-                borderRadius: borderRadius,
+                width: calcWidth,
+                height: calcHeight,
+                borderRadius: widget.borderRadius,
               );
             },
             errorBuilder: (_, __, ___) => Container(
-              width: width,
-              height: height,
+              width: calcWidth,
+              height: calcHeight,
               color: const Color(0xFFF3F4F6),
               child: const Icon(
                 Icons.broken_image_outlined,
