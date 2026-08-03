@@ -1790,12 +1790,20 @@ class FeedService {
     return parsed;
   }
 
-  Future<MessageThreadPage?> loadMessageThread(int threadId) async {
+  Future<MessageThreadPage?> loadMessageThread(
+    int threadId, {
+    int? beforeId,
+    int limit = 30,
+  }) async {
     if (threadId <= 0) {
       return null;
     }
 
-    final data = await _authenticatedGet('/api/messages/threads/$threadId');
+    final query = beforeId != null
+        ? '?beforeId=$beforeId&limit=$limit'
+        : '?limit=$limit';
+    final data =
+        await _authenticatedGet('/api/messages/threads/$threadId$query');
     final thread = data['thread'];
     final messages = data['messages'];
     if (data['ok'] != true || thread is! Map<String, dynamic>) {

@@ -108,6 +108,8 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _isLoadingThreads = false;
   bool _hasLoadedThreadOnce = false;
   bool _hasLoadedThreadsOnce = false;
+  bool _isLoadingOlderMessages = false;
+  bool _hasMoreOlderMessages = true;
   bool _isSending = false;
   bool _isRecording = false;
   DirectMessage? _replyTarget;
@@ -156,6 +158,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     ConversationThemeStore.ensureInitialized();
     ConversationThemeStore.selections.addListener(_onThemeChanged);
     MessageSoundService.ensureInitialized();
+    _scrollController.addListener(_onMessagesScroll);
 
     _dmMessageSub = FeedService.dmMessageStream.listen(_onDmMessage);
     _dmThreadSub = FeedService.dmThreadUpdatedStream.listen(_onDmThreadUpdated);
@@ -170,6 +173,79 @@ class _MessagesScreenState extends State<MessagesScreen>
       _loadThreadById(_pendingThreadId!);
     } else {
       _loadThreads();
+    }
+  }
+
+  void _onMessagesScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels <= 150) {
+      _loadOlderMessages();
+    }
+  }
+
+  Future<void> _loadOlderMessages() async {
+    final thread = _thread;
+    if (thread == null ||
+        _isLoadingOlderMessages ||
+        !_hasMoreOlderMessages ||
+        _messages.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingOlderMessages = true;
+    });
+
+    final oldestMessage = _messages.first;
+    try {
+      final page = await _feedService.loadMessageThread(
+        thread.id,
+        beforeId: oldestMessage.id,
+        limit: 30,
+      );
+
+      if (!mounted) return;
+
+      if (page != null && page.messages.isNotEmpty) {
+        final existingIds = _messages.map((m) => m.id).toSet();
+        final newOlderMessages =
+            page.messages.where((m) => !existingIds.contains(m.id)).toList();
+
+        if (newOlderMessages.isNotEmpty) {
+          final oldMaxScroll = _scrollController.position.maxScrollExtent;
+          final oldPixels = _scrollController.position.pixels;
+
+          setState(() {
+            _messages = [...newOlderMessages, ..._messages];
+            if (page.messages.length < 30) {
+              _hasMoreOlderMessages = false;
+            }
+          });
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!_scrollController.hasClients) return;
+            final newMaxScroll = _scrollController.position.maxScrollExtent;
+            final scrollDiff = newMaxScroll - oldMaxScroll;
+            _scrollController.jumpTo(oldPixels + scrollDiff);
+          });
+        } else {
+          setState(() {
+            _hasMoreOlderMessages = false;
+          });
+        }
+      } else {
+        setState(() {
+          _hasMoreOlderMessages = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[DM-DBG] Error loading older messages: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingOlderMessages = false;
+        });
+      }
     }
   }
 
@@ -218,6 +294,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     unawaited(_audioRecorder.dispose());
     _searchController.dispose();
     _searchDebounce?.cancel();
+    _scrollController.removeListener(_onMessagesScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -1925,6 +2002,8 @@ class _MessagesScreenState extends State<MessagesScreen>
         }
         _isLoadingThread = false;
         _hasLoadedThreadOnce = true;
+        _hasMoreOlderMessages = true;
+        _isLoadingOlderMessages = false;
       });
 
       _scrollToBottomSoon();
@@ -1971,6 +2050,8 @@ class _MessagesScreenState extends State<MessagesScreen>
         }
         _isLoadingThread = false;
         _hasLoadedThreadOnce = true;
+        _hasMoreOlderMessages = true;
+        _isLoadingOlderMessages = false;
       });
       _scrollToBottomSoon();
       if (page != null) {
@@ -2030,29 +2111,48 @@ class _MessagesScreenState extends State<MessagesScreen>
         _typingUserIds.contains(t.otherUser.id) &&
         !isKatswipeBot;
 
-    final itemCount = _messages.length + (showTyping ? 1 : 0);
+    final showLoadingHeader = _isLoadingOlderMessages;
+    final totalHeaderOffset = showLoadingHeader ? 1 : 0;
+    final itemCount = _messages.length + totalHeaderOffset + (showTyping ? 1 : 0);
 
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (showTyping && index == _messages.length) {
+        if (showLoadingHeader && index == 0) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 6, bottom: 12),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final msgIndex = index - totalHeaderOffset;
+        if (showTyping && msgIndex == _messages.length) {
           return Padding(
             padding: const EdgeInsets.only(top: 6, bottom: 8),
             child: _TypingRow(otherUser: t.otherUser),
           );
         }
 
-        final message = _messages[index];
-        final prev = index > 0 ? _messages[index - 1] : null;
-        final next = index < _messages.length - 1 ? _messages[index + 1] : null;
-        final isLastOwn = index == ownLastIndex;
+        final message = _messages[msgIndex];
+        final prev = msgIndex > 0 ? _messages[msgIndex - 1] : null;
+        final next = msgIndex < _messages.length - 1 ? _messages[msgIndex + 1] : null;
+        final isLastOwn = msgIndex == ownLastIndex;
         final messageSeen = message.seenByOther;
         final seenByOther = message.sentByMe && (
           messageSeen ||
-          index <= _highestSeenOwnMessageIndex ||
-          (index <= ownLastIndex && threadSeen)
+          msgIndex <= _highestSeenOwnMessageIndex ||
+          (msgIndex <= ownLastIndex && threadSeen)
         );
 
         final bubble = GestureDetector(
