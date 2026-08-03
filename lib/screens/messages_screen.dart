@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -4636,25 +4637,18 @@ class _MessageImageTileState extends State<_MessageImageTile> {
         onTap: widget.onTap,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          child: Image.network(
-            ApiConfig.assetUrl(widget.attachment.url),
+          child: CachedNetworkImage(
+            imageUrl: ApiConfig.assetUrl(widget.attachment.url),
             width: calcWidth,
             height: calcHeight,
-            cacheWidth: cacheW > 0 ? cacheW : null,
-            cacheHeight: null,
-            filterQuality: FilterQuality.medium,
+            memCacheWidth: cacheW > 0 ? cacheW : null,
             fit: BoxFit.cover,
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (wasSynchronouslyLoaded || frame != null) {
-                return child;
-              }
-              return _ImageTileSkeleton(
-                width: calcWidth,
-                height: calcHeight,
-                borderRadius: widget.borderRadius,
-              );
-            },
-            errorBuilder: (_, __, ___) => Container(
+            placeholder: (context, url) => _ImageTileSkeleton(
+              width: calcWidth,
+              height: calcHeight,
+              borderRadius: widget.borderRadius,
+            ),
+            errorWidget: (_, __, ___) => Container(
               width: calcWidth,
               height: calcHeight,
               color: const Color(0xFFF3F4F6),
@@ -4803,11 +4797,20 @@ class _MessagePhotoViewerState extends State<_MessagePhotoViewer> {
                   child: InteractiveViewer(
                     minScale: 1,
                     maxScale: 4,
-                    child: Image.network(
-                      ApiConfig.assetUrl(attachment.url),
+                    child: CachedNetworkImage(
+                      imageUrl: ApiConfig.assetUrl(attachment.url),
                       fit: BoxFit.contain,
-                      filterQuality: FilterQuality.medium,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      placeholder: (context, url) => const Center(
+                        child: SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => const Icon(
                         Icons.broken_image_outlined,
                         color: Colors.white,
                         size: 40,
