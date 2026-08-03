@@ -4806,6 +4806,7 @@ class _MessagePhotoViewerState extends State<_MessagePhotoViewer> {
                     child: Image.network(
                       ApiConfig.assetUrl(attachment.url),
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.medium,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.broken_image_outlined,
                         color: Colors.white,
