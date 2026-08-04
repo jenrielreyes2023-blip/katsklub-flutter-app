@@ -608,6 +608,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.3"
   jni:
     dependency: transitive
     description:
@@ -1205,6 +1213,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  syncfusion_flutter_chat:
+    dependency: "direct main"
+    description:
+      name: syncfusion_flutter_chat
+      sha256: ec1066d1768bfed77f2ff756dd1a8188c2bf471ed46abd25c0c88c03b1420c81
+      url: "https://pub.dev"
+    source: hosted
+    version: "34.1.33"
+  syncfusion_flutter_core:
+    dependency: transitive
+    description:
+      name: syncfusion_flutter_core
+      sha256: "3e557e1c8cc9a5b4e4f05059d2f618c00c6501f65b8832c766ca68b6785eca2d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "34.1.33"
   synchronized:
     dependency: transitive
     description:

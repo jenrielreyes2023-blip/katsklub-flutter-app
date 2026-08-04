@@ -31,6 +31,7 @@ import '../widgets/presence_avatar_dot.dart';
 import '../widgets/special_name_text.dart';
 import '../services/presence_service.dart';
 import '../services/webrtc_call_service.dart';
+import 'package:syncfusion_flutter_chat/chat.dart';
 
 enum _MessagesPageState { general, groups, requests, archived }
 
@@ -482,22 +483,14 @@ class _MessagesScreenState extends State<MessagesScreen>
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child:
-                _isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty
-                    ? const _MessageThreadSkeleton()
-                    : _messages.isEmpty && _typingUserIds.isEmpty
-                        ? _NewConversationIntro(
-                            thread: _thread!,
-                            accent: theme.accent,
-                          )
-                        : _buildMessagesList(),
-          ),
-          _composer(),
-        ],
-      ),
+      body: _isLoadingThread && !_hasLoadedThreadOnce && _messages.isEmpty
+          ? Column(
+              children: [
+                const Expanded(child: _MessageThreadSkeleton()),
+                _composer(),
+              ],
+            )
+          : _buildMessagesList(),
     );
   }
 
@@ -2030,53 +2023,125 @@ class _MessagesScreenState extends State<MessagesScreen>
         _typingUserIds.contains(t.otherUser.id) &&
         !isKatswipeBot;
 
-    final itemCount = _messages.length + (showTyping ? 1 : 0);
+    // Convert _messages to List<ChatMessage>
+    final chatMessages = <ChatMessage>[];
+    for (int index = 0; index < _messages.length; index++) {
+      final message = _messages[index];
+      final prev = index > 0 ? _messages[index - 1] : null;
+      final next = index < _messages.length - 1 ? _messages[index + 1] : null;
+      final isLastOwn = index == ownLastIndex;
+      final messageSeen = message.seenByOther;
+      final seenByOther = message.sentByMe && (
+        messageSeen ||
+        index <= _highestSeenOwnMessageIndex ||
+        (index <= ownLastIndex && threadSeen)
+      );
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (showTyping && index == _messages.length) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 8),
-            child: _TypingRow(otherUser: t.otherUser),
+      chatMessages.add(
+        SfDirectChatMessage(
+          directMessage: message,
+          text: message.body,
+          time: DateTime.tryParse(message.createdAt)?.toLocal() ?? DateTime.now(),
+          author: ChatAuthor(
+            id: message.sender.id?.toString() ?? '',
+            name: message.sender.displayName ?? message.sender.username ?? '',
+            avatar: message.sender.avatarUrl != null
+                ? NetworkImage(message.sender.avatarUrl!)
+                : null,
+          ),
+          seenByOther: seenByOther,
+          isLastOwn: isLastOwn,
+          prevMessage: prev,
+          nextMessage: next,
+        ),
+      );
+    }
+
+    if (showTyping && t != null) {
+      chatMessages.add(
+        SfDirectChatMessage(
+          directMessage: DirectMessage(
+            id: -999, // Special ID for typing indicator
+            conversationId: t.id,
+            body: '',
+            createdAt: DateTime.now().toIso8601String(),
+            sender: t.otherUser,
+            sentByMe: false,
+          ),
+          text: '',
+          time: DateTime.now(),
+          author: ChatAuthor(
+            id: t.otherUser.id?.toString() ?? '',
+            name: t.otherUser.displayName ?? t.otherUser.username ?? '',
+            avatar: t.otherUser.avatarUrl != null
+                ? NetworkImage(t.otherUser.avatarUrl!)
+                : null,
+          ),
+        ),
+      );
+    }
+
+    final currentUserId = _currentUser?.id?.toString() ?? '';
+
+    return SfChat(
+      messages: chatMessages,
+      outgoingUser: currentUserId,
+      incomingMessageSettings: const ChatMessageSettings(
+        backgroundColor: Colors.transparent,
+        showAuthorAvatar: false,
+        showAuthorName: false,
+        padding: EdgeInsets.zero,
+      ),
+      outgoingMessageSettings: const ChatMessageSettings(
+        backgroundColor: Colors.transparent,
+        showAuthorAvatar: false,
+        showAuthorName: false,
+        padding: EdgeInsets.zero,
+      ),
+      messageContentBuilder: (BuildContext context, int index, ChatMessage chatMessage) {
+        if (chatMessage is SfDirectChatMessage) {
+          final message = chatMessage.directMessage;
+          if (message.id == -999 && t != null) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 6, bottom: 8),
+              child: _TypingRow(otherUser: t.otherUser),
+            );
+          }
+
+          final prev = chatMessage.prevMessage;
+          final next = chatMessage.nextMessage;
+          final isLastOwn = chatMessage.isLastOwn;
+          final seenByOther = chatMessage.seenByOther;
+
+          final bubble = GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPress: isKatswipeBot ? null : () => _showMessageActions(message),
+            child: _MessageBubble(
+              message: message,
+              previous: prev,
+              next: next,
+              isLastOwn: isLastOwn,
+              seenByOther: seenByOther,
+              theme: theme,
+            ),
+          );
+
+          if (isKatswipeBot) {
+            return bubble;
+          }
+
+          return _SwipeToReply(
+            onSwipeReply: () => _startReplyTo(message),
+            child: bubble,
           );
         }
-
-        final message = _messages[index];
-        final prev = index > 0 ? _messages[index - 1] : null;
-        final next = index < _messages.length - 1 ? _messages[index + 1] : null;
-        final isLastOwn = index == ownLastIndex;
-        final messageSeen = message.seenByOther;
-        final seenByOther = message.sentByMe && (
-          messageSeen ||
-          index <= _highestSeenOwnMessageIndex ||
-          (index <= ownLastIndex && threadSeen)
-        );
-
-        final bubble = GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onLongPress: isKatswipeBot ? null : () => _showMessageActions(message),
-          child: _MessageBubble(
-            message: message,
-            previous: prev,
-            next: next,
-            isLastOwn: isLastOwn,
-            seenByOther: seenByOther,
-            theme: theme,
-          ),
-        );
-
-        if (isKatswipeBot) {
-          return bubble;
-        }
-
-        return _SwipeToReply(
-          onSwipeReply: () => _startReplyTo(message),
-          child: bubble,
-        );
+        return Text(chatMessage.text);
       },
+      composer: ChatComposer.builder(
+        builder: (BuildContext context) {
+          return _composer();
+        },
+      ),
     );
   }
 
@@ -6330,3 +6395,23 @@ class _MessagesRequestList extends StatelessWidget {
       );
   }
 }
+
+class SfDirectChatMessage extends ChatMessage {
+  SfDirectChatMessage({
+    required this.directMessage,
+    required super.text,
+    required super.time,
+    required super.author,
+    this.seenByOther = false,
+    this.isLastOwn = false,
+    this.prevMessage,
+    this.nextMessage,
+  });
+
+  final DirectMessage directMessage;
+  final bool seenByOther;
+  final bool isLastOwn;
+  final DirectMessage? prevMessage;
+  final DirectMessage? nextMessage;
+}
+
