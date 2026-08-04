@@ -2050,11 +2050,20 @@ class _MessagesScreenState extends State<MessagesScreen>
     final ownLastIndex = _findLastOwnIndex();
     final theme = _getTheme();
     final isKatswipeBot = _thread?.otherUser.username?.toLowerCase() == 'katswipe';
+    final otherLastReadAtStr = _thread?.otherLastReadAt;
+    final otherLastReadAt = otherLastReadAtStr != null
+        ? DateTime.tryParse(otherLastReadAtStr)?.toLocal()
+        : null;
     final threadSeen = _thread?.lastMessage?.seenByOther ?? false;
 
-    if (threadSeen && ownLastIndex >= 0) {
-      if (ownLastIndex > _highestSeenOwnMessageIndex) {
-        _highestSeenOwnMessageIndex = ownLastIndex;
+    if (ownLastIndex >= 0 && ownLastIndex < _messages.length) {
+      final lastOwnMsg = _messages[ownLastIndex];
+      final lastOwnTime = DateTime.tryParse(lastOwnMsg.createdAt)?.toLocal();
+      final lastOwnSeen = threadSeen || (otherLastReadAt != null && lastOwnTime != null && !lastOwnTime.isAfter(otherLastReadAt));
+      if (lastOwnSeen) {
+        if (ownLastIndex > _highestSeenOwnMessageIndex) {
+          _highestSeenOwnMessageIndex = ownLastIndex;
+        }
       }
     }
 
@@ -2095,10 +2104,12 @@ class _MessagesScreenState extends State<MessagesScreen>
       final next = index < _messages.length - 1 ? _messages[index + 1] : null;
       final isLastOwn = index == ownLastIndex;
       final messageSeen = message.seenByOther;
+      final messageTime = DateTime.tryParse(message.createdAt)?.toLocal() ?? DateTime.now();
       final seenByOther = message.sentByMe && (
         messageSeen ||
         index <= _highestSeenOwnMessageIndex ||
-        (index <= ownLastIndex && threadSeen)
+        (index <= ownLastIndex && threadSeen) ||
+        (otherLastReadAt != null && !messageTime.isAfter(otherLastReadAt))
       );
 
       chatMessages.add(

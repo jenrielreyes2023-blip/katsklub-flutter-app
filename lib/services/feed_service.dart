@@ -151,6 +151,7 @@ class MessageThread {
     required this.otherUser,
     this.lastMessage,
     this.lastReadAt,
+    this.otherLastReadAt,
     this.unreadCount = 0,
     this.isGroup = false,
     this.name = '',
@@ -163,6 +164,7 @@ class MessageThread {
   final User otherUser;
   final DirectMessage? lastMessage;
   final String? lastReadAt;
+  final String? otherLastReadAt;
   final int unreadCount;
   final bool isGroup;
   final String name;
@@ -194,6 +196,7 @@ class MessageThread {
           ? DirectMessage.fromJson(lastMessage)
           : null,
       lastReadAt: json['lastReadAt']?.toString(),
+      otherLastReadAt: json['otherLastReadAt']?.toString(),
       unreadCount: _readStaticInt(json['unreadCount']),
       isGroup: json['isGroup'] == true,
       name: json['name']?.toString() ?? '',
