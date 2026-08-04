@@ -418,10 +418,18 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
-  void _scrollToBottomSoon({bool animate = false}) {
+  void _scrollToBottomSoon({bool animate = false, bool force = false}) {
     void doScroll() {
       if (!_scrollController.hasClients) return;
-      final target = _scrollController.position.maxScrollExtent;
+      final pos = _scrollController.position;
+      if (!force) {
+        final isNearBottom = (pos.maxScrollExtent - pos.pixels) <= 220;
+        if (!isNearBottom) {
+          return;
+        }
+      }
+
+      final target = pos.maxScrollExtent;
       if (animate) {
         _scrollController.animateTo(
           target,
@@ -2007,7 +2015,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         _isLoadingOlderMessages = false;
       });
 
-      _scrollToBottomSoon();
+      _scrollToBottomSoon(force: true);
       _feedService.markThreadRead(thread.id);
       _scheduleStaleCatchup(thread.id);
 
@@ -2054,7 +2062,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         _hasMoreOlderMessages = true;
         _isLoadingOlderMessages = false;
       });
-      _scrollToBottomSoon();
+      _scrollToBottomSoon(force: true);
       if (page != null) {
         _feedService.markThreadRead(threadId);
         _loadOtherUserProfile(page.thread);
@@ -3240,7 +3248,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     });
 
     if (sentMessages.isNotEmpty) {
-      _scrollToBottomSoon();
+      _scrollToBottomSoon(animate: true, force: true);
       MessageSoundService.playOutgoing();
     }
     if (failed) {
