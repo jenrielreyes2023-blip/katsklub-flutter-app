@@ -183,7 +183,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _onMessagesScroll() {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
-    if (pos.pixels <= 700.0 && !_isLoadingOlderMessages && _hasMoreOlderMessages) {
+    if (pos.pixels <= 400.0 && !_isLoadingOlderMessages && _hasMoreOlderMessages) {
       _loadOlderMessages();
     }
   }
@@ -219,27 +219,11 @@ class _MessagesScreenState extends State<MessagesScreen>
             page.messages.where((m) => !existingIds.contains(m.id)).toList();
 
         if (newOlderMessages.isNotEmpty) {
-          final double oldMaxScroll =
-              _scrollController.position.maxScrollExtent;
-
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
             _isLoadingOlderMessages = false;
             if (page.messages.length < 40) {
               _hasMoreOlderMessages = false;
-            }
-          });
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted || !_scrollController.hasClients) return;
-            final double newMaxScroll =
-                _scrollController.position.maxScrollExtent;
-            final double scrollDiff = newMaxScroll - oldMaxScroll;
-            if (scrollDiff > 0) {
-              final double livePixels = _scrollController.position.pixels;
-              _scrollController.jumpTo(
-                (livePixels + scrollDiff).clamp(0.0, newMaxScroll),
-              );
             }
           });
         } else {
