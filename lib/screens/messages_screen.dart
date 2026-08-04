@@ -32,6 +32,7 @@ import '../widgets/special_name_text.dart';
 import '../services/presence_service.dart';
 import '../services/webrtc_call_service.dart';
 import 'package:syncfusion_flutter_chat/chat.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 enum _MessagesPageState { general, groups, requests, archived }
 
@@ -4451,12 +4452,12 @@ class _SingleMessageAttachmentView extends StatelessWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth.isFinite
-              ? constraints.maxWidth.clamp(190.0, 280.0).toDouble()
-              : 280.0;
+              ? constraints.maxWidth.clamp(120.0, 160.0).toDouble()
+              : 160.0;
           return _MessageImageTile(
             attachment: attachment,
             width: width,
-            height: width * 1.05,
+            height: width * 0.9,
             borderRadius: 14,
             onTap: () => _openMessagePhotoViewer(
               context,
@@ -4500,8 +4501,8 @@ class _MessageImageGallery extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth.isFinite
-            ? constraints.maxWidth.clamp(210.0, 280.0).toDouble()
-            : 280.0;
+            ? constraints.maxWidth.clamp(140.0, 200.0).toDouble()
+            : 200.0;
         final gap = 3.0;
         final tile = (width - gap) / 2;
         final threeUp = attachments.length == 3;
@@ -4595,24 +4596,19 @@ class _MessageImageTile extends StatelessWidget {
         onTap: onTap,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
-          child: Image.network(
-            ApiConfig.assetUrl(attachment.url),
+          child: CachedNetworkImage(
+            imageUrl: ApiConfig.assetUrl(attachment.url),
             width: width,
             height: height,
-            cacheWidth: cacheW > 0 ? cacheW : null,
-            cacheHeight: cacheH > 0 ? cacheH : null,
+            memCacheWidth: cacheW > 0 ? cacheW : null,
+            memCacheHeight: cacheH > 0 ? cacheH : null,
             fit: BoxFit.cover,
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (wasSynchronouslyLoaded || frame != null) {
-                return child;
-              }
-              return _ImageTileSkeleton(
-                width: width,
-                height: height,
-                borderRadius: borderRadius,
-              );
-            },
-            errorBuilder: (_, __, ___) => Container(
+            placeholder: (context, url) => _ImageTileSkeleton(
+              width: width,
+              height: height,
+              borderRadius: borderRadius,
+            ),
+            errorWidget: (_, __, ___) => Container(
               width: width,
               height: height,
               color: const Color(0xFFF3F4F6),
