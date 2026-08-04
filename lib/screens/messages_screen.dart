@@ -231,11 +231,15 @@ class _MessagesScreenState extends State<MessagesScreen>
               _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
           final double? oldY =
               oldBox != null ? oldBox.localToGlobal(Offset.zero).dy : null;
-          final double oldMaxScroll = _scrollController.position.maxScrollExtent;
+          final double oldMaxScroll =
+              _scrollController.position.maxScrollExtent;
           final double oldPixels = _scrollController.position.pixels;
 
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
+            _isLoadingOlderMessages = false;
+            _anchorKey = null;
+            _anchorMessageId = null;
             if (page.messages.length < 30) {
               _hasMoreOlderMessages = false;
             }
@@ -253,10 +257,14 @@ class _MessagesScreenState extends State<MessagesScreen>
                 final double target = (_scrollController.position.pixels + delta)
                     .clamp(0.0, _scrollController.position.maxScrollExtent);
                 _scrollController.jumpTo(target);
+                return;
               }
-            } else {
-              final double newMaxScroll = _scrollController.position.maxScrollExtent;
-              final double scrollDiff = newMaxScroll - oldMaxScroll;
+            }
+
+            final double newMaxScroll =
+                _scrollController.position.maxScrollExtent;
+            final double scrollDiff = newMaxScroll - oldMaxScroll;
+            if (scrollDiff > 0) {
               _scrollController.jumpTo(
                 (oldPixels + scrollDiff).clamp(0.0, newMaxScroll),
               );
@@ -264,17 +272,22 @@ class _MessagesScreenState extends State<MessagesScreen>
           });
         } else {
           setState(() {
+            _isLoadingOlderMessages = false;
             _hasMoreOlderMessages = false;
+            _anchorKey = null;
+            _anchorMessageId = null;
           });
         }
       } else {
         setState(() {
+          _isLoadingOlderMessages = false;
           _hasMoreOlderMessages = false;
+          _anchorKey = null;
+          _anchorMessageId = null;
         });
       }
     } catch (e) {
       debugPrint('[DM-DBG] Error loading older messages: $e');
-    } finally {
       if (mounted) {
         setState(() {
           _isLoadingOlderMessages = false;
@@ -283,6 +296,23 @@ class _MessagesScreenState extends State<MessagesScreen>
         });
       }
     }
+  }
+
+  Future<void> _catchupNewMessages(int threadId) async {
+    try {
+      final page = await _feedService.loadMessageThread(threadId);
+      if (!mounted || page == null) return;
+      final currentIds = _messages.map((m) => m.id).toSet();
+      final fresh = page.messages
+          .where((m) => m.id > 0 && !currentIds.contains(m.id))
+          .toList();
+      if (fresh.isEmpty) return;
+      setState(() {
+        _thread = page.thread;
+        _messages = [..._messages, ...fresh];
+      });
+      _scrollToBottomSoon(force: false);
+    } catch (_) {}
   }
 
   void _onThemeChanged() {
@@ -295,7 +325,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       final t = _thread;
       if (t != null) {
         unawaited(FeedService.ensureRealtimeSync());
-        _loadThread();
+        _catchupNewMessages(t.id);
         _feedService.markThreadRead(t.id);
       } else {
         unawaited(FeedService.ensureRealtimeSync());
@@ -4481,12 +4511,13 @@ class _SingleMessageAttachmentView extends StatelessWidget {
           final width = constraints.maxWidth.isFinite
               ? constraints.maxWidth.clamp(190.0, 270.0).toDouble()
               : 260.0;
+          final height = (width * 0.75).clamp(150.0, 240.0);
           return _MessageImageTile(
             attachment: attachment,
             width: width,
-            height: width * 0.95,
+            height: height,
             borderRadius: 14,
-            autoAspectRatio: true,
+            autoAspectRatio: false,
             onTap: () => _openMessagePhotoViewer(
               context,
               imageAttachments,
