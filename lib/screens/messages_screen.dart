@@ -238,8 +238,6 @@ class _MessagesScreenState extends State<MessagesScreen>
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
             _isLoadingOlderMessages = false;
-            _anchorKey = null;
-            _anchorMessageId = null;
             if (page.messages.length < 30) {
               _hasMoreOlderMessages = false;
             }
@@ -250,13 +248,15 @@ class _MessagesScreenState extends State<MessagesScreen>
             final RenderBox? newBox =
                 _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
 
-            if (oldY != null && newBox != null) {
+            if (oldY != null && newBox != null && newBox.attached) {
               final double newY = newBox.localToGlobal(Offset.zero).dy;
               final double delta = newY - oldY;
               if (delta.abs() > 0.5) {
                 final double target = (_scrollController.position.pixels + delta)
                     .clamp(0.0, _scrollController.position.maxScrollExtent);
                 _scrollController.jumpTo(target);
+                _anchorKey = null;
+                _anchorMessageId = null;
                 return;
               }
             }
@@ -269,6 +269,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                 (oldPixels + scrollDiff).clamp(0.0, newMaxScroll),
               );
             }
+            _anchorKey = null;
+            _anchorMessageId = null;
           });
         } else {
           setState(() {
@@ -488,7 +490,8 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (!_scrollController.hasClients) return;
       final pos = _scrollController.position;
       if (!force) {
-        final isNearBottom = (pos.maxScrollExtent - pos.pixels) <= 220;
+        if (_isLoadingOlderMessages) return;
+        final isNearBottom = (pos.maxScrollExtent - pos.pixels) <= 60.0;
         if (!isNearBottom) {
           return;
         }
