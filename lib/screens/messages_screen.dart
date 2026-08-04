@@ -111,6 +111,9 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _hasLoadedThreadsOnce = false;
   bool _isLoadingOlderMessages = false;
   bool _hasMoreOlderMessages = true;
+  DateTime? _lastOlderLoadTime;
+  GlobalKey? _anchorKey;
+  int? _anchorMessageId;
   bool _isSending = false;
   bool _isRecording = false;
   DirectMessage? _replyTarget;
@@ -179,7 +182,14 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   void _onMessagesScroll() {
     if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels <= 150) {
+    final pos = _scrollController.position;
+    if (pos.pixels <= 120 && !_isLoadingOlderMessages && _hasMoreOlderMessages) {
+      final now = DateTime.now();
+      if (_lastOlderLoadTime != null &&
+          now.difference(_lastOlderLoadTime!).inMilliseconds < 800) {
+        return;
+      }
+      _lastOlderLoadTime = now;
       _loadOlderMessages();
     }
   }
@@ -193,15 +203,19 @@ class _MessagesScreenState extends State<MessagesScreen>
       return;
     }
 
+    final anchorMsg = _messages.first;
+    final anchorKey = GlobalKey();
+    _anchorMessageId = anchorMsg.id;
+    _anchorKey = anchorKey;
+
     setState(() {
       _isLoadingOlderMessages = true;
     });
 
-    final oldestMessage = _messages.first;
     try {
       final page = await _feedService.loadMessageThread(
         thread.id,
-        beforeId: oldestMessage.id,
+        beforeId: anchorMsg.id,
         limit: 30,
       );
 
@@ -213,8 +227,12 @@ class _MessagesScreenState extends State<MessagesScreen>
             page.messages.where((m) => !existingIds.contains(m.id)).toList();
 
         if (newOlderMessages.isNotEmpty) {
-          final oldMaxScroll = _scrollController.position.maxScrollExtent;
-          final oldPixels = _scrollController.position.pixels;
+          final RenderBox? oldBox =
+              _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
+          final double? oldY =
+              oldBox != null ? oldBox.localToGlobal(Offset.zero).dy : null;
+          final double oldMaxScroll = _scrollController.position.maxScrollExtent;
+          final double oldPixels = _scrollController.position.pixels;
 
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
@@ -224,10 +242,25 @@ class _MessagesScreenState extends State<MessagesScreen>
           });
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!_scrollController.hasClients) return;
-            final newMaxScroll = _scrollController.position.maxScrollExtent;
-            final scrollDiff = newMaxScroll - oldMaxScroll;
-            _scrollController.jumpTo(oldPixels + scrollDiff);
+            if (!mounted || !_scrollController.hasClients) return;
+            final RenderBox? newBox =
+                _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
+
+            if (oldY != null && newBox != null) {
+              final double newY = newBox.localToGlobal(Offset.zero).dy;
+              final double delta = newY - oldY;
+              if (delta.abs() > 0.5) {
+                final double target = (_scrollController.position.pixels + delta)
+                    .clamp(0.0, _scrollController.position.maxScrollExtent);
+                _scrollController.jumpTo(target);
+              }
+            } else {
+              final double newMaxScroll = _scrollController.position.maxScrollExtent;
+              final double scrollDiff = newMaxScroll - oldMaxScroll;
+              _scrollController.jumpTo(
+                (oldPixels + scrollDiff).clamp(0.0, newMaxScroll),
+              );
+            }
           });
         } else {
           setState(() {
@@ -245,6 +278,8 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (mounted) {
         setState(() {
           _isLoadingOlderMessages = false;
+          _anchorKey = null;
+          _anchorMessageId = null;
         });
       }
     }
@@ -2164,16 +2199,22 @@ class _MessagesScreenState extends State<MessagesScreen>
           (msgIndex <= ownLastIndex && threadSeen)
         );
 
-        final bubble = GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onLongPress: isKatswipeBot ? null : () => _showMessageActions(message),
-          child: _MessageBubble(
-            message: message,
-            previous: prev,
-            next: next,
-            isLastOwn: isLastOwn,
-            seenByOther: seenByOther,
-            theme: theme,
+        final isAnchor = message.id == _anchorMessageId;
+        final itemKey = isAnchor ? _anchorKey : ValueKey('msg_${message.id}');
+
+        final bubble = Container(
+          key: itemKey,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPress: isKatswipeBot ? null : () => _showMessageActions(message),
+            child: _MessageBubble(
+              message: message,
+              previous: prev,
+              next: next,
+              isLastOwn: isLastOwn,
+              seenByOther: seenByOther,
+              theme: theme,
+            ),
           ),
         );
 
