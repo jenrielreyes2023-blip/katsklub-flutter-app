@@ -183,13 +183,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _onMessagesScroll() {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
-    if (pos.pixels <= 120 && !_isLoadingOlderMessages && _hasMoreOlderMessages) {
-      final now = DateTime.now();
-      if (_lastOlderLoadTime != null &&
-          now.difference(_lastOlderLoadTime!).inMilliseconds < 800) {
-        return;
-      }
-      _lastOlderLoadTime = now;
+    if (pos.pixels <= 700.0 && !_isLoadingOlderMessages && _hasMoreOlderMessages) {
       _loadOlderMessages();
     }
   }
@@ -203,10 +197,8 @@ class _MessagesScreenState extends State<MessagesScreen>
       return;
     }
 
-    final anchorMsg = _messages.first;
-    final anchorKey = GlobalKey();
-    _anchorMessageId = anchorMsg.id;
-    _anchorKey = anchorKey;
+    final anchorMsg = _messages.firstWhere((m) => m.id > 0, orElse: () => _messages.first);
+    if (anchorMsg.id <= 0) return;
 
     setState(() {
       _isLoadingOlderMessages = true;
@@ -216,7 +208,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       final page = await _feedService.loadMessageThread(
         thread.id,
         beforeId: anchorMsg.id,
-        limit: 30,
+        limit: 40,
       );
 
       if (!mounted) return;
@@ -227,65 +219,39 @@ class _MessagesScreenState extends State<MessagesScreen>
             page.messages.where((m) => !existingIds.contains(m.id)).toList();
 
         if (newOlderMessages.isNotEmpty) {
-          final RenderBox? oldBox =
-              _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
-          final double? oldY =
-              oldBox != null ? oldBox.localToGlobal(Offset.zero).dy : null;
           final double oldMaxScroll =
               _scrollController.position.maxScrollExtent;
 
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
             _isLoadingOlderMessages = false;
-            if (page.messages.length < 30) {
+            if (page.messages.length < 40) {
               _hasMoreOlderMessages = false;
             }
           });
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || !_scrollController.hasClients) return;
-            final RenderBox? newBox =
-                _anchorKey?.currentContext?.findRenderObject() as RenderBox?;
-
-            if (oldY != null && newBox != null && newBox.attached) {
-              final double newY = newBox.localToGlobal(Offset.zero).dy;
-              final double delta = newY - oldY;
-              if (delta.abs() > 0.5) {
-                final double target = (_scrollController.position.pixels + delta)
-                    .clamp(0.0, _scrollController.position.maxScrollExtent);
-                _scrollController.jumpTo(target);
-                _anchorKey = null;
-                _anchorMessageId = null;
-                return;
-              }
-            }
-
-            final double currentPixels = _scrollController.position.pixels;
             final double newMaxScroll =
                 _scrollController.position.maxScrollExtent;
             final double scrollDiff = newMaxScroll - oldMaxScroll;
             if (scrollDiff > 0) {
+              final double livePixels = _scrollController.position.pixels;
               _scrollController.jumpTo(
-                (currentPixels + scrollDiff).clamp(0.0, newMaxScroll),
+                (livePixels + scrollDiff).clamp(0.0, newMaxScroll),
               );
             }
-            _anchorKey = null;
-            _anchorMessageId = null;
           });
         } else {
           setState(() {
             _isLoadingOlderMessages = false;
             _hasMoreOlderMessages = false;
-            _anchorKey = null;
-            _anchorMessageId = null;
           });
         }
       } else {
         setState(() {
           _isLoadingOlderMessages = false;
           _hasMoreOlderMessages = false;
-          _anchorKey = null;
-          _anchorMessageId = null;
         });
       }
     } catch (e) {
@@ -293,8 +259,6 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (mounted) {
         setState(() {
           _isLoadingOlderMessages = false;
-          _anchorKey = null;
-          _anchorMessageId = null;
         });
       }
     }
