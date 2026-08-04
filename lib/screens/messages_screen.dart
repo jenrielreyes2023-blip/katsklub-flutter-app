@@ -109,6 +109,8 @@ class _MessagesScreenState extends State<MessagesScreen>
   bool _isLoadingThreads = false;
   bool _hasLoadedThreadOnce = false;
   bool _hasLoadedThreadsOnce = false;
+  bool _hasMoreMessages = true;
+  bool _isLoadingMoreMessages = false;
   bool _isSending = false;
   bool _isRecording = false;
   DirectMessage? _replyTarget;
@@ -1915,6 +1917,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         if (page != null) {
           _thread = page.thread;
           _messages = page.messages;
+          _hasMoreMessages = page.messages.length >= 30;
         }
         _isLoadingThread = false;
         _hasLoadedThreadOnce = true;
@@ -1935,6 +1938,42 @@ class _MessagesScreenState extends State<MessagesScreen>
       setState(() {
         _isLoadingThread = false;
         _hasLoadedThreadOnce = true;
+      });
+    }
+  }
+
+  Future<void> _loadOlderMessages() async {
+    final thread = _thread;
+    if (thread == null || _isLoadingMoreMessages || !_hasMoreMessages || _messages.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMoreMessages = true;
+    });
+
+    try {
+      final oldestMessageId = _messages.first.id;
+      final page = await _feedService.loadMessageThread(
+        thread.id,
+        beforeId: oldestMessageId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        if (page != null && page.messages.isNotEmpty) {
+          _messages = [...page.messages, ..._messages];
+          _hasMoreMessages = page.messages.length >= 30;
+        } else {
+          _hasMoreMessages = false;
+        }
+        _isLoadingMoreMessages = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMoreMessages = false;
       });
     }
   }
@@ -1961,6 +2000,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         if (page != null) {
           _thread = page.thread;
           _messages = page.messages;
+          _hasMoreMessages = page.messages.length >= 30;
         }
         _isLoadingThread = false;
         _hasLoadedThreadOnce = true;
@@ -2025,6 +2065,29 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     // Convert _messages to List<ChatMessage>
     final chatMessages = <ChatMessage>[];
+
+    // Prepend a "Load older messages" indicator if there are more
+    if (_hasMoreMessages && _messages.isNotEmpty) {
+      chatMessages.add(
+        SfDirectChatMessage(
+          directMessage: DirectMessage(
+            id: -998, // Special ID for loading older messages
+            conversationId: t?.id ?? 0,
+            body: '',
+            createdAt: DateTime.now().subtract(const Duration(days: 365)).toIso8601String(),
+            sender: User.fromJson(const <String, dynamic>{}),
+            sentByMe: false,
+          ),
+          text: '',
+          time: DateTime.now().subtract(const Duration(days: 365)),
+          author: const ChatAuthor(
+            id: '-998',
+            name: '',
+          ),
+        ),
+      );
+    }
+
     for (int index = 0; index < _messages.length; index++) {
       final message = _messages[index];
       final prev = index > 0 ? _messages[index - 1] : null;
@@ -2101,6 +2164,35 @@ class _MessagesScreenState extends State<MessagesScreen>
       messageContentBuilder: (BuildContext context, int index, ChatMessage chatMessage) {
         if (chatMessage is SfDirectChatMessage) {
           final message = chatMessage.directMessage;
+          if (message.id == -998) {
+            return Center(
+              child: _isLoadingMoreMessages
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                        ),
+                      ),
+                    )
+                  : TextButton.icon(
+                      onPressed: _loadOlderMessages,
+                      icon: const Icon(Icons.history_rounded, size: 16, color: Colors.grey),
+                      label: const Text(
+                        'Load older messages',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+            );
+          }
+
           if (message.id == -999 && t != null) {
             return Padding(
               padding: const EdgeInsets.only(top: 6, bottom: 8),

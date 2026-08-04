@@ -1790,12 +1790,17 @@ class FeedService {
     return parsed;
   }
 
-  Future<MessageThreadPage?> loadMessageThread(int threadId) async {
+  Future<MessageThreadPage?> loadMessageThread(int threadId, {int? beforeId, int limit = 30}) async {
     if (threadId <= 0) {
       return null;
     }
 
-    final data = await _authenticatedGet('/api/messages/threads/$threadId');
+    String path = '/api/messages/threads/$threadId?limit=$limit';
+    if (beforeId != null) {
+      path += '&beforeId=$beforeId';
+    }
+
+    final data = await _authenticatedGet(path);
     final thread = data['thread'];
     final messages = data['messages'];
     if (data['ok'] != true || thread is! Map<String, dynamic>) {
