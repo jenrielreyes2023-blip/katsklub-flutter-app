@@ -4588,7 +4588,6 @@ class _MessageImageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final dpr = MediaQuery.of(context).devicePixelRatio;
     final cacheW = (width * dpr).toInt();
-    final cacheH = (height * dpr).toInt();
 
     return Material(
       color: Colors.transparent,
@@ -4601,7 +4600,6 @@ class _MessageImageTile extends StatelessWidget {
             width: width,
             height: height,
             memCacheWidth: cacheW > 0 ? cacheW : null,
-            memCacheHeight: cacheH > 0 ? cacheH : null,
             fit: BoxFit.cover,
             placeholder: (context, url) => _ImageTileSkeleton(
               width: width,
