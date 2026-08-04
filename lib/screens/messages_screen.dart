@@ -233,7 +233,6 @@ class _MessagesScreenState extends State<MessagesScreen>
               oldBox != null ? oldBox.localToGlobal(Offset.zero).dy : null;
           final double oldMaxScroll =
               _scrollController.position.maxScrollExtent;
-          final double oldPixels = _scrollController.position.pixels;
 
           setState(() {
             _messages = [...newOlderMessages, ..._messages];
@@ -261,12 +260,13 @@ class _MessagesScreenState extends State<MessagesScreen>
               }
             }
 
+            final double currentPixels = _scrollController.position.pixels;
             final double newMaxScroll =
                 _scrollController.position.maxScrollExtent;
             final double scrollDiff = newMaxScroll - oldMaxScroll;
             if (scrollDiff > 0) {
               _scrollController.jumpTo(
-                (oldPixels + scrollDiff).clamp(0.0, newMaxScroll),
+                (currentPixels + scrollDiff).clamp(0.0, newMaxScroll),
               );
             }
             _anchorKey = null;
