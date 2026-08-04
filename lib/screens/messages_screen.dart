@@ -2154,12 +2154,14 @@ class _MessagesScreenState extends State<MessagesScreen>
         backgroundColor: Colors.transparent,
         showAuthorAvatar: false,
         showAuthorName: false,
+        showTimestamp: false,
         padding: EdgeInsets.zero,
       ),
       outgoingMessageSettings: const ChatMessageSettings(
         backgroundColor: Colors.transparent,
         showAuthorAvatar: false,
         showAuthorName: false,
+        showTimestamp: false,
         padding: EdgeInsets.zero,
       ),
       messageContentBuilder: (BuildContext context, int index, ChatMessage chatMessage) {
