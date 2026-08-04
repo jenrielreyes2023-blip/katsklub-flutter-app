@@ -2166,31 +2166,23 @@ class _MessagesScreenState extends State<MessagesScreen>
         if (chatMessage is SfDirectChatMessage) {
           final message = chatMessage.directMessage;
           if (message.id == -998) {
-            return Center(
-              child: _isLoadingMoreMessages
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                        ),
-                      ),
-                    )
-                  : TextButton.icon(
-                      onPressed: _loadOlderMessages,
-                      icon: const Icon(Icons.history_rounded, size: 16, color: Colors.grey),
-                      label: const Text(
-                        'Load older messages',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+            if (!_isLoadingMoreMessages) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _loadOlderMessages();
+              });
+            }
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                  ),
+                ),
+              ),
             );
           }
 
