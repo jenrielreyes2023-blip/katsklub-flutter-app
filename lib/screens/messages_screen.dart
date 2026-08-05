@@ -7341,14 +7341,14 @@ class _MessageReactionBadges extends StatelessWidget {
     final overflowCount = items.length - visibleItems.length;
 
     return Transform.translate(
-      offset: const Offset(0, -10),
+      offset: const Offset(0, -9),
       child: Padding(
         padding: EdgeInsets.only(
-          left: sentByMe ? 0 : 6,
-          right: sentByMe ? 6 : 0,
+          left: sentByMe ? 0 : 10,
+          right: sentByMe ? 10 : 0,
         ),
         child: AnimatedSize(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           child: Wrap(
             spacing: -4, // Overlap chips slightly horizontally by -4dp like Messenger
@@ -7358,14 +7358,15 @@ class _MessageReactionBadges extends StatelessWidget {
             children: [
               ...visibleItems.map((s) {
                 final isMyReactionEmoji = myReaction == s.emoji;
-                final chipBgColor = isMyReactionEmoji
-                    ? (isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB))
-                    : chipBg;
-                final chipBorderColor = isMyReactionEmoji
-                    ? (isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.2))
-                    : borderColor;
-
-                return GestureDetector(
+                return _MessengerReactionChip(
+                  key: ValueKey('chip_${message.id}_${s.emoji}'),
+                  emoji: s.emoji,
+                  count: s.count,
+                  isMyReaction: isMyReactionEmoji,
+                  isDark: isDark,
+                  chipBg: chipBg,
+                  textColor: textColor,
+                  borderColor: borderColor,
                   onTap: () {
                     HapticFeedback.lightImpact();
                     final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
@@ -7373,60 +7374,18 @@ class _MessageReactionBadges extends StatelessWidget {
                       screenState._showReactionsListModal(message);
                     }
                   },
-                  child: AnimatedScale(
-                    scale: isMyReactionEmoji ? 1.05 : 1.0,
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    child: Container(
-                      height: 27,
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: chipBgColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: chipBorderColor,
-                          width: isMyReactionEmoji ? 1.2 : 1.0,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
-                            blurRadius: 6,
-                            spreadRadius: 0,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            s.emoji,
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          if (s.count > 0) ...[
-                            const SizedBox(width: 4),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 180),
-                              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                              child: Text(
-                                '${s.count}',
-                                key: ValueKey('${s.emoji}_${s.count}'),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
                 );
               }),
               if (showOverflow)
-                GestureDetector(
+                _MessengerReactionChip(
+                  key: ValueKey('chip_${message.id}_plus_$overflowCount'),
+                  emoji: '+$overflowCount',
+                  count: 0,
+                  isMyReaction: false,
+                  isDark: isDark,
+                  chipBg: chipBg,
+                  textColor: textColor,
+                  borderColor: borderColor,
                   onTap: () {
                     HapticFeedback.lightImpact();
                     final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
@@ -7434,34 +7393,113 @@ class _MessageReactionBadges extends StatelessWidget {
                       screenState._showReactionsListModal(message);
                     }
                   },
-                  child: Container(
-                    height: 27,
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: chipBg,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderColor, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
-                          blurRadius: 6,
-                          spreadRadius: 0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        '+$overflowCount',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MessengerReactionChip extends StatefulWidget {
+  const _MessengerReactionChip({
+    super.key,
+    required this.emoji,
+    required this.count,
+    required this.isMyReaction,
+    required this.isDark,
+    required this.chipBg,
+    required this.textColor,
+    required this.borderColor,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final int count;
+  final bool isMyReaction;
+  final bool isDark;
+  final Color chipBg;
+  final Color textColor;
+  final Color borderColor;
+  final VoidCallback onTap;
+
+  @override
+  State<_MessengerReactionChip> createState() => _MessengerReactionChipState();
+}
+
+class _MessengerReactionChipState extends State<_MessengerReactionChip> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final chipBgColor = widget.isMyReaction
+        ? (widget.isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB))
+        : widget.chipBg;
+    final chipBorderColor = widget.isMyReaction
+        ? (widget.isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.2))
+        : widget.borderColor;
+
+    final targetScale = _isPressed
+        ? 0.97
+        : (widget.isMyReaction ? 1.05 : 1.0);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: targetScale,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: 27,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            color: chipBgColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: chipBorderColor,
+              width: widget.isMyReaction ? 1.2 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: widget.isDark ? 0.2 : 0.12),
+                blurRadius: 4,
+                spreadRadius: 0,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                widget.emoji,
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.1,
+                ),
+              ),
+              if (widget.count > 0) ...[
+                const SizedBox(width: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 160),
+                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                  child: Text(
+                    '${widget.count}',
+                    key: ValueKey('${widget.emoji}_${widget.count}'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: widget.textColor,
+                      height: 1.1,
                     ),
                   ),
                 ),
+              ],
             ],
           ),
         ),
