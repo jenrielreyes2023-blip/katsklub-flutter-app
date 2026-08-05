@@ -7326,28 +7326,45 @@ class _MessageReactionBadges extends StatelessWidget {
       items.add(ReactionSummary(emoji: myReaction, count: 1));
     }
 
+    // Priority Sorting: 1. My reaction first, 2. Highest count, 3. Emoji order
+    items.sort((a, b) {
+      final aMine = a.emoji == myReaction;
+      final bMine = b.emoji == myReaction;
+      if (aMine && !bMine) return -1;
+      if (!aMine && bMine) return 1;
+      return b.count.compareTo(a.count);
+    });
+
     const maxVisible = 4;
     final showOverflow = items.length > maxVisible;
     final visibleItems = showOverflow ? items.take(maxVisible - 1).toList() : items;
     final overflowCount = items.length - visibleItems.length;
 
     return Transform.translate(
-      offset: const Offset(0, -6),
+      offset: const Offset(0, -10),
       child: Padding(
         padding: EdgeInsets.only(
-          left: sentByMe ? 0 : 4,
-          right: sentByMe ? 4 : 0,
+          left: sentByMe ? 0 : 6,
+          right: sentByMe ? 6 : 0,
         ),
         child: AnimatedSize(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           child: Wrap(
-            spacing: 5,
+            spacing: -4, // Overlap chips slightly horizontally by -4dp like Messenger
             runSpacing: 4,
+            clipBehavior: Clip.none,
             alignment: sentByMe ? WrapAlignment.end : WrapAlignment.start,
             children: [
               ...visibleItems.map((s) {
                 final isMyReactionEmoji = myReaction == s.emoji;
+                final chipBgColor = isMyReactionEmoji
+                    ? (isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB))
+                    : chipBg;
+                final chipBorderColor = isMyReactionEmoji
+                    ? (isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.2))
+                    : borderColor;
+
                 return GestureDetector(
                   onTap: () {
                     HapticFeedback.lightImpact();
@@ -7356,47 +7373,54 @@ class _MessageReactionBadges extends StatelessWidget {
                       screenState._showReactionsListModal(message);
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: isMyReactionEmoji
-                          ? (isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB))
-                          : chipBg,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isMyReactionEmoji
-                            ? (isDark ? Colors.white.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.15))
-                            : borderColor,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                          blurRadius: 6,
-                          spreadRadius: 0,
-                          offset: const Offset(0, 2),
+                  child: AnimatedScale(
+                    scale: isMyReactionEmoji ? 1.05 : 1.0,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: Container(
+                      height: 27,
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: chipBgColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: chipBorderColor,
+                          width: isMyReactionEmoji ? 1.2 : 1.0,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          s.emoji,
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                        if (s.count > 0) ...[
-                          const SizedBox(width: 3),
-                          Text(
-                            '${s.count}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
+                            blurRadius: 6,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 2),
                           ),
                         ],
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            s.emoji,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          if (s.count > 0) ...[
+                            const SizedBox(width: 4),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 180),
+                              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                              child: Text(
+                                '${s.count}',
+                                key: ValueKey('${s.emoji}_${s.count}'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -7411,26 +7435,29 @@ class _MessageReactionBadges extends StatelessWidget {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    height: 27,
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                     decoration: BoxDecoration(
                       color: chipBg,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: borderColor, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
                           blurRadius: 6,
                           spreadRadius: 0,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Text(
-                      '+$overflowCount',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                    child: Center(
+                      child: Text(
+                        '+$overflowCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
                       ),
                     ),
                   ),
