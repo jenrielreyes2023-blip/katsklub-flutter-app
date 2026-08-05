@@ -233,14 +233,19 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   void _onDmMessageReaction(DirectMessageReactionEvent event) {
-    debugPrint('[DM-DBG] socket dm:message-reaction threadId=${event.threadId} msgId=${event.messageId} reaction="${event.emoji}"');
+    debugPrint('[DM-DBG] socket dm:message-reaction threadId=${event.threadId} msgId=${event.messageId}');
     final t = _thread;
     if (t == null || event.threadId != t.id || !mounted) return;
 
     setState(() {
       final idx = _messages.indexWhere((m) => m.id == event.messageId);
       if (idx >= 0) {
-        _messages[idx] = _messages[idx].copyWith(reaction: event.emoji);
+        final currentMsg = _messages[idx];
+        _messages[idx] = currentMsg.copyWith(
+          myReaction: event.myReaction ?? currentMsg.myReaction,
+          reactions: event.reactions.isNotEmpty ? event.reactions : currentMsg.reactions,
+          reactionSummary: event.reactionSummary.isNotEmpty ? event.reactionSummary : currentMsg.reactionSummary,
+        );
       }
     });
   }
@@ -2334,12 +2339,12 @@ class _MessagesScreenState extends State<MessagesScreen>
             }
           },
           onSelectReaction: (emoji) async {
-            final isSelected = message.reaction == emoji;
+            final isSelected = message.myReaction == emoji;
             final newReaction = isSelected ? null : emoji;
             setState(() {
               final idx = _messages.indexWhere((m) => m.id == message.id);
               if (idx >= 0) {
-                _messages[idx] = _messages[idx].copyWith(reaction: newReaction);
+                _messages[idx] = _messages[idx].copyWith(myReaction: newReaction);
               }
             });
             await _feedService.reactToMessage(message.id, newReaction ?? '');
@@ -4372,23 +4377,41 @@ class _MessageBubble extends StatelessWidget {
               },
             ),
           ],
-          if (message.reaction != null && message.reaction!.isNotEmpty) ...[
+          if (message.reactionSummary.isNotEmpty || (message.myReaction != null && message.myReaction!.isNotEmpty)) ...[
             const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? const Color(0xFF374151)
                     : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: sentByMe ? Colors.white24 : Colors.black12,
                   width: 0.5,
                 ),
               ),
-              child: Text(
-                message.reaction!,
-                style: const TextStyle(fontSize: 13),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (message.reactionSummary.isNotEmpty)
+                    ...message.reactionSummary.map((s) => Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            '${s.emoji}${s.count > 1 ? " ${s.count}" : ""}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ))
+                  else if (message.myReaction != null)
+                    Text(
+                      message.myReaction!,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                ],
               ),
             ),
           ],
@@ -6989,7 +7012,7 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: quickEmojis.map((emoji) {
-                    final isSelected = widget.message.reaction == emoji;
+                    final isSelected = widget.message.myReaction == emoji;
                     return _EmojiReactionButton(
                       emoji: emoji,
                       isSelected: isSelected,

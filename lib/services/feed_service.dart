@@ -268,6 +268,40 @@ class MessageReplyRef {
   }
 }
 
+class MessageReaction {
+  const MessageReaction({
+    required this.userId,
+    required this.emoji,
+  });
+
+  final String userId;
+  final String emoji;
+
+  factory MessageReaction.fromJson(Map<String, dynamic> json) {
+    return MessageReaction(
+      userId: json['userId']?.toString() ?? json['user_id']?.toString() ?? '',
+      emoji: json['emoji']?.toString() ?? '',
+    );
+  }
+}
+
+class ReactionSummary {
+  const ReactionSummary({
+    required this.emoji,
+    required this.count,
+  });
+
+  final String emoji;
+  final int count;
+
+  factory ReactionSummary.fromJson(Map<String, dynamic> json) {
+    return ReactionSummary(
+      emoji: json['emoji']?.toString() ?? '',
+      count: _readStaticInt(json['count'] ?? json['cnt']),
+    );
+  }
+}
+
 class DirectMessage {
   const DirectMessage({
     required this.id,
@@ -280,7 +314,9 @@ class DirectMessage {
     this.attachments = const <DirectMessageAttachment>[],
     this.seenByOther = false,
     this.replyTo,
-    this.reaction,
+    this.myReaction,
+    this.reactions = const <MessageReaction>[],
+    this.reactionSummary = const <ReactionSummary>[],
   });
 
   final int id;
@@ -293,7 +329,9 @@ class DirectMessage {
   final List<DirectMessageAttachment> attachments;
   final bool seenByOther;
   final MessageReplyRef? replyTo;
-  final String? reaction;
+  final String? myReaction;
+  final List<MessageReaction> reactions;
+  final List<ReactionSummary> reactionSummary;
 
   DirectMessage copyWith({
     int? id,
@@ -306,7 +344,9 @@ class DirectMessage {
     List<DirectMessageAttachment>? attachments,
     bool? seenByOther,
     MessageReplyRef? replyTo,
-    String? reaction,
+    String? myReaction,
+    List<MessageReaction>? reactions,
+    List<ReactionSummary>? reactionSummary,
   }) {
     return DirectMessage(
       id: id ?? this.id,
@@ -319,7 +359,9 @@ class DirectMessage {
       attachments: attachments ?? this.attachments,
       seenByOther: seenByOther ?? this.seenByOther,
       replyTo: replyTo ?? this.replyTo,
-      reaction: reaction ?? this.reaction,
+      myReaction: myReaction ?? this.myReaction,
+      reactions: reactions ?? this.reactions,
+      reactionSummary: reactionSummary ?? this.reactionSummary,
     );
   }
 
@@ -361,6 +403,27 @@ class DirectMessage {
       );
     }
 
+    final parsedReactions = <MessageReaction>[];
+    if (json['reactions'] is List) {
+      for (final r in json['reactions']) {
+        if (r is Map<String, dynamic>) {
+          parsedReactions.add(MessageReaction.fromJson(r));
+        }
+      }
+    }
+
+    final parsedSummary = <ReactionSummary>[];
+    final summaryRaw = json['reactionSummary'] ?? json['reaction_summary'];
+    if (summaryRaw is List) {
+      for (final s in summaryRaw) {
+        if (s is Map<String, dynamic>) {
+          parsedSummary.add(ReactionSummary.fromJson(s));
+        }
+      }
+    }
+
+    final myReaction = json['myReaction']?.toString() ?? json['my_reaction']?.toString() ?? json['reaction']?.toString();
+
     return DirectMessage(
       id: _readStaticInt(json['id']),
       conversationId: _readStaticInt(json['conversationId']),
@@ -376,7 +439,9 @@ class DirectMessage {
       ),
       seenByOther: json['seenByOther'] == true,
       replyTo: MessageReplyRef.fromJson(json['replyTo']),
-      reaction: json['reaction']?.toString(),
+      myReaction: myReaction,
+      reactions: List<MessageReaction>.unmodifiable(parsedReactions),
+      reactionSummary: List<ReactionSummary>.unmodifiable(parsedSummary),
     );
   }
 }
@@ -446,13 +511,17 @@ class DirectMessageReactionEvent {
     required this.threadId,
     required this.messageId,
     required this.userId,
-    required this.emoji,
+    this.myReaction,
+    this.reactions = const <MessageReaction>[],
+    this.reactionSummary = const <ReactionSummary>[],
   });
 
   final int threadId;
   final int messageId;
   final String userId;
-  final String? emoji;
+  final String? myReaction;
+  final List<MessageReaction> reactions;
+  final List<ReactionSummary> reactionSummary;
 }
 
 class DirectMessageDeletedEvent {
@@ -780,16 +849,36 @@ class FeedService {
       final threadId = _readStaticInt(map['threadId']);
       final messageId = _readStaticInt(map['messageId']);
       final userId = map['userId']?.toString() ?? '';
-      final emoji = map['emoji']?.toString();
+      final myReaction = map['myReaction']?.toString() ?? map['emoji']?.toString();
 
-      print('[Reactions Socket Client] Received dm:message-reaction for messageId: $messageId, emoji: "$emoji"');
+      final parsedReactions = <MessageReaction>[];
+      if (map['reactions'] is List) {
+        for (final r in map['reactions']) {
+          if (r is Map<String, dynamic>) {
+            parsedReactions.add(MessageReaction.fromJson(r));
+          }
+        }
+      }
+
+      final parsedSummary = <ReactionSummary>[];
+      if (map['reactionSummary'] is List) {
+        for (final s in map['reactionSummary']) {
+          if (s is Map<String, dynamic>) {
+            parsedSummary.add(ReactionSummary.fromJson(s));
+          }
+        }
+      }
+
+      print('[Reactions Socket Client] Received dm:message-reaction for messageId: $messageId, myReaction: "$myReaction", summaryCount: ${parsedSummary.length}');
 
       _dmReactionController.add(
         DirectMessageReactionEvent(
           threadId: threadId,
           messageId: messageId,
           userId: userId,
-          emoji: emoji,
+          myReaction: myReaction,
+          reactions: parsedReactions,
+          reactionSummary: parsedSummary,
         ),
       );
     });
