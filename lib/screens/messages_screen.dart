@@ -3292,47 +3292,93 @@ class _MessagesScreenState extends State<MessagesScreen>
                             onPressed: _isSending ? null : _toggleRecording,
                           ),
                         ],
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: TextField(
-                              controller: _controller,
-                              minLines: 1,
-                              maxLines: 4,
-                              textInputAction: TextInputAction.newline,
-                              onChanged: (val) {
-                                _onComposerChanged(val);
-                                setState(() {});
-                              },
-                              inputFormatters: [EmojiPresentationFormatter()],
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 14.5,
-                                height: 1.3,
+                        if (_isRecording) ...[
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.fiber_manual_record, color: Color(0xFFEF4444), size: 14),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${_recordingSeconds ~/ 60}:${(_recordingSeconds % 60).toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      color: isDarkComposer ? Colors.white : Colors.black87,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 18,
+                                      child: Row(
+                                        children: List.generate(
+                                          _liveAmplitudes.isEmpty ? 16 : _liveAmplitudes.length,
+                                          (idx) {
+                                            final h = _liveAmplitudes.isEmpty
+                                                ? 6.0
+                                                : (_liveAmplitudes[idx] * 18.0);
+                                            return Expanded(
+                                              child: Container(
+                                                margin: const EdgeInsets.symmetric(horizontal: 1.0),
+                                                height: h,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFEF4444),
+                                                  borderRadius: BorderRadius.circular(2),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              decoration: InputDecoration(
-                                hintText: _isRecording
-                                    ? 'Recording...'
-                                    : 'Write a message...',
-                                hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkComposer
-                                      ? const Color(0xFF9CA3AF)
-                                      : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: TextField(
+                                controller: _controller,
+                                minLines: 1,
+                                maxLines: 4,
+                                textInputAction: TextInputAction.newline,
+                                onChanged: (val) {
+                                  _onComposerChanged(val);
+                                  setState(() {});
+                                },
+                                inputFormatters: [EmojiPresentationFormatter()],
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 14.5,
+                                  height: 1.3,
                                 ),
-                                isDense: true,
-                                border: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                                decoration: InputDecoration(
+                                  hintText: 'Write a message...',
+                                  hintStyle: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkComposer
+                                        ? const Color(0xFF9CA3AF)
+                                        : const Color(0xFF94A3B8),
+                                  ),
+                                  isDense: true,
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -3423,10 +3469,13 @@ class _MessagesScreenState extends State<MessagesScreen>
   double _recordingDragDy = 0.0;
   int _recordingSeconds = 0;
   Timer? _recordingTimer;
+  final List<double> _liveAmplitudes = <double>[];
+  StreamSubscription<Amplitude>? _amplitudeSub;
 
   void _startRecordingTimer() {
     _recordingTimer?.cancel();
     _recordingSeconds = 0;
+    _liveAmplitudes.clear();
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (mounted && _isRecording) {
         setState(() => _recordingSeconds++);
@@ -3437,11 +3486,13 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _stopRecordingTimer() {
     _recordingTimer?.cancel();
     _recordingTimer = null;
-    _recordingSeconds = 0;
+    _amplitudeSub?.cancel();
+    _amplitudeSub = null;
   }
 
   Future<void> _toggleRecording() async {
     if (_isRecording) {
+      final recSecs = _recordingSeconds;
       _stopRecordingTimer();
       final path = await _audioRecorder.stop();
       if (!mounted) return;
@@ -3454,9 +3505,10 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (path == null || path.isEmpty) return;
       final file = File(path);
       final size = await file.length();
+      final finalDurationSecs = recSecs > 0 ? recSecs : 1;
       await _addPendingAttachment(
         path: path,
-        name: 'Voice message.m4a',
+        name: 'Voice message (${finalDurationSecs}s).m4a',
         size: size,
         mime: 'audio/mp4',
         type: 'audio',
@@ -3485,6 +3537,18 @@ class _MessagesScreenState extends State<MessagesScreen>
       _recordingDragDy = 0.0;
     });
     _startRecordingTimer();
+
+    _amplitudeSub = _audioRecorder.onAmplitudeChanged(const Duration(milliseconds: 80)).listen((amp) {
+      if (mounted && _isRecording) {
+        final normalized = ((amp.current + 60.0) / 60.0).clamp(0.15, 1.0);
+        setState(() {
+          if (_liveAmplitudes.length >= 22) {
+            _liveAmplitudes.removeAt(0);
+          }
+          _liveAmplitudes.add(normalized);
+        });
+      }
+    });
   }
 
   Future<void> _addXFileAttachment(
@@ -7791,7 +7855,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     });
 
     _player.durationStream.listen((d) {
-      if (mounted && d != null) {
+      if (mounted && d != null && d > Duration.zero) {
         setState(() => _duration = d);
       }
     });
@@ -7801,6 +7865,24 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         setState(() => _position = p);
       }
     });
+
+    final regExp = RegExp(r'\((\d+)s\)');
+    final match = regExp.firstMatch(widget.attachment.name);
+    if (match != null) {
+      final secs = int.tryParse(match.group(1) ?? '0') ?? 0;
+      if (secs > 0) {
+        _duration = Duration(seconds: secs);
+      }
+    }
+
+    if (widget.attachment.url.isNotEmpty) {
+      try {
+        final d = await _player.setUrl(widget.attachment.url);
+        if (d != null && mounted) {
+          setState(() => _duration = d);
+        }
+      } catch (_) {}
+    }
   }
 
   @override
