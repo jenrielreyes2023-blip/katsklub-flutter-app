@@ -2211,17 +2211,31 @@ class _MessagesScreenState extends State<MessagesScreen>
           final isLastOwn = chatMessage.isLastOwn;
           final seenByOther = chatMessage.seenByOther;
 
-          final bubble = GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onLongPress: isKatswipeBot ? null : () => _showMessageActions(message),
-            child: _MessageBubble(
-              message: message,
-              previous: prev,
-              next: next,
-              isLastOwn: isLastOwn,
-              seenByOther: seenByOther,
-              theme: theme,
-            ),
+          final bubble = Builder(
+            builder: (bubbleContext) {
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onLongPress: isKatswipeBot
+                    ? null
+                    : () => _showMessengerOverlay(
+                          message,
+                          bubbleContext,
+                          prev,
+                          next,
+                          isLastOwn,
+                          seenByOther,
+                          theme,
+                        ),
+                child: _MessageBubble(
+                  message: message,
+                  previous: prev,
+                  next: next,
+                  isLastOwn: isLastOwn,
+                  seenByOther: seenByOther,
+                  theme: theme,
+                ),
+              );
+            },
           );
 
           if (isKatswipeBot) {
@@ -2253,160 +2267,128 @@ class _MessagesScreenState extends State<MessagesScreen>
     setState(() => _replyTarget = null);
   }
 
-  Future<void> _showMessageActions(DirectMessage message) async {
+  void _showMessengerOverlay(
+    DirectMessage message,
+    BuildContext bubbleContext,
+    DirectMessage? previous,
+    DirectMessage? next,
+    bool isLastOwn,
+    bool seenByOther,
+    ConversationTheme theme,
+  ) {
     HapticFeedback.selectionClick();
-    final quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 38,
-                height: 4,
-                margin: const EdgeInsets.only(top: 10, bottom: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Emoji Reactions Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: quickEmojis.map((emoji) {
-                      final isSelected = message.reaction == emoji;
-                      return GestureDetector(
-                        onTap: () async {
-                          HapticFeedback.lightImpact();
-                          Navigator.of(sheetContext).pop();
-                          final newReaction = isSelected ? null : emoji;
-                          setState(() {
-                            final idx = _messages.indexWhere((m) => m.id == message.id);
-                            if (idx >= 0) {
-                              _messages[idx] = _messages[idx].copyWith(reaction: newReaction);
-                            }
-                          });
-                          await _feedService.reactToMessage(message.id, newReaction ?? '');
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.transparent,
-                            shape: BoxShape.circle,
-                            boxShadow: isSelected
-                                ? const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFFF3F4F6)),
-              // Reply Action
-              ListTile(
-                leading: const Icon(Icons.reply_rounded, color: Color(0xFF111827)),
-                title: const Text(
-                  'Reply',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _startReplyTo(message);
-                },
-              ),
-              // Copy Text Action
-              if (message.body.trim().isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.copy_rounded, color: Color(0xFF111827)),
-                  title: const Text(
-                    'Copy Text',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    Clipboard.setData(ClipboardData(text: message.body));
-                    HapticFeedback.mediumImpact();
+    final renderBox = bubbleContext.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) {
+      return;
+    }
+
+    final bubbleOffset = renderBox.localToGlobal(Offset.zero);
+    final bubbleSize = renderBox.size;
+
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        return _MessengerOverlayContent(
+          message: message,
+          bubbleOffset: bubbleOffset,
+          bubbleSize: bubbleSize,
+          previous: previous,
+          next: next,
+          isLastOwn: isLastOwn,
+          seenByOther: seenByOther,
+          theme: theme,
+          onDismiss: () {
+            if (overlayEntry.mounted) {
+              overlayEntry.remove();
+            }
+          },
+          onSelectReaction: (emoji) async {
+            final isSelected = message.reaction == emoji;
+            final newReaction = isSelected ? null : emoji;
+            setState(() {
+              final idx = _messages.indexWhere((m) => m.id == message.id);
+              if (idx >= 0) {
+                _messages[idx] = _messages[idx].copyWith(reaction: newReaction);
+              }
+            });
+            await _feedService.reactToMessage(message.id, newReaction ?? '');
+          },
+          onReply: () => _startReplyTo(message),
+          onCopy: message.body.trim().isNotEmpty
+              ? () {
+                  Clipboard.setData(ClipboardData(text: message.body));
+                  HapticFeedback.mediumImpact();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              : null,
+          onForward: () => _showForwardPicker(message),
+          onTranslate: () => _showTranslationModal(message),
+          onUnsend: message.sentByMe
+              ? () async {
+                  HapticFeedback.mediumImpact();
+                  setState(() {
+                    _messages.removeWhere((m) => m.id == message.id);
+                  });
+                  final ok = await _feedService.deleteMessage(message.id);
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Copied to clipboard'),
-                        duration: Duration(seconds: 2),
+                      SnackBar(
+                        content: Text(ok ? 'Message unsent' : 'Failed to unsend message'),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
-                  },
-                ),
-              // Forward Action
-              ListTile(
-                leading: const Icon(Icons.shortcut_rounded, color: Color(0xFF111827)),
-                title: const Text(
-                  'Forward',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showForwardPicker(message);
-                },
-              ),
-              // Unsend Action (only for sentByMe)
-              if (message.sentByMe)
-                ListTile(
-                  leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                  title: const Text(
-                    'Unsend Message',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                  onTap: () async {
-                    Navigator.of(sheetContext).pop();
-                    HapticFeedback.mediumImpact();
-                    setState(() {
-                      _messages.removeWhere((m) => m.id == message.id);
-                    });
-                    final ok = await _feedService.deleteMessage(message.id);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(ok ? 'Message unsent' : 'Failed to unsend message'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              const SizedBox(height: 8),
+                  }
+                }
+              : null,
+        );
+      },
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+  }
+
+  void _showTranslationModal(DirectMessage message) {
+    if (message.body.trim().isEmpty) return;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.translate_rounded, color: Color(0xFF3B82F6)),
+              SizedBox(width: 8),
+              Text('Translation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Original:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+              const SizedBox(height: 2),
+              Text(message.body, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 12),
+              const Text('Translated:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+              const SizedBox(height: 2),
+              Text(message.body, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+          ],
         );
       },
     );
@@ -2415,11 +2397,12 @@ class _MessagesScreenState extends State<MessagesScreen>
   Future<void> _showForwardPicker(DirectMessage message) async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2429,22 +2412,22 @@ class _MessagesScreenState extends State<MessagesScreen>
                 height: 4,
                 margin: const EdgeInsets.only(top: 10, bottom: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
+                  color: isDark ? Colors.white24 : const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Text(
                   'Forward Message to...',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF111827),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFF3F4F6)),
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -2464,7 +2447,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ),
                       title: Text(
                         otherUser.displayName.isNotEmpty ? otherUser.displayName : (otherUser.username ?? 'User'),
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       trailing: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF3B82F6)),
                       onTap: () async {
@@ -2481,7 +2467,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         if (mounted && sent != null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Message forwarded to ${otherUser.displayName ?? 'user'}'),
+                              content: Text('Message forwarded to ${otherUser.displayName.isNotEmpty ? otherUser.displayName : 'user'}'),
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -6728,5 +6714,458 @@ class SfDirectChatMessage extends ChatMessage {
   final bool isLastOwn;
   final DirectMessage? prevMessage;
   final DirectMessage? nextMessage;
+}
+
+class _MessengerOverlayContent extends StatefulWidget {
+  const _MessengerOverlayContent({
+    required this.message,
+    required this.bubbleOffset,
+    required this.bubbleSize,
+    required this.previous,
+    required this.next,
+    required this.isLastOwn,
+    required this.seenByOther,
+    required this.theme,
+    required this.onDismiss,
+    required this.onSelectReaction,
+    required this.onReply,
+    required this.onCopy,
+    required this.onForward,
+    required this.onTranslate,
+    required this.onUnsend,
+  });
+
+  final DirectMessage message;
+  final Offset bubbleOffset;
+  final Size bubbleSize;
+  final DirectMessage? previous;
+  final DirectMessage? next;
+  final bool isLastOwn;
+  final bool seenByOther;
+  final ConversationTheme theme;
+  final VoidCallback onDismiss;
+  final ValueChanged<String> onSelectReaction;
+  final VoidCallback onReply;
+  final VoidCallback? onCopy;
+  final VoidCallback onForward;
+  final VoidCallback onTranslate;
+  final VoidCallback? onUnsend;
+
+  @override
+  State<_MessengerOverlayContent> createState() => _MessengerOverlayContentState();
+}
+
+class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.92, end: 1.04).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    _slideAnimation = Tween<double>(begin: 12.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _dismissWithAction(VoidCallback action) async {
+    await _animController.reverse();
+    widget.onDismiss();
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final padding = MediaQuery.of(context).padding;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final cardBg = isDark
+        ? (colorScheme.surfaceContainerHighest != Colors.transparent
+            ? colorScheme.surfaceContainerHighest
+            : const Color(0xFF2B2B2B))
+        : Colors.white;
+
+    final onSurfaceColor = colorScheme.onSurface != Colors.transparent
+        ? colorScheme.onSurface
+        : (isDark ? Colors.white : const Color(0xFF111827));
+
+    final shadowColor = isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.12);
+
+    final spaceAbove = widget.bubbleOffset.dy - padding.top;
+    final spaceBelow = screenSize.height - (widget.bubbleOffset.dy + widget.bubbleSize.height) - padding.bottom;
+
+    // Reactions Pill Dimensions
+    const reactionBarHeight = 52.0;
+    const reactionBarWidth = 280.0;
+
+    // Action Sheet Dimensions
+    const actionSheetWidth = 230.0;
+    int itemCount = 3; // Reply, Forward, Translate
+    if (widget.onCopy != null) itemCount++;
+    if (widget.onUnsend != null) itemCount++;
+    final actionSheetHeight = (itemCount * 46.0) + 16.0;
+
+    // Positioning Logic
+    bool placeReactionsAbove = spaceAbove >= (reactionBarHeight + 12.0);
+    if (!placeReactionsAbove && spaceBelow < (actionSheetHeight + reactionBarHeight + 20.0)) {
+      placeReactionsAbove = true;
+    }
+
+    // Reaction Bar Y
+    double reactionBarY;
+    if (placeReactionsAbove) {
+      reactionBarY = widget.bubbleOffset.dy - reactionBarHeight - 10.0;
+    } else {
+      reactionBarY = widget.bubbleOffset.dy + widget.bubbleSize.height + 10.0;
+    }
+    reactionBarY = reactionBarY.clamp(padding.top + 8.0, screenSize.height - padding.bottom - reactionBarHeight - 8.0);
+
+    // Action Sheet Y
+    double actionSheetY;
+    if (placeReactionsAbove) {
+      if (spaceBelow >= (actionSheetHeight + 12.0)) {
+        actionSheetY = widget.bubbleOffset.dy + widget.bubbleSize.height + 10.0;
+      } else {
+        actionSheetY = reactionBarY - actionSheetHeight - 8.0;
+      }
+    } else {
+      actionSheetY = reactionBarY + reactionBarHeight + 8.0;
+    }
+    actionSheetY = actionSheetY.clamp(padding.top + 8.0, screenSize.height - padding.bottom - actionSheetHeight - 8.0);
+
+    // X Alignment based on sentByMe
+    double reactionBarX;
+    double actionSheetX;
+
+    if (widget.message.sentByMe) {
+      reactionBarX = (widget.bubbleOffset.dx + widget.bubbleSize.width - reactionBarWidth).clamp(12.0, screenSize.width - reactionBarWidth - 12.0);
+      actionSheetX = (widget.bubbleOffset.dx + widget.bubbleSize.width - actionSheetWidth).clamp(12.0, screenSize.width - actionSheetWidth - 12.0);
+    } else {
+      reactionBarX = widget.bubbleOffset.dx.clamp(12.0, screenSize.width - reactionBarWidth - 12.0);
+      actionSheetX = widget.bubbleOffset.dx.clamp(12.0, screenSize.width - actionSheetWidth - 12.0);
+    }
+
+    final quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
+
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          // 1. Semi-transparent backdrop overlay with Fade
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: GestureDetector(
+              onTap: () => _dismissWithAction(() {}),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: screenSize.width,
+                height: screenSize.height,
+                color: isDark ? const Color(0x99000000) : const Color(0x66000000),
+              ),
+            ),
+          ),
+
+          // 2. Scaled Original Message Bubble at its exact screen position
+          Positioned(
+            left: widget.bubbleOffset.dx,
+            top: widget.bubbleOffset.dy,
+            width: widget.bubbleSize.width,
+            height: widget.bubbleSize.height,
+            child: AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: child,
+                );
+              },
+              child: IgnorePointer(
+                child: _MessageBubble(
+                  message: widget.message,
+                  previous: widget.previous,
+                  next: widget.next,
+                  isLastOwn: widget.isLastOwn,
+                  seenByOther: widget.seenByOther,
+                  theme: widget.theme,
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Floating Reaction Bar Pill
+          Positioned(
+            left: reactionBarX,
+            top: reactionBarY,
+            width: reactionBarWidth,
+            height: reactionBarHeight,
+            child: AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? -1 : 1)),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: shadowColor,
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: quickEmojis.map((emoji) {
+                    final isSelected = widget.message.reaction == emoji;
+                    return _EmojiReactionButton(
+                      emoji: emoji,
+                      isSelected: isSelected,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _dismissWithAction(() {
+                          widget.onSelectReaction(emoji);
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+
+          // 4. Separate Floating Action Sheet Card
+          Positioned(
+            left: actionSheetX,
+            top: actionSheetY,
+            width: actionSheetWidth,
+            child: AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? 1 : -1)),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: shadowColor,
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _OverlayActionTile(
+                        icon: Icons.reply_rounded,
+                        title: 'Reply',
+                        textColor: onSurfaceColor,
+                        iconColor: onSurfaceColor,
+                        onTap: () => _dismissWithAction(widget.onReply),
+                      ),
+                      if (widget.onCopy != null) ...[
+                        _OverlayTileDivider(isDark: isDark),
+                        _OverlayActionTile(
+                          icon: Icons.copy_rounded,
+                          title: 'Copy',
+                          textColor: onSurfaceColor,
+                          iconColor: onSurfaceColor,
+                          onTap: () => _dismissWithAction(widget.onCopy!),
+                        ),
+                      ],
+                      _OverlayTileDivider(isDark: isDark),
+                      _OverlayActionTile(
+                        icon: Icons.shortcut_rounded,
+                        title: 'Forward',
+                        textColor: onSurfaceColor,
+                        iconColor: onSurfaceColor,
+                        onTap: () => _dismissWithAction(widget.onForward),
+                      ),
+                      _OverlayTileDivider(isDark: isDark),
+                      _OverlayActionTile(
+                        icon: Icons.translate_rounded,
+                        title: 'Translate',
+                        textColor: onSurfaceColor,
+                        iconColor: onSurfaceColor,
+                        onTap: () => _dismissWithAction(widget.onTranslate),
+                      ),
+                      if (widget.onUnsend != null) ...[
+                        _OverlayTileDivider(isDark: isDark),
+                        _OverlayActionTile(
+                          icon: Icons.delete_outline_rounded,
+                          title: 'Unsend',
+                          textColor: Colors.redAccent,
+                          iconColor: Colors.redAccent,
+                          onTap: () => _dismissWithAction(widget.onUnsend!),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmojiReactionButton extends StatefulWidget {
+  const _EmojiReactionButton({
+    required this.emoji,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  State<_EmojiReactionButton> createState() => _EmojiReactionButtonState();
+}
+
+class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _isPressed ? 1.35 : (widget.isSelected ? 1.2 : 1.0),
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: widget.isSelected ? Colors.white.withOpacity(0.25) : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            widget.emoji,
+            style: const TextStyle(fontSize: 24),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayActionTile extends StatelessWidget {
+  const _OverlayActionTile({
+    required this.icon,
+    required this.title,
+    required this.textColor,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color textColor;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 14),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayTileDivider extends StatelessWidget {
+  const _OverlayTileDivider({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 0.6,
+      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+    );
+  }
 }
 
