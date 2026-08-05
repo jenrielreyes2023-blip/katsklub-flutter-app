@@ -441,6 +441,30 @@ class DirectTypingEvent {
   final bool typing;
 }
 
+class DirectMessageReactionEvent {
+  const DirectMessageReactionEvent({
+    required this.threadId,
+    required this.messageId,
+    required this.userId,
+    required this.emoji,
+  });
+
+  final int threadId;
+  final int messageId;
+  final String userId;
+  final String? emoji;
+}
+
+class DirectMessageDeletedEvent {
+  const DirectMessageDeletedEvent({
+    required this.threadId,
+    required this.messageId,
+  });
+
+  final int threadId;
+  final int messageId;
+}
+
 class FeedService {
   static const String _cachedDiscoverPostsKey = 'cached_discover_posts';
   static const String _cachedHomePostsKey = 'cached_home_posts';
@@ -469,6 +493,10 @@ class FeedService {
       StreamController<MessageThread>.broadcast();
   static final StreamController<DirectTypingEvent> _dmTypingController =
       StreamController<DirectTypingEvent>.broadcast();
+  static final StreamController<DirectMessageReactionEvent> _dmReactionController =
+      StreamController<DirectMessageReactionEvent>.broadcast();
+  static final StreamController<DirectMessageDeletedEvent> _dmDeletedController =
+      StreamController<DirectMessageDeletedEvent>.broadcast();
   static final StreamController<void> _notesUpdatedController =
       StreamController<void>.broadcast();
   static final ValueNotifier<int> unreadNotificationsNotifier =
@@ -518,6 +546,10 @@ class FeedService {
       _dmThreadUpdatedController.stream;
   static Stream<DirectTypingEvent> get dmTypingStream =>
       _dmTypingController.stream;
+  static Stream<DirectMessageReactionEvent> get dmReactionStream =>
+      _dmReactionController.stream;
+  static Stream<DirectMessageDeletedEvent> get dmDeletedStream =>
+      _dmDeletedController.stream;
   static Stream<void> get notesUpdatedStream => _notesUpdatedController.stream;
 
   static void notifyPostcardThemesReset() {
@@ -738,6 +770,44 @@ class FeedService {
       _unreadByThread[thread.id] = thread.unreadCount;
       _recomputeUnreadMessagesTotal();
       _dmThreadUpdatedController.add(thread);
+    });
+
+    socket.on('dm:message-reaction', (payload) {
+      if (payload is! Map) return;
+      final map = Map<String, dynamic>.from(
+        payload.map((key, value) => MapEntry(key.toString(), value)),
+      );
+      final threadId = _readStaticInt(map['threadId']);
+      final messageId = _readStaticInt(map['messageId']);
+      final userId = map['userId']?.toString() ?? '';
+      final emoji = map['emoji']?.toString();
+
+      print('[Reactions Socket Client] Received dm:message-reaction for messageId: $messageId, emoji: "$emoji"');
+
+      _dmReactionController.add(
+        DirectMessageReactionEvent(
+          threadId: threadId,
+          messageId: messageId,
+          userId: userId,
+          emoji: emoji,
+        ),
+      );
+    });
+
+    socket.on('dm:message-deleted', (payload) {
+      if (payload is! Map) return;
+      final map = Map<String, dynamic>.from(
+        payload.map((key, value) => MapEntry(key.toString(), value)),
+      );
+      final threadId = _readStaticInt(map['threadId']);
+      final messageId = _readStaticInt(map['messageId']);
+
+      _dmDeletedController.add(
+        DirectMessageDeletedEvent(
+          threadId: threadId,
+          messageId: messageId,
+        ),
+      );
     });
 
     socket.on('dm:typing', (payload) {
@@ -1865,12 +1935,15 @@ class FeedService {
 
   Future<bool> reactToMessage(int messageId, String emoji) async {
     if (messageId <= 0) return false;
+    print('[Reactions Log] Step 1 & 2: Sending API request POST /api/messages/$messageId/reactions with emoji: "$emoji"');
     try {
       final res = await _authenticatedPost('/api/messages/$messageId/reactions', body: {
         'emoji': emoji,
       });
+      print('[Reactions Log] Step 3: API response received: $res');
       return res['ok'] == true;
-    } catch (_) {
+    } catch (e) {
+      print('[Reactions Log] API Error in reactToMessage: $e');
       return false;
     }
   }

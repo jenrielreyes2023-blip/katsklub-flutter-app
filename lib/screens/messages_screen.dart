@@ -137,6 +137,8 @@ class _MessagesScreenState extends State<MessagesScreen>
   StreamSubscription<DirectMessageEvent>? _dmMessageSub;
   StreamSubscription<MessageThread>? _dmThreadSub;
   StreamSubscription<DirectTypingEvent>? _dmTypingSub;
+  StreamSubscription<DirectMessageReactionEvent>? _dmReactionSub;
+  StreamSubscription<DirectMessageDeletedEvent>? _dmDeletedSub;
   StreamSubscription<void>? _notesUpdatedSub;
 
   final Map<int, Set<String>> _typingByThread = <int, Set<String>>{};
@@ -164,6 +166,8 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmMessageSub = FeedService.dmMessageStream.listen(_onDmMessage);
     _dmThreadSub = FeedService.dmThreadUpdatedStream.listen(_onDmThreadUpdated);
     _dmTypingSub = FeedService.dmTypingStream.listen(_onDmTyping);
+    _dmReactionSub = FeedService.dmReactionStream.listen(_onDmMessageReaction);
+    _dmDeletedSub = FeedService.dmDeletedStream.listen(_onDmMessageDeleted);
     _notesUpdatedSub = FeedService.notesUpdatedStream.listen((_) => _loadNotes());
 
     _loadCurrentUser();
@@ -218,12 +222,37 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmMessageSub?.cancel();
     _dmThreadSub?.cancel();
     _dmTypingSub?.cancel();
+    _dmReactionSub?.cancel();
+    _dmDeletedSub?.cancel();
     _notesUpdatedSub?.cancel();
     unawaited(_audioRecorder.dispose());
     _searchController.dispose();
     _searchDebounce?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onDmMessageReaction(DirectMessageReactionEvent event) {
+    debugPrint('[DM-DBG] socket dm:message-reaction threadId=${event.threadId} msgId=${event.messageId} reaction="${event.emoji}"');
+    final t = _thread;
+    if (t == null || event.threadId != t.id || !mounted) return;
+
+    setState(() {
+      final idx = _messages.indexWhere((m) => m.id == event.messageId);
+      if (idx >= 0) {
+        _messages[idx] = _messages[idx].copyWith(reaction: event.emoji);
+      }
+    });
+  }
+
+  void _onDmMessageDeleted(DirectMessageDeletedEvent event) {
+    debugPrint('[DM-DBG] socket dm:message-deleted threadId=${event.threadId} msgId=${event.messageId}');
+    final t = _thread;
+    if (t == null || event.threadId != t.id || !mounted) return;
+
+    setState(() {
+      _messages.removeWhere((m) => m.id == event.messageId);
+    });
   }
 
   void _onDmMessage(DirectMessageEvent event) {
