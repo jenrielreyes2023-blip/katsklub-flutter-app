@@ -1866,7 +1866,7 @@ class FeedService {
   Future<bool> reactToMessage(int messageId, String emoji) async {
     if (messageId <= 0) return false;
     try {
-      final res = await _authenticatedPost('/api/messages/$messageId/reactions', {
+      final res = await _authenticatedPost('/api/messages/$messageId/reactions', body: {
         'emoji': emoji,
       });
       return res['ok'] == true;
