@@ -7975,6 +7975,8 @@ class _GlobalVoicePlayerManager {
   }
 }
 
+typedef VoiceNotePlayerForTest = _VoiceNotePlayer;
+
 class _VoiceNotePlayer extends StatefulWidget {
   const _VoiceNotePlayer({
     super.key,
@@ -8099,16 +8101,23 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   }
 
   Future<void> _togglePlay() async {
-    debugPrint('[AudioPlayer Action] _togglePlay() called. url=${widget.attachment.url}, loadedUrl=$_loadedUrl, isPlaying=$_isPlaying, isLoading=$_isLoading, processingState=${_player.processingState}');
+    debugPrint('[STEP 0] _togglePlay() called for ${widget.attachment.url}');
+    debugPrint('[STEP 0] State: isPlaying=$_isPlaying, isLoading=$_isLoading, hasError=$_hasError, processingState=${_player.processingState}');
 
     if (_isLoading) {
-      debugPrint('[AudioPlayer Guard] Already loading! Ignoring rapid tap for ${widget.attachment.url}');
+      debugPrint('[STEP 0] Guard: Already loading! Ignoring rapid tap.');
       return;
     }
 
     if (_isPlaying) {
-      debugPrint('[AudioPlayer Action] Calling _player.pause() for ${widget.attachment.url}');
-      await _player.pause();
+      debugPrint('[STEP 1-PAUSE] Calling _player.pause()...');
+      try {
+        await _player.pause();
+        debugPrint('[STEP 1-PAUSE SUCCESS]');
+      } catch (e, st) {
+        debugPrint('[STEP 1-PAUSE FAILED] ${e.toString()}');
+        debugPrintStack(stackTrace: st);
+      }
       return;
     }
 
@@ -8117,49 +8126,72 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       _isLoading = true;
     });
 
-    try {
-      _GlobalVoicePlayerManager.registerActive(this);
+    _GlobalVoicePlayerManager.registerActive(this);
 
-      if (_player.processingState == ProcessingState.completed) {
-        debugPrint('[AudioPlayer Action] Seeking to zero after completion...');
+    if (_player.processingState == ProcessingState.completed) {
+      debugPrint('[STEP 2-SEEK] Completed state detected. Seeking to zero...');
+      try {
         await _player.seek(Duration.zero);
+        debugPrint('[STEP 2-SEEK SUCCESS]');
+      } catch (e, st) {
+        debugPrint('[STEP 2-SEEK FAILED] ${e.toString()}');
+        debugPrintStack(stackTrace: st);
       }
+    }
 
-      final needsSetUrl = _loadedUrl != widget.attachment.url ||
-          _player.processingState == ProcessingState.idle;
+    final needsSetUrl = _loadedUrl != widget.attachment.url ||
+        _player.processingState == ProcessingState.idle;
 
-      debugPrint('[AudioPlayer Decision] _loadedUrl=$_loadedUrl, targetUrl=${widget.attachment.url}, processingState=${_player.processingState} => needsSetUrl=$needsSetUrl');
+    debugPrint('[STEP 3-SETURL DECISION] loadedUrl=$_loadedUrl, target=${widget.attachment.url}, processingState=${_player.processingState} => needsSetUrl=$needsSetUrl');
 
-      if (needsSetUrl) {
-        debugPrint('[AudioPlayer Action] Invoking _player.setUrl(${widget.attachment.url})...');
+    if (needsSetUrl) {
+      debugPrint('[STEP 3-SETURL START] Invoking _player.setUrl(${widget.attachment.url})...');
+      try {
         _loadedUrl = widget.attachment.url;
         final d = await _player.setUrl(widget.attachment.url);
-        debugPrint('[AudioPlayer Action] _player.setUrl() resolved. Duration=$d');
+        debugPrint('[STEP 3-SETURL SUCCESS] Duration=$d');
         if (d != null && mounted && d > Duration.zero) {
           setState(() => _duration = d);
         }
+      } catch (e, st) {
+        debugPrint('[STEP 3-SETURL FAILED] ${e.toString()}');
+        debugPrintStack(stackTrace: st);
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _isLoading = false;
+            _loadedUrl = null;
+          });
+        }
+        return;
       }
+    }
 
-      if (_position > Duration.zero && _player.position == Duration.zero) {
-        debugPrint('[AudioPlayer Action] Seeking saved position: $_position');
+    if (_position > Duration.zero && _player.position == Duration.zero) {
+      debugPrint('[STEP 4-RESTORE-POSITION] Seeking cached position: $_position');
+      try {
         await _player.seek(_position);
+        debugPrint('[STEP 4-RESTORE-POSITION SUCCESS]');
+      } catch (e, st) {
+        debugPrint('[STEP 4-RESTORE-POSITION FAILED] ${e.toString()}');
+        debugPrintStack(stackTrace: st);
       }
+    }
 
-      debugPrint('[AudioPlayer Action] Invoking _player.play()...');
+    debugPrint('[STEP 5-PLAY START] Invoking _player.play()...');
+    try {
       await _player.play();
-      debugPrint('[AudioPlayer Action] _player.play() resolved.');
-
+      debugPrint('[STEP 5-PLAY SUCCESS] _player.play() returned successfully.');
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    } catch (e, stack) {
-      debugPrint('[AudioPlayer Error] Exception in _togglePlay for ${widget.attachment.url}: ${e.toString()}');
-      debugPrintStack(stackTrace: stack);
+    } catch (e, st) {
+      debugPrint('[STEP 5-PLAY FAILED] ${e.toString()}');
+      debugPrintStack(stackTrace: st);
       if (mounted) {
         setState(() {
           _hasError = true;
           _isLoading = false;
-          _loadedUrl = null;
         });
       }
     }
