@@ -4880,6 +4880,7 @@ class _SingleMessageAttachmentView extends StatelessWidget {
 
     if (attachment.isAudio) {
       return _VoiceNotePlayer(
+        key: ValueKey(attachment.url.isNotEmpty ? attachment.url : attachment.name),
         attachment: attachment,
         sentByMe: sentByMe,
         theme: theme,
@@ -7976,6 +7977,7 @@ class _GlobalVoicePlayerManager {
 
 class _VoiceNotePlayer extends StatefulWidget {
   const _VoiceNotePlayer({
+    super.key,
     required this.attachment,
     required this.sentByMe,
     required this.theme,
@@ -8004,10 +8006,17 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} initState for ${widget.attachment.url}');
     if (_positionCache.containsKey(widget.attachment.url)) {
       _position = _positionCache[widget.attachment.url]!;
     }
     _initAudio();
+  }
+
+  @override
+  void didUpdateWidget(covariant _VoiceNotePlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} didUpdateWidget oldUrl=${oldWidget.attachment.url} newUrl=${widget.attachment.url}');
   }
 
   Future<void> _initAudio() async {
@@ -8083,6 +8092,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
 
   @override
   void dispose() {
+    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} dispose for ${widget.attachment.url}');
     _GlobalVoicePlayerManager.unregister(this);
     _player.dispose();
     super.dispose();
