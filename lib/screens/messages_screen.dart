@@ -7326,19 +7326,21 @@ class _MessageReactionBadges extends StatelessWidget {
       items.add(ReactionSummary(emoji: myReaction, count: 1));
     }
 
-    // Priority Sorting: 1. My reaction first, 2. Highest count, 3. Emoji order
+    // Sorting: 1. Highest count descending, 2. If equal count, prioritize myReaction first
     items.sort((a, b) {
+      final countCompare = b.count.compareTo(a.count);
+      if (countCompare != 0) return countCompare;
       final aMine = a.emoji == myReaction;
       final bMine = b.emoji == myReaction;
       if (aMine && !bMine) return -1;
       if (!aMine && bMine) return 1;
-      return b.count.compareTo(a.count);
+      return 0;
     });
 
-    const maxVisible = 4;
+    const maxVisible = 3;
     final showOverflow = items.length > maxVisible;
-    final visibleItems = showOverflow ? items.take(maxVisible - 1).toList() : items;
-    final overflowCount = items.length - visibleItems.length;
+    final visibleItems = showOverflow ? items.take(maxVisible).toList() : items;
+    final overflowCount = items.length - maxVisible;
 
     return Transform.translate(
       offset: const Offset(0, -9),
