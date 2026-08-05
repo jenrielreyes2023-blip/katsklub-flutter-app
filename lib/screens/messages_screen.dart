@@ -260,9 +260,10 @@ class _MessagesScreenState extends State<MessagesScreen>
     });
   }
 
-  void _showReactionsListModal(DirectMessage message) {
+  void _showReactionsListModal(DirectMessage message, {String? initialEmoji}) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? const Color(0xFF242526)
           : Colors.white,
@@ -270,86 +271,10 @@ class _MessagesScreenState extends State<MessagesScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF050505);
-
-        return FutureBuilder<Map<String, dynamic>>(
-          future: _feedService.getMessageReactions(message.id),
-          builder: (context, snapshot) {
-            final rawList = snapshot.hasData && snapshot.data!['reactions'] is List
-                ? (snapshot.data!['reactions'] as List)
-                : message.reactions;
-
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: 10, bottom: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: Text(
-                      'Reactions',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator.adaptive(),
-                    )
-                  else if (rawList.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'No reactions yet',
-                        style: TextStyle(color: textColor.withOpacity(0.6)),
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: rawList.length,
-                        itemBuilder: (context, index) {
-                          final item = rawList[index];
-                          final emoji = item is MessageReaction
-                              ? item.emoji
-                              : (item['emoji']?.toString() ?? '');
-                          final name = item is MessageReaction
-                              ? 'User ${item.userId.substring(0, item.userId.length > 8 ? 8 : item.userId.length)}'
-                              : (item['fullName']?.toString() ?? item['username']?.toString() ?? 'User');
-
-                          return ListTile(
-                            leading: Text(emoji, style: const TextStyle(fontSize: 24)),
-                            title: Text(
-                              name,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
+        return _ReactionsListModalContent(
+          message: message,
+          initialEmoji: initialEmoji,
+          feedService: _feedService,
         );
       },
     );
@@ -7326,7 +7251,7 @@ class _MessageReactionBadges extends StatelessWidget {
       items.add(ReactionSummary(emoji: myReaction, count: 1));
     }
 
-    // Sorting: 1. Highest count descending, 2. If equal count, prioritize myReaction first
+    // Sorting: 1. Highest count descending, 2. My reaction first, 3. Emoji string order
     items.sort((a, b) {
       final countCompare = b.count.compareTo(a.count);
       if (countCompare != 0) return countCompare;
@@ -7334,7 +7259,7 @@ class _MessageReactionBadges extends StatelessWidget {
       final bMine = b.emoji == myReaction;
       if (aMine && !bMine) return -1;
       if (!aMine && bMine) return 1;
-      return 0;
+      return a.emoji.compareTo(b.emoji);
     });
 
     const maxVisible = 3;
@@ -7373,7 +7298,7 @@ class _MessageReactionBadges extends StatelessWidget {
                     HapticFeedback.lightImpact();
                     final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
                     if (screenState != null) {
-                      screenState._showReactionsListModal(message);
+                      screenState._showReactionsListModal(message, initialEmoji: s.emoji);
                     }
                   },
                 );
@@ -7392,7 +7317,7 @@ class _MessageReactionBadges extends StatelessWidget {
                     HapticFeedback.lightImpact();
                     final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
                     if (screenState != null) {
-                      screenState._showReactionsListModal(message);
+                      screenState._showReactionsListModal(message, initialEmoji: 'All');
                     }
                   },
                 ),
@@ -7506,6 +7431,162 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ReactionsListModalContent extends StatefulWidget {
+  const _ReactionsListModalContent({
+    required this.message,
+    required this.initialEmoji,
+    required this.feedService,
+  });
+
+  final DirectMessage message;
+  final String? initialEmoji;
+  final FeedService feedService;
+
+  @override
+  State<_ReactionsListModalContent> createState() => _ReactionsListModalContentState();
+}
+
+class _ReactionsListModalContentState extends State<_ReactionsListModalContent> {
+  late String _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.initialEmoji ?? 'All';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF050505);
+
+    final summary = widget.message.reactionSummary;
+    final tabs = ['All', ...summary.map((s) => s.emoji)];
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: widget.feedService.getMessageReactions(widget.message.id),
+      builder: (context, snapshot) {
+        final rawList = snapshot.hasData && snapshot.data!['reactions'] is List
+            ? (snapshot.data!['reactions'] as List)
+            : widget.message.reactions;
+
+        final filteredList = _selectedTab == 'All'
+            ? rawList
+            : rawList.where((item) {
+                final emoji = item is MessageReaction
+                    ? item.emoji
+                    : (item['emoji']?.toString() ?? '');
+                return emoji == _selectedTab;
+              }).toList();
+
+        return SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.55,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 10, bottom: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Text(
+                    'Reactions',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                if (summary.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: tabs.map((tab) {
+                        final isSelected = tab == _selectedTab;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(tab),
+                            selected: isSelected,
+                            selectedColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB),
+                            backgroundColor: isDark ? const Color(0xFF18191A) : const Color(0xFFF0F2F5),
+                            labelStyle: TextStyle(
+                              color: isSelected ? textColor : textColor.withValues(alpha: 0.7),
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            onSelected: (val) {
+                              if (val) setState(() => _selectedTab = tab);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                const Divider(height: 1),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator.adaptive(),
+                  )
+                else if (filteredList.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'No reactions yet',
+                      style: TextStyle(color: textColor.withValues(alpha: 0.6)),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredList[index];
+                        final emoji = item is MessageReaction
+                            ? item.emoji
+                            : (item['emoji']?.toString() ?? '');
+                        final name = item is MessageReaction
+                            ? 'User ${item.userId.substring(0, item.userId.length > 8 ? 8 : item.userId.length)}'
+                            : (item['fullName']?.toString() ?? item['username']?.toString() ?? 'User');
+
+                        return ListTile(
+                          leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+                          title: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
