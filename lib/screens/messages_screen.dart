@@ -15,6 +15,7 @@ import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -7744,6 +7745,154 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
   }
 }
 
+class StandaloneVoiceTestScreen extends StatefulWidget {
+  const StandaloneVoiceTestScreen({super.key});
+
+  @override
+  State<StandaloneVoiceTestScreen> createState() => _StandaloneVoiceTestScreenState();
+}
+
+class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
+  static const String _testUrl =
+      'https://media.katsklub.top/messages/message-97f4cc4c-4635-4f56-a18d-b0cc9112ab65.m4a';
+
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  bool _isLoading = false;
+  String _statusLog = 'Idle';
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTestPlayer();
+  }
+
+  Future<void> _initTestPlayer() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.speech());
+      debugPrint('[AUDIO_TEST] AudioSession configured successfully.');
+    } catch (e) {
+      debugPrint('[AUDIO_TEST] AudioSession configuration error: $e');
+    }
+
+    _player.playbackEventStream.listen((event) {
+      debugPrint('[AUDIO_TEST] playbackEventStream: processingState=${event.processingState}, updatePosition=${event.updatePosition}');
+    });
+
+    _player.playerStateStream.listen((state) {
+      debugPrint('[AUDIO_TEST] playerStateStream: playing=${state.playing}, processingState=${state.processingState}');
+      if (mounted) {
+        setState(() {
+          _isPlaying = state.playing && state.processingState != ProcessingState.completed;
+          _statusLog = 'playing=${state.playing}, state=${state.processingState}';
+        });
+      }
+    });
+
+    _player.durationStream.listen((d) {
+      debugPrint('[AUDIO_TEST] durationStream: duration=$d');
+      if (mounted && d != null) {
+        setState(() => _duration = d);
+      }
+    });
+
+    _player.positionStream.listen((p) {
+      if (mounted) {
+        setState(() => _position = p);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleTestPlay() async {
+    debugPrint('\n[AUDIO_TEST] === START PLAY ===');
+    debugPrint('[AUDIO_TEST] CALL setUrl: $_testUrl');
+    setState(() => _isLoading = true);
+
+    try {
+      if (_player.processingState == ProcessingState.idle || _player.duration == null) {
+        final d = await _player.setUrl(_testUrl);
+        debugPrint('[AUDIO_TEST] setUrl SUCCESS. Duration=$d');
+      } else {
+        debugPrint('[AUDIO_TEST] setUrl SKIPPED (Already loaded)');
+      }
+
+      if (_isPlaying) {
+        debugPrint('[AUDIO_TEST] CALL pause');
+        await _player.pause();
+        debugPrint('[AUDIO_TEST] pause SUCCESS');
+      } else {
+        if (_player.processingState == ProcessingState.completed) {
+          await _player.seek(Duration.zero);
+        }
+        debugPrint('[AUDIO_TEST] CALL play');
+        await _player.play();
+        debugPrint('[AUDIO_TEST] play SUCCESS');
+      }
+    } catch (e, stack) {
+      debugPrint('[AUDIO_TEST] FAILED Exception: ${e.toString()}');
+      debugPrintStack(stackTrace: stack);
+      if (mounted) {
+        setState(() => _statusLog = 'ERROR: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Standalone Audio Player Test')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Test URL: $_testUrl',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Duration: ${_duration.inSeconds}s | Position: ${_position.inSeconds}s',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Status: $_statusLog',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: _statusLog.startsWith('ERROR') ? Colors.red : Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 30),
+              IconButton(
+                iconSize: 64,
+                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                onPressed: _isLoading ? null : _toggleTestPlay,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EditingMessageBar extends StatelessWidget {
   const _EditingMessageBar({
     required this.target,
@@ -7862,6 +8011,14 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   }
 
   Future<void> _initAudio() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.speech());
+      debugPrint('[AudioSession] Configured speech session successfully for ${widget.attachment.url}');
+    } catch (e) {
+      debugPrint('[AudioSession Error] Failed to configure session: $e');
+    }
+
     _player.playbackEventStream.listen((event) {
       debugPrint('[AudioPlayer Event] ${widget.attachment.url} - processingState=${event.processingState}');
     });
