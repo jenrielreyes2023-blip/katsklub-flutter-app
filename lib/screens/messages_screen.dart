@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -139,6 +140,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   StreamSubscription<DirectTypingEvent>? _dmTypingSub;
   StreamSubscription<DirectMessageReactionEvent>? _dmReactionSub;
   StreamSubscription<DirectMessageDeletedEvent>? _dmDeletedSub;
+  StreamSubscription<DirectMessageEditedEvent>? _dmEditedSub;
   StreamSubscription<void>? _notesUpdatedSub;
 
   final Map<int, Set<String>> _typingByThread = <int, Set<String>>{};
@@ -167,7 +169,8 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmThreadSub = FeedService.dmThreadUpdatedStream.listen(_onDmThreadUpdated);
     _dmTypingSub = FeedService.dmTypingStream.listen(_onDmTyping);
     _dmReactionSub = FeedService.dmReactionStream.listen(_onDmMessageReaction);
-    _dmDeletedSub = FeedService.dmDeletedStream.listen(_onDmMessageDeleted);
+    _dmDeletedSub = FeedService.onDmMessageDeleted.listen(_onDmMessageDeleted);
+    _dmEditedSub = _feedService.onDmMessageEdited.listen(_onDmMessageEdited);
     _notesUpdatedSub = FeedService.notesUpdatedStream.listen((_) => _loadNotes());
 
     _loadCurrentUser();
@@ -257,6 +260,43 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     setState(() {
       _messages.removeWhere((m) => m.id == event.messageId);
+    });
+  }
+
+  void _onDmMessageEdited(DirectMessageEditedEvent event) {
+    debugPrint('[DM-DBG] socket dm:message-edited threadId=${event.threadId} msgId=${event.messageId}');
+    final t = _thread;
+    if (t == null || event.threadId != t.id || !mounted) return;
+
+    setState(() {
+      final index = _messages.indexWhere((m) => m.id == event.messageId);
+      if (index != -1) {
+        _messages[index] = _messages[index].copyWith(
+          body: event.body,
+          isEdited: true,
+          editedAt: event.editedAt,
+        );
+      }
+    });
+  }
+
+  DirectMessage? _editingTarget;
+
+  void _startEditMessage(DirectMessage message) {
+    setState(() {
+      _editingTarget = message;
+      _replyTarget = null;
+      _controller.text = message.body;
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controller.text.length),
+      );
+    });
+  }
+
+  void _clearEditTarget() {
+    setState(() {
+      _editingTarget = null;
+      _controller.clear();
     });
   }
 
@@ -2384,6 +2424,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               : null,
           onForward: () => _showForwardPicker(message),
           onTranslate: () => _showTranslationModal(message),
+          onEdit: message.sentByMe ? () => _startEditMessage(message) : null,
           onUnsend: message.sentByMe
               ? () async {
                   HapticFeedback.mediumImpact();
@@ -3156,6 +3197,12 @@ class _MessagesScreenState extends State<MessagesScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_editingTarget != null)
+              _EditingMessageBar(
+                target: _editingTarget!,
+                accent: theme.accent,
+                onClose: _isSending ? null : _clearEditTarget,
+              ),
             if (_replyTarget != null)
               _ReplyingToBar(
                 target: _replyTarget!,
@@ -4375,7 +4422,7 @@ class _MessageBubble extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      _formatBubbleTime(_createdAt!),
+                      '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -4740,16 +4787,20 @@ class _SingleMessageAttachmentView extends StatelessWidget {
       );
     }
 
-    final icon = attachment.isAudio
-        ? Icons.play_circle_outline_rounded
-        : attachment.isVideo
-            ? Icons.play_arrow_rounded
-            : Icons.insert_drive_file_outlined;
-    final title = attachment.isAudio
-        ? 'Voice message'
-        : attachment.name.isEmpty
-            ? 'Attachment'
-            : attachment.name;
+    if (attachment.isAudio) {
+      return _VoiceNotePlayer(
+        attachment: attachment,
+        sentByMe: sentByMe,
+        theme: theme,
+      );
+    }
+
+    final icon = attachment.isVideo
+        ? Icons.play_arrow_rounded
+        : Icons.insert_drive_file_outlined;
+    final title = attachment.name.isEmpty
+        ? 'Attachment'
+        : attachment.name;
 
     return _MessageAttachmentRow(
       icon: icon,
@@ -6788,6 +6839,7 @@ class _MessengerOverlayContent extends StatefulWidget {
     required this.onCopy,
     required this.onForward,
     required this.onTranslate,
+    this.onEdit,
     required this.onUnsend,
   });
 
@@ -6805,6 +6857,7 @@ class _MessengerOverlayContent extends StatefulWidget {
   final VoidCallback? onCopy;
   final VoidCallback onForward;
   final VoidCallback onTranslate;
+  final VoidCallback? onEdit;
   final VoidCallback? onUnsend;
 
   @override
@@ -7095,6 +7148,16 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
                         iconColor: onSurfaceColor,
                         onTap: () => _dismissWithAction(widget.onTranslate),
                       ),
+                      if (widget.onEdit != null) ...[
+                        _OverlayTileDivider(isDark: isDark),
+                        _OverlayActionTile(
+                          icon: Icons.edit_outlined,
+                          title: 'Edit',
+                          textColor: onSurfaceColor,
+                          iconColor: onSurfaceColor,
+                          onTap: () => _dismissWithAction(widget.onEdit!),
+                        ),
+                      ],
                       if (widget.onUnsend != null) ...[
                         _OverlayTileDivider(isDark: isDark),
                         _OverlayActionTile(
@@ -7587,6 +7650,254 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
           ),
         );
       },
+    );
+  }
+}
+
+class _EditingMessageBar extends StatelessWidget {
+  const _EditingMessageBar({
+    required this.target,
+    required this.accent,
+    required this.onClose,
+  });
+
+  final DirectMessage target;
+  final Color accent;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(left: BorderSide(color: accent, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.edit_rounded, size: 16, color: accent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Editing Message',
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  target.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Cancel edit',
+            icon: const Icon(Icons.close_rounded, size: 18),
+            color: const Color(0xFF6B7280),
+            visualDensity: VisualDensity.compact,
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoiceNotePlayer extends StatefulWidget {
+  const _VoiceNotePlayer({
+    required this.attachment,
+    required this.sentByMe,
+    required this.theme,
+  });
+
+  final DirectMessageAttachment attachment;
+  final bool sentByMe;
+  final ConversationTheme theme;
+
+  @override
+  State<_VoiceNotePlayer> createState() => _VoiceNotePlayerState();
+}
+
+class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+  double _playbackSpeed = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAudio();
+  }
+
+  Future<void> _initAudio() async {
+    _player.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = state.playing && state.processingState != ProcessingState.completed;
+        });
+      }
+    });
+
+    _player.durationStream.listen((d) {
+      if (mounted && d != null) {
+        setState(() => _duration = d);
+      }
+    });
+
+    _player.positionStream.listen((p) {
+      if (mounted) {
+        setState(() => _position = p);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() async {
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      if (_player.processingState == ProcessingState.completed) {
+        await _player.seek(Duration.zero);
+      }
+      if (_player.duration == null) {
+        await _player.setUrl(widget.attachment.url);
+      }
+      await _player.play();
+    }
+  }
+
+  void _cycleSpeed() async {
+    double nextSpeed = 1.0;
+    if (_playbackSpeed == 1.0) {
+      nextSpeed = 1.5;
+    } else if (_playbackSpeed == 1.5) {
+      nextSpeed = 2.0;
+    } else {
+      nextSpeed = 1.0;
+    }
+    setState(() => _playbackSpeed = nextSpeed);
+    await _player.setSpeed(nextSpeed);
+  }
+
+  String _formatTime(Duration d) {
+    final mins = d.inMinutes.remainder(60).toString().padLeft(1, '0');
+    final secs = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onOwn = widget.sentByMe;
+    final iconColor = onOwn ? Colors.white : widget.theme.accent;
+    final textColor = onOwn ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF374151);
+    final waveColor = onOwn ? Colors.white54 : Colors.grey[400]!;
+    final activeWaveColor = onOwn ? Colors.white : widget.theme.accent;
+
+    final progress = _duration.inMilliseconds > 0
+        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(
+              _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+              size: 34,
+              color: iconColor,
+            ),
+            onPressed: _togglePlay,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 20,
+                  child: Row(
+                    children: List.generate(18, (index) {
+                      final barProgress = index / 18.0;
+                      final isActive = barProgress <= progress;
+                      final heights = [10.0, 16.0, 8.0, 18.0, 12.0, 15.0, 7.0, 19.0, 11.0, 14.0, 9.0, 16.0, 8.0, 12.0, 15.0, 10.0, 14.0, 8.0];
+                      final h = heights[index % heights.length];
+
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 1.0),
+                          height: h,
+                          decoration: BoxDecoration(
+                            color: isActive ? activeWaveColor : waveColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _isPlaying ? _formatTime(_position) : _formatTime(_duration),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _cycleSpeed,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: onOwn ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${_playbackSpeed}x',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

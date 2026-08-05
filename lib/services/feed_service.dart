@@ -317,6 +317,8 @@ class DirectMessage {
     this.myReaction,
     this.reactions = const <MessageReaction>[],
     this.reactionSummary = const <ReactionSummary>[],
+    this.isEdited = false,
+    this.editedAt,
   });
 
   final int id;
@@ -332,6 +334,8 @@ class DirectMessage {
   final String? myReaction;
   final List<MessageReaction> reactions;
   final List<ReactionSummary> reactionSummary;
+  final bool isEdited;
+  final String? editedAt;
 
   DirectMessage copyWith({
     int? id,
@@ -347,6 +351,8 @@ class DirectMessage {
     String? myReaction,
     List<MessageReaction>? reactions,
     List<ReactionSummary>? reactionSummary,
+    bool? isEdited,
+    String? editedAt,
   }) {
     return DirectMessage(
       id: id ?? this.id,
@@ -362,6 +368,8 @@ class DirectMessage {
       myReaction: myReaction ?? this.myReaction,
       reactions: reactions ?? this.reactions,
       reactionSummary: reactionSummary ?? this.reactionSummary,
+      isEdited: isEdited ?? this.isEdited,
+      editedAt: editedAt ?? this.editedAt,
     );
   }
 
@@ -442,6 +450,8 @@ class DirectMessage {
       myReaction: myReaction,
       reactions: List<MessageReaction>.unmodifiable(parsedReactions),
       reactionSummary: List<ReactionSummary>.unmodifiable(parsedSummary),
+      isEdited: json['isEdited'] == true || json['is_edited'] == true,
+      editedAt: json['editedAt']?.toString() ?? json['edited_at']?.toString(),
     );
   }
 }
@@ -534,6 +544,22 @@ class DirectMessageDeletedEvent {
   final int messageId;
 }
 
+class DirectMessageEditedEvent {
+  const DirectMessageEditedEvent({
+    required this.threadId,
+    required this.messageId,
+    required this.body,
+    required this.isEdited,
+    this.editedAt,
+  });
+
+  final int threadId;
+  final int messageId;
+  final String body;
+  final bool isEdited;
+  final String? editedAt;
+}
+
 class FeedService {
   static const String _cachedDiscoverPostsKey = 'cached_discover_posts';
   static const String _cachedHomePostsKey = 'cached_home_posts';
@@ -564,8 +590,12 @@ class FeedService {
       StreamController<DirectTypingEvent>.broadcast();
   static final StreamController<DirectMessageReactionEvent> _dmReactionController =
       StreamController<DirectMessageReactionEvent>.broadcast();
-  static final StreamController<DirectMessageDeletedEvent> _dmDeletedController =
+  static final StreamController<DirectMessageDeletedEvent>
+      _dmDeletedController =
       StreamController<DirectMessageDeletedEvent>.broadcast();
+  static final StreamController<DirectMessageEditedEvent>
+      _dmEditedController =
+      StreamController<DirectMessageEditedEvent>.broadcast();
   static final StreamController<void> _notesUpdatedController =
       StreamController<void>.broadcast();
   static final ValueNotifier<int> unreadNotificationsNotifier =
@@ -617,8 +647,10 @@ class FeedService {
       _dmTypingController.stream;
   static Stream<DirectMessageReactionEvent> get dmReactionStream =>
       _dmReactionController.stream;
-  static Stream<DirectMessageDeletedEvent> get dmDeletedStream =>
+  static  Stream<DirectMessageDeletedEvent> get onDmMessageDeleted =>
       _dmDeletedController.stream;
+  Stream<DirectMessageEditedEvent> get onDmMessageEdited =>
+      _dmEditedController.stream;
   static Stream<void> get notesUpdatedStream => _notesUpdatedController.stream;
 
   static void notifyPostcardThemesReset() {
@@ -895,6 +927,28 @@ class FeedService {
         DirectMessageDeletedEvent(
           threadId: threadId,
           messageId: messageId,
+        ),
+      );
+    });
+
+    socket.on('dm:message-edited', (payload) {
+      if (payload is! Map) return;
+      final map = Map<String, dynamic>.from(
+        payload.map((key, value) => MapEntry(key.toString(), value)),
+      );
+      final threadId = _readStaticInt(map['conversationId'] ?? map['threadId']);
+      final messageId = _readStaticInt(map['messageId']);
+      final body = map['body']?.toString() ?? '';
+      final isEdited = map['isEdited'] == true;
+      final editedAt = map['editedAt']?.toString();
+
+      _dmEditedController.add(
+        DirectMessageEditedEvent(
+          threadId: threadId,
+          messageId: messageId,
+          body: body,
+          isEdited: isEdited,
+          editedAt: editedAt,
         ),
       );
     });
@@ -1952,6 +2006,16 @@ class FeedService {
     }
   }
 
+  Future<bool> editDirectMessage(int messageId, String newBody) async {
+    if (messageId <= 0 || newBody.trim().isEmpty) return false;
+    try {
+      final res = await _authenticatedPut('/api/messages/$messageId', body: {'body': newBody.trim()});
+      return res['ok'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<MessageThread?> archiveMessageThread(int threadId) async {
     if (threadId <= 0) return null;
     final data = await _authenticatedPost('/api/messages/threads/$threadId/archive');
@@ -2729,6 +2793,31 @@ class FeedService {
 
     try {
       final response = await _client.post(
+        ApiConfig.uri(path),
+        headers: _authHeaders(token, includeJsonContentType: body != null),
+        body: body == null ? null : jsonEncode(body),
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return <String, dynamic>{};
+      }
+      final decoded = jsonDecode(response.body);
+      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  Future<Map<String, dynamic>> _authenticatedPut(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    try {
+      final response = await _client.put(
         ApiConfig.uri(path),
         headers: _authHeaders(token, includeJsonContentType: body != null),
         body: body == null ? null : jsonEncode(body),
