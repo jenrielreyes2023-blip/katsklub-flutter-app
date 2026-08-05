@@ -6193,7 +6193,7 @@ class _QuotedReplyChip extends StatelessWidget {
             ? reply.senderDisplayName
             : 'User');
     final previewText =
-        reply.body.trim().isEmpty ? '[attachment]' : reply.body.trim();
+        reply.body.trim().isEmpty ? '🎙️ Voice message' : reply.body.trim();
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
       decoration: BoxDecoration(
