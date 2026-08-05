@@ -2255,11 +2255,13 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Future<void> _showMessageActions(DirectMessage message) async {
     HapticFeedback.selectionClick();
+    final quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
+
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -2270,23 +2272,225 @@ class _MessagesScreenState extends State<MessagesScreen>
               Container(
                 width: 38,
                 height: 4,
-                margin: const EdgeInsets.only(top: 8, bottom: 6),
+                margin: const EdgeInsets.only(top: 10, bottom: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              // Emoji Reactions Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: quickEmojis.map((emoji) {
+                      final isSelected = message.reaction == emoji;
+                      return GestureDetector(
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
+                          Navigator.of(sheetContext).pop();
+                          final newReaction = isSelected ? null : emoji;
+                          setState(() {
+                            final idx = _messages.indexWhere((m) => m.id == message.id);
+                            if (idx >= 0) {
+                              _messages[idx] = _messages[idx].copyWith(reaction: newReaction);
+                            }
+                          });
+                          await _feedService.reactToMessage(message.id, newReaction ?? '');
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.white : Colors.transparent,
+                            shape: BoxShape.circle,
+                            boxShadow: isSelected
+                                ? const [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              // Reply Action
               ListTile(
-                leading:
-                    const Icon(Icons.reply_rounded, color: Color(0xFF111827)),
-                title: const Text('Reply',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(Icons.reply_rounded, color: Color(0xFF111827)),
+                title: const Text(
+                  'Reply',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   _startReplyTo(message);
                 },
               ),
-              const SizedBox(height: 4),
+              // Copy Text Action
+              if (message.body.trim().isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.copy_rounded, color: Color(0xFF111827)),
+                  title: const Text(
+                    'Copy Text',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Clipboard.setData(ClipboardData(text: message.body));
+                    HapticFeedback.mediumImpact();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              // Forward Action
+              ListTile(
+                leading: const Icon(Icons.shortcut_rounded, color: Color(0xFF111827)),
+                title: const Text(
+                  'Forward',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showForwardPicker(message);
+                },
+              ),
+              // Unsend Action (only for sentByMe)
+              if (message.sentByMe)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                  title: const Text(
+                    'Unsend Message',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      _messages.removeWhere((m) => m.id == message.id);
+                    });
+                    final ok = await _feedService.deleteMessage(message.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(ok ? 'Message unsent' : 'Failed to unsend message'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showForwardPicker(DirectMessage message) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 4,
+                margin: const EdgeInsets.only(top: 10, bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Text(
+                  'Forward Message to...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _threads.length,
+                  itemBuilder: (context, index) {
+                    final targetThread = _threads[index];
+                    final otherUser = targetThread.otherUser;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: otherUser.avatarUrl != null && otherUser.avatarUrl!.isNotEmpty
+                            ? NetworkImage(otherUser.avatarUrl!)
+                            : null,
+                        child: (otherUser.avatarUrl == null || otherUser.avatarUrl!.isEmpty)
+                            ? Text(otherUser.displayName.isNotEmpty ? otherUser.displayName[0] : '?')
+                            : null,
+                      ),
+                      title: Text(
+                        otherUser.displayName.isNotEmpty ? otherUser.displayName : (otherUser.username ?? 'User'),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF3B82F6)),
+                      onTap: () async {
+                        Navigator.of(sheetContext).pop();
+                        HapticFeedback.lightImpact();
+                        final sent = await _feedService.sendDirectMessage(
+                          targetThread.id,
+                          message.body,
+                          attachmentDataUrl: message.attachment?.url,
+                          attachmentType: message.attachment?.type,
+                          attachmentName: message.attachment?.name,
+                          attachmentMime: message.attachment?.mime,
+                        );
+                        if (mounted && sent != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Message forwarded to ${otherUser.displayName ?? 'user'}'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         );
@@ -4151,6 +4355,26 @@ class _MessageBubble extends StatelessWidget {
                   ],
                 );
               },
+            ),
+          ],
+          if (message.reaction != null && message.reaction!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: sentByMe ? Colors.white24 : Colors.black12,
+                  width: 0.5,
+                ),
+              ),
+              child: Text(
+                message.reaction!,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ],
         ],

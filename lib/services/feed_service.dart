@@ -280,6 +280,7 @@ class DirectMessage {
     this.attachments = const <DirectMessageAttachment>[],
     this.seenByOther = false,
     this.replyTo,
+    this.reaction,
   });
 
   final int id;
@@ -292,6 +293,35 @@ class DirectMessage {
   final List<DirectMessageAttachment> attachments;
   final bool seenByOther;
   final MessageReplyRef? replyTo;
+  final String? reaction;
+
+  DirectMessage copyWith({
+    int? id,
+    int? conversationId,
+    String? body,
+    String? createdAt,
+    User? sender,
+    bool? sentByMe,
+    DirectMessageAttachment? attachment,
+    List<DirectMessageAttachment>? attachments,
+    bool? seenByOther,
+    MessageReplyRef? replyTo,
+    String? reaction,
+  }) {
+    return DirectMessage(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      body: body ?? this.body,
+      createdAt: createdAt ?? this.createdAt,
+      sender: sender ?? this.sender,
+      sentByMe: sentByMe ?? this.sentByMe,
+      attachment: attachment ?? this.attachment,
+      attachments: attachments ?? this.attachments,
+      seenByOther: seenByOther ?? this.seenByOther,
+      replyTo: replyTo ?? this.replyTo,
+      reaction: reaction ?? this.reaction,
+    );
+  }
 
   factory DirectMessage.fromJson(Map<String, dynamic> json) {
     final sender = json['sender'];
@@ -346,6 +376,7 @@ class DirectMessage {
       ),
       seenByOther: json['seenByOther'] == true,
       replyTo: MessageReplyRef.fromJson(json['replyTo']),
+      reaction: json['reaction']?.toString(),
     );
   }
 }
@@ -1820,6 +1851,28 @@ class FeedService {
               .toList()
           : [],
     );
+  }
+
+  Future<bool> deleteMessage(int messageId) async {
+    if (messageId <= 0) return false;
+    try {
+      final res = await _authenticatedDelete('/api/messages/$messageId');
+      return res['ok'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> reactToMessage(int messageId, String emoji) async {
+    if (messageId <= 0) return false;
+    try {
+      final res = await _authenticatedPost('/api/messages/$messageId/reactions', {
+        'emoji': emoji,
+      });
+      return res['ok'] == true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<DirectMessage?> sendDirectMessage(
