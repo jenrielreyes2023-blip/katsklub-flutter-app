@@ -7844,6 +7844,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   static final Map<String, Duration> _positionCache = <String, Duration>{};
 
   final AudioPlayer _player = AudioPlayer();
+  String? _loadedUrl;
   bool _isPlaying = false;
   bool _isLoading = false;
   bool _hasError = false;
@@ -7861,7 +7862,12 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   }
 
   Future<void> _initAudio() async {
+    _player.playbackEventStream.listen((event) {
+      debugPrint('[AudioPlayer Event] ${widget.attachment.url} - processingState=${event.processingState}');
+    });
+
     _player.playerStateStream.listen((state) {
+      debugPrint('[AudioPlayer State] ${widget.attachment.url} - playing=${state.playing}, processingState=${state.processingState}');
       if (mounted) {
         setState(() {
           _isPlaying = state.playing && state.processingState != ProcessingState.completed;
@@ -7873,6 +7879,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     });
 
     _player.durationStream.listen((d) {
+      debugPrint('[AudioPlayer Duration] ${widget.attachment.url} - duration=$d');
       if (mounted && d != null && d > Duration.zero) {
         setState(() => _duration = d);
       }
@@ -7896,22 +7903,23 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       }
     }
 
-    if (widget.attachment.url.isNotEmpty) {
+    if (widget.attachment.url.isNotEmpty && _loadedUrl != widget.attachment.url) {
       try {
+        debugPrint('[AudioPlayer Preload] Preloading ${widget.attachment.url}');
+        _loadedUrl = widget.attachment.url;
         final d = await _player.setUrl(widget.attachment.url);
         if (d != null && mounted && d > Duration.zero) {
-          setState(() {
-            _duration = d;
-          });
+          setState(() => _duration = d);
         }
       } catch (e) {
-        debugPrint('[AudioPlayer Preload] Non-fatal background preload note for ${widget.attachment.url}: $e');
+        debugPrint('[AudioPlayer Preload Note] Non-fatal background preload note for ${widget.attachment.url}: $e');
       }
     }
   }
 
   void _pausePlayback() {
     if (_isPlaying) {
+      debugPrint('[AudioPlayer Action] _pausePlayback() called via Global Manager for ${widget.attachment.url}');
       _player.pause();
     }
   }
@@ -7924,7 +7932,10 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   }
 
   Future<void> _togglePlay() async {
+    debugPrint('[AudioPlayer Action] _togglePlay() called. url=${widget.attachment.url}, loadedUrl=$_loadedUrl, isPlaying=$_isPlaying, processingState=${_player.processingState}');
+
     if (_isPlaying) {
+      debugPrint('[AudioPlayer Action] Pausing playback...');
       await _player.pause();
       return;
     }
@@ -7938,30 +7949,40 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       _GlobalVoicePlayerManager.registerActive(this);
 
       if (_player.processingState == ProcessingState.completed) {
+        debugPrint('[AudioPlayer Action] Seeking to zero after completion...');
         await _player.seek(Duration.zero);
       }
 
-      if (_player.duration == null || _player.processingState == ProcessingState.idle) {
+      if (_loadedUrl != widget.attachment.url || _player.processingState == ProcessingState.idle) {
+        debugPrint('[AudioPlayer Action] Loading URL: ${widget.attachment.url}');
+        _loadedUrl = widget.attachment.url;
         final d = await _player.setUrl(widget.attachment.url);
+        debugPrint('[AudioPlayer Action] setUrl completed. Duration=$d');
         if (d != null && mounted && d > Duration.zero) {
           setState(() => _duration = d);
         }
       }
 
       if (_position > Duration.zero && _player.position == Duration.zero) {
+        debugPrint('[AudioPlayer Action] Seeking saved position: $_position');
         await _player.seek(_position);
       }
 
+      debugPrint('[AudioPlayer Action] Starting play()...');
       await _player.play();
+      debugPrint('[AudioPlayer Action] play() call resolved.');
+
       if (mounted) {
         setState(() => _isLoading = false);
       }
     } catch (e, stack) {
-      debugPrint('[AudioPlayer Error] Failed to play voice note ${widget.attachment.url}: $e\n$stack');
+      debugPrint('[AudioPlayer Error] Failed to play voice note ${widget.attachment.url}: $e');
+      debugPrintStack(stackTrace: stack);
       if (mounted) {
         setState(() {
           _hasError = true;
           _isLoading = false;
+          _loadedUrl = null;
         });
       }
     }
