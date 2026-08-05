@@ -3417,11 +3417,39 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
+  bool _isRecordingLocked = false;
+  double _recordingDragDx = 0.0;
+  double _recordingDragDy = 0.0;
+  int _recordingSeconds = 0;
+  Timer? _recordingTimer;
+
+  void _startRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingSeconds = 0;
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (mounted && _isRecording) {
+        setState(() => _recordingSeconds++);
+      }
+    });
+  }
+
+  void _stopRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+    _recordingSeconds = 0;
+  }
+
   Future<void> _toggleRecording() async {
     if (_isRecording) {
+      _stopRecordingTimer();
       final path = await _audioRecorder.stop();
       if (!mounted) return;
-      setState(() => _isRecording = false);
+      setState(() {
+        _isRecording = false;
+        _isRecordingLocked = false;
+        _recordingDragDx = 0.0;
+        _recordingDragDy = 0.0;
+      });
       if (path == null || path.isEmpty) return;
       final file = File(path);
       final size = await file.length();
@@ -3449,7 +3477,13 @@ class _MessagesScreenState extends State<MessagesScreen>
       path: path,
     );
     if (!mounted) return;
-    setState(() => _isRecording = true);
+    setState(() {
+      _isRecording = true;
+      _isRecordingLocked = false;
+      _recordingDragDx = 0.0;
+      _recordingDragDy = 0.0;
+    });
+    _startRecordingTimer();
   }
 
   Future<void> _addXFileAttachment(
@@ -7839,27 +7873,53 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  height: 20,
-                  child: Row(
-                    children: List.generate(18, (index) {
-                      final barProgress = index / 18.0;
-                      final isActive = barProgress <= progress;
-                      final heights = [10.0, 16.0, 8.0, 18.0, 12.0, 15.0, 7.0, 19.0, 11.0, 14.0, 9.0, 16.0, 8.0, 12.0, 15.0, 10.0, 14.0, 8.0];
-                      final h = heights[index % heights.length];
+                Builder(
+                  builder: (ctx) {
+                    return GestureDetector(
+                      onTapDown: (details) {
+                        if (_duration.inMilliseconds > 0) {
+                          final box = ctx.findRenderObject() as RenderBox?;
+                          if (box != null) {
+                            final fraction = (details.localPosition.dx / box.size.width).clamp(0.0, 1.0);
+                            final seekTarget = Duration(milliseconds: (_duration.inMilliseconds * fraction).round());
+                            _player.seek(seekTarget);
+                          }
+                        }
+                      },
+                      onHorizontalDragUpdate: (details) {
+                        if (_duration.inMilliseconds > 0) {
+                          final box = ctx.findRenderObject() as RenderBox?;
+                          if (box != null) {
+                            final fraction = (details.localPosition.dx / box.size.width).clamp(0.0, 1.0);
+                            final seekTarget = Duration(milliseconds: (_duration.inMilliseconds * fraction).round());
+                            _player.seek(seekTarget);
+                          }
+                        }
+                      },
+                      child: SizedBox(
+                        height: 20,
+                        child: Row(
+                          children: List.generate(18, (index) {
+                            final barProgress = index / 18.0;
+                            final isActive = barProgress <= progress;
+                            final heights = [10.0, 16.0, 8.0, 18.0, 12.0, 15.0, 7.0, 19.0, 11.0, 14.0, 9.0, 16.0, 8.0, 12.0, 15.0, 10.0, 14.0, 8.0];
+                            final h = heights[index % heights.length];
 
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 1.0),
-                          height: h,
-                          decoration: BoxDecoration(
-                            color: isActive ? activeWaveColor : waveColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                            return Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 1.0),
+                                height: h,
+                                decoration: BoxDecoration(
+                                  color: isActive ? activeWaveColor : waveColor,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            );
+                          }),
                         ),
-                      );
-                    }),
-                  ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 3),
                 Row(
