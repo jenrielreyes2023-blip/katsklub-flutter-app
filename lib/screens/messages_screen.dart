@@ -7932,10 +7932,15 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   }
 
   Future<void> _togglePlay() async {
-    debugPrint('[AudioPlayer Action] _togglePlay() called. url=${widget.attachment.url}, loadedUrl=$_loadedUrl, isPlaying=$_isPlaying, processingState=${_player.processingState}');
+    debugPrint('[AudioPlayer Action] _togglePlay() called. url=${widget.attachment.url}, loadedUrl=$_loadedUrl, isPlaying=$_isPlaying, isLoading=$_isLoading, processingState=${_player.processingState}');
+
+    if (_isLoading) {
+      debugPrint('[AudioPlayer Guard] Already loading! Ignoring rapid tap for ${widget.attachment.url}');
+      return;
+    }
 
     if (_isPlaying) {
-      debugPrint('[AudioPlayer Action] Pausing playback...');
+      debugPrint('[AudioPlayer Action] Calling _player.pause() for ${widget.attachment.url}');
       await _player.pause();
       return;
     }
@@ -7953,11 +7958,16 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         await _player.seek(Duration.zero);
       }
 
-      if (_loadedUrl != widget.attachment.url || _player.processingState == ProcessingState.idle) {
-        debugPrint('[AudioPlayer Action] Loading URL: ${widget.attachment.url}');
+      final needsSetUrl = _loadedUrl != widget.attachment.url ||
+          _player.processingState == ProcessingState.idle;
+
+      debugPrint('[AudioPlayer Decision] _loadedUrl=$_loadedUrl, targetUrl=${widget.attachment.url}, processingState=${_player.processingState} => needsSetUrl=$needsSetUrl');
+
+      if (needsSetUrl) {
+        debugPrint('[AudioPlayer Action] Invoking _player.setUrl(${widget.attachment.url})...');
         _loadedUrl = widget.attachment.url;
         final d = await _player.setUrl(widget.attachment.url);
-        debugPrint('[AudioPlayer Action] setUrl completed. Duration=$d');
+        debugPrint('[AudioPlayer Action] _player.setUrl() resolved. Duration=$d');
         if (d != null && mounted && d > Duration.zero) {
           setState(() => _duration = d);
         }
@@ -7968,15 +7978,15 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         await _player.seek(_position);
       }
 
-      debugPrint('[AudioPlayer Action] Starting play()...');
+      debugPrint('[AudioPlayer Action] Invoking _player.play()...');
       await _player.play();
-      debugPrint('[AudioPlayer Action] play() call resolved.');
+      debugPrint('[AudioPlayer Action] _player.play() resolved.');
 
       if (mounted) {
         setState(() => _isLoading = false);
       }
     } catch (e, stack) {
-      debugPrint('[AudioPlayer Error] Failed to play voice note ${widget.attachment.url}: $e');
+      debugPrint('[AudioPlayer Error] Exception in _togglePlay for ${widget.attachment.url}: ${e.toString()}');
       debugPrintStack(stackTrace: stack);
       if (mounted) {
         setState(() {
