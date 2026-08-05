@@ -227,6 +227,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmTypingSub?.cancel();
     _dmReactionSub?.cancel();
     _dmDeletedSub?.cancel();
+    _dmEditedSub?.cancel();
     _notesUpdatedSub?.cancel();
     unawaited(_audioRecorder.dispose());
     _searchController.dispose();
