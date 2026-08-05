@@ -6860,16 +6860,10 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final padding = MediaQuery.of(context).padding;
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final cardBg = isDark
-        ? (colorScheme.surfaceContainerHigh != Colors.transparent
-            ? colorScheme.surfaceContainerHigh
-            : const Color(0xFF2B2B2B))
-        : colorScheme.surface;
-
-    final onSurfaceColor = colorScheme.onSurface;
+    final cardBg = isDark ? const Color(0xFF242526) : Colors.white;
+    final onSurfaceColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF050505);
 
     final overlayBorder = Border.all(
       color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
