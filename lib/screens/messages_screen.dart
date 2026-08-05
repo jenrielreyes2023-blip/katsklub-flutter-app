@@ -7845,6 +7845,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
 
   final AudioPlayer _player = AudioPlayer();
   bool _isPlaying = false;
+  bool _isLoading = false;
   bool _hasError = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
@@ -7864,6 +7865,9 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       if (mounted) {
         setState(() {
           _isPlaying = state.playing && state.processingState != ProcessingState.completed;
+          if (state.processingState == ProcessingState.ready || state.processingState == ProcessingState.completed) {
+            _isLoading = false;
+          }
         });
       }
     });
@@ -7895,17 +7899,13 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     if (widget.attachment.url.isNotEmpty) {
       try {
         final d = await _player.setUrl(widget.attachment.url);
-        if (d != null && mounted) {
+        if (d != null && mounted && d > Duration.zero) {
           setState(() {
             _duration = d;
-            _hasError = false;
           });
-          if (_position > Duration.zero) {
-            await _player.seek(_position);
-          }
         }
-      } catch (_) {
-        if (mounted) setState(() => _hasError = true);
+      } catch (e) {
+        debugPrint('[AudioPlayer Preload] Non-fatal background preload note for ${widget.attachment.url}: $e');
       }
     }
   }
@@ -7923,24 +7923,47 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     super.dispose();
   }
 
-  void _togglePlay() async {
-    if (_hasError) {
-      setState(() => _hasError = false);
-      _initAudio();
+  Future<void> _togglePlay() async {
+    if (_isPlaying) {
+      await _player.pause();
       return;
     }
 
-    if (_isPlaying) {
-      await _player.pause();
-    } else {
+    setState(() {
+      _hasError = false;
+      _isLoading = true;
+    });
+
+    try {
       _GlobalVoicePlayerManager.registerActive(this);
+
       if (_player.processingState == ProcessingState.completed) {
         await _player.seek(Duration.zero);
       }
-      if (_player.duration == null) {
-        await _player.setUrl(widget.attachment.url);
+
+      if (_player.duration == null || _player.processingState == ProcessingState.idle) {
+        final d = await _player.setUrl(widget.attachment.url);
+        if (d != null && mounted && d > Duration.zero) {
+          setState(() => _duration = d);
+        }
       }
+
+      if (_position > Duration.zero && _player.position == Duration.zero) {
+        await _player.seek(_position);
+      }
+
       await _player.play();
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    } catch (e, stack) {
+      debugPrint('[AudioPlayer Error] Failed to play voice note ${widget.attachment.url}: $e\n$stack');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -7982,13 +8005,22 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: Icon(
-              _hasError
-                  ? Icons.refresh_rounded
-                  : (_isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded),
-              size: 34,
-              color: _hasError ? Colors.redAccent : iconColor,
-            ),
+            icon: _isLoading
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: iconColor,
+                    ),
+                  )
+                : Icon(
+                    _hasError
+                        ? Icons.refresh_rounded
+                        : (_isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded),
+                    size: 34,
+                    color: _hasError ? Colors.redAccent : iconColor,
+                  ),
             onPressed: _togglePlay,
           ),
           const SizedBox(width: 4),
