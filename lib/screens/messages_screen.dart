@@ -8186,6 +8186,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} build for ${widget.attachment.url}');
     final onOwn = widget.sentByMe;
     final iconColor = onOwn ? Colors.white : widget.theme.accent;
     final textColor = onOwn ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF374151);
