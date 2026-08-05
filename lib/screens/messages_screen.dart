@@ -6864,16 +6864,26 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBg = isDark
-        ? (colorScheme.surfaceContainerHighest != Colors.transparent
-            ? colorScheme.surfaceContainerHighest
+        ? (colorScheme.surfaceContainerHigh != Colors.transparent
+            ? colorScheme.surfaceContainerHigh
             : const Color(0xFF2B2B2B))
-        : Colors.white;
+        : colorScheme.surface;
 
-    final onSurfaceColor = colorScheme.onSurface != Colors.transparent
-        ? colorScheme.onSurface
-        : (isDark ? Colors.white : const Color(0xFF111827));
+    final onSurfaceColor = colorScheme.onSurface;
 
-    final shadowColor = isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.12);
+    final overlayBorder = Border.all(
+      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+      width: 1,
+    );
+
+    final overlayShadow = [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
+        blurRadius: 20,
+        spreadRadius: 0,
+        offset: const Offset(0, 8),
+      ),
+    ];
 
     final spaceAbove = widget.bubbleOffset.dy - padding.top;
     final spaceBelow = screenSize.height - (widget.bubbleOffset.dy + widget.bubbleSize.height) - padding.bottom;
@@ -6999,15 +7009,9 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
               child: Container(
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: shadowColor,
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(28),
+                  border: overlayBorder,
+                  boxShadow: overlayShadow,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -7052,14 +7056,8 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
                 decoration: BoxDecoration(
                   color: cardBg,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: shadowColor,
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: overlayBorder,
+                  boxShadow: overlayShadow,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
@@ -7153,7 +7151,11 @@ class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: widget.isSelected ? Colors.white.withOpacity(0.25) : Colors.transparent,
+            color: widget.isSelected
+                ? (Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.08))
+                : Colors.transparent,
             shape: BoxShape.circle,
           ),
           child: Text(
@@ -7216,7 +7218,7 @@ class _OverlayTileDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 0.6,
-      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
     );
   }
 }
