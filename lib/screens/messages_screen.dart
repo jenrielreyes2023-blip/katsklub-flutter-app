@@ -3464,9 +3464,6 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
-  bool _isRecordingLocked = false;
-  double _recordingDragDx = 0.0;
-  double _recordingDragDy = 0.0;
   int _recordingSeconds = 0;
   Timer? _recordingTimer;
   final List<double> _liveAmplitudes = <double>[];
@@ -3498,9 +3495,6 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (!mounted) return;
       setState(() {
         _isRecording = false;
-        _isRecordingLocked = false;
-        _recordingDragDx = 0.0;
-        _recordingDragDy = 0.0;
       });
       if (path == null || path.isEmpty) return;
       final file = File(path);
@@ -3532,9 +3526,6 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (!mounted) return;
     setState(() {
       _isRecording = true;
-      _isRecordingLocked = false;
-      _recordingDragDx = 0.0;
-      _recordingDragDy = 0.0;
     });
     _startRecordingTimer();
 
@@ -7817,6 +7808,23 @@ class _EditingMessageBar extends StatelessWidget {
   }
 }
 
+class _GlobalVoicePlayerManager {
+  static _VoiceNotePlayerState? _activeState;
+
+  static void registerActive(_VoiceNotePlayerState state) {
+    if (_activeState != null && _activeState != state) {
+      _activeState?._pausePlayback();
+    }
+    _activeState = state;
+  }
+
+  static void unregister(_VoiceNotePlayerState state) {
+    if (_activeState == state) {
+      _activeState = null;
+    }
+  }
+}
+
 class _VoiceNotePlayer extends StatefulWidget {
   const _VoiceNotePlayer({
     required this.attachment,
@@ -7833,8 +7841,11 @@ class _VoiceNotePlayer extends StatefulWidget {
 }
 
 class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
+  static final Map<String, Duration> _positionCache = <String, Duration>{};
+
   final AudioPlayer _player = AudioPlayer();
   bool _isPlaying = false;
+  bool _hasError = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   double _playbackSpeed = 1.0;
@@ -7842,6 +7853,9 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   @override
   void initState() {
     super.initState();
+    if (_positionCache.containsKey(widget.attachment.url)) {
+      _position = _positionCache[widget.attachment.url]!;
+    }
     _initAudio();
   }
 
@@ -7863,6 +7877,9 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     _player.positionStream.listen((p) {
       if (mounted) {
         setState(() => _position = p);
+        if (widget.attachment.url.isNotEmpty) {
+          _positionCache[widget.attachment.url] = p;
+        }
       }
     });
 
@@ -7879,22 +7896,44 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       try {
         final d = await _player.setUrl(widget.attachment.url);
         if (d != null && mounted) {
-          setState(() => _duration = d);
+          setState(() {
+            _duration = d;
+            _hasError = false;
+          });
+          if (_position > Duration.zero) {
+            await _player.seek(_position);
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        if (mounted) setState(() => _hasError = true);
+      }
+    }
+  }
+
+  void _pausePlayback() {
+    if (_isPlaying) {
+      _player.pause();
     }
   }
 
   @override
   void dispose() {
+    _GlobalVoicePlayerManager.unregister(this);
     _player.dispose();
     super.dispose();
   }
 
   void _togglePlay() async {
+    if (_hasError) {
+      setState(() => _hasError = false);
+      _initAudio();
+      return;
+    }
+
     if (_isPlaying) {
       await _player.pause();
     } else {
+      _GlobalVoicePlayerManager.registerActive(this);
       if (_player.processingState == ProcessingState.completed) {
         await _player.seek(Duration.zero);
       }
@@ -7944,9 +7983,11 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         children: [
           IconButton(
             icon: Icon(
-              _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+              _hasError
+                  ? Icons.refresh_rounded
+                  : (_isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded),
               size: 34,
-              color: iconColor,
+              color: _hasError ? Colors.redAccent : iconColor,
             ),
             onPressed: _togglePlay,
           ),
@@ -7979,26 +8020,28 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                           }
                         }
                       },
-                      child: SizedBox(
-                        height: 20,
-                        child: Row(
-                          children: List.generate(18, (index) {
-                            final barProgress = index / 18.0;
-                            final isActive = barProgress <= progress;
-                            final heights = [10.0, 16.0, 8.0, 18.0, 12.0, 15.0, 7.0, 19.0, 11.0, 14.0, 9.0, 16.0, 8.0, 12.0, 15.0, 10.0, 14.0, 8.0];
-                            final h = heights[index % heights.length];
+                      child: RepaintBoundary(
+                        child: SizedBox(
+                          height: 20,
+                          child: Row(
+                            children: List.generate(18, (index) {
+                              final barProgress = index / 18.0;
+                              final isActive = barProgress <= progress;
+                              final heights = [10.0, 16.0, 8.0, 18.0, 12.0, 15.0, 7.0, 19.0, 11.0, 14.0, 9.0, 16.0, 8.0, 12.0, 15.0, 10.0, 14.0, 8.0];
+                              final h = heights[index % heights.length];
 
-                            return Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 1.0),
-                                height: h,
-                                decoration: BoxDecoration(
-                                  color: isActive ? activeWaveColor : waveColor,
-                                  borderRadius: BorderRadius.circular(2),
+                              return Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 1.0),
+                                  height: h,
+                                  decoration: BoxDecoration(
+                                    color: isActive ? activeWaveColor : waveColor,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            }),
+                          ),
                         ),
                       ),
                     );
