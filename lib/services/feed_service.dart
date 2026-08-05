@@ -1942,6 +1942,16 @@ class FeedService {
     return data['ok'] == true;
   }
 
+  Future<Map<String, dynamic>> getMessageReactions(int messageId) async {
+    if (messageId <= 0) return const {'ok': false, 'reactions': []};
+    try {
+      final res = await _authenticatedGet('/api/messages/$messageId/reactions');
+      return res;
+    } catch (_) {
+      return const {'ok': false, 'reactions': []};
+    }
+  }
+
   Future<MessageThread?> archiveMessageThread(int threadId) async {
     if (threadId <= 0) return null;
     final data = await _authenticatedPost('/api/messages/threads/$threadId/archive');

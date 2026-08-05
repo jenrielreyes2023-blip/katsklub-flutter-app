@@ -260,6 +260,101 @@ class _MessagesScreenState extends State<MessagesScreen>
     });
   }
 
+  void _showReactionsListModal(DirectMessage message) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF242526)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+        final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF050505);
+
+        return FutureBuilder<Map<String, dynamic>>(
+          future: _feedService.getMessageReactions(message.id),
+          builder: (context, snapshot) {
+            final rawList = snapshot.hasData && snapshot.data!['reactions'] is List
+                ? (snapshot.data!['reactions'] as List)
+                : message.reactions;
+
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 10, bottom: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Text(
+                      'Reactions',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator.adaptive(),
+                    )
+                  else if (rawList.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'No reactions yet',
+                        style: TextStyle(color: textColor.withOpacity(0.6)),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: rawList.length,
+                        itemBuilder: (context, index) {
+                          final item = rawList[index];
+                          final emoji = item is MessageReaction
+                              ? item.emoji
+                              : (item['emoji']?.toString() ?? '');
+                          final name = item is MessageReaction
+                              ? 'User ${item.userId.substring(0, item.userId.length > 8 ? 8 : item.userId.length)}'
+                              : (item['fullName']?.toString() ?? item['username']?.toString() ?? 'User');
+
+                          return ListTile(
+                            leading: Text(emoji, style: const TextStyle(fontSize: 24)),
+                            title: Text(
+                              name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _onDmMessage(DirectMessageEvent event) {
     final t = _thread;
     debugPrint(
@@ -4377,44 +4472,6 @@ class _MessageBubble extends StatelessWidget {
               },
             ),
           ],
-          if (message.reactionSummary.isNotEmpty || (message.myReaction != null && message.myReaction!.isNotEmpty)) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF374151)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: sentByMe ? Colors.white24 : Colors.black12,
-                  width: 0.5,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (message.reactionSummary.isNotEmpty)
-                    ...message.reactionSummary.map((s) => Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(
-                            '${s.emoji}${s.count > 1 ? " ${s.count}" : ""}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ))
-                  else if (message.myReaction != null)
-                    Text(
-                      message.myReaction!,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -4423,7 +4480,17 @@ class _MessageBubble extends StatelessWidget {
     if (sentByMe) {
       row = Align(
         alignment: Alignment.centerRight,
-        child: bubble,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            bubble,
+            _MessageReactionBadges(
+              message: message,
+              sentByMe: true,
+            ),
+          ],
+        ),
       );
     } else {
       row = Row(
@@ -4439,7 +4506,19 @@ class _MessageBubble extends StatelessWidget {
                   )
                 : const SizedBox.shrink(),
           ),
-          Flexible(child: bubble),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                bubble,
+                _MessageReactionBadges(
+                  message: message,
+                  sentByMe: false,
+                ),
+              ],
+            ),
+          ),
         ],
       );
     }
@@ -7213,6 +7292,153 @@ class _OverlayTileDivider extends StatelessWidget {
       height: 1,
       thickness: 0.6,
       color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+    );
+  }
+}
+
+class _MessageReactionBadges extends StatelessWidget {
+  const _MessageReactionBadges({
+    required this.message,
+    required this.sentByMe,
+  });
+
+  final DirectMessage message;
+  final bool sentByMe;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = message.reactionSummary;
+    final myReaction = message.myReaction;
+
+    if (summary.isEmpty && (myReaction == null || myReaction.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipBg = isDark ? const Color(0xFF242526) : Colors.white;
+    final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF050505);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.08);
+
+    List<ReactionSummary> items = List<ReactionSummary>.from(summary);
+    if (items.isEmpty && myReaction != null && myReaction.isNotEmpty) {
+      items.add(ReactionSummary(emoji: myReaction, count: 1));
+    }
+
+    const maxVisible = 4;
+    final showOverflow = items.length > maxVisible;
+    final visibleItems = showOverflow ? items.take(maxVisible - 1).toList() : items;
+    final overflowCount = items.length - visibleItems.length;
+
+    return Transform.translate(
+      offset: const Offset(0, -6),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: sentByMe ? 0 : 4,
+          right: sentByMe ? 4 : 0,
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: Wrap(
+            spacing: 5,
+            runSpacing: 4,
+            alignment: sentByMe ? WrapAlignment.end : WrapAlignment.start,
+            children: [
+              ...visibleItems.map((s) {
+                final isMyReactionEmoji = myReaction == s.emoji;
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
+                    if (screenState != null) {
+                      screenState._showReactionsListModal(message);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isMyReactionEmoji
+                          ? (isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB))
+                          : chipBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isMyReactionEmoji
+                            ? (isDark ? Colors.white.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.15))
+                            : borderColor,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                          blurRadius: 6,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          s.emoji,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        if (s.count > 0) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            '${s.count}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              if (showOverflow)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    final screenState = context.findAncestorStateOfType<_MessagesScreenState>();
+                    if (screenState != null) {
+                      screenState._showReactionsListModal(message);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                          blurRadius: 6,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '+$overflowCount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
