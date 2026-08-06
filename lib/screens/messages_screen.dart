@@ -3451,18 +3451,28 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Future<void> _pickCameraImage() async {
-    final image = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 92,
-    );
-    if (image == null) return;
-    await _addXFileAttachment(image, type: 'image');
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 92,
+      );
+      if (image == null) return;
+      await _addXFileAttachment(image, type: 'image');
+    } catch (e) {
+      debugPrint('[Camera Error] Failed to pick image from camera: $e');
+      _showComposerMessage('Unable to open camera. Please check camera permissions.');
+    }
   }
 
   Future<void> _pickGalleryImages() async {
-    final images = await _imagePicker.pickMultiImage(imageQuality: 92);
-    for (final image in images) {
-      await _addXFileAttachment(image, type: 'image');
+    try {
+      final images = await _imagePicker.pickMultiImage(imageQuality: 92);
+      for (final image in images) {
+        await _addXFileAttachment(image, type: 'image');
+      }
+    } catch (e) {
+      debugPrint('[Gallery Error] Failed to pick images: $e');
+      _showComposerMessage('Unable to access photos. Please check storage permissions.');
     }
   }
 
