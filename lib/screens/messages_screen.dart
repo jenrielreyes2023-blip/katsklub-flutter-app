@@ -8009,6 +8009,34 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     final trimmed = rawUrl.trim();
     if (trimmed.isEmpty) return null;
 
+    if (trimmed.startsWith('data:')) {
+      try {
+        final commaIndex = trimmed.indexOf(',');
+        if (commaIndex != -1) {
+          final base64Str = trimmed.substring(commaIndex + 1);
+          final bytes = base64Decode(base64Str);
+          final tempDir = await getTemporaryDirectory();
+          final fileHash = trimmed.hashCode.abs();
+          String ext = 'm4a';
+          if (trimmed.contains('audio/mp3') || trimmed.contains('audio/mpeg')) {
+            ext = 'mp3';
+          } else if (trimmed.contains('audio/wav')) {
+            ext = 'wav';
+          } else if (trimmed.contains('audio/ogg')) {
+            ext = 'ogg';
+          }
+          final tempFile = File('${tempDir.path}/voice_temp_$fileHash.$ext');
+          if (!await tempFile.exists()) {
+            await tempFile.writeAsBytes(bytes);
+          }
+          debugPrint('[AudioPlayer SetSource] Decoded data URI (${bytes.length} bytes) to temp file: ${tempFile.path}');
+          return await _player.setFilePath(tempFile.path);
+        }
+      } catch (e) {
+        debugPrint('[AudioPlayer SetSource DataURI Error] Failed to decode data URI: $e');
+      }
+    }
+
     if (trimmed.startsWith('/') || trimmed.startsWith('file://') || File(trimmed).existsSync()) {
       final cleanPath = trimmed.startsWith('file://') ? Uri.parse(trimmed).toFilePath() : trimmed;
       if (File(cleanPath).existsSync()) {
