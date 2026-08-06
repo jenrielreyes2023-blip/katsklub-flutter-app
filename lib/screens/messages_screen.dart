@@ -3455,12 +3455,22 @@ class _MessagesScreenState extends State<MessagesScreen>
       final image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 92,
+        preferredCameraDevice: CameraDevice.rear,
       );
       if (image == null) return;
       await _addXFileAttachment(image, type: 'image');
     } catch (e) {
-      debugPrint('[Camera Error] Failed to pick image from camera: $e');
-      _showComposerMessage('Unable to open camera. Please check camera permissions.');
+      debugPrint('[Camera Primary Error] $e - Retrying fallback pickImage without parameters...');
+      try {
+        final imageFallback = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+        );
+        if (imageFallback == null) return;
+        await _addXFileAttachment(imageFallback, type: 'image');
+      } catch (e2) {
+        debugPrint('[Camera Fallback Error] $e2');
+        _showComposerMessage('Unable to open camera ($e2).');
+      }
     }
   }
 
