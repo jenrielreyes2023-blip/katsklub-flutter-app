@@ -8005,6 +8005,23 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   Duration _position = Duration.zero;
   double _playbackSpeed = 1.0;
 
+  Future<Duration?> _setAudioSource(String rawUrl) async {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return null;
+
+    if (trimmed.startsWith('/') || trimmed.startsWith('file://') || File(trimmed).existsSync()) {
+      final cleanPath = trimmed.startsWith('file://') ? Uri.parse(trimmed).toFilePath() : trimmed;
+      if (File(cleanPath).existsSync()) {
+        debugPrint('[AudioPlayer SetSource] Loading local file path: $cleanPath');
+        return await _player.setFilePath(cleanPath);
+      }
+    }
+
+    final resolvedUrl = ApiConfig.assetUrl(trimmed);
+    debugPrint('[AudioPlayer SetSource] Loading audio URL: $resolvedUrl (original: $trimmed)');
+    return await _player.setUrl(resolvedUrl);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -8074,13 +8091,14 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     if (widget.attachment.url.isNotEmpty && _loadedUrl != widget.attachment.url) {
       try {
         debugPrint('[AudioPlayer Preload] Preloading ${widget.attachment.url}');
+        final d = await _setAudioSource(widget.attachment.url);
         _loadedUrl = widget.attachment.url;
-        final d = await _player.setUrl(widget.attachment.url);
         if (d != null && mounted && d > Duration.zero) {
           setState(() => _duration = d);
         }
       } catch (e) {
         debugPrint('[AudioPlayer Preload Note] Non-fatal background preload note for ${widget.attachment.url}: $e');
+        _loadedUrl = null;
       }
     }
   }
@@ -8140,15 +8158,16 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     }
 
     final needsSetUrl = _loadedUrl != widget.attachment.url ||
-        _player.processingState == ProcessingState.idle;
+        _player.processingState == ProcessingState.idle ||
+        _hasError;
 
     debugPrint('[STEP 3-SETURL DECISION] loadedUrl=$_loadedUrl, target=${widget.attachment.url}, processingState=${_player.processingState} => needsSetUrl=$needsSetUrl');
 
     if (needsSetUrl) {
-      debugPrint('[STEP 3-SETURL START] Invoking _player.setUrl(${widget.attachment.url})...');
+      debugPrint('[STEP 3-SETURL START] Invoking _setAudioSource(${widget.attachment.url})...');
       try {
+        final d = await _setAudioSource(widget.attachment.url);
         _loadedUrl = widget.attachment.url;
-        final d = await _player.setUrl(widget.attachment.url);
         debugPrint('[STEP 3-SETURL SUCCESS] Duration=$d');
         if (d != null && mounted && d > Duration.zero) {
           setState(() => _duration = d);
