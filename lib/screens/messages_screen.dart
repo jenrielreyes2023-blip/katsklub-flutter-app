@@ -16,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:audioplayers/audioplayers.dart' as ap;
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -7996,66 +7997,18 @@ class _VoiceNotePlayer extends StatefulWidget {
 class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
   static final Map<String, Duration> _positionCache = <String, Duration>{};
 
-  final AudioPlayer _player = AudioPlayer();
-  String? _loadedUrl;
+  final ap.AudioPlayer _player = ap.AudioPlayer();
+  StreamSubscription? _durationSub;
+  StreamSubscription? _positionSub;
+  StreamSubscription? _stateSub;
+  StreamSubscription? _completeSub;
+
   bool _isPlaying = false;
   bool _isLoading = false;
   bool _hasError = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   double _playbackSpeed = 1.0;
-
-  Future<Duration?> _setAudioSource(String rawUrl) async {
-    final trimmed = rawUrl.trim();
-    if (trimmed.isEmpty) return null;
-
-    if (trimmed.startsWith('data:')) {
-      try {
-        final commaIndex = trimmed.indexOf(',');
-        if (commaIndex != -1) {
-          final base64Str = trimmed.substring(commaIndex + 1);
-          final bytes = base64Decode(base64Str);
-          final tempDir = await getTemporaryDirectory();
-          final fileHash = trimmed.hashCode.abs();
-          String ext = 'm4a';
-          if (trimmed.contains('audio/mp3') || trimmed.contains('audio/mpeg')) {
-            ext = 'mp3';
-          } else if (trimmed.contains('audio/wav')) {
-            ext = 'wav';
-          } else if (trimmed.contains('audio/ogg')) {
-            ext = 'ogg';
-          }
-          final tempFile = File('${tempDir.path}/voice_temp_$fileHash.$ext');
-          if (!await tempFile.exists()) {
-            await tempFile.writeAsBytes(bytes);
-          }
-          debugPrint('[AudioPlayer SetSource] Decoded data URI (${bytes.length} bytes) to temp file: ${tempFile.path}');
-          return await _player.setFilePath(tempFile.path);
-        }
-      } catch (e) {
-        debugPrint('[AudioPlayer SetSource DataURI Error] Failed to decode data URI: $e');
-      }
-    }
-
-    if (trimmed.startsWith('/') || trimmed.startsWith('file://') || File(trimmed).existsSync()) {
-      final cleanPath = trimmed.startsWith('file://') ? Uri.parse(trimmed).toFilePath() : trimmed;
-      if (File(cleanPath).existsSync()) {
-        debugPrint('[AudioPlayer SetSource] Loading local file path: $cleanPath');
-        return await _player.setFilePath(cleanPath);
-      }
-    }
-
-    final resolvedUrl = ApiConfig.assetUrl(trimmed);
-    debugPrint('[AudioPlayer SetSource] Loading audio URL: $resolvedUrl (original: $trimmed)');
-    try {
-      return await _player.setUrl(resolvedUrl);
-    } catch (e) {
-      debugPrint('[AudioPlayer SetSource] setUrl failed ($e), attempting AudioSource.uri fallback for $resolvedUrl');
-      return await _player.setAudioSource(
-        AudioSource.uri(Uri.parse(resolvedUrl)),
-      );
-    }
-  }
 
   @override
   void initState() {
@@ -8067,50 +8020,39 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
     _initAudio();
   }
 
-  @override
-  void didUpdateWidget(covariant _VoiceNotePlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} didUpdateWidget oldUrl=${oldWidget.attachment.url} newUrl=${widget.attachment.url}');
-  }
-
-  Future<void> _initAudio() async {
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.speech());
-      debugPrint('[AudioSession] Configured speech session successfully for ${widget.attachment.url}');
-    } catch (e) {
-      debugPrint('[AudioSession Error] Failed to configure session: $e');
-    }
-
-    _player.playbackEventStream.listen((event) {
-      debugPrint('[AudioPlayer Event] ${widget.attachment.url} - processingState=${event.processingState}');
-    });
-
-    _player.playerStateStream.listen((state) {
-      debugPrint('[AudioPlayer State] ${widget.attachment.url} - playing=${state.playing}, processingState=${state.processingState}');
+  void _initAudio() {
+    _stateSub = _player.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {
-          _isPlaying = state.playing && state.processingState != ProcessingState.completed;
-          if (state.processingState == ProcessingState.ready || state.processingState == ProcessingState.completed) {
+          _isPlaying = state == ap.PlayerState.playing;
+          if (state == ap.PlayerState.playing || state == ap.PlayerState.paused || state == ap.PlayerState.completed) {
             _isLoading = false;
           }
         });
       }
     });
 
-    _player.durationStream.listen((d) {
-      debugPrint('[AudioPlayer Duration] ${widget.attachment.url} - duration=$d');
-      if (mounted && d != null && d > Duration.zero) {
+    _durationSub = _player.onDurationChanged.listen((d) {
+      if (mounted && d > Duration.zero) {
         setState(() => _duration = d);
       }
     });
 
-    _player.positionStream.listen((p) {
+    _positionSub = _player.onPositionChanged.listen((p) {
       if (mounted) {
         setState(() => _position = p);
         if (widget.attachment.url.isNotEmpty) {
           _positionCache[widget.attachment.url] = p;
         }
+      }
+    });
+
+    _completeSub = _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _position = Duration.zero;
+        });
       }
     });
 
@@ -8122,54 +8064,34 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         _duration = Duration(seconds: secs);
       }
     }
-
-    if (widget.attachment.url.isNotEmpty && _loadedUrl != widget.attachment.url) {
-      try {
-        debugPrint('[AudioPlayer Preload] Preloading ${widget.attachment.url}');
-        final d = await _setAudioSource(widget.attachment.url);
-        _loadedUrl = widget.attachment.url;
-        if (d != null && mounted && d > Duration.zero) {
-          setState(() => _duration = d);
-        }
-      } catch (e) {
-        debugPrint('[AudioPlayer Preload Note] Non-fatal background preload note for ${widget.attachment.url}: $e');
-        _loadedUrl = null;
-      }
-    }
   }
 
   void _pausePlayback() {
     if (_isPlaying) {
-      debugPrint('[AudioPlayer Action] _pausePlayback() called via Global Manager for ${widget.attachment.url}');
       _player.pause();
     }
   }
 
   @override
   void dispose() {
-    debugPrint('[VoiceWidget] hash=${identityHashCode(this)} dispose for ${widget.attachment.url}');
+    _durationSub?.cancel();
+    _positionSub?.cancel();
+    _stateSub?.cancel();
+    _completeSub?.cancel();
     _GlobalVoicePlayerManager.unregister(this);
     _player.dispose();
     super.dispose();
   }
 
   Future<void> _togglePlay() async {
-    debugPrint('[STEP 0] _togglePlay() called for ${widget.attachment.url}');
-    debugPrint('[STEP 0] State: isPlaying=$_isPlaying, isLoading=$_isLoading, hasError=$_hasError, processingState=${_player.processingState}');
-
-    if (_isLoading) {
-      debugPrint('[STEP 0] Guard: Already loading! Ignoring rapid tap.');
-      return;
-    }
+    debugPrint('[VoiceWidget] _togglePlay() called for ${widget.attachment.url}');
+    if (_isLoading) return;
 
     if (_isPlaying) {
-      debugPrint('[STEP 1-PAUSE] Calling _player.pause()...');
       try {
         await _player.pause();
-        debugPrint('[STEP 1-PAUSE SUCCESS]');
-      } catch (e, st) {
-        debugPrint('[STEP 1-PAUSE FAILED] ${e.toString()}');
-        debugPrintStack(stackTrace: st);
+      } catch (e) {
+        debugPrint('[VoiceWidget] Pause error: $e');
       }
       return;
     }
@@ -8181,71 +8103,41 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
 
     _GlobalVoicePlayerManager.registerActive(this);
 
-    if (_player.processingState == ProcessingState.completed) {
-      debugPrint('[STEP 2-SEEK] Completed state detected. Seeking to zero...');
-      try {
-        await _player.seek(Duration.zero);
-        debugPrint('[STEP 2-SEEK SUCCESS]');
-      } catch (e, st) {
-        debugPrint('[STEP 2-SEEK FAILED] ${e.toString()}');
-        debugPrintStack(stackTrace: st);
-      }
-    }
-
-    final needsSetUrl = _loadedUrl != widget.attachment.url ||
-        _player.processingState == ProcessingState.idle ||
-        _hasError;
-
-    debugPrint('[STEP 3-SETURL DECISION] loadedUrl=$_loadedUrl, target=${widget.attachment.url}, processingState=${_player.processingState} => needsSetUrl=$needsSetUrl');
-
-    if (needsSetUrl) {
-      debugPrint('[STEP 3-SETURL START] Invoking _setAudioSource(${widget.attachment.url})...');
-      try {
-        final d = await _setAudioSource(widget.attachment.url);
-        _loadedUrl = widget.attachment.url;
-        debugPrint('[STEP 3-SETURL SUCCESS] Duration=$d');
-        if (d != null && mounted && d > Duration.zero) {
-          setState(() => _duration = d);
-        }
-      } catch (e, st) {
-        debugPrint('[STEP 3-SETURL FAILED] ${e.toString()}');
-        debugPrintStack(stackTrace: st);
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _isLoading = false;
-            _loadedUrl = null;
-          });
-        }
-        return;
-      }
-    }
-
-    if (_position > Duration.zero && _player.position == Duration.zero) {
-      debugPrint('[STEP 4-RESTORE-POSITION] Seeking cached position: $_position');
-      try {
-        await _player.seek(_position);
-        debugPrint('[STEP 4-RESTORE-POSITION SUCCESS]');
-      } catch (e, st) {
-        debugPrint('[STEP 4-RESTORE-POSITION FAILED] ${e.toString()}');
-        debugPrintStack(stackTrace: st);
-      }
-    }
-
-    debugPrint('[STEP 5-PLAY START] Invoking _player.play()...');
     try {
-      await _player.play();
-      debugPrint('[STEP 5-PLAY SUCCESS] _player.play() returned successfully.');
+      final rawUrl = widget.attachment.url.trim();
+      ap.Source source;
+
+      if (rawUrl.startsWith('data:')) {
+        final commaIndex = rawUrl.indexOf(',');
+        final base64Str = commaIndex != -1 ? rawUrl.substring(commaIndex + 1) : rawUrl;
+        final bytes = base64Decode(base64Str);
+        source = ap.BytesSource(bytes);
+      } else if (rawUrl.startsWith('/') || rawUrl.startsWith('file://') || File(rawUrl).existsSync()) {
+        final cleanPath = rawUrl.startsWith('file://') ? Uri.parse(rawUrl).toFilePath() : rawUrl;
+        source = ap.DeviceFileSource(cleanPath);
+      } else {
+        final resolvedUrl = ApiConfig.assetUrl(rawUrl);
+        source = ap.UrlSource(resolvedUrl);
+      }
+
+      await _player.setPlaybackRate(_playbackSpeed);
+      await _player.play(source);
+      if (_position > Duration.zero) {
+        await _player.seek(_position);
+      }
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isPlaying = true;
+        });
       }
     } catch (e, st) {
-      debugPrint('[STEP 5-PLAY FAILED] ${e.toString()}');
-      debugPrintStack(stackTrace: st);
+      debugPrint('[VoiceWidget] Playback error: $e\n$st');
       if (mounted) {
         setState(() {
           _hasError = true;
           _isLoading = false;
+          _isPlaying = false;
         });
       }
     }
@@ -8261,7 +8153,9 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
       nextSpeed = 1.0;
     }
     setState(() => _playbackSpeed = nextSpeed);
-    await _player.setSpeed(nextSpeed);
+    try {
+      await _player.setPlaybackRate(nextSpeed);
+    } catch (_) {}
   }
 
   String _formatTime(Duration d) {
