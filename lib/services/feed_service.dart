@@ -223,7 +223,27 @@ class DirectMessageAttachment {
   final int size;
 
   bool get isImage => type == 'image' || mime.startsWith('image/');
-  bool get isAudio => type == 'audio' || mime.startsWith('audio/');
+  bool get isAudio {
+    final t = type.toLowerCase().trim();
+    final m = mime.toLowerCase().trim();
+    final u = url.toLowerCase().trim();
+    final n = name.toLowerCase().trim();
+    return t == 'audio' ||
+        t == 'voice' ||
+        t == 'voice_note' ||
+        t == 'voice-note' ||
+        m.startsWith('audio/') ||
+        u.endsWith('.m4a') ||
+        u.endsWith('.mp3') ||
+        u.endsWith('.aac') ||
+        u.endsWith('.ogg') ||
+        u.endsWith('.wav') ||
+        n.endsWith('.m4a') ||
+        n.endsWith('.mp3') ||
+        n.endsWith('.aac') ||
+        n.endsWith('.ogg') ||
+        n.endsWith('.wav');
+  }
   bool get isVideo => type == 'video' || mime.startsWith('video/');
 
   factory DirectMessageAttachment.fromJson(Map<String, dynamic> json) {

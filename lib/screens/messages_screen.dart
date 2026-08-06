@@ -8019,7 +8019,14 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
 
     final resolvedUrl = ApiConfig.assetUrl(trimmed);
     debugPrint('[AudioPlayer SetSource] Loading audio URL: $resolvedUrl (original: $trimmed)');
-    return await _player.setUrl(resolvedUrl);
+    try {
+      return await _player.setUrl(resolvedUrl);
+    } catch (e) {
+      debugPrint('[AudioPlayer SetSource] setUrl failed ($e), attempting AudioSource.uri fallback for $resolvedUrl');
+      return await _player.setAudioSource(
+        AudioSource.uri(Uri.parse(resolvedUrl)),
+      );
+    }
   }
 
   @override
