@@ -22,27 +22,29 @@ class InAppCameraScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: CameraAwesomeBuilder.awesome(
-          saveConfig: SaveConfig.photo(),
-          onMediaTap: (mediaCapture) {
-            final path = mediaCapture.filePath;
-            if (path != null && path.isNotEmpty) {
-              Navigator.of(context).pop(path);
-            }
-          },
-          topActionsBuilder: (state) {
-            return AwesomeTopActions(
-              state: state,
-              children: [
-                AwesomeIconButton(
-                  icon: Icons.close_rounded,
-                  onTap: () => Navigator.of(context).pop(),
+        child: Stack(
+          children: [
+            CameraAwesomeBuilder.awesome(
+              saveConfig: SaveConfig.photo(),
+              onMediaTap: (mediaCapture) {
+                final path = mediaCapture.captureRequest.path;
+                if (path != null && path.isNotEmpty) {
+                  Navigator.of(context).pop(path);
+                }
+              },
+            ),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-                AwesomeFlashButton(state: state),
-                AwesomeAspectRatioButton(state: state),
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         ),
       ),
     );
