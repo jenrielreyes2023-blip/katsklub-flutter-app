@@ -32,6 +32,7 @@ import '../utils/emoji_presentation.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/presence_avatar_dot.dart';
 import '../widgets/special_name_text.dart';
+import '../widgets/inapp_camera_sheet.dart';
 import '../services/presence_service.dart';
 import '../services/webrtc_call_service.dart';
 import 'package:syncfusion_flutter_chat/chat.dart';
@@ -3451,6 +3452,24 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Future<void> _pickCameraImage() async {
+    try {
+      final file = await InAppCameraScreen.show(context);
+      if (file != null && await file.exists()) {
+        final size = await file.length();
+        final name = file.path.split('/').last.split('\\').last;
+        await _addPendingAttachment(
+          path: file.path,
+          name: name,
+          size: size,
+          mime: lookupMimeType(file.path) ?? 'image/jpeg',
+          type: 'image',
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('[InAppCamera Error] $e - Retrying with image_picker...');
+    }
+
     try {
       final image = await _imagePicker.pickImage(
         source: ImageSource.camera,

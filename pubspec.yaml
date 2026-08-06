@@ -1,6 +1,7 @@
 dependencies:
   audioplayers: ^6.1.0
   cached_network_image: ^3.4.1
+  camerawesome: ^2.4.0
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
   file_picker: ^8.1.7
