@@ -3879,12 +3879,12 @@ class _AttachmentPreviewStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 78,
+      height: 74,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(left: 12, right: 12, top: 6, bottom: 4),
         itemCount: attachments.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final attachment = attachments[index];
           return _PendingAttachmentTile(
@@ -3909,54 +3909,120 @@ class _PendingAttachmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = attachment.isAudio ? 'Voice message' : attachment.name;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (attachment.isImage) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(attachment.path),
+                width: 62,
+                height: 62,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFFF3F4F6),
+                  child: const Icon(Icons.image_outlined, color: Colors.grey, size: 24),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: 132,
-          height: 66,
-          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(maxWidth: 160),
+          height: 62,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
           ),
-          child: attachment.isImage
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    File(attachment.path),
-                    width: 116,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const _AttachmentIconLabel(
-                      icon: Icons.image_outlined,
-                      label: 'Photo',
-                    ),
-                  ),
-                )
-              : _AttachmentIconLabel(
-                  icon: attachment.isAudio
-                      ? Icons.mic_none_rounded
-                      : Icons.insert_drive_file_outlined,
-                  label: label,
-                ),
+          child: _AttachmentIconLabel(
+            icon: attachment.isAudio
+                ? Icons.mic_none_rounded
+                : Icons.insert_drive_file_outlined,
+            label: label,
+          ),
         ),
         Positioned(
-          top: -7,
-          right: -7,
-          child: IconButton(
-            onPressed: onRemove,
-            style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFF111827),
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFE5E7EB),
-              fixedSize: const Size(24, 24),
-              minimumSize: const Size(24, 24),
-              padding: EdgeInsets.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          top: -6,
+          right: -6,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F2937),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                size: 13,
+                color: Colors.white,
+              ),
             ),
-            icon: const Icon(Icons.close_rounded, size: 15),
           ),
         ),
       ],
