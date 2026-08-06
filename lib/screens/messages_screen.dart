@@ -129,6 +129,15 @@ class _MessagesScreenState extends State<MessagesScreen>
   List<Story> _stories = [];
   bool _isLoadingNotes = false;
 
+  OverlayEntry? _activeMessageOverlayEntry;
+
+  void _dismissActiveMessageOverlay() {
+    if (_activeMessageOverlayEntry != null && _activeMessageOverlayEntry!.mounted) {
+      _activeMessageOverlayEntry!.remove();
+    }
+    _activeMessageOverlayEntry = null;
+  }
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   List<User> _searchedUsers = [];
@@ -214,6 +223,7 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   @override
   void dispose() {
+    _dismissActiveMessageOverlay();
     WidgetsBinding.instance.removeObserver(this);
     ConversationThemeStore.selections.removeListener(_onThemeChanged);
     final t = _thread;
@@ -2384,6 +2394,8 @@ class _MessagesScreenState extends State<MessagesScreen>
     final bubbleOffset = renderBox.localToGlobal(Offset.zero);
     final bubbleSize = renderBox.size;
 
+    _dismissActiveMessageOverlay();
+
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
@@ -2398,6 +2410,9 @@ class _MessagesScreenState extends State<MessagesScreen>
           seenByOther: seenByOther,
           theme: theme,
           onDismiss: () {
+            if (_activeMessageOverlayEntry == overlayEntry) {
+              _activeMessageOverlayEntry = null;
+            }
             if (overlayEntry.mounted) {
               overlayEntry.remove();
             }
@@ -2450,6 +2465,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       },
     );
 
+    _activeMessageOverlayEntry = overlayEntry;
     Overlay.of(context).insert(overlayEntry);
   }
 
@@ -7190,189 +7206,197 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
 
     final quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
 
-    return Material(
-      color: Colors.transparent,
-      child: Stack(
-        children: [
-          // 1. Semi-transparent backdrop overlay with Fade
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: GestureDetector(
-              onTap: () => _dismissWithAction(() {}),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: screenSize.width,
-                height: screenSize.height,
-                color: isDark ? const Color(0x99000000) : const Color(0x66000000),
-              ),
-            ),
-          ),
-
-          // 2. Scaled Original Message Bubble at its exact screen position
-          Positioned(
-            left: widget.bubbleOffset.dx,
-            top: widget.bubbleOffset.dy,
-            width: widget.bubbleSize.width,
-            height: widget.bubbleSize.height,
-            child: AnimatedBuilder(
-              animation: _animController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: child,
-                );
-              },
-              child: IgnorePointer(
-                child: _MessageBubble(
-                  message: widget.message,
-                  previous: widget.previous,
-                  next: widget.next,
-                  isLastOwn: widget.isLastOwn,
-                  seenByOther: widget.seenByOther,
-                  theme: widget.theme,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _dismissWithAction(() {});
+        }
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            // 1. Semi-transparent backdrop overlay with Fade
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: GestureDetector(
+                onTap: () => _dismissWithAction(() {}),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: screenSize.width,
+                  height: screenSize.height,
+                  color: isDark ? const Color(0x99000000) : const Color(0x66000000),
                 ),
               ),
             ),
-          ),
 
-          // 3. Floating Reaction Bar Pill
-          Positioned(
-            left: reactionBarX,
-            top: reactionBarY,
-            width: reactionBarWidth,
-            height: reactionBarHeight,
-            child: AnimatedBuilder(
-              animation: _animController,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? -1 : 1)),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value,
-                      child: child,
-                    ),
+            // 2. Scaled Original Message Bubble at its exact screen position
+            Positioned(
+              left: widget.bubbleOffset.dx,
+              top: widget.bubbleOffset.dy,
+              width: widget.bubbleSize.width,
+              height: widget.bubbleSize.height,
+              child: AnimatedBuilder(
+                animation: _animController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: child,
+                  );
+                },
+                child: IgnorePointer(
+                  child: _MessageBubble(
+                    message: widget.message,
+                    previous: widget.previous,
+                    next: widget.next,
+                    isLastOwn: widget.isLastOwn,
+                    seenByOther: widget.seenByOther,
+                    theme: widget.theme,
                   ),
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(28),
-                  border: overlayBorder,
-                  boxShadow: overlayShadow,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: quickEmojis.map((emoji) {
-                    final isSelected = widget.message.myReaction == emoji;
-                    return _EmojiReactionButton(
-                      emoji: emoji,
-                      isSelected: isSelected,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        _dismissWithAction(() {
-                          widget.onSelectReaction(emoji);
-                        });
-                      },
-                    );
-                  }).toList(),
                 ),
               ),
             ),
-          ),
 
-          // 4. Separate Floating Action Sheet Card
-          Positioned(
-            left: actionSheetX,
-            top: actionSheetY,
-            width: actionSheetWidth,
-            child: AnimatedBuilder(
-              animation: _animController,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? 1 : -1)),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value,
-                      child: child,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: overlayBorder,
-                  boxShadow: overlayShadow,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _OverlayActionTile(
-                        icon: Icons.reply_rounded,
-                        title: 'Reply',
-                        textColor: onSurfaceColor,
-                        iconColor: onSurfaceColor,
-                        onTap: () => _dismissWithAction(widget.onReply),
+            // 3. Floating Reaction Bar Pill
+            Positioned(
+              left: reactionBarX,
+              top: reactionBarY,
+              width: reactionBarWidth,
+              height: reactionBarHeight,
+              child: AnimatedBuilder(
+                animation: _animController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? -1 : 1)),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Transform.scale(
+                        scale: _scaleAnimation.value,
+                        child: child,
                       ),
-                      if (widget.onCopy != null) ...[
-                        _OverlayTileDivider(isDark: isDark),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(28),
+                    border: overlayBorder,
+                    boxShadow: overlayShadow,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: quickEmojis.map((emoji) {
+                      final isSelected = widget.message.myReaction == emoji;
+                      return _EmojiReactionButton(
+                        emoji: emoji,
+                        isSelected: isSelected,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _dismissWithAction(() {
+                            widget.onSelectReaction(emoji);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ),
+
+            // 4. Separate Floating Action Sheet Card
+            Positioned(
+              left: actionSheetX,
+              top: actionSheetY,
+              width: actionSheetWidth,
+              child: AnimatedBuilder(
+                animation: _animController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _slideAnimation.value * (placeReactionsAbove ? 1 : -1)),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Transform.scale(
+                        scale: _scaleAnimation.value,
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(24),
+                    border: overlayBorder,
+                    boxShadow: overlayShadow,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         _OverlayActionTile(
-                          icon: Icons.copy_rounded,
-                          title: 'Copy',
+                          icon: Icons.reply_rounded,
+                          title: 'Reply',
                           textColor: onSurfaceColor,
                           iconColor: onSurfaceColor,
-                          onTap: () => _dismissWithAction(widget.onCopy!),
+                          onTap: () => _dismissWithAction(widget.onReply),
                         ),
-                      ],
-                      _OverlayTileDivider(isDark: isDark),
-                      _OverlayActionTile(
-                        icon: Icons.shortcut_rounded,
-                        title: 'Forward',
-                        textColor: onSurfaceColor,
-                        iconColor: onSurfaceColor,
-                        onTap: () => _dismissWithAction(widget.onForward),
-                      ),
-                      _OverlayTileDivider(isDark: isDark),
-                      _OverlayActionTile(
-                        icon: Icons.translate_rounded,
-                        title: 'Translate',
-                        textColor: onSurfaceColor,
-                        iconColor: onSurfaceColor,
-                        onTap: () => _dismissWithAction(widget.onTranslate),
-                      ),
-                      if (widget.onEdit != null) ...[
+                        if (widget.onCopy != null) ...[
+                          _OverlayTileDivider(isDark: isDark),
+                          _OverlayActionTile(
+                            icon: Icons.copy_rounded,
+                            title: 'Copy',
+                            textColor: onSurfaceColor,
+                            iconColor: onSurfaceColor,
+                            onTap: () => _dismissWithAction(widget.onCopy!),
+                          ),
+                        ],
                         _OverlayTileDivider(isDark: isDark),
                         _OverlayActionTile(
-                          icon: Icons.edit_outlined,
-                          title: 'Edit',
+                          icon: Icons.shortcut_rounded,
+                          title: 'Forward',
                           textColor: onSurfaceColor,
                           iconColor: onSurfaceColor,
-                          onTap: () => _dismissWithAction(widget.onEdit!),
+                          onTap: () => _dismissWithAction(widget.onForward),
                         ),
-                      ],
-                      if (widget.onUnsend != null) ...[
                         _OverlayTileDivider(isDark: isDark),
                         _OverlayActionTile(
-                          icon: Icons.delete_outline_rounded,
-                          title: 'Unsend',
-                          textColor: Colors.redAccent,
-                          iconColor: Colors.redAccent,
-                          onTap: () => _dismissWithAction(widget.onUnsend!),
+                          icon: Icons.translate_rounded,
+                          title: 'Translate',
+                          textColor: onSurfaceColor,
+                          iconColor: onSurfaceColor,
+                          onTap: () => _dismissWithAction(widget.onTranslate),
                         ),
+                        if (widget.onEdit != null) ...[
+                          _OverlayTileDivider(isDark: isDark),
+                          _OverlayActionTile(
+                            icon: Icons.edit_outlined,
+                            title: 'Edit',
+                            textColor: onSurfaceColor,
+                            iconColor: onSurfaceColor,
+                            onTap: () => _dismissWithAction(widget.onEdit!),
+                          ),
+                        ],
+                        if (widget.onUnsend != null) ...[
+                          _OverlayTileDivider(isDark: isDark),
+                          _OverlayActionTile(
+                            icon: Icons.delete_outline_rounded,
+                            title: 'Unsend',
+                            textColor: Colors.redAccent,
+                            iconColor: Colors.redAccent,
+                            onTap: () => _dismissWithAction(widget.onUnsend!),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
