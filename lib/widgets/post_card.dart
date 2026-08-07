@@ -757,7 +757,7 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _post.text,
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
                         color: subtitleColor,
                         height: 1.4,
