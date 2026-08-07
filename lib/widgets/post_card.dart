@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -691,7 +692,7 @@ class _PostCardState extends State<PostCard> {
                               Text(
                                 displayHeaderName,
                                 style: TextStyle(
-                                  fontSize: 14.5,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w800,
                                   color: textColor,
                                 ),
@@ -715,12 +716,12 @@ class _PostCardState extends State<PostCard> {
                                   color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'SPONSORED',
                                   style: TextStyle(
-                                    fontSize: 8.5,
+                                    fontSize: 9.sp,
                                     fontWeight: FontWeight.w900,
-                                    color: Color(0xFFFF8A00),
+                                    color: const Color(0xFFFF8A00),
                                     letterSpacing: 0.5,
                                   ),
                                 ),
@@ -745,7 +746,7 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _post.authorFullName,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 15.5.sp,
                         fontWeight: FontWeight.w800,
                         color: textColor,
                       ),
@@ -756,7 +757,7 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _post.text,
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 14.5.sp,
                         fontWeight: FontWeight.w500,
                         color: subtitleColor,
                         height: 1.4,
@@ -811,7 +812,7 @@ class _PostCardState extends State<PostCard> {
                       child: Text(
                         'Ads: ${_post.promotionUrl}',
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 11.5.sp,
                           color: subtitleColor.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
@@ -838,8 +839,8 @@ class _PostCardState extends State<PostCard> {
                             _post.promotionButtonText.isNotEmpty
                                 ? _post.promotionButtonText
                                 : 'Learn More',
-                            style: const TextStyle(
-                              fontSize: 12.5,
+                            style: TextStyle(
+                              fontSize: 12.5.sp,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -2047,7 +2048,7 @@ class _PostCardState extends State<PostCard> {
                             Text(
                               'Pinned Post',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey[600],
                               ),
@@ -2071,7 +2072,7 @@ class _PostCardState extends State<PostCard> {
                               child: Text(
                                 '${_post.repostedByText} reposted this',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey[600],
                                 ),
@@ -2103,7 +2104,7 @@ class _PostCardState extends State<PostCard> {
                         child: Text(
                           displayTitle,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
                             color: isPostCardDark ? Colors.white : const Color(0xFF1C1E21),

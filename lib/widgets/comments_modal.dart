@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
@@ -921,7 +922,7 @@ class _CommentTile extends StatelessWidget {
                                       displayName: comment.displayName,
                                       style: TextStyle(
                                         color: primaryTextColor,
-                                        fontSize: 13,
+                                        fontSize: 13.5.sp,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -942,7 +943,7 @@ class _CommentTile extends StatelessWidget {
                                     '·',
                                     style: TextStyle(
                                       color: secondaryTextColor,
-                                      fontSize: 13,
+                                      fontSize: 13.sp,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -951,7 +952,7 @@ class _CommentTile extends StatelessWidget {
                                     comment.timeAgo,
                                     style: TextStyle(
                                       color: secondaryTextColor,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -964,8 +965,8 @@ class _CommentTile extends StatelessWidget {
                               style: TextStyle(
                                 inherit: false,
                                 color: primaryTextColor,
-                                fontSize: 14,
-                                height: 1.26,
+                                fontSize: 14.5.sp,
+                                height: 1.3,
                               ),
                               onHashtagTap: onHashtagTap,
                               onMentionTap: onMentionTap,
@@ -989,7 +990,7 @@ class _CommentTile extends StatelessWidget {
                             'Reply',
                             style: TextStyle(
                               color: secondaryTextColor,
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -999,7 +1000,7 @@ class _CommentTile extends StatelessWidget {
                             '·',
                             style: TextStyle(
                               color: dotColor,
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1011,9 +1012,9 @@ class _CommentTile extends StatelessWidget {
                                   : comment.replyCount == 1
                                       ? 'View 1 reply'
                                       : 'View ${comment.replyCount} replies',
-                              style: const TextStyle(
-                                color: Color(0xFFFF7A45),
-                                fontSize: 13,
+                              style: TextStyle(
+                                color: const Color(0xFFFF7A45),
+                                fontSize: 13.5.sp,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1622,13 +1623,13 @@ class _CommentComposer extends StatelessWidget {
                         maxLines: 4,
                         textInputAction: TextInputAction.newline,
                         inputFormatters: [EmojiPresentationFormatter()],
-                        style: TextStyle(color: primaryTextColor, fontSize: 14),
+                        style: TextStyle(color: primaryTextColor, fontSize: 14.5.sp),
                         decoration: InputDecoration(
                           hintText: replyTarget == null
                               ? 'Write a comment...'
                               : 'Reply to ${replyTarget!.displayName}...',
                           hintMaxLines: 1,
-                          hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                          hintStyle: TextStyle(color: const Color(0xFF9CA3AF), fontSize: 14.5.sp),
                           isDense: true,
                           filled: true,
                           fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F6),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../screens/hashtag_screen.dart';
 import '../screens/user_profile_screen.dart';
@@ -30,11 +31,11 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
   static final RegExp _sentenceEndRe = RegExp(r"""[.!?…]+["')\]]*\s+""");
   static final RegExp _whitespaceRe = RegExp(r'\s+');
 
-  static const TextStyle _textStyle = TextStyle(
+  static final TextStyle _textStyle = TextStyle(
     inherit: false,
-    fontSize: 15,
-    height: 1.25,
-    color: Color(0xFF1C1E21),
+    fontSize: 15.5.sp,
+    height: 1.3,
+    color: const Color(0xFF1C1E21),
   );
 
   String? _cachedText;
@@ -249,10 +250,10 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text(
                       widget.expanded ? 'See less' : 'See more',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFFF7A45),
+                        color: const Color(0xFFFF7A45),
                       ),
                     ),
                   ),
