@@ -964,7 +964,9 @@ class _CommentTile extends StatelessWidget {
                               text: comment.body,
                               style: TextStyle(
                                 inherit: false,
-                                color: const Color(0xFF050505),
+                                color: isDark
+                                    ? const Color(0xFFE4E6EB)
+                                    : const Color(0xFF050505),
                                 fontSize: 15.sp,
                                 height: 1.33,
                                 letterSpacing: -0.2,
@@ -1626,7 +1628,9 @@ class _CommentComposer extends StatelessWidget {
                         textInputAction: TextInputAction.newline,
                         inputFormatters: [EmojiPresentationFormatter()],
                         style: TextStyle(
-                            color: const Color(0xFF050505),
+                            color: isDark
+                                ? const Color(0xFFE4E6EB)
+                                : const Color(0xFF050505),
                             fontSize: 15.sp,
                             height: 1.33,
                             letterSpacing: -0.2,

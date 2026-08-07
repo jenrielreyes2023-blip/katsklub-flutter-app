@@ -4456,7 +4456,9 @@ class _CommentMessageBlock extends StatelessWidget {
           text: comment.body,
           style: TextStyle(
             inherit: false,
-            color: const Color(0xFF050505),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFFE4E6EB)
+                : const Color(0xFF050505),
             fontSize: 15.sp,
             height: 1.33,
             letterSpacing: -0.2,

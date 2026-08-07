@@ -236,7 +236,9 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
               HashtagText(
                 text: widget.expanded ? widget.text : collapsedText,
                 style: _textStyle.copyWith(
-                  color: isDark ? Colors.white : const Color(0xFF1C1E21),
+                  color: isDark
+                      ? const Color(0xFFE4E6EB)
+                      : const Color(0xFF050505),
                 ),
                 textScaler: TextScaler.noScaling,
                 onHashtagTap: (tag) => _openHashtag(context, tag),
