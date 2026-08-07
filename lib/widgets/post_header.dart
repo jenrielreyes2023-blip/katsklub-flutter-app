@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../config/api_config.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
 import '../screens/user_profile_screen.dart';
 import 'custom_icons.dart';
@@ -79,7 +78,7 @@ class PostHeader extends StatelessWidget {
                               displayName: post.authorFullName,
                               style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 15,
+                                  fontSize: 15.sp,
                                   letterSpacing: -0.2,
                                   color: nameColor),
                             ),
@@ -90,7 +89,7 @@ class PostHeader extends StatelessWidget {
                           Text(
                             'is feeling',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               color: metaColor,
                             ),
                           ),
@@ -99,7 +98,7 @@ class PostHeader extends StatelessWidget {
                             post.feeling,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               color: nameColor,
                             ),
                           ),
@@ -120,7 +119,7 @@ class PostHeader extends StatelessWidget {
                               '·',
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 13,
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -144,7 +143,7 @@ class PostHeader extends StatelessWidget {
                                         'Follow',
                                         style: TextStyle(
                                           color: followColor,
-                                          fontSize: 13,
+                                          fontSize: 13.sp,
                                           fontWeight: FontWeight.w600,
                                           height: 1.0,
                                         ),
@@ -163,21 +162,21 @@ class PostHeader extends StatelessWidget {
                         prefixHighlight: '— with',
                         prefixHighlightStyle: TextStyle(
                           color: nameColor,
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.2,
                           height: 1.1,
                         ),
                         style: TextStyle(
                           color: metaColor,
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
                           letterSpacing: -0.2,
                           height: 1.1,
                         ),
                         linkStyle: TextStyle(
                           color: nameColor,
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.2,
                           height: 1.1,
@@ -200,7 +199,7 @@ class PostHeader extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: metaColor,
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -211,7 +210,7 @@ class PostHeader extends StatelessWidget {
                             '·',
                             style: TextStyle(
                               color: metaColor,
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -229,7 +228,7 @@ class PostHeader extends StatelessWidget {
                               '·',
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -247,7 +246,7 @@ class PostHeader extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -261,7 +260,7 @@ class PostHeader extends StatelessWidget {
                               '·',
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -279,7 +278,7 @@ class PostHeader extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -292,7 +291,7 @@ class PostHeader extends StatelessWidget {
                               '·',
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -305,7 +304,7 @@ class PostHeader extends StatelessWidget {
                               displayName: post.originalPost!.authorFullName,
                               style: TextStyle(
                                 color: metaColor,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -523,7 +522,7 @@ class PostOptionsRow extends StatelessWidget {
                     action.label,
                     style: TextStyle(
                       color: color,
-                      fontSize: 15,
+                      fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -535,7 +534,7 @@ class PostOptionsRow extends StatelessWidget {
                         color: Theme.of(context).brightness == Brightness.dark
                             ? const Color(0xFFB0B3B8)
                             : const Color(0xFF65676B),
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         height: 1.35,
                       ),
                     ),
@@ -577,7 +576,7 @@ class DeletePostSheet extends StatelessWidget {
                   'Delete post?',
                   style: TextStyle(
                     color: titleColor,
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -586,7 +585,7 @@ class DeletePostSheet extends StatelessWidget {
                   'This post will be permanently deleted. This can\'t be undone.',
                   style: TextStyle(
                     color: bodyColor,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     height: 1.4,
                   ),
                 ),

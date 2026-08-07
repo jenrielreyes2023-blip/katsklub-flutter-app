@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
@@ -37,12 +38,12 @@ class KatsTopBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Home',
                     style: TextStyle(
                       inherit: false,
-                      color: Color(0xFFFF7A45),
-                      fontSize: 22,
+                      color: const Color(0xFFFF7A45),
+                      fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -147,10 +148,10 @@ class NotificationBellButton extends StatelessWidget {
                         child: Text(
                           badgeLabel,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             inherit: false,
                             color: Colors.white,
-                            fontSize: 9,
+                            fontSize: 9.sp,
                             fontWeight: FontWeight.w700,
                             height: 1.1,
                           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/user.dart';
 import '../services/feed_service.dart';
@@ -164,9 +165,9 @@ class _UserListModalState extends State<UserListModal> {
           // Header Title
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 18,
+            style: TextStyle(
+              color: const Color(0xFF1F2937),
+              fontSize: 18.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -183,10 +184,10 @@ class _UserListModalState extends State<UserListModal> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
+                style: TextStyle(fontSize: 15.sp, color: const Color(0xFF1F2937)),
                 decoration: InputDecoration(
                   hintText: 'Search users...',
-                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15),
+                  hintStyle: TextStyle(color: const Color(0xFF9CA3AF), fontSize: 15.sp),
                   prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 20),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -246,9 +247,9 @@ class _UserListModalState extends State<UserListModal> {
           Text(
             'This ${widget.isFollowersList ? "followers" : "following"} list is private',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF111827),
-              fontSize: 17,
+            style: TextStyle(
+              color: const Color(0xFF111827),
+              fontSize: 17.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -256,9 +257,9 @@ class _UserListModalState extends State<UserListModal> {
           Text(
             'This user has chosen to hide their $listName. Only they can view it.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 14,
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: 14.sp,
               height: 1.4,
             ),
           ),
@@ -279,9 +280,9 @@ class _UserListModalState extends State<UserListModal> {
             children: [
               Text(
                 _searchQuery.isNotEmpty ? 'No matches found' : 'No users found',
-                style: const TextStyle(
-                  color: Color(0xFF4B5563),
-                  fontSize: 16,
+                style: TextStyle(
+                  color: const Color(0xFF4B5563),
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -290,9 +291,9 @@ class _UserListModalState extends State<UserListModal> {
                 _searchQuery.isNotEmpty
                     ? 'Try searching with a different name or username.'
                     : 'This list is empty.',
-                style: const TextStyle(
-                  color: Color(0xFF9CA3AF),
-                  fontSize: 13,
+                style: TextStyle(
+                  color: const Color(0xFF9CA3AF),
+                  fontSize: 13.sp,
                 ),
               ),
             ],
@@ -338,9 +339,9 @@ class _UserListModalState extends State<UserListModal> {
                         user.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF1F2937),
-                          fontSize: 15,
+                        style: TextStyle(
+                          color: const Color(0xFF1F2937),
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -349,9 +350,9 @@ class _UserListModalState extends State<UserListModal> {
                         user.handle ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 13,
+                        style: TextStyle(
+                          color: const Color(0xFF6B7280),
+                          fontSize: 13.sp,
                         ),
                       ),
                     ],
@@ -407,9 +408,9 @@ class _UserListModalState extends State<UserListModal> {
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Following',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -430,9 +431,9 @@ class _UserListModalState extends State<UserListModal> {
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Requested',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -453,9 +454,9 @@ class _UserListModalState extends State<UserListModal> {
           minimumSize: const Size(80, 32),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        child: const Text(
+        child: Text(
           'Follow',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
         ),
       ),
     );

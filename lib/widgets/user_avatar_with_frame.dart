@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_svga/flutter_svga.dart';
@@ -38,7 +39,7 @@ class UserAvatarWithFrame extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF111827),
-                fontSize: radius * 0.7,
+                fontSize: (radius * 0.7).sp,
               ),
             ),
           )
@@ -63,7 +64,7 @@ class UserAvatarWithFrame extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
-                  fontSize: radius * 0.7,
+                  fontSize: (radius * 0.7).sp,
                 ),
               ),
             ),
