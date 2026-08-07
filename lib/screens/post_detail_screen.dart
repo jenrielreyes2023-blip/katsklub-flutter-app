@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
@@ -3740,7 +3741,7 @@ class _CommentsSummaryHeader extends StatelessWidget {
           label,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 15,
+            fontSize: 15.sp,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -4456,7 +4457,7 @@ class _CommentMessageBlock extends StatelessWidget {
           style: TextStyle(
             inherit: false,
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 14,
+            fontSize: 13.sp,
             height: 1.35,
           ),
           onHashtagTap: (_) {},
