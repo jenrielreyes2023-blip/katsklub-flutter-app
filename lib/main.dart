@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import 'http_overrides_stub.dart' if (dart.library.io) 'http_overrides.dart';
@@ -143,220 +144,230 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
-          return MaterialApp(
-            navigatorKey: UpdateChecker.navigatorKey,
-            title: 'KatsKlub',
-            debugShowCheckedModeBanner: false,
-            themeMode: themeProvider.themeMode,
-            theme: ThemeData(
-              useMaterial3: true,
-              fontFamilyFallback: const [
-                'Apple Color Emoji',
-                'Noto Color Emoji',
-                'Segoe UI Emoji',
-                'EmojiOne Color',
-              ],
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFFF7A59), // Elegant Light Orange / Coral
-                primary: const Color(0xFFFF7A59),
-                secondary: const Color(0xFF111827), // Modern Charcoal Black
-                surface: Colors.white,
-                onSurface: const Color(0xFF1C1E21),
-                brightness: Brightness.light,
-              ),
-              scaffoldBackgroundColor: Colors.white,
-              dialogTheme: const DialogThemeData(
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.transparent,
-                titleTextStyle: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
+          return ScreenUtilInit(
+            designSize: const Size(360, 690),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (context, child) {
+              return MaterialApp(
+                navigatorKey: UpdateChecker.navigatorKey,
+                title: 'KatsKlub',
+                debugShowCheckedModeBanner: false,
+                themeMode: themeProvider.themeMode,
+                theme: ThemeData(
+                  useMaterial3: true,
+                  fontFamilyFallback: const [
+                    'Apple Color Emoji',
+                    'Noto Color Emoji',
+                    'Segoe UI Emoji',
+                    'EmojiOne Color',
+                  ],
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: const Color(0xFFFF7A59),
+                    primary: const Color(0xFFFF7A59),
+                    secondary: const Color(0xFF111827),
+                    surface: Colors.white,
+                    onSurface: const Color(0xFF1C1E21),
+                    brightness: Brightness.light,
+                  ),
+                  scaffoldBackgroundColor: Colors.white,
+                  dialogTheme: const DialogThemeData(
+                    backgroundColor: Colors.white,
+                    surfaceTintColor: Colors.transparent,
+                    titleTextStyle: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    contentTextStyle: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  cardTheme: const CardThemeData(
+                    color: Colors.white,
+                    surfaceTintColor: Colors.transparent,
+                  ),
+                  bottomSheetTheme: const BottomSheetThemeData(
+                    backgroundColor: Colors.white,
+                    surfaceTintColor: Colors.transparent,
+                  ),
+                  textTheme: const TextTheme(
+                    bodyLarge: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    bodyMedium: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    bodySmall: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    titleLarge: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                    titleMedium: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                    labelLarge: TextStyle(
+                      color: Color(0xFF1C1E21),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  appBarTheme: const AppBarTheme(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarColor: Colors.white,
+                      statusBarIconBrightness: Brightness.dark,
+                      statusBarBrightness: Brightness.light,
+                      systemNavigationBarColor: Colors.white,
+                      systemNavigationBarIconBrightness: Brightness.dark,
+                    ),
+                  ),
+                  snackBarTheme: SnackBarThemeData(
+                    behavior: SnackBarBehavior.fixed,
+                    backgroundColor: const Color(0xFF111827),
+                    contentTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                contentTextStyle: TextStyle(
-                  color: Color(0xFF4B5563), // Slate gray
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                darkTheme: ThemeData(
+                  useMaterial3: true,
+                  fontFamilyFallback: const [
+                    'Apple Color Emoji',
+                    'Noto Color Emoji',
+                    'Segoe UI Emoji',
+                    'EmojiOne Color',
+                  ],
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: const Color(0xFFFF7A59),
+                    primary: const Color(0xFFFF7A59),
+                    secondary: const Color(0xFFE5E7EB),
+                    surface: const Color(0xFF18191A),
+                    onSurface: Colors.white,
+                    brightness: Brightness.dark,
+                  ),
+                  scaffoldBackgroundColor: const Color(0xFF18191A),
+                  dialogTheme: const DialogThemeData(
+                    backgroundColor: Color(0xFF242526),
+                    surfaceTintColor: Colors.transparent,
+                    titleTextStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    contentTextStyle: TextStyle(
+                      color: Color(0xFFB0B3B8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  cardTheme: const CardThemeData(
+                    color: Color(0xFF242526),
+                    surfaceTintColor: Colors.transparent,
+                  ),
+                  bottomSheetTheme: const BottomSheetThemeData(
+                    backgroundColor: Color(0xFF242526),
+                    surfaceTintColor: Colors.transparent,
+                  ),
+                  textTheme: const TextTheme(
+                    bodyLarge: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    bodyMedium: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    bodySmall: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                    titleLarge: TextStyle(
+                      color: Colors.white,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                    titleMedium: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                    labelLarge: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  appBarTheme: const AppBarTheme(
+                    backgroundColor: Color(0xFF18191A),
+                    foregroundColor: Colors.white,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarColor: Color(0xFF18191A),
+                      statusBarIconBrightness: Brightness.light,
+                      statusBarBrightness: Brightness.dark,
+                      systemNavigationBarColor: Color(0xFF18191A),
+                      systemNavigationBarIconBrightness: Brightness.light,
+                    ),
+                  ),
+                  snackBarTheme: SnackBarThemeData(
+                    behavior: SnackBarBehavior.fixed,
+                    backgroundColor: const Color(0xFF1F2937),
+                    contentTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-              cardTheme: const CardThemeData(
-                color: Colors.white,
-                surfaceTintColor: Colors.transparent,
-              ),
-              bottomSheetTheme: const BottomSheetThemeData(
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.transparent,
-              ),
-              textTheme: const TextTheme(
-                bodyLarge: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                bodyMedium: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                bodySmall: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                titleLarge: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-                titleMedium: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
-                labelLarge: TextStyle(
-                  color: Color(0xFF1C1E21),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
-              ),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Colors.white,
-                  statusBarIconBrightness: Brightness.dark,
-                  statusBarBrightness: Brightness.light,
-                  systemNavigationBarColor: Colors.white,
-                  systemNavigationBarIconBrightness: Brightness.dark,
-                ),
-              ),
-              snackBarTheme: SnackBarThemeData(
-                behavior: SnackBarBehavior.fixed,
-                backgroundColor: const Color(0xFF111827),
-                contentTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              fontFamilyFallback: const [
-                'Apple Color Emoji',
-                'Noto Color Emoji',
-                'Segoe UI Emoji',
-                'EmojiOne Color',
-              ],
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFFF7A59), // Keep orange primary
-                primary: const Color(0xFFFF7A59),
-                secondary: const Color(0xFFE5E7EB),
-                surface: const Color(0xFF18191A), // Dark mode surface
-                onSurface: Colors.white,
-                brightness: Brightness.dark,
-              ),
-              scaffoldBackgroundColor: const Color(0xFF18191A),
-              dialogTheme: const DialogThemeData(
-                backgroundColor: Color(0xFF242526),
-                surfaceTintColor: Colors.transparent,
-                titleTextStyle: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                ),
-                contentTextStyle: TextStyle(
-                  color: Color(0xFFB0B3B8), // Muted dark mode gray
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              cardTheme: const CardThemeData(
-                color: Color(0xFF242526),
-                surfaceTintColor: Colors.transparent,
-              ),
-              bottomSheetTheme: const BottomSheetThemeData(
-                backgroundColor: Color(0xFF242526),
-                surfaceTintColor: Colors.transparent,
-              ),
-              textTheme: const TextTheme(
-                bodyLarge: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                bodyMedium: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                bodySmall: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-                titleLarge: TextStyle(
-                  color: Colors.white,
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-                titleMedium: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
-                labelLarge: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
-              ),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF18191A),
-                foregroundColor: Colors.white,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Color(0xFF18191A),
-                  statusBarIconBrightness: Brightness.light,
-                  statusBarBrightness: Brightness.dark,
-                  systemNavigationBarColor: Color(0xFF18191A),
-                  systemNavigationBarIconBrightness: Brightness.light,
-                ),
-              ),
-              snackBarTheme: SnackBarThemeData(
-                behavior: SnackBarBehavior.fixed,
-                backgroundColor: const Color(0xFF1F2937),
-                contentTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-             builder: (context, child) {
-               return MediaQuery(
-                 data: MediaQuery.of(context).copyWith(
-                   textScaler: TextScaler.noScaling,
-                 ),
-                 child: child!,
-               );
-             },
-            home: _currentUser == null
+                builder: (context, widget) {
+                  return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(
+                        MediaQuery.of(context).textScaler.scale(1.0).clamp(0.85, 1.3),
+                      ),
+                    ),
+                    child: widget!,
+                  );
+                },
+                home: child,
+              );
+            },
+            child: _currentUser == null
                 ? LoginScreen(
                     authService: widget.authService,
                     onLoginSuccess: (user) {

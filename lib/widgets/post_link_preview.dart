@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart'; // For LinkPreview
 import 'loading_skeletons.dart'; // For SkeletonPulse
 
@@ -76,11 +77,11 @@ class YouTubePreviewCard extends StatelessWidget {
                       color: const Color(0xCCDC2626),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
+                    child: Text(
                       'YouTube',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -97,7 +98,7 @@ class YouTubePreviewCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -113,7 +114,7 @@ class YouTubePreviewCard extends StatelessWidget {
                   color: Theme.of(context).brightness == Brightness.dark
                       ? const Color(0xFFB0B3B8)
                       : const Color(0xFF65676B),
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   height: 1.35,
                 ),
               ),
@@ -214,11 +215,11 @@ class LinkPreviewCard extends StatelessWidget {
                               color: const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Text(
+                            child: Text(
                               'YouTube',
                               style: TextStyle(
-                                color: Color(0xFFDC2626),
-                                fontSize: 11,
+                                color: const Color(0xFFDC2626),
+                                fontSize: 11.sp,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -232,7 +233,7 @@ class LinkPreviewCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -246,7 +247,7 @@ class LinkPreviewCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -258,7 +259,7 @@ class LinkPreviewCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
-                          fontSize: 13,
+                          fontSize: 13.sp,
                           height: 1.3,
                         ),
                       ),

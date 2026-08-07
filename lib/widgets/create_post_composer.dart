@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
@@ -685,7 +686,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
               Text(
                 'How are you feeling?',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -708,7 +709,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                       final name = f.$1;
                       final emoji = f.$2;
                       return ListTile(
-                        leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+                        leading: Text(emoji, style: TextStyle(fontSize: 22.sp)),
                         title: Text(
                           name,
                           style: TextStyle(
