@@ -965,7 +965,7 @@ class _CommentTile extends StatelessWidget {
                               style: TextStyle(
                                 inherit: false,
                                 color: primaryTextColor,
-                                fontSize: 14.5.sp,
+                                fontSize: 13.sp,
                                 height: 1.3,
                               ),
                               onHashtagTap: onHashtagTap,
@@ -1623,13 +1623,13 @@ class _CommentComposer extends StatelessWidget {
                         maxLines: 4,
                         textInputAction: TextInputAction.newline,
                         inputFormatters: [EmojiPresentationFormatter()],
-                        style: TextStyle(color: primaryTextColor, fontSize: 14.5.sp),
+                        style: TextStyle(color: primaryTextColor, fontSize: 13.sp),
                         decoration: InputDecoration(
                           hintText: replyTarget == null
                               ? 'Write a comment...'
                               : 'Reply to ${replyTarget!.displayName}...',
                           hintMaxLines: 1,
-                          hintStyle: TextStyle(color: const Color(0xFF9CA3AF), fontSize: 14.5.sp),
+                          hintStyle: TextStyle(color: const Color(0xFF9CA3AF), fontSize: 13.sp),
                           isDense: true,
                           filled: true,
                           fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F6),

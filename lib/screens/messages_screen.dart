@@ -3879,13 +3879,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 inputFormatters: [EmojiPresentationFormatter()],
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 15.sp,
+                                  fontSize: 13.sp,
                                   height: 1.3,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
                                   hintStyle: TextStyle(
-                                    fontSize: 14.5.sp,
+                                    fontSize: 13.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
@@ -5123,7 +5123,7 @@ class _MessageBubble extends StatelessWidget {
                 text: body,
                 style: TextStyle(
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 15.sp,
+                  fontSize: 13.sp,
                   height: 1.3,
                 ),
               ),
