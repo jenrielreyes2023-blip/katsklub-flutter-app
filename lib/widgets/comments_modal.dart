@@ -1128,9 +1128,13 @@ class _ReplyTile extends StatelessWidget {
                                   username: reply.authorUsername,
                                   displayName: reply.displayName,
                                   style: TextStyle(
-                                    color: primaryTextColor,
-                                    fontSize: 13,
+                                    color: isDark
+                                        ? const Color(0xFFE4E6EB)
+                                        : const Color(0xFF050505),
+                                    fontSize: 13.5.sp,
                                     fontWeight: FontWeight.w600,
+                                    height: 1.33,
+                                    letterSpacing: -0.2,
                                   ),
                                 ),
                               ),
@@ -1150,7 +1154,7 @@ class _ReplyTile extends StatelessWidget {
                                 '·',
                                 style: TextStyle(
                                   color: secondaryTextColor,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1159,7 +1163,7 @@ class _ReplyTile extends StatelessWidget {
                                 reply.timeAgo,
                                 style: TextStyle(
                                   color: secondaryTextColor,
-                                  fontSize: 12,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -1171,9 +1175,13 @@ class _ReplyTile extends StatelessWidget {
                           text: reply.body,
                           style: TextStyle(
                             inherit: false,
-                            color: primaryTextColor,
-                            fontSize: 14,
-                            height: 1.26,
+                            color: isDark
+                                ? const Color(0xFFE4E6EB)
+                                : const Color(0xFF050505),
+                            fontSize: 15.sp,
+                            height: 1.33,
+                            letterSpacing: -0.2,
+                            fontWeight: FontWeight.w400,
                           ),
                           onHashtagTap: onHashtagTap,
                           onMentionTap: onMentionTap,
