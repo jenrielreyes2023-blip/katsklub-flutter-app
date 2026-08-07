@@ -2143,6 +2143,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (page != null) {
         _feedService.markThreadRead(threadId);
         _loadOtherUserProfile(page.thread);
+        _loadWallpaperSettings(threadId);
       }
       _scheduleStaleCatchup(threadId);
     } catch (_) {
@@ -2951,14 +2952,24 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Future<void> _loadWallpaperSettings([int? targetThreadId]) async {
     final tId = targetThreadId ?? _thread?.id;
+    if (!mounted) return;
+
+    if (tId == null || tId <= 0) {
+      setState(() {
+        _chatWallpaperPath = null;
+        _chatWallpaperDim = 0.35;
+      });
+      return;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
-      final keyPath = tId != null ? 'chat_wallpaper_path_$tId' : 'chat_wallpaper_path';
-      final keyDim = tId != null ? 'chat_wallpaper_dim_$tId' : 'chat_wallpaper_dim';
+      final keyPath = 'chat_wallpaper_path_$tId';
+      final keyDim = 'chat_wallpaper_dim_$tId';
 
-      String? path = prefs.getString(keyPath) ?? prefs.getString('chat_wallpaper_path');
-      double dim = prefs.getDouble(keyDim) ?? prefs.getDouble('chat_wallpaper_dim') ?? 0.35;
+      String? path = prefs.getString(keyPath);
+      double dim = prefs.getDouble(keyDim) ?? 0.35;
 
       for (final m in _messages.reversed) {
         for (final att in m.attachments) {
@@ -2984,10 +2995,12 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Future<void> _saveWallpaperSettings(String? path, double dim, {bool broadcast = true}) async {
     final tId = _thread?.id;
+    if (tId == null || tId <= 0) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      final keyPath = tId != null ? 'chat_wallpaper_path_$tId' : 'chat_wallpaper_path';
-      final keyDim = tId != null ? 'chat_wallpaper_dim_$tId' : 'chat_wallpaper_dim';
+      final keyPath = 'chat_wallpaper_path_$tId';
+      final keyDim = 'chat_wallpaper_dim_$tId';
 
       if (path != null && path.isNotEmpty) {
         await prefs.setString(keyPath, path);
@@ -3002,7 +3015,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         _chatWallpaperDim = dim;
       });
 
-      if (broadcast && tId != null && tId > 0) {
+      if (broadcast) {
         final payload = 'wallpaper|${path ?? 'none'}|$dim';
         await _feedService.sendDirectMessage(
           tId,
