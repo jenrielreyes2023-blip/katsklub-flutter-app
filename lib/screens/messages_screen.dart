@@ -17,6 +17,7 @@ import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -160,6 +161,9 @@ class _MessagesScreenState extends State<MessagesScreen>
   Timer? _typingStopDebounce;
   bool _iAmTyping = false;
 
+  String? _chatWallpaperPath;
+  double _chatWallpaperDim = 0.35;
+
   Set<String> get _typingUserIds {
     final t = _thread;
     if (t == null) return const <String>{};
@@ -186,6 +190,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     _notesUpdatedSub = FeedService.notesUpdatedStream.listen((_) => _loadNotes());
 
     _loadCurrentUser();
+    _loadWallpaperSettings();
 
     if (widget.initialThread != null) {
       _loadThread();
@@ -581,6 +586,15 @@ class _MessagesScreenState extends State<MessagesScreen>
               size: 22,
             ),
             onPressed: _startAudioCall,
+          ),
+          IconButton(
+            tooltip: 'Wallpaper',
+            icon: Icon(
+              Icons.wallpaper_rounded,
+              color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+              size: 22,
+            ),
+            onPressed: _showWallpaperPickerSheet,
           ),
           IconButton(
             tooltip: 'More',
@@ -2266,7 +2280,7 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     final currentUserId = _currentUser?.id?.toString() ?? '';
 
-    return SfChat(
+    final chatWidget = SfChat(
       messages: chatMessages,
       outgoingUser: currentUserId,
       incomingMessageSettings: const ChatMessageSettings(
@@ -2363,6 +2377,24 @@ class _MessagesScreenState extends State<MessagesScreen>
         },
       ),
     );
+
+    if (_chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: _buildWallpaperWidget(_chatWallpaperPath!),
+          ),
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: _chatWallpaperDim.clamp(0.0, 0.9)),
+            ),
+          ),
+          Positioned.fill(child: chatWidget),
+        ],
+      );
+    }
+
+    return chatWidget;
   }
 
   void _startReplyTo(DirectMessage message) {
@@ -2764,6 +2796,30 @@ class _MessagesScreenState extends State<MessagesScreen>
                   _openThemePicker();
                 },
               ),
+              ListTile(
+                leading: Icon(Icons.wallpaper_rounded,
+                    color: sheetTextIconColor),
+                title: Text(
+                  'Chat Wallpaper',
+                  style: TextStyle(
+                    color: sheetTextIconColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  _chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty
+                      ? 'Custom background active'
+                      : 'Default background',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showWallpaperPickerSheet();
+                },
+              ),
               if (t.isActive)
                 ListTile(
                   leading: Icon(Icons.archive_outlined,
@@ -2843,6 +2899,361 @@ class _MessagesScreenState extends State<MessagesScreen>
               const SizedBox(height: 4),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _loadWallpaperSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _chatWallpaperPath = prefs.getString('chat_wallpaper_path');
+        _chatWallpaperDim = prefs.getDouble('chat_wallpaper_dim') ?? 0.35;
+      });
+    } catch (e) {
+      debugPrint('[Wallpaper] Error loading wallpaper: $e');
+    }
+  }
+
+  Future<void> _saveWallpaperSettings(String? path, double dim) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (path != null && path.isNotEmpty) {
+        await prefs.setString('chat_wallpaper_path', path);
+      } else {
+        await prefs.remove('chat_wallpaper_path');
+      }
+      await prefs.setDouble('chat_wallpaper_dim', dim);
+      if (!mounted) return;
+      setState(() {
+        _chatWallpaperPath = path;
+        _chatWallpaperDim = dim;
+      });
+    } catch (e) {
+      debugPrint('[Wallpaper] Error saving wallpaper: $e');
+    }
+  }
+
+  Widget _buildWallpaperWidget(String path) {
+    if (path.startsWith('preset:')) {
+      final presetKey = path.replaceFirst('preset:', '');
+      switch (presetKey) {
+        case 'dark_mesh':
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF020617)],
+              ),
+            ),
+          );
+        case 'neon_cyber':
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF180828), Color(0xFF0C1033), Color(0xFF050515)],
+              ),
+            ),
+          );
+        case 'warm_dusk':
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [Color(0xFF2E1065), Color(0xFF3B0764), Color(0xFF111827)],
+              ),
+            ),
+          );
+        case 'emerald_night':
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF064E3B), Color(0xFF022C22), Color(0xFF030712)],
+              ),
+            ),
+          );
+        case 'minimal_doodle':
+        default:
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF111827),
+            ),
+          );
+      }
+    }
+
+    final file = File(path);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+      );
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: path,
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => Container(color: const Color(0xFF111827)),
+      );
+    }
+
+    return Container(color: const Color(0xFF111827));
+  }
+
+  void _showWallpaperPickerSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF1E1F21) : Colors.white;
+    final sheetText = isDark ? Colors.white : const Color(0xFF111827);
+
+    String? tempPath = _chatWallpaperPath;
+    double tempDim = _chatWallpaperDim;
+
+    final presets = [
+      {'key': 'preset:dark_mesh', 'name': 'Dark Mesh', 'color1': 0xFF0F172A, 'color2': 0xFF1E1B4B},
+      {'key': 'preset:neon_cyber', 'name': 'Neon Cyber', 'color1': 0xFF180828, 'color2': 0xFF0C1033},
+      {'key': 'preset:warm_dusk', 'name': 'Warm Dusk', 'color1': 0xFF2E1065, 'color2': 0xFF3B0764},
+      {'key': 'preset:emerald_night', 'name': 'Emerald Night', 'color1': 0xFF064E3B, 'color2': 0xFF022C22},
+    ];
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: sheetBg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(Icons.wallpaper_rounded, color: Color(0xFF3B82F6), size: 24),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Chat Background Wallpaper',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: sheetText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+                        if (picked != null) {
+                          setSheetState(() => tempPath = picked.path);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark ? Colors.white12 : Colors.black12,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3B82F6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Choose from Phone Gallery',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: sheetText,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Upload your own photo as chat background',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Preset Wallpapers',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: sheetText,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 80,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: presets.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, idx) {
+                          final item = presets[idx];
+                          final key = item['key'] as String;
+                          final isSelected = tempPath == key;
+
+                          return GestureDetector(
+                            onTap: () => setSheetState(() => tempPath = key),
+                            child: Container(
+                              width: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(item['color1'] as int),
+                                    Color(item['color2'] as int),
+                                  ],
+                                ),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  item['name'] as String,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Background Dimming',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: sheetText,
+                          ),
+                        ),
+                        Text(
+                          '${(tempDim * 100).toInt()}%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: tempDim,
+                      min: 0.0,
+                      max: 0.8,
+                      divisions: 16,
+                      activeColor: const Color(0xFF3B82F6),
+                      onChanged: (val) => setSheetState(() => tempDim = val),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        if (tempPath != null) ...[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setSheetState(() {
+                                  tempPath = null;
+                                  tempDim = 0.35;
+                                });
+                                _saveWallpaperSettings(null, 0.35);
+                                Navigator.of(sheetContext).pop();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.redAccent),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text('Reset', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _saveWallpaperSettings(tempPath, tempDim);
+                              Navigator.of(sheetContext).pop();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Apply Wallpaper', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
