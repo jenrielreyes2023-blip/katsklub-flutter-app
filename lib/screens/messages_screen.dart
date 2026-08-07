@@ -371,6 +371,16 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (event.thread != null) {
         _thread = event.thread;
       }
+      for (final att in event.message.attachments) {
+        if (att.url.startsWith('wallpaper|')) {
+          final parts = att.url.split('|');
+          if (parts.length >= 3) {
+            final wPath = parts[1] == 'none' ? null : parts[1];
+            final wDim = double.tryParse(parts[2]) ?? 0.35;
+            _saveWallpaperSettings(wPath, wDim, broadcast: false);
+          }
+        }
+      }
       // Other side is no longer typing if we just got their message.
       if (!event.message.sentByMe) {
         final senderId = event.message.sender.id ?? '';
@@ -2046,6 +2056,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         _hasLoadedThreadOnce = true;
       });
 
+      _loadWallpaperSettings(thread.id);
       _scrollToBottomSoon();
       _feedService.markThreadRead(thread.id);
       _scheduleStaleCatchup(thread.id);
@@ -2325,6 +2336,40 @@ class _MessagesScreenState extends State<MessagesScreen>
             return Padding(
               padding: const EdgeInsets.only(top: 6, bottom: 8),
               child: _TypingRow(otherUser: t.otherUser),
+            );
+          }
+
+          if (message.attachments.any((a) => a.url.startsWith('wallpaper|')) ||
+              message.body.contains('Changed the chat wallpaper')) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.wallpaper_rounded, size: 14, color: Color(0xFF3B82F6)),
+                      const SizedBox(width: 6),
+                      Text(
+                        message.sentByMe
+                            ? 'You changed the chat wallpaper'
+                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat wallpaper',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             );
           }
 
@@ -2904,33 +2949,68 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  Future<void> _loadWallpaperSettings() async {
+  Future<void> _loadWallpaperSettings([int? targetThreadId]) async {
+    final tId = targetThreadId ?? _thread?.id;
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
+      final keyPath = tId != null ? 'chat_wallpaper_path_$tId' : 'chat_wallpaper_path';
+      final keyDim = tId != null ? 'chat_wallpaper_dim_$tId' : 'chat_wallpaper_dim';
+
+      String? path = prefs.getString(keyPath) ?? prefs.getString('chat_wallpaper_path');
+      double dim = prefs.getDouble(keyDim) ?? prefs.getDouble('chat_wallpaper_dim') ?? 0.35;
+
+      for (final m in _messages.reversed) {
+        for (final att in m.attachments) {
+          if (att.url.startsWith('wallpaper|')) {
+            final parts = att.url.split('|');
+            if (parts.length >= 3) {
+              path = parts[1] == 'none' ? null : parts[1];
+              dim = double.tryParse(parts[2]) ?? 0.35;
+              break;
+            }
+          }
+        }
+      }
+
       setState(() {
-        _chatWallpaperPath = prefs.getString('chat_wallpaper_path');
-        _chatWallpaperDim = prefs.getDouble('chat_wallpaper_dim') ?? 0.35;
+        _chatWallpaperPath = path;
+        _chatWallpaperDim = dim;
       });
     } catch (e) {
       debugPrint('[Wallpaper] Error loading wallpaper: $e');
     }
   }
 
-  Future<void> _saveWallpaperSettings(String? path, double dim) async {
+  Future<void> _saveWallpaperSettings(String? path, double dim, {bool broadcast = true}) async {
+    final tId = _thread?.id;
     try {
       final prefs = await SharedPreferences.getInstance();
+      final keyPath = tId != null ? 'chat_wallpaper_path_$tId' : 'chat_wallpaper_path';
+      final keyDim = tId != null ? 'chat_wallpaper_dim_$tId' : 'chat_wallpaper_dim';
+
       if (path != null && path.isNotEmpty) {
-        await prefs.setString('chat_wallpaper_path', path);
+        await prefs.setString(keyPath, path);
       } else {
-        await prefs.remove('chat_wallpaper_path');
+        await prefs.remove(keyPath);
       }
-      await prefs.setDouble('chat_wallpaper_dim', dim);
+      await prefs.setDouble(keyDim, dim);
+
       if (!mounted) return;
       setState(() {
         _chatWallpaperPath = path;
         _chatWallpaperDim = dim;
       });
+
+      if (broadcast && tId != null && tId > 0) {
+        final payload = 'wallpaper|${path ?? 'none'}|$dim';
+        await _feedService.sendDirectMessage(
+          tId,
+          '🎨 Changed the chat wallpaper',
+          attachmentDataUrl: payload,
+          attachmentType: 'system_wallpaper',
+        );
+      }
     } catch (e) {
       debugPrint('[Wallpaper] Error saving wallpaper: $e');
     }
