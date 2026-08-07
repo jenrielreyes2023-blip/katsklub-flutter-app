@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'webview_screen.dart';
 import 'story_viewer_screen.dart';
@@ -554,7 +555,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           maxLines: 1,
                           style: TextStyle(
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 16,
+                            fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         )
@@ -563,7 +564,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           displayName: _thread?.otherUser.displayName ?? 'Messages',
                           style: TextStyle(
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 16,
+                            fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -574,7 +575,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                        fontSize: 12,
+                        fontSize: 12.5.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     )
@@ -1205,10 +1206,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                           child: resolvedAvatar.isEmpty
                               ? Text(
                                   user.initials,
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF4B5563),
+                                    color: const Color(0xFF4B5563),
                                   ),
                                 )
                               : null,
@@ -1221,7 +1222,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               Text(
                                 user.displayName.isNotEmpty ? user.displayName : '@${user.username}',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w800,
                                   color: primaryTextColor,
                                 ),
@@ -1230,7 +1231,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               Text(
                                 '@${user.username}',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 12.5.sp,
                                   color: secondaryTextColor,
                                 ),
                               ),
@@ -3878,13 +3879,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 inputFormatters: [EmojiPresentationFormatter()],
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 14.5,
+                                  fontSize: 15.sp,
                                   height: 1.3,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
                                   hintStyle: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 14.5.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
@@ -5122,7 +5123,7 @@ class _MessageBubble extends StatelessWidget {
                 text: body,
                 style: TextStyle(
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 15,
+                  fontSize: 15.sp,
                   height: 1.3,
                 ),
               ),
@@ -5141,7 +5142,7 @@ class _MessageBubble extends StatelessWidget {
                     Text(
                       '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 10.5.sp,
                         fontWeight: FontWeight.w500,
                         color: sentByMe
                             ? Colors.white70
