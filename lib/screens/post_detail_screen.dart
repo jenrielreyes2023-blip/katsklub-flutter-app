@@ -2969,9 +2969,13 @@ class _PostMetaRow extends StatelessWidget {
                       username: post.authorUsername,
                       displayName: post.authorFullName,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14.5,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFFE4E6EB)
+                            : const Color(0xFF050505),
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
+                        height: 1.33,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ),
@@ -2989,15 +2993,19 @@ class _PostMetaRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 PostWithUsersLine(
                   users: post.withUsers,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12.5,
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: 12.5.sp,
                     fontWeight: FontWeight.w500,
+                    height: 1.33,
                   ),
                   linkStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 12.5,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFFE4E6EB)
+                        : const Color(0xFF050505),
+                    fontSize: 12.5.sp,
                     fontWeight: FontWeight.w700,
+                    height: 1.33,
                   ),
                   onUserTap: (username) => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -4303,8 +4311,10 @@ class _CommentThreadBlock extends StatelessWidget {
                       color: isLoadingReplies
                           ? const Color(0xFF6B7280)
                           : const Color(0xFF2563EB),
-                      fontSize: 12.5,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w700,
+                      height: 1.33,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 ],
