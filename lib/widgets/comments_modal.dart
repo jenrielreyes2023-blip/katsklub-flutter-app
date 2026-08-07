@@ -964,9 +964,11 @@ class _CommentTile extends StatelessWidget {
                               text: comment.body,
                               style: TextStyle(
                                 inherit: false,
-                                color: primaryTextColor,
-                                fontSize: 13.sp,
-                                height: 1.3,
+                                color: const Color(0xFF050505),
+                                fontSize: 15.sp,
+                                height: 1.33,
+                                letterSpacing: -0.2,
+                                fontWeight: FontWeight.w400,
                               ),
                               onHashtagTap: onHashtagTap,
                               onMentionTap: onMentionTap,
@@ -1623,13 +1625,21 @@ class _CommentComposer extends StatelessWidget {
                         maxLines: 4,
                         textInputAction: TextInputAction.newline,
                         inputFormatters: [EmojiPresentationFormatter()],
-                        style: TextStyle(color: primaryTextColor, fontSize: 13.sp),
+                        style: TextStyle(
+                            color: const Color(0xFF050505),
+                            fontSize: 15.sp,
+                            height: 1.33,
+                            letterSpacing: -0.2,
+                            fontWeight: FontWeight.w400),
                         decoration: InputDecoration(
                           hintText: replyTarget == null
                               ? 'Write a comment...'
                               : 'Reply to ${replyTarget!.displayName}...',
                           hintMaxLines: 1,
-                          hintStyle: TextStyle(color: const Color(0xFF9CA3AF), fontSize: 13.sp),
+                          hintStyle: TextStyle(
+                              color: const Color(0xFF9CA3AF),
+                              fontSize: 15.sp,
+                              height: 1.33),
                           isDense: true,
                           filled: true,
                           fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F6),

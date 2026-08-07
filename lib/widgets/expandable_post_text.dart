@@ -33,9 +33,11 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
 
   static final TextStyle _textStyle = TextStyle(
     inherit: false,
-    fontSize: 13.sp,
-    height: 1.3,
-    color: const Color(0xFF1C1E21),
+    fontSize: 15.sp,
+    height: 1.33,
+    letterSpacing: -0.2,
+    fontWeight: FontWeight.w400,
+    color: const Color(0xFF050505),
   );
 
   String? _cachedText;
