@@ -1464,7 +1464,7 @@ class _StoriesRowState extends State<_StoriesRow>
     final hasOwnStories = widget.ownStories.isNotEmpty;
 
     return SizedBox(
-      height: 102,
+      height: 92,
       child: ListView.separated(
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
@@ -1520,7 +1520,7 @@ class _OwnStoryAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 82,
+      width: 72,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1531,8 +1531,8 @@ class _OwnStoryAvatar extends StatelessWidget {
                 customBorder: const CircleBorder(),
                 onTap: onOpenViewer ?? onCreateStory,
                 child: Container(
-                  width: 72,
-                  height: 72,
+                  width: 60,
+                  height: 60,
                   padding: const EdgeInsets.all(2.5),
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
