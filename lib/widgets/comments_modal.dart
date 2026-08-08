@@ -967,7 +967,7 @@ class _CommentTile extends StatelessWidget {
                                 color: isDark
                                     ? const Color(0xFFE4E6EB)
                                     : const Color(0xFF050505),
-                                fontSize: 15.sp,
+                                fontSize: 13.5.sp,
                                 height: 1.33,
                                 letterSpacing: -0.2,
                                 fontWeight: FontWeight.w400,
@@ -1178,7 +1178,7 @@ class _ReplyTile extends StatelessWidget {
                             color: isDark
                                 ? const Color(0xFFE4E6EB)
                                 : const Color(0xFF050505),
-                            fontSize: 15.sp,
+                            fontSize: 13.5.sp,
                             height: 1.33,
                             letterSpacing: -0.2,
                             fontWeight: FontWeight.w400,
@@ -1639,7 +1639,7 @@ class _CommentComposer extends StatelessWidget {
                             color: isDark
                                 ? const Color(0xFFE4E6EB)
                                 : const Color(0xFF050505),
-                            fontSize: 15.sp,
+                            fontSize: 13.5.sp,
                             height: 1.33,
                             letterSpacing: -0.2,
                             fontWeight: FontWeight.w400),
@@ -1650,7 +1650,7 @@ class _CommentComposer extends StatelessWidget {
                           hintMaxLines: 1,
                           hintStyle: TextStyle(
                               color: const Color(0xFF9CA3AF),
-                              fontSize: 15.sp,
+                              fontSize: 13.5.sp,
                               height: 1.33),
                           isDense: true,
                           filled: true,

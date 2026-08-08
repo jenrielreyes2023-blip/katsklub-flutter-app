@@ -33,7 +33,7 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
 
   static final TextStyle _textStyle = TextStyle(
     inherit: false,
-    fontSize: 15.sp,
+    fontSize: 13.5.sp,
     height: 1.33,
     letterSpacing: -0.2,
     fontWeight: FontWeight.w400,

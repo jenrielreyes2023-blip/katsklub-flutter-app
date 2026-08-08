@@ -692,7 +692,7 @@ class _PostCardState extends State<PostCard> {
                               Text(
                                 displayHeaderName,
                                 style: TextStyle(
-                                  fontSize: 15.sp,
+                                  fontSize: 13.5.sp,
                                   fontWeight: FontWeight.w800,
                                   color: textColor,
                                 ),
@@ -757,7 +757,7 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _post.text,
                       style: TextStyle(
-                        fontSize: 15.sp,
+                        fontSize: 13.5.sp,
                         fontWeight: FontWeight.w400,
                         color: isDark
                             ? const Color(0xFFE4E6EB)
