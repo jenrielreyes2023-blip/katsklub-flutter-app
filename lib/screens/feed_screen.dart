@@ -1861,7 +1861,7 @@ class _PeopleListRow extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                 shape: const StadiumBorder(),
                 textStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 14.sp,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
