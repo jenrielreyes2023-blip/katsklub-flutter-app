@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../theme/app_text_styles.dart';
 import '../models/post_comment.dart';
 import '../screens/hashtag_screen.dart';
 import '../screens/user_profile_screen.dart';
@@ -962,16 +963,7 @@ class _CommentTile extends StatelessWidget {
                             const SizedBox(height: 3),
                             HashtagText(
                               text: comment.body,
-                              style: TextStyle(
-                                inherit: false,
-                                color: isDark
-                                    ? const Color(0xFFE4E6EB)
-                                    : const Color(0xFF050505),
-                                fontSize: 13.5.sp,
-                                height: 1.33,
-                                letterSpacing: -0.2,
-                                fontWeight: FontWeight.w400,
-                              ),
+                              style: KatsText.commentBody(context),
                               onHashtagTap: onHashtagTap,
                               onMentionTap: onMentionTap,
                             ),
@@ -1127,14 +1119,8 @@ class _ReplyTile extends StatelessWidget {
                                 child: SpecialNameText(
                                   username: reply.authorUsername,
                                   displayName: reply.displayName,
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? const Color(0xFFE4E6EB)
-                                        : const Color(0xFF050505),
-                                    fontSize: 13.5.sp,
+                                  style: KatsText.commentAuthor(context).copyWith(
                                     fontWeight: FontWeight.w600,
-                                    height: 1.33,
-                                    letterSpacing: -0.2,
                                   ),
                                 ),
                               ),
@@ -1173,16 +1159,7 @@ class _ReplyTile extends StatelessWidget {
                         const SizedBox(height: 3),
                         HashtagText(
                           text: reply.body,
-                          style: TextStyle(
-                            inherit: false,
-                            color: isDark
-                                ? const Color(0xFFE4E6EB)
-                                : const Color(0xFF050505),
-                            fontSize: 13.5.sp,
-                            height: 1.33,
-                            letterSpacing: -0.2,
-                            fontWeight: FontWeight.w400,
-                          ),
+                          style: KatsText.replyBody(context),
                           onHashtagTap: onHashtagTap,
                           onMentionTap: onMentionTap,
                           prefixSpans: [

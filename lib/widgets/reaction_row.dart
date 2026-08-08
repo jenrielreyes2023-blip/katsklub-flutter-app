@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
+import '../theme/app_text_styles.dart';
 import 'custom_icons.dart';
 
 class ReactionRow extends StatelessWidget {
@@ -174,12 +175,7 @@ class _ActionIcon extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 _formatCount(count),
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 1.33,
-                ),
+                style: KatsText.countLabel(context, color),
               ),
             ],
           ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
+import '../theme/app_text_styles.dart';
 import '../screens/user_profile_screen.dart';
 import 'custom_icons.dart';
 import 'post_with_users_line.dart';
@@ -76,14 +77,8 @@ class PostHeader extends StatelessWidget {
                             child: SpecialNameText(
                               username: post.authorUsername,
                               displayName: post.authorFullName,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5.sp,
-                                  letterSpacing: -0.2,
-                                  height: 1.33,
-                                  color: isDarkTheme
-                                      ? const Color(0xFFE4E6EB)
-                                      : const Color(0xFF050505)),
+                              style: KatsText.postAuthor(context,
+                                  themeKey: themeKey),
                             ),
                           ),
                         ),

@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../theme/app_text_styles.dart';
 import '../models/post_comment.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
@@ -2968,15 +2969,7 @@ class _PostMetaRow extends StatelessWidget {
                     child: SpecialNameText(
                       username: post.authorUsername,
                       displayName: post.authorFullName,
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFFE4E6EB)
-                            : const Color(0xFF050505),
-                        fontSize: 13.5.sp,
-                        fontWeight: FontWeight.w700,
-                        height: 1.33,
-                        letterSpacing: -0.2,
-                      ),
+                      style: KatsText.postAuthor(context),
                     ),
                   ),
                   if (post.authorIsVerified) ...[
@@ -3717,12 +3710,7 @@ class _PostDetailActionIcon extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 _formatCount(count),
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 1.33,
-                ),
+                style: KatsText.countLabel(context, color),
               ),
             ],
           ],
@@ -4309,15 +4297,8 @@ class _CommentThreadBlock extends StatelessWidget {
                         : isRepliesExpanded
                             ? 'Hide replies'
                             : 'View ${comment.replyCount} ${comment.replyCount == 1 ? 'reply' : 'replies'}',
-                    style: TextStyle(
-                      color: isLoadingReplies
-                          ? const Color(0xFF6B7280)
-                          : const Color(0xFF2563EB),
-                      fontSize: 13.5.sp,
-                      fontWeight: FontWeight.w700,
-                      height: 1.33,
-                      letterSpacing: -0.2,
-                    ),
+                    style: KatsText.viewReplies(context,
+                        isLoading: isLoadingReplies),
                   ),
                 ],
               ),
@@ -4411,15 +4392,7 @@ class _CommentMessageBlock extends StatelessWidget {
                 child: SpecialNameText(
                   username: comment.authorUsername,
                   displayName: comment.displayName,
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFFE4E6EB)
-                        : const Color(0xFF050505),
-                    fontSize: 13.5.sp,
-                    fontWeight: FontWeight.w700,
-                    height: 1.33,
-                    letterSpacing: -0.2,
-                  ),
+                  style: KatsText.commentAuthor(context),
                 ),
               ),
             ),
@@ -4470,16 +4443,7 @@ class _CommentMessageBlock extends StatelessWidget {
         const SizedBox(height: 5),
         HashtagText(
           text: comment.body,
-          style: TextStyle(
-            inherit: false,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFFE4E6EB)
-                : const Color(0xFF050505),
-            fontSize: 13.5.sp,
-            height: 1.33,
-            letterSpacing: -0.2,
-            fontWeight: FontWeight.w400,
-          ),
+          style: KatsText.commentBody(context),
           onHashtagTap: (_) {},
           onMentionTap: onMentionTap,
         ),

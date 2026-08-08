@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../screens/hashtag_screen.dart';
 import '../screens/user_profile_screen.dart';
+import '../theme/app_text_styles.dart';
 import 'hashtag_text.dart';
 
 class ExpandablePostText extends StatefulWidget {
@@ -31,6 +32,7 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
   static final RegExp _sentenceEndRe = RegExp(r"""[.!?…]+["')\]]*\s+""");
   static final RegExp _whitespaceRe = RegExp(r'\s+');
 
+  // Centralized via KatsText — kept for _fits measurement (color irrelevant)
   static final TextStyle _textStyle = TextStyle(
     inherit: false,
     fontSize: 13.5.sp,
@@ -235,11 +237,7 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
             children: [
               HashtagText(
                 text: widget.expanded ? widget.text : collapsedText,
-                style: _textStyle.copyWith(
-                  color: isDark
-                      ? const Color(0xFFE4E6EB)
-                      : const Color(0xFF050505),
-                ),
+                style: KatsText.postBody(context),
                 textScaler: TextScaler.noScaling,
                 onHashtagTap: (tag) => _openHashtag(context, tag),
                 onMentionTap: (username) => _openMention(context, username),

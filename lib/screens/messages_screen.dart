@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_text_styles.dart';
 import 'webview_screen.dart';
 import 'story_viewer_screen.dart';
 import 'post_detail_screen.dart';
@@ -6117,22 +6118,12 @@ class _MessagesThreadList extends StatelessWidget {
                                       : 'Group chat',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 13.5.sp,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.33,
-                                  ),
+                                  style: KatsText.threadName(context),
                                 )
                               : SpecialNameText(
                                   username: thread.otherUser.username ?? '',
                                   displayName: thread.otherUser.displayName,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 13.5.sp,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.33,
-                                  ),
+                                  style: KatsText.threadName(context),
                                 ),
                           const SizedBox(height: 3),
                           if (isTyping)
@@ -6142,16 +6133,8 @@ class _MessagesThreadList extends StatelessWidget {
                               _previewFor(thread.lastMessage),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: thread.unreadCount > 0
-                                    ? (isDark ? Colors.white : const Color(0xFF111827))
-                                    : const Color(0xFF6B7280),
-                                fontSize: 13.sp,
-                                fontWeight: thread.unreadCount > 0
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                                height: 1.33,
-                              ),
+                              style: KatsText.threadPreview(context,
+                                  unread: thread.unreadCount > 0),
                             ),
                         ],
                       ),

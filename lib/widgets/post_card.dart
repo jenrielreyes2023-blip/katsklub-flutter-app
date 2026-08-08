@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../theme/app_text_styles.dart';
 import '../models/user.dart';
 import '../screens/edit_post_screen.dart';
 import '../screens/youtube_player_screen.dart';
@@ -745,30 +746,14 @@ class _PostCardState extends State<PostCard> {
                   if (hasTargetProfile && _post.authorFullName.isNotEmpty) ...[
                     Text(
                       _post.authorFullName,
-                      style: TextStyle(
-                        fontSize: 13.5.sp,
-                        fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? const Color(0xFFE4E6EB)
-                            : const Color(0xFF050505),
-                        height: 1.33,
-                        letterSpacing: -0.2,
-                      ),
+                      style: KatsText.postAuthor(context),
                     ),
                     const SizedBox(height: 4),
                   ],
                   if (_post.text.isNotEmpty)
                     Text(
                       _post.text,
-                      style: TextStyle(
-                        fontSize: 13.5.sp,
-                        fontWeight: FontWeight.w400,
-                        color: isDark
-                            ? const Color(0xFFE4E6EB)
-                            : const Color(0xFF050505),
-                        height: 1.33,
-                        letterSpacing: -0.2,
-                      ),
+                      style: KatsText.postBody(context),
                     ),
                 ],
               ),
