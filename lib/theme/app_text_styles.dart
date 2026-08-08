@@ -24,7 +24,7 @@ class KatsText {
 
   /// Post body — Home/Discover/Postpage (Feed + Post detail text)
   static TextStyle postBody(BuildContext c) => TextStyle(
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w400,
@@ -34,7 +34,7 @@ class KatsText {
   /// Post author name — Home/Discover/Postpage (parehas na)
   static TextStyle postAuthor(BuildContext c, {String themeKey = ''}) =>
       TextStyle(
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w700,
@@ -44,7 +44,7 @@ class KatsText {
   /// Comment body — Postpage + Comments modal
   static TextStyle commentBody(BuildContext c) => TextStyle(
         inherit: false,
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w400,
@@ -53,7 +53,7 @@ class KatsText {
 
   /// Comment/Replies author name
   static TextStyle commentAuthor(BuildContext c) => TextStyle(
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w700,
@@ -66,7 +66,7 @@ class KatsText {
   /// Like/Comment/Repost count label — Feed + Postpage
   static TextStyle countLabel(BuildContext c, Color color) => TextStyle(
         color: color,
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         fontWeight: FontWeight.w600,
         height: 1.33,
       );
@@ -75,7 +75,7 @@ class KatsText {
   static TextStyle viewReplies(BuildContext c, {bool isLoading = false}) =>
       TextStyle(
         color: isLoading ? const Color(0xFF6B7280) : const Color(0xFF2563EB),
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         fontWeight: FontWeight.w700,
         height: 1.33,
         letterSpacing: -0.2,
@@ -84,7 +84,7 @@ class KatsText {
   /// Messages thread list
   static TextStyle threadName(BuildContext c) => TextStyle(
         color: Theme.of(c).colorScheme.onSurface,
-        fontSize: 12.sp,
+        fontSize: 13.sp,
         fontWeight: FontWeight.w800,
         height: 1.33,
       );
@@ -95,7 +95,7 @@ class KatsText {
       color: unread
           ? (isDark ? Colors.white : const Color(0xFF111827))
           : const Color(0xFF6B7280),
-      fontSize: 12.sp,
+      fontSize: 13.sp,
       fontWeight: unread ? FontWeight.w700 : FontWeight.w400,
       height: 1.33,
     );
