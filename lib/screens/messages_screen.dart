@@ -556,8 +556,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                           maxLines: 1,
                           style: TextStyle(fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         )
                       : SpecialNameText(
@@ -565,8 +565,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                           displayName: _thread?.otherUser.displayName ?? 'Messages',
                           style: TextStyle(fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                   if (_thread?.isGroup == true)
@@ -4938,8 +4938,8 @@ class _ConversationPresenceLabel extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: Color(0xFF6B7280),
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w400,
           ),
         );
       },
