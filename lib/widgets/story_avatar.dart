@@ -116,6 +116,7 @@ class StoryAvatar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
