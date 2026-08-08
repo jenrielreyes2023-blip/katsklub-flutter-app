@@ -6119,8 +6119,9 @@ class _MessagesThreadList extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 15,
+                                    fontSize: 13.5.sp,
                                     fontWeight: FontWeight.w800,
+                                    height: 1.33,
                                   ),
                                 )
                               : SpecialNameText(
@@ -6128,8 +6129,9 @@ class _MessagesThreadList extends StatelessWidget {
                                   displayName: thread.otherUser.displayName,
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 15,
+                                    fontSize: 13.5.sp,
                                     fontWeight: FontWeight.w800,
+                                    height: 1.33,
                                   ),
                                 ),
                           const SizedBox(height: 3),
@@ -6144,10 +6146,11 @@ class _MessagesThreadList extends StatelessWidget {
                                 color: thread.unreadCount > 0
                                     ? (isDark ? Colors.white : const Color(0xFF111827))
                                     : const Color(0xFF6B7280),
-                                fontSize: 13,
+                                fontSize: 13.sp,
                                 fontWeight: thread.unreadCount > 0
                                     ? FontWeight.w700
                                     : FontWeight.w400,
+                                height: 1.33,
                               ),
                             ),
                         ],
