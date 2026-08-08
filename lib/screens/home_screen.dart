@@ -1610,7 +1610,7 @@ class _OwnStoryAvatar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 11.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w600,
             ),
           ),

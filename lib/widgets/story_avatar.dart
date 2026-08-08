@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 
@@ -114,8 +115,8 @@ class StoryAvatar extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
