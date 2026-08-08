@@ -634,7 +634,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             const SizedBox(height: 16),
             Text(
               'This account is private',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: Color(0xFF111827),
                 fontWeight: FontWeight.w700,
                 fontSize: 17.sp,
@@ -646,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ? 'Your follow request is pending approval.'
                   : 'Follow this account to see their posts.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: Color(0xFF6B7280),
                 fontSize: 14.sp,
                 height: 1.4,
@@ -1436,7 +1436,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               const SizedBox(height: 12),
               Text(
                 'No reels yet',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF6B7280),
@@ -1452,7 +1452,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       SizedBox(width: 8),
                       Text(
                         'Suggested Reels',
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF111827),
@@ -1548,7 +1548,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             const SizedBox(height: 12),
             Text(
               emptyMessage,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
@@ -1564,7 +1564,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(width: 8),
                     Text(
                       'Suggested for you',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w800,
                         color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
@@ -1643,7 +1643,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               user.displayName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
                 color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF1F2937),
@@ -1654,7 +1654,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               user.handle ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 10.sp,
                 color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF9CA3AF),
               ),
@@ -1687,7 +1687,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           child: Text(
                             'Following',
-                            style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 11.sp, fontWeight: FontWeight.w700),
                           ),
                         )
                       : user.isRequested
@@ -1703,7 +1703,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               child: Text(
                                 'Requested',
-                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 11.sp, fontWeight: FontWeight.w700),
                               ),
                             )
                           : ElevatedButton(
@@ -1719,7 +1719,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               child: Text(
                                 'Follow',
-                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 11.sp, fontWeight: FontWeight.w700),
                               ),
                             ),
             ),
@@ -1957,7 +1957,7 @@ class _ProfileInlineCounters extends StatelessWidget {
             onTap: onTapFollowing,
             child: Text.rich(
               TextSpan(
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 14.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
@@ -1971,7 +1971,7 @@ class _ProfileInlineCounters extends StatelessWidget {
           ),
           Text(
             '  ·  ',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 14.sp,
               color: Color(0xFF65676B),
             ),
@@ -1980,7 +1980,7 @@ class _ProfileInlineCounters extends StatelessWidget {
             onTap: onTapFollowers,
             child: Text.rich(
               TextSpan(
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 14.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
@@ -1994,14 +1994,14 @@ class _ProfileInlineCounters extends StatelessWidget {
           ),
           Text(
             '  ·  ',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 14.sp,
               color: Color(0xFF65676B),
             ),
           ),
           Text.rich(
             TextSpan(
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 14.sp,
                 color: Color(0xFF65676B),
                 height: 1.3,
@@ -2020,7 +2020,7 @@ class _ProfileInlineCounters extends StatelessWidget {
   TextSpan _boldNumber(BuildContext context, String value) {
     return TextSpan(
       text: value,
-      style: TextStyle(
+      style: TextStyle(fontFamily: 'SF Pro Rounded',
         fontWeight: FontWeight.w700,
         color: Theme.of(context).colorScheme.onSurface,
       ),
@@ -2086,7 +2086,7 @@ class _ProfileBio extends StatelessWidget {
                 child: SpecialNameText(
                   username: user.username ?? '',
                   displayName: user.displayName,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -2114,7 +2114,7 @@ class _ProfileBio extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               line.text,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 14.sp,
                 color: line.color,
               ),
@@ -2207,7 +2207,7 @@ class _ProfileBio extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           linkTitle,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             color: brandColor,
@@ -2238,7 +2238,7 @@ class _ProfileBio extends StatelessWidget {
         const SizedBox(width: 2),
         Text(
           '$level',
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: Color(0xFFFF7A45),
             fontSize: 9.5.sp,
             fontWeight: FontWeight.w900,
@@ -4173,7 +4173,7 @@ class _ProfileMetadataSvgItem extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
               color: textColor,
               fontWeight: FontWeight.w400,
@@ -4371,7 +4371,7 @@ class _EmptyTab extends StatelessWidget {
     return Center(
       child: Text(
         message,
-        style: TextStyle(
+        style: TextStyle(fontFamily: 'SF Pro Rounded',
           fontSize: 16.sp,
           color: Color(0xFF9CA3AF),
         ),
@@ -4515,7 +4515,7 @@ class _MoreOptionsRow extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -4620,7 +4620,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'About account',
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w800,
@@ -4663,7 +4663,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                         child: avatarUrl.isEmpty
                             ? Text(
                                 user.initials,
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).brightness == Brightness.dark
                                       ? const Color(0xFF93C5FD)
                                       : const Color(0xFF2563EB),
@@ -4682,7 +4682,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                               user.displayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w800,
@@ -4694,7 +4694,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                                 user.handle!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Color(0xFF65676B),
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w400,
@@ -4730,7 +4730,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                             padding: EdgeInsets.all(16),
                             child: Text(
                               'No visible account information yet.',
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 color: Color(0xFF65676B),
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
@@ -4876,7 +4876,7 @@ class _AboutSectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 14.sp,
             fontWeight: FontWeight.w800,
@@ -4923,7 +4923,7 @@ class _AboutInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Color(0xFF65676B),
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -4932,7 +4932,7 @@ class _AboutInfoRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   value,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
