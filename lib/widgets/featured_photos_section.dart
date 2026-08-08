@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -254,10 +255,10 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
             children: [
               Text(
                 'Visitors',
-                style: TextStyle(
-                  fontSize: 13,
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.5.sp,
                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF65676B),
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   ),
               ),
               if (widget.user.newVisitorsCount > 0)
@@ -338,9 +339,9 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   const SizedBox(width: 8),
                   Text(
                     'Featured Photos',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w700,
                       color: isDark ? Colors.white : const Color(0xFF1C1E21),
                       letterSpacing: -0.3,
                     ),
