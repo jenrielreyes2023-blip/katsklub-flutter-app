@@ -746,9 +746,13 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _post.authorFullName,
                       style: TextStyle(
-                        fontSize: 15.5.sp,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
+                        fontSize: 13.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark
+                            ? const Color(0xFFE4E6EB)
+                            : const Color(0xFF050505),
+                        height: 1.33,
+                        letterSpacing: -0.2,
                       ),
                     ),
                     const SizedBox(height: 4),
