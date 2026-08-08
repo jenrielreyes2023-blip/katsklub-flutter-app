@@ -330,23 +330,23 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                         if (story.ownedByMe) ...[
                           ListTile(
                             leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                            title: const Text('Delete story', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                            title: Text('Delete story', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
                             onTap: () async {
                               Navigator.of(sheetContext).pop();
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (dialogCtx) => AlertDialog(
                                   backgroundColor: const Color(0xFF242526),
-                                  title: const Text('Delete story?', style: TextStyle(color: Colors.white)),
-                                  content: const Text('This story will be permanently removed.', style: TextStyle(color: Colors.white70)),
+                                  title: Text('Delete story?', style: TextStyle(color: Colors.white)),
+                                  content: Text('This story will be permanently removed.', style: TextStyle(color: Colors.white70)),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.of(dialogCtx).pop(false),
-                                      child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                                      child: Text('Cancel', style: TextStyle(color: Colors.white70)),
                                     ),
                                     TextButton(
                                       onPressed: () => Navigator.of(dialogCtx).pop(true),
-                                      child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                      child: Text('Delete', style: TextStyle(color: Colors.redAccent)),
                                     ),
                                   ],
                                 ),
@@ -949,7 +949,7 @@ class _StoryViewersSheetState extends State<_StoryViewersSheet> {
                           child: _isLoading
                               ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF7A59)))
                               : _viewers.isEmpty
-                                  ? const Center(
+                                  ? Center(
                                       child: Text(
                                         'No viewers yet.',
                                         style: TextStyle(fontFamily: 'SF Pro Rounded', color: Color(0xFF6B7280), fontSize: 14.sp),
