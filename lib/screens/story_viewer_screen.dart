@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -457,7 +458,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 '${story.viewCount} views',
-                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                                style: TextStyle(fontFamily: 'SF Pro Rounded', color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -494,9 +495,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                             child: Text(
                               'Send message to @${story.authorUsername}...',
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                 color: Colors.white70,
-                                fontSize: 13,
+                                fontSize: 13.sp,
                               ),
                             ),
                           ),
@@ -630,9 +631,9 @@ class _ShareStorySheet extends StatelessWidget {
                       children: [
                         Text(
                           'Share story',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: textColor,
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -641,9 +642,9 @@ class _ShareStorySheet extends StatelessWidget {
                           'Story by ${story.authorFullName} (@${story.authorUsername})',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: subtitleColor,
-                            fontSize: 13,
+                            fontSize: 13.sp,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -735,9 +736,9 @@ class _StoryShareActionButton extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                 color: textColor,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 height: 1.2,
               ),
@@ -812,9 +813,9 @@ class _StoryReplySheetState extends State<_StoryReplySheet> {
                       children: [
                         Text(
                           'Reply to @${widget.story.authorUsername}',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: textColor,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -939,7 +940,7 @@ class _StoryViewersSheetState extends State<_StoryViewersSheet> {
                             const SizedBox(width: 8),
                             Text(
                               'Story Viewers (${_viewers.length})',
-                              style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w800),
+                              style: TextStyle(fontFamily: 'SF Pro Rounded', color: textColor, fontSize: 16.sp, fontWeight: FontWeight.w800),
                             ),
                           ],
                         ),
@@ -951,7 +952,7 @@ class _StoryViewersSheetState extends State<_StoryViewersSheet> {
                                   ? const Center(
                                       child: Text(
                                         'No viewers yet.',
-                                        style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded', color: Color(0xFF6B7280), fontSize: 14.sp),
                                       ),
                                     )
                                   : ListView.separated(
@@ -983,12 +984,12 @@ class _StoryViewersSheetState extends State<_StoryViewersSheet> {
                                                   SpecialNameText(
                                                     username: username,
                                                     displayName: fullName,
-                                                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w700),
+                                                    style: TextStyle(fontFamily: 'SF Pro Rounded', color: textColor, fontSize: 14.sp, fontWeight: FontWeight.w700),
                                                   ),
                                                   if (username.isNotEmpty)
                                                     Text(
                                                       '@$username',
-                                                      style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                                                      style: TextStyle(fontFamily: 'SF Pro Rounded', color: Color(0xFF6B7280), fontSize: 12.sp),
                                                     ),
                                                 ],
                                               ),
@@ -1126,9 +1127,9 @@ class _TextStory extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded', 
               color: Colors.white,
-              fontSize: 32,
+              fontSize: 32.sp,
               fontWeight: FontWeight.w700,
               shadows: [
                 Shadow(
@@ -1238,9 +1239,9 @@ class _VideoStoryState extends State<_VideoStory> {
               child: Text(
                 widget.text!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded', 
                   color: Colors.white,
-                  fontSize: 28,
+                  fontSize: 28.sp,
                   fontWeight: FontWeight.w700,
                   shadows: [
                     Shadow(
@@ -1317,18 +1318,18 @@ class _PlaceholderStory extends StatelessWidget {
             SpecialNameText(
               username: story.authorUsername,
               displayName: story.authorFullName,
-              style: const TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Story content unavailable',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
+                fontSize: 14.sp,
               ),
             ),
           ],
@@ -1418,9 +1419,9 @@ class _StoryHeader extends StatelessWidget {
                       child: Center(
                         child: Text(
                           story.initials,
-                          style: const TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Color(0xFF111827),
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -1440,9 +1441,9 @@ class _StoryHeader extends StatelessWidget {
                         child: Center(
                           child: Text(
                             story.initials,
-                            style: const TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded', 
                               color: Color(0xFF111827),
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -1459,9 +1460,9 @@ class _StoryHeader extends StatelessWidget {
                 SpecialNameText(
                   username: story.authorUsername,
                   displayName: story.authorFullName,
-                  style: const TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded', 
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1470,9 +1471,9 @@ class _StoryHeader extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     text: TextSpan(
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded', 
                         color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                       ),
                       children: [
                         if (story.authorUsername.isNotEmpty)
@@ -1495,9 +1496,9 @@ class _StoryHeader extends StatelessWidget {
                     story.musicArtist!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
                       color: Colors.white.withValues(alpha: 0.62),
-                      fontSize: 11,
+                      fontSize: 11.sp,
                     ),
                   ),
               ],
