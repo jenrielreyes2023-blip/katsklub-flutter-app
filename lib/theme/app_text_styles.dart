@@ -115,4 +115,15 @@ class KatsText {
         fontWeight: FontWeight.w700,
         height: 1.33,
       );
+
+  /// Timestamp — Postcard feed & Postpage (12.sp w400 meta)
+  static TextStyle timestamp(BuildContext c) {
+    final isDark = _isDark(c);
+    return TextStyle(
+      color: isDark ? _metaDark : _metaLight,
+      fontSize: 12.sp,
+      fontWeight: FontWeight.w400,
+      height: 1.33,
+    );
+  }
 }

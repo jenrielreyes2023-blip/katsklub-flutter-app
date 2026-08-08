@@ -195,22 +195,14 @@ class PostHeader extends StatelessWidget {
                             _formatTimestamp(post.createdAt),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: metaColor,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: KatsText.timestamp(context),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
                             '·',
-                            style: TextStyle(
-                              color: metaColor,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: KatsText.timestamp(context),
                           ),
                         ),
                         Icon(
