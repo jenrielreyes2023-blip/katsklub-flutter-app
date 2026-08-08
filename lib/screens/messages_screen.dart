@@ -70,7 +70,7 @@ class _MessagesPageHeader extends StatelessWidget {
                 'Messages',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -541,7 +541,7 @@ class _MessagesScreenState extends State<MessagesScreen>
         title: Row(
           children: [
             _ThreadAvatar(thread: _thread),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,12 +766,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                         ? Colors.white
                         : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    fontSize: 12.5,
+                    fontSize: 12.5.sp,
                   ),
                 ),
               ),
               if (badge > 0) ...[
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Container(
                   constraints: const BoxConstraints(minWidth: 16),
                   height: 16,
@@ -786,7 +786,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     style: TextStyle(
                       color: selected ? const Color(0xFFFF7A45) : Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 10,
+                      fontSize: 10.sp,
                       height: 1.0,
                     ),
                   ),
@@ -922,14 +922,14 @@ class _MessagesScreenState extends State<MessagesScreen>
           children: [
             _buildNotesRail(),
             if (directThreads.isEmpty)
-              const SizedBox(
+              SizedBox(
                 height: 180,
                 child: Center(
                   child: Text(
                     'No chats history',
                     style: TextStyle(
                       color: Color(0xFF9CA3AF),
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1033,7 +1033,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       ),
       child: Row(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 10),
             child: Icon(
               Icons.search_rounded,
@@ -1046,14 +1046,14 @@ class _MessagesScreenState extends State<MessagesScreen>
               controller: _searchController,
               onChanged: _onSearchQueryChanged,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Search chats or users...',
                 hintStyle: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: Color(0xFF9CA3AF),
                   fontWeight: FontWeight.w500,
                 ),
@@ -1112,13 +1112,13 @@ class _MessagesScreenState extends State<MessagesScreen>
             child: Text(
               'Chats',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w800,
                 color: headerTextColor,
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           _MessagesThreadList(
             threads: matchedThreads,
             typingThreadIds: _typingByThread.entries
@@ -1133,7 +1133,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               );
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
         ],
 
         Padding(
@@ -1141,15 +1141,15 @@ class _MessagesScreenState extends State<MessagesScreen>
           child: Text(
             'KatsKlub Users',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.sp,
               fontWeight: FontWeight.w800,
               color: headerTextColor,
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (_isSearchingUsers)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(
               child: SizedBox(
@@ -1169,7 +1169,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               child: Text(
                 'No users found',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   color: secondaryTextColor,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1215,7 +1215,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1228,7 +1228,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   color: primaryTextColor,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Text(
                                 '@${user.username}',
                                 style: TextStyle(
@@ -1426,8 +1426,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                                       _currentUser?.displayName.isNotEmpty == true
                                           ? _currentUser!.displayName[0].toUpperCase()
                                           : 'Me',
-                                      style: const TextStyle(
-                                        fontSize: 16,
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF4B5563),
                                       ),
@@ -1451,8 +1451,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                                     _currentUser?.displayName.isNotEmpty == true
                                         ? _currentUser!.displayName[0].toUpperCase()
                                         : 'Me',
-                                    style: const TextStyle(
-                                      fontSize: 18,
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF4B5563),
                                     ),
@@ -1487,8 +1487,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                             ownNote.text,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10,
+                            style: TextStyle(
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF111827),
                             ),
@@ -1522,13 +1522,13 @@ class _MessagesScreenState extends State<MessagesScreen>
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          SizedBox(height: 6),
+          Text(
             'Your note',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 11.sp,
               color: Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
             ),
@@ -1586,8 +1586,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                               child: resolvedAvatar.isEmpty
                                   ? Text(
                                       note.initials,
-                                      style: const TextStyle(
-                                        fontSize: 16,
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF4B5563),
                                       ),
@@ -1609,8 +1609,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                             child: resolvedAvatar.isEmpty
                                 ? Text(
                                     note.initials,
-                                    style: const TextStyle(
-                                      fontSize: 18,
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF4B5563),
                                     ),
@@ -1644,8 +1644,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                           note.text,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
+                          style: TextStyle(
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF111827),
                           ),
@@ -1657,13 +1657,13 @@ class _MessagesScreenState extends State<MessagesScreen>
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
             note.fullName.isNotEmpty ? note.fullName : '@${note.username}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: 11.sp,
               color: Color(0xFF111827),
               fontWeight: FontWeight.w600,
             ),
@@ -1690,7 +1690,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Container(
                 width: 40,
                 height: 4,
@@ -1699,23 +1699,23 @@ class _MessagesScreenState extends State<MessagesScreen>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 'Your Note',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF111827),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   '"${ownNote.text}"',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: 14.sp,
                     fontStyle: FontStyle.italic,
                     color: Color(0xFF4B5563),
                   ),
@@ -1724,7 +1724,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.edit_outlined, color: Color(0xFF2563EB)),
-                title: const Text('Leave a new note'),
+                title: Text('Leave a new note'),
                 onTap: () {
                   Navigator.of(context).pop();
                   _showCreateNoteDialog(currentText: ownNote.text);
@@ -1732,13 +1732,13 @@ class _MessagesScreenState extends State<MessagesScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
-                title: const Text('Delete note', style: TextStyle(color: Color(0xFFDC2626))),
+                title: Text('Delete note', style: TextStyle(color: Color(0xFFDC2626))),
                 onTap: () {
                   Navigator.of(context).pop();
                   _deleteNote();
                 },
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
           ),
         );
@@ -1756,9 +1756,9 @@ class _MessagesScreenState extends State<MessagesScreen>
             final length = textController.text.length;
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text(
+              title: Text(
                 'Share a thought',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18.sp),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1774,7 +1774,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     },
                     decoration: InputDecoration(
                       hintText: "What's on your mind? (up to 60 characters)...",
-                      hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontSize: 14.sp, color: Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1787,13 +1787,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                       counterText: "",
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       '$length / 60',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         color: length > 50 ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
                         fontWeight: FontWeight.w600,
                       ),
@@ -1804,7 +1804,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
                 ),
                 ElevatedButton(
                   onPressed: textController.text.trim().isEmpty
@@ -1817,7 +1817,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     backgroundColor: const Color(0xFF2563EB),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Share', style: TextStyle(color: Colors.white)),
+                  child: Text('Share', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -1879,32 +1879,32 @@ class _MessagesScreenState extends State<MessagesScreen>
                         child: note.avatarUrl.isEmpty
                             ? Text(
                                 note.initials,
-                                style: const TextStyle(
-                                  fontSize: 14,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF4B5563),
                                 ),
                               )
                             : null,
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               note.fullName.isNotEmpty ? note.fullName : '@${note.username}',
-                              style: const TextStyle(
-                                fontSize: 13,
+                              style: TextStyle(
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF111827),
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: 2),
                             Text(
                               '@${note.username}',
-                              style: const TextStyle(
-                                fontSize: 11,
+                              style: TextStyle(
+                                fontSize: 11.sp,
                                 color: Color(0xFF6B7280),
                               ),
                             ),
@@ -1913,7 +1913,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -1923,21 +1923,21 @@ class _MessagesScreenState extends State<MessagesScreen>
                     ),
                     child: Text(
                       note.text,
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: 13.sp,
                         fontStyle: FontStyle.italic,
                         color: Color(0xFF374151),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   TextField(
                     controller: replyController,
                     autofocus: true,
                     onChanged: (val) => setDialogState(() {}),
                     decoration: InputDecoration(
                       hintText: 'Send message...',
-                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontSize: 13.sp, color: Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1954,7 +1954,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
                 ),
                 ElevatedButton(
                   onPressed: replyController.text.trim().isEmpty
@@ -1967,7 +1967,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     backgroundColor: const Color(0xFF2563EB),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Send', style: TextStyle(color: Colors.white)),
+                  child: Text('Send', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -2358,13 +2358,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.wallpaper_rounded, size: 14, color: Color(0xFF3B82F6)),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text(
                         message.sentByMe
                             ? 'You changed the chat wallpaper'
                             : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat wallpaper',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.grey[300] : Colors.grey[700],
                         ),
@@ -2558,30 +2558,30 @@ class _MessagesScreenState extends State<MessagesScreen>
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           backgroundColor: Theme.of(context).colorScheme.surface,
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.translate_rounded, color: Color(0xFF3B82F6)),
               SizedBox(width: 8),
-              Text('Translation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Translation', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Original:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
-              const SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-              const SizedBox(height: 12),
-              const Text('Translated:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
-              const SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+              Text('Original:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+              SizedBox(height: 2),
+              Text(message.body, style: TextStyle(fontSize: 14.sp, color: Theme.of(context).colorScheme.onSurface)),
+              SizedBox(height: 12),
+              Text('Translated:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+              SizedBox(height: 2),
+              Text(message.body, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Close'),
+              child: Text('Close'),
             ),
           ],
         );
@@ -2616,7 +2616,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 child: Text(
                   'Forward Message to...',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -2859,7 +2859,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ? 'Custom background active'
                       : 'Default background',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
@@ -2912,7 +2912,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     (_otherUserProfile?.isMuted == true)
                         ? 'Unmute @${t.otherUser.username}'
                         : 'Mute @${t.otherUser.username}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w700,
                     ),
@@ -2933,7 +2933,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     (_otherUserProfile?.isBlocked == true)
                         ? 'Unblock @${t.otherUser.username}'
                         : 'Block @${t.otherUser.username}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w700,
                     ),
@@ -3147,15 +3147,15 @@ class _MessagesScreenState extends State<MessagesScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         const Icon(Icons.wallpaper_rounded, color: Color(0xFF3B82F6), size: 24),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Text(
                           'Chat Background Wallpaper',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.bold,
                             color: sheetText,
                           ),
@@ -3190,7 +3190,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               ),
                               child: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 20),
                             ),
-                            const SizedBox(width: 14),
+                            SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3198,16 +3198,16 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   Text(
                                     'Choose from Phone Gallery',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.bold,
                                       color: sheetText,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
+                                  SizedBox(height: 2),
                                   Text(
                                     'Upload your own photo as chat background',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                                     ),
                                   ),
@@ -3219,11 +3219,11 @@ class _MessagesScreenState extends State<MessagesScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Text(
                       'Preset Wallpapers',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                         color: sheetText,
                       ),
@@ -3261,9 +3261,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 child: Text(
                                   item['name'] as String,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 11,
+                                    fontSize: 11.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -3273,22 +3273,22 @@ class _MessagesScreenState extends State<MessagesScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Background Dimming',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
                             color: sheetText,
                           ),
                         ),
                         Text(
                           '${(tempDim * 100).toInt()}%',
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: TextStyle(
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF3B82F6),
                           ),
@@ -3322,7 +3322,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
-                              child: const Text('Reset', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                              child: Text('Reset', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -3339,7 +3339,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            child: const Text('Apply Wallpaper', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: Text('Apply Wallpaper', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -3375,7 +3375,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -3442,7 +3442,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -3541,9 +3541,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ),
                 Text(
                   'Members (${thread.members.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFF111827),
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -3565,12 +3565,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                               : null,
                           child: avatarUrl.isEmpty
                               ? Text(m.initials,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontWeight: FontWeight.w800))
                               : null,
                         ),
                         title: Text(m.displayName,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w700)),
                         subtitle: m.handle != null ? Text(m.handle!) : null,
                       );
@@ -3626,7 +3626,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     'Conversation theme',
                     style: TextStyle(
                       color: textColor,
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -3696,13 +3696,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                 color: Colors.grey.shade500,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'This is an automated system account. Replies are disabled.',
                   style: TextStyle(
                     color: Colors.grey.shade600,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -3824,13 +3824,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                               child: Row(
                                 children: [
                                   const Icon(Icons.fiber_manual_record, color: Color(0xFFEF4444), size: 14),
-                                  const SizedBox(width: 6),
+                                  SizedBox(width: 6),
                                   Text(
                                     '${_recordingSeconds ~/ 60}:${(_recordingSeconds % 60).toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       color: isDarkComposer ? Colors.white : Colors.black87,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 13,
+                                      fontSize: 13.sp,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -4566,15 +4566,15 @@ class _AttachmentIconLabel extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, color: const Color(0xFF374151), size: 22),
-        const SizedBox(width: 7),
+        SizedBox(width: 7),
         Expanded(
           child: Text(
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF111827),
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w700,
               height: 1.15,
             ),
@@ -4694,37 +4694,37 @@ class _NewConversationIntro extends StatelessWidget {
             child: avatarUrl.isEmpty
                 ? Text(
                     other.initials,
-                    style: const TextStyle(
-                      fontSize: 32,
+                    style: TextStyle(
+                      fontSize: 32.sp,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF111827),
                     ),
                   )
                 : null,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Display name.
           Text(
             displayName,
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF111827),
-              fontSize: 18,
+              fontSize: 18.sp,
               fontWeight: FontWeight.w800,
             ),
           ),
           if (username.isNotEmpty) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               '@$username',
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Color(0xFF6B7280),
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -4774,12 +4774,12 @@ class _FollowStateChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: fg),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               color: fg,
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -4810,14 +4810,14 @@ class _EncryptionHint extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.lock_rounded, size: 14, color: accent),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Flexible(
             child: Text(
               'Messages and calls are encrypted. Only you two can read what’s inside.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: accent,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
               ),
@@ -4853,14 +4853,14 @@ class _DeliveryHint extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(iconData, size: 14, color: iconColor),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             textAlign: TextAlign.left,
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF6B7280),
-              fontSize: 11.5,
+              fontSize: 11.5.sp,
               fontWeight: FontWeight.w500,
               height: 1.4,
             ),
@@ -4902,7 +4902,7 @@ class _ThreadAvatar extends StatelessWidget {
       child: avatarUrl.isEmpty
           ? Text(
               user?.initials ?? 'K',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w800),
             )
           : null,
     );
@@ -4936,9 +4936,9 @@ class _ConversationPresenceLabel extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             color: Color(0xFF6B7280),
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w600,
           ),
         );
@@ -5111,7 +5111,7 @@ class _MessageBubble extends StatelessWidget {
               theme: theme,
             ),
           if (attachments.isNotEmpty && body.isNotEmpty)
-            const SizedBox(height: 7),
+            SizedBox(height: 7),
           if (body.isNotEmpty) ...[
             if (body.startsWith('📞'))
               _CallLogChip(
@@ -5130,7 +5130,7 @@ class _MessageBubble extends StatelessWidget {
               ),
           ],
           if (_createdAt != null) ...[
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -5224,9 +5224,9 @@ class _MessageBubble extends StatelessWidget {
             child: Center(
               child: Text(
                 _formatTimeLabel(t),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Color(0xFF9CA3AF),
-                  fontSize: 11,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -5277,13 +5277,13 @@ class _CallLogChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Flexible(
             child: Text(
               body,
               style: TextStyle(
                 color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -5592,9 +5592,9 @@ class _MessageImageGallery extends StatelessWidget {
                         child: Center(
                           child: Text(
                             '+${attachments.length - 4}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 24,
+                              fontSize: 24.sp,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -5839,9 +5839,9 @@ class _MessagePhotoViewerState extends State<_MessagePhotoViewer> {
                     ),
                     child: Text(
                       '${_index + 1}/${widget.attachments.length}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -5886,7 +5886,7 @@ class _MessageAttachmentRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: textColor, size: 24),
-          const SizedBox(width: 9),
+          SizedBox(width: 9),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5898,7 +5898,7 @@ class _MessageAttachmentRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 13,
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -5909,7 +5909,7 @@ class _MessageAttachmentRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: textColor,
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -6139,7 +6139,7 @@ class _MessagesThreadList extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -6151,7 +6151,7 @@ class _MessagesThreadList extends StatelessWidget {
                               color: thread.unreadCount > 0
                                   ? const Color(0xFFFF7A45)
                                   : const Color(0xFF9CA3AF),
-                              fontSize: 11.5,
+                              fontSize: 11.5.sp,
                               fontWeight: thread.unreadCount > 0
                                   ? FontWeight.w800
                                   : FontWeight.w500,
@@ -6208,7 +6208,7 @@ class _MessagesThreadAvatar extends StatelessWidget {
       child: avatarUrl.isEmpty
           ? Text(
               thread.otherUser.initials,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Color(0xFF111827),
                 fontWeight: FontWeight.w800,
               ),
@@ -6263,25 +6263,25 @@ class _MessagesInfoState extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF111827),
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF6B7280),
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         height: 1.35,
                         fontWeight: FontWeight.w500,
                       ),
@@ -6297,9 +6297,9 @@ class _MessagesInfoState extends StatelessWidget {
           child: Center(
             child: Text(
               emptyText,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Color(0xFF9CA3AF),
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -6342,11 +6342,11 @@ class _ThreadTypingPreviewState extends State<_ThreadTypingPreview>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           'typing',
           style: TextStyle(
             color: accent,
-            fontSize: 13,
+            fontSize: 13.sp,
             fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w700,
           ),
@@ -6411,9 +6411,9 @@ class _UnreadBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 11.5,
+          fontSize: 11.5.sp,
           fontWeight: FontWeight.w900,
           height: 1.0,
         ),
@@ -6498,14 +6498,14 @@ class _ThemePreviewCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               displayTheme.label,
               style: TextStyle(
                 color: selected
                     ? displayTheme.accent
                     : (isDark ? Colors.white : const Color(0xFF111827)),
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -6661,19 +6661,19 @@ class _ReplyingToBar extends StatelessWidget {
                   'Replying to $senderName',
                   style: TextStyle(
                     color: accent,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 if (preview.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF6B7280),
-                      fontSize: 13,
+                      fontSize: 13.sp,
                     ),
                   ),
                 ],
@@ -6729,29 +6729,29 @@ class _GhostPostReplyBar extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       '👻 ',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 12.sp),
                     ),
                     Text(
                       "Replying to $authorName's ghost post",
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFFFF7A59),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
                 if (preview.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      fontSize: 11,
+                      fontSize: 11.sp,
                     ),
                   ),
                 ],
@@ -6815,18 +6815,18 @@ class _QuotedReplyChip extends StatelessWidget {
             senderLabel,
             style: TextStyle(
               color: nameColor,
-              fontSize: 11.5,
+              fontSize: 11.5.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 1),
+          SizedBox(height: 1),
           Text(
             previewText,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: previewColor,
-              fontSize: 13,
+              fontSize: 13.sp,
             ),
           ),
         ],
@@ -6848,7 +6848,7 @@ class _CreateGroupButton extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: const Padding(
+        child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
@@ -6863,7 +6863,7 @@ class _CreateGroupButton extends StatelessWidget {
                   'Create new group',
                   style: TextStyle(
                     color: Color(0xFF111827),
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -7021,7 +7021,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
               style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Group name',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
                 border: OutlineInputBorder(
@@ -7054,7 +7054,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
               style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Search users by name or @username',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
@@ -7093,7 +7093,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
                                     : null,
                                 child: avatarUrl.isEmpty
                                     ? Text(u.initials,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontWeight: FontWeight.w800,
                                             color: Colors.black))
                                     : null,
@@ -7289,7 +7289,7 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
               style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Search users by name or @username',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
@@ -7330,7 +7330,7 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
                                     : null,
                                 child: avatarUrl.isEmpty
                                     ? Text(u.initials,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontWeight: FontWeight.w800,
                                             color: Colors.black))
                                     : null,
@@ -7437,7 +7437,7 @@ class _MessagesRequestList extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onSurface,
-                                        fontSize: 15,
+                                        fontSize: 15.sp,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     )
@@ -7446,18 +7446,18 @@ class _MessagesRequestList extends StatelessWidget {
                                       displayName: thread.otherUser.displayName,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onSurface,
-                                        fontSize: 15,
+                                        fontSize: 15.sp,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Text(
                                 _previewFor(thread.lastMessage),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFF6B7280),
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -7479,7 +7479,7 @@ class _MessagesRequestList extends StatelessWidget {
                               ),
                             ),
                             onPressed: () => onDecline(thread),
-                            child: const Text('Decline',
+                            child: Text('Decline',
                                 style: TextStyle(fontWeight: FontWeight.w700)),
                           ),
                         ),
@@ -7493,7 +7493,7 @@ class _MessagesRequestList extends StatelessWidget {
                               ),
                             ),
                             onPressed: () => onAccept(thread),
-                            child: const Text('Accept',
+                            child: Text('Accept',
                                 style: TextStyle(fontWeight: FontWeight.w800)),
                           ),
                         ),
@@ -7934,7 +7934,7 @@ class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
           ),
           child: Text(
             widget.emoji,
-            style: const TextStyle(fontSize: 24),
+            style: TextStyle(fontSize: 24.sp),
           ),
         ),
       ),
@@ -7966,11 +7966,11 @@ class _OverlayActionTile extends StatelessWidget {
         child: Row(
           children: [
             Icon(icon, size: 20, color: iconColor),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             Text(
               title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -8181,13 +8181,13 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
             children: [
               Text(
                 widget.emoji,
-                style: const TextStyle(
-                  fontSize: 15,
+                style: TextStyle(
+                  fontSize: 15.sp,
                   height: 1.1,
                 ),
               ),
               if (widget.count > 0) ...[
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
@@ -8195,7 +8195,7 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
                     '${widget.count}',
                     key: ValueKey('${widget.emoji}_${widget.count}'),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: widget.textColor,
                       height: 1.1,
@@ -8281,7 +8281,7 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                   child: Text(
                     'Reactions',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                       color: textColor,
                     ),
@@ -8345,11 +8345,11 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                             : (item['fullName']?.toString() ?? item['username']?.toString() ?? 'User');
 
                         return ListTile(
-                          leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+                          leading: Text(emoji, style: TextStyle(fontSize: 22.sp)),
                           title: Text(
                             name,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
                               color: textColor,
                             ),
@@ -8394,7 +8394,7 @@ class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
   Future<void> _initTestPlayer() async {
     try {
       final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.speech());
+      await session.configure(AudioSessionConfiguration.speech());
       debugPrint('[AUDIO_TEST] AudioSession configured successfully.');
     } catch (e) {
       debugPrint('[AUDIO_TEST] AudioSession configuration error: $e');
@@ -8475,7 +8475,7 @@ class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Standalone Audio Player Test')),
+      appBar: AppBar(title: Text('Standalone Audio Player Test')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -8485,19 +8485,19 @@ class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
               Text(
                 'Test URL: $_testUrl',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11.sp, color: Colors.grey),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Text(
                 'Duration: ${_duration.inSeconds}s | Position: ${_position.inSeconds}s',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Text(
                 'Status: $_statusLog',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: _statusLog.startsWith('ERROR') ? Colors.red : Colors.blue,
                 ),
               ),
@@ -8540,7 +8540,7 @@ class _EditingMessageBar extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.edit_rounded, size: 16, color: accent),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -8550,7 +8550,7 @@ class _EditingMessageBar extends StatelessWidget {
                   'Editing Message',
                   style: TextStyle(
                     color: accent,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -8560,7 +8560,7 @@ class _EditingMessageBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white70 : Colors.black87,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                   ),
                 ),
               ],
@@ -8878,14 +8878,14 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                     );
                   },
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: 3),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       _isPlaying ? _formatTime(_position) : _formatTime(_duration),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w600,
                         color: textColor,
                       ),
@@ -8901,7 +8901,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                         child: Text(
                           '${_playbackSpeed}x',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 9.sp,
                             fontWeight: FontWeight.bold,
                             color: textColor,
                           ),
