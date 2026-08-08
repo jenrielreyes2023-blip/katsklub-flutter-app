@@ -74,8 +74,8 @@ class KatsText {
   /// View/Hide replies link
   static TextStyle viewReplies(BuildContext c, {bool isLoading = false}) =>
       TextStyle(fontFamily: 'SF Pro Rounded', 
-        color: isLoading ? const Color(0xFF6B7280) : const Color(0xFF2563EB),
-        fontSize: 13.sp,
+        color: isLoading ? const Color(0xFF6B7280) : const Color(0xFFFF7A45),
+        fontSize: 10.sp,
         fontWeight: FontWeight.w700,
         height: 1.33,
         letterSpacing: -0.2,
