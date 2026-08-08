@@ -3015,23 +3015,15 @@ class _PostMetaRow extends StatelessWidget {
                       _formatTimestamp(post.createdAt),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: KatsText.timestamp(context),
                     ),
                   ),
                   if (post.privacyLabel.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
                         '·',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: KatsText.timestamp(context),
                       ),
                     ),
                     Icon(
