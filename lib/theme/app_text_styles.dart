@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized text styles for Home / Discover / Postpage / Messages
 /// Iisang hawak lang — pag binago mo dito, sabay-sabay na lahat.
@@ -25,7 +24,7 @@ class KatsText {
 
   /// Post body — Home/Discover/Postpage (Feed + Post detail text)
   /// SF Pro Rounded alternative: Nunito (rounded, even spacing, clear like Facebook Optimistic)
-  static TextStyle postBody(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle postBody(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
@@ -35,7 +34,7 @@ class KatsText {
 
   /// Post author name — Home/Discover/Postpage (parehas na)
   static TextStyle postAuthor(BuildContext c, {String themeKey = ''}) =>
-      GoogleFonts.nunito(
+      TextStyle(fontFamily: 'SF Pro Rounded', 
         fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
@@ -44,7 +43,7 @@ class KatsText {
       );
 
   /// Comment body — Postpage + Comments modal
-  static TextStyle commentBody(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle commentBody(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
@@ -53,7 +52,7 @@ class KatsText {
       );
 
   /// Comment/Replies author name
-  static TextStyle commentAuthor(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle commentAuthor(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
@@ -65,7 +64,7 @@ class KatsText {
   static TextStyle replyBody(BuildContext c) => commentBody(c);
 
   /// Like/Comment/Repost count label — Feed + Postpage
-  static TextStyle countLabel(BuildContext c, Color color) => GoogleFonts.nunito(
+  static TextStyle countLabel(BuildContext c, Color color) => TextStyle(fontFamily: 'SF Pro Rounded', 
         color: color,
         fontSize: 13.sp,
         fontWeight: FontWeight.w600,
@@ -74,7 +73,7 @@ class KatsText {
 
   /// View/Hide replies link
   static TextStyle viewReplies(BuildContext c, {bool isLoading = false}) =>
-      GoogleFonts.nunito(
+      TextStyle(fontFamily: 'SF Pro Rounded', 
         color: isLoading ? const Color(0xFF6B7280) : const Color(0xFF2563EB),
         fontSize: 13.sp,
         fontWeight: FontWeight.w700,
@@ -83,7 +82,7 @@ class KatsText {
       );
 
   /// Messages thread list
-  static TextStyle threadName(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle threadName(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         color: Theme.of(c).colorScheme.onSurface,
         fontSize: 13.sp,
         fontWeight: FontWeight.w800,
@@ -92,7 +91,7 @@ class KatsText {
 
   static TextStyle threadPreview(BuildContext c, {bool unread = false}) {
     final isDark = _isDark(c);
-    return GoogleFonts.nunito(
+    return TextStyle(fontFamily: 'SF Pro Rounded', 
       color: unread
           ? (isDark ? Colors.white : const Color(0xFF111827))
           : const Color(0xFF6B7280),
@@ -103,14 +102,14 @@ class KatsText {
   }
 
   /// With users line
-  static TextStyle withUsers(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle withUsers(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         color: const Color(0xFF6B7280),
         fontSize: 12.5.sp,
         fontWeight: FontWeight.w500,
         height: 1.33,
       );
 
-  static TextStyle withUsersLink(BuildContext c) => GoogleFonts.nunito(
+  static TextStyle withUsersLink(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded', 
         color: _isDark(c) ? _darkBody : _lightBody,
         fontSize: 12.5.sp,
         fontWeight: FontWeight.w700,
@@ -120,7 +119,7 @@ class KatsText {
   /// Timestamp — Postcard feed & Postpage (10.5.sp w400 meta)
   static TextStyle timestamp(BuildContext c) {
     final isDark = _isDark(c);
-    return GoogleFonts.nunito(
+    return TextStyle(fontFamily: 'SF Pro Rounded', 
       color: isDark ? _metaDark : _metaLight,
       fontSize: 10.5.sp,
       fontWeight: FontWeight.w400,
