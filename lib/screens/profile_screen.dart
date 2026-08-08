@@ -2055,6 +2055,7 @@ class _ProfileBio extends StatelessWidget {
         _ProfileBioLine(
           text: user.roleTitle!.trim(),
           color: const Color(0xFF65676B),
+          fontSize: 12,
         ),
       if (user.bio != null && user.bio!.trim().isNotEmpty)
         _ProfileBioLine(
@@ -2062,6 +2063,9 @@ class _ProfileBio extends StatelessWidget {
           color: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFFE4E6EB)
               : const Color(0xFF000000),
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
         ),
       if (isOwnProfile &&
           user.profileShowEmail &&
@@ -2071,6 +2075,7 @@ class _ProfileBio extends StatelessWidget {
         _ProfileBioLine(
           text: user.email!.trim(),
           color: const Color(0xFF65676B),
+          fontSize: 12,
         ),
     ];
 
@@ -2087,7 +2092,7 @@ class _ProfileBio extends StatelessWidget {
                   username: user.username ?? '',
                   displayName: user.displayName,
                   style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    fontSize: 18.sp,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: -0.2,
@@ -2115,7 +2120,9 @@ class _ProfileBio extends StatelessWidget {
             Text(
               line.text,
               style: TextStyle(fontFamily: 'SF Pro Rounded',
-                fontSize: 14.sp,
+                fontSize: line.fontSize.sp,
+                fontWeight: line.fontWeight,
+                height: line.height,
                 color: line.color,
               ),
             ),
@@ -2253,10 +2260,16 @@ class _ProfileBioLine {
   const _ProfileBioLine({
     required this.text,
     required this.color,
+    this.fontSize = 14,
+    this.fontWeight = FontWeight.w400,
+    this.height = 1.33,
   });
 
   final String text;
   final Color color;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double height;
 }
 
 class _ProfileAchievementDefinition {
