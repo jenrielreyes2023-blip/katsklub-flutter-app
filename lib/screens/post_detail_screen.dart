@@ -4191,21 +4191,23 @@ class _InlineCommentRow extends StatelessWidget {
                   if (comment.timeAgo.isNotEmpty)
                     Text(
                       comment.timeAgo,
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12,
+                      style: TextStyle(
+                        color: const Color(0xFF6B7280),
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w600,
+                        height: 1.33,
                       ),
                     ),
                   const SizedBox(width: 14),
                   GestureDetector(
                     onTap: onReply,
-                    child: const Text(
+                    child: Text(
                       'Reply',
                       style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12,
+                        color: const Color(0xFF6B7280),
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
+                        height: 1.33,
                       ),
                     ),
                   ),
