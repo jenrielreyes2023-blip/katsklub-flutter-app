@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
 import 'custom_icons.dart';
 
@@ -175,8 +176,9 @@ class _ActionIcon extends StatelessWidget {
                 _formatCount(count),
                 style: TextStyle(
                   color: color,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
+                  height: 1.33,
                 ),
               ),
             ],
