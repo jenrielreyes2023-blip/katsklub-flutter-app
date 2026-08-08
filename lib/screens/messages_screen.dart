@@ -929,7 +929,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     'No chats history',
                     style: TextStyle(
                       color: Color(0xFF9CA3AF),
-                      fontSize: 14.sp,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1046,14 +1046,14 @@ class _MessagesScreenState extends State<MessagesScreen>
               controller: _searchController,
               onChanged: _onSearchQueryChanged,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: 13.sp,
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: 'Search chats or users...',
                 hintStyle: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                   color: Color(0xFF9CA3AF),
                   fontWeight: FontWeight.w500,
                 ),
@@ -1208,7 +1208,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               ? Text(
                                   user.initials,
                                   style: TextStyle(
-                                    fontSize: 14.sp,
+                                    fontSize: 13.sp,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF4B5563),
                                   ),
@@ -1715,7 +1715,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   '"${ownNote.text}"',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: 13.sp,
                     fontStyle: FontStyle.italic,
                     color: Color(0xFF4B5563),
                   ),
@@ -1774,7 +1774,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     },
                     decoration: InputDecoration(
                       hintText: "What's on your mind? (up to 60 characters)...",
-                      hintStyle: TextStyle(fontSize: 14.sp, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontSize: 13.sp, color: Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1880,7 +1880,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             ? Text(
                                 note.initials,
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF4B5563),
                                 ),
@@ -2571,11 +2571,11 @@ class _MessagesScreenState extends State<MessagesScreen>
             children: [
               Text('Original:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
               SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 14.sp, color: Theme.of(context).colorScheme.onSurface)),
+              Text(message.body, style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurface)),
               SizedBox(height: 12),
               Text('Translated:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
               SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+              Text(message.body, style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           actions: [
@@ -3198,7 +3198,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   Text(
                                     'Choose from Phone Gallery',
                                     style: TextStyle(
-                                      fontSize: 14.sp,
+                                      fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
                                       color: sheetText,
                                     ),
@@ -3223,7 +3223,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     Text(
                       'Preset Wallpapers',
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         color: sheetText,
                       ),
@@ -3280,7 +3280,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         Text(
                           'Background Dimming',
                           style: TextStyle(
-                            fontSize: 14.sp,
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
                             color: sheetText,
                           ),
@@ -3702,7 +3702,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   'This is an automated system account. Replies are disabled.',
                   style: TextStyle(
                     color: Colors.grey.shade600,
-                    fontSize: 14.sp,
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -5283,7 +5283,7 @@ class _CallLogChip extends StatelessWidget {
               body,
               style: TextStyle(
                 color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                fontSize: 14.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -6299,7 +6299,7 @@ class _MessagesInfoState extends StatelessWidget {
               emptyText,
               style: TextStyle(
                 color: Color(0xFF9CA3AF),
-                fontSize: 14.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -8349,7 +8349,7 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                           title: Text(
                             name,
                             style: TextStyle(
-                              fontSize: 14.sp,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
                               color: textColor,
                             ),
@@ -8497,7 +8497,7 @@ class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
                 'Status: $_statusLog',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                   color: _statusLog.startsWith('ERROR') ? Colors.red : Colors.blue,
                 ),
               ),
