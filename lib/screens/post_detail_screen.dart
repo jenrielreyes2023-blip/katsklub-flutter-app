@@ -4292,7 +4292,8 @@ class _CommentThreadBlock extends StatelessWidget {
                             ? 'Hide replies'
                             : 'View ${comment.replyCount} ${comment.replyCount == 1 ? 'reply' : 'replies'}',
                     style: KatsText.viewReplies(context,
-                        isLoading: isLoadingReplies),
+                            isLoading: isLoadingReplies)
+                        .copyWith(fontSize: 10.sp),
                   ),
                 ],
               ),
