@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -162,8 +163,10 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+        style: (Theme.of(context).textTheme.titleMedium ?? const TextStyle()).copyWith(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
             ),
       ),
     );
