@@ -107,8 +107,8 @@ class _PersonResult extends StatelessWidget {
           borderType: borderType,
           size: 40,
         ),
-        title: Text(user.displayName),
-        subtitle: Text(user.handle ?? ''),
+        title: Text(user.displayName, style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp, fontWeight: FontWeight.w700)),
+        subtitle: Text(user.handle ?? '', style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp, fontWeight: FontWeight.w400, color: Color(0xFF6B7280))),
         onTap: () {
           if (user.username == null) return;
           Navigator.of(context).push(
