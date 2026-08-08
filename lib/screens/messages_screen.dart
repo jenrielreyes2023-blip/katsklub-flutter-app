@@ -68,7 +68,7 @@ class _MessagesPageHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 'Messages',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w800,
@@ -554,7 +554,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               : 'Group chat',
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
                             fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
@@ -563,7 +563,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       : SpecialNameText(
                           username: _thread?.otherUser.username ?? '',
                           displayName: _thread?.otherUser.displayName ?? 'Messages',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
                             fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
@@ -574,7 +574,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       '${_thread!.members.length} members',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                         fontSize: 12.5.sp,
                         fontWeight: FontWeight.w600,
@@ -761,7 +761,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: selected
                         ? Colors.white
                         : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
@@ -783,7 +783,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   alignment: Alignment.center,
                   child: Text(
                     badge > 99 ? '99+' : '$badge',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: selected ? const Color(0xFFFF7A45) : Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 10.sp,
@@ -927,7 +927,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 child: Center(
                   child: Text(
                     'No chats history',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFF9CA3AF),
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -1045,14 +1045,14 @@ class _MessagesScreenState extends State<MessagesScreen>
             child: TextField(
               controller: _searchController,
               onChanged: _onSearchQueryChanged,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: 'Search chats or users...',
-                hintStyle: TextStyle(
+                hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
                   color: Color(0xFF9CA3AF),
                   fontWeight: FontWeight.w500,
@@ -1111,7 +1111,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Text(
               'Chats',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w800,
                 color: headerTextColor,
@@ -1140,7 +1140,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
             'KatsKlub Users',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
               fontWeight: FontWeight.w800,
               color: headerTextColor,
@@ -1168,7 +1168,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             child: Center(
               child: Text(
                 'No users found',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
                   color: secondaryTextColor,
                   fontWeight: FontWeight.w600,
@@ -1207,7 +1207,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           child: resolvedAvatar.isEmpty
                               ? Text(
                                   user.initials,
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF4B5563),
@@ -1222,7 +1222,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             children: [
                               Text(
                                 user.displayName.isNotEmpty ? user.displayName : '@${user.username}',
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w800,
                                   color: primaryTextColor,
@@ -1231,7 +1231,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               SizedBox(height: 2),
                               Text(
                                 '@${user.username}',
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 12.5.sp,
                                   color: secondaryTextColor,
                                 ),
@@ -1426,7 +1426,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                       _currentUser?.displayName.isNotEmpty == true
                                           ? _currentUser!.displayName[0].toUpperCase()
                                           : 'Me',
-                                      style: TextStyle(
+                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF4B5563),
@@ -1451,7 +1451,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                     _currentUser?.displayName.isNotEmpty == true
                                         ? _currentUser!.displayName[0].toUpperCase()
                                         : 'Me',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF4B5563),
@@ -1487,7 +1487,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             ownNote.text,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF111827),
@@ -1527,7 +1527,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             'Your note',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
               color: Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
@@ -1586,7 +1586,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               child: resolvedAvatar.isEmpty
                                   ? Text(
                                       note.initials,
-                                      style: TextStyle(
+                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF4B5563),
@@ -1609,7 +1609,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             child: resolvedAvatar.isEmpty
                                 ? Text(
                                     note.initials,
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF4B5563),
@@ -1644,7 +1644,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           note.text,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF111827),
@@ -1662,7 +1662,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             note.fullName.isNotEmpty ? note.fullName : '@${note.username}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
               color: Color(0xFF111827),
               fontWeight: FontWeight.w600,
@@ -1702,7 +1702,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               SizedBox(height: 16),
               Text(
                 'Your Note',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF111827),
@@ -1714,7 +1714,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 child: Text(
                   '"${ownNote.text}"',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontStyle: FontStyle.italic,
                     color: Color(0xFF4B5563),
@@ -1732,7 +1732,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
-                title: Text('Delete note', style: TextStyle(color: Color(0xFFDC2626))),
+                title: Text('Delete note', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFFDC2626))),
                 onTap: () {
                   Navigator.of(context).pop();
                   _deleteNote();
@@ -1758,7 +1758,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
                 'Share a thought',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18.sp),
+                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800, fontSize: 18.sp),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1774,7 +1774,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     },
                     decoration: InputDecoration(
                       hintText: "What's on your mind? (up to 60 characters)...",
-                      hintStyle: TextStyle(fontSize: 13.sp, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, color: Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1792,7 +1792,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     alignment: Alignment.centerRight,
                     child: Text(
                       '$length / 60',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 12.sp,
                         color: length > 50 ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
                         fontWeight: FontWeight.w600,
@@ -1804,7 +1804,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280))),
                 ),
                 ElevatedButton(
                   onPressed: textController.text.trim().isEmpty
@@ -1817,7 +1817,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     backgroundColor: const Color(0xFF2563EB),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('Share', style: TextStyle(color: Colors.white)),
+                  child: Text('Share', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white)),
                 ),
               ],
             );
@@ -1879,7 +1879,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         child: note.avatarUrl.isEmpty
                             ? Text(
                                 note.initials,
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF4B5563),
@@ -1894,7 +1894,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           children: [
                             Text(
                               note.fullName.isNotEmpty ? note.fullName : '@${note.username}',
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF111827),
@@ -1903,7 +1903,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             SizedBox(height: 2),
                             Text(
                               '@${note.username}',
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontSize: 11.sp,
                                 color: Color(0xFF6B7280),
                               ),
@@ -1923,7 +1923,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     ),
                     child: Text(
                       note.text,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
                         fontStyle: FontStyle.italic,
                         color: Color(0xFF374151),
@@ -1937,7 +1937,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     onChanged: (val) => setDialogState(() {}),
                     decoration: InputDecoration(
                       hintText: 'Send message...',
-                      hintStyle: TextStyle(fontSize: 13.sp, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, color: Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1954,7 +1954,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280))),
                 ),
                 ElevatedButton(
                   onPressed: replyController.text.trim().isEmpty
@@ -1967,7 +1967,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     backgroundColor: const Color(0xFF2563EB),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('Send', style: TextStyle(color: Colors.white)),
+                  child: Text('Send', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white)),
                 ),
               ],
             );
@@ -2363,7 +2363,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         message.sentByMe
                             ? 'You changed the chat wallpaper'
                             : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat wallpaper',
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.grey[300] : Colors.grey[700],
@@ -2562,20 +2562,20 @@ class _MessagesScreenState extends State<MessagesScreen>
             children: [
               Icon(Icons.translate_rounded, color: Color(0xFF3B82F6)),
               SizedBox(width: 8),
-              Text('Translation', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+              Text('Translation', style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 18.sp, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Original:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+              Text('Original:', style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600])),
               SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurface)),
+              Text(message.body, style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurface)),
               SizedBox(height: 12),
-              Text('Translated:', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+              Text('Translated:', style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
               SizedBox(height: 2),
-              Text(message.body, style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+              Text(message.body, style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           actions: [
@@ -2615,7 +2615,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Text(
                   'Forward Message to...',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -2642,7 +2642,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ),
                       title: Text(
                         otherUser.displayName.isNotEmpty ? otherUser.displayName : (otherUser.username ?? 'User'),
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -2803,7 +2803,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       color: sheetTextIconColor),
                   title: Text(
                     'Add members',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
@@ -2819,7 +2819,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       color: sheetTextIconColor),
                   title: Text(
                     'Members (${t.members.length})',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
@@ -2834,7 +2834,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     color: sheetTextIconColor),
                 title: Text(
                   'Change theme',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: sheetTextIconColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2849,7 +2849,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     color: sheetTextIconColor),
                 title: Text(
                   'Chat Wallpaper',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: sheetTextIconColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2858,7 +2858,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   _chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty
                       ? 'Custom background active'
                       : 'Default background',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     fontSize: 12.sp,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
@@ -2874,7 +2874,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       color: sheetTextIconColor),
                   title: Text(
                     'Archive chat',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
@@ -2890,7 +2890,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       color: sheetTextIconColor),
                   title: Text(
                     'Unarchive chat',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: sheetTextIconColor,
                       fontWeight: FontWeight.w700,
                     ),
@@ -2912,7 +2912,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     (_otherUserProfile?.isMuted == true)
                         ? 'Unmute @${t.otherUser.username}'
                         : 'Mute @${t.otherUser.username}',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w700,
                     ),
@@ -2933,7 +2933,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     (_otherUserProfile?.isBlocked == true)
                         ? 'Unblock @${t.otherUser.username}'
                         : 'Block @${t.otherUser.username}',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w700,
                     ),
@@ -3154,7 +3154,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         SizedBox(width: 10),
                         Text(
                           'Chat Background Wallpaper',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 18.sp,
                             fontWeight: FontWeight.bold,
                             color: sheetText,
@@ -3197,7 +3197,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 children: [
                                   Text(
                                     'Choose from Phone Gallery',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
                                       color: sheetText,
@@ -3206,7 +3206,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   SizedBox(height: 2),
                                   Text(
                                     'Upload your own photo as chat background',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 12.sp,
                                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                                     ),
@@ -3222,7 +3222,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     SizedBox(height: 20),
                     Text(
                       'Preset Wallpapers',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         color: sheetText,
@@ -3261,7 +3261,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 child: Text(
                                   item['name'] as String,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                     color: Colors.white,
                                     fontSize: 11.sp,
                                     fontWeight: FontWeight.bold,
@@ -3279,7 +3279,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       children: [
                         Text(
                           'Background Dimming',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
                             color: sheetText,
@@ -3287,7 +3287,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         ),
                         Text(
                           '${(tempDim * 100).toInt()}%',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 13.sp,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF3B82F6),
@@ -3322,7 +3322,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
-                              child: Text('Reset', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                              child: Text('Reset', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.redAccent, fontWeight: FontWeight.bold)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -3339,7 +3339,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            child: Text('Apply Wallpaper', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: Text('Apply Wallpaper', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -3541,7 +3541,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ),
                 Text(
                   'Members (${thread.members.length})',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Color(0xFF111827),
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w800,
@@ -3565,12 +3565,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                               : null,
                           child: avatarUrl.isEmpty
                               ? Text(m.initials,
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontWeight: FontWeight.w800))
                               : null,
                         ),
                         title: Text(m.displayName,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontWeight: FontWeight.w700)),
                         subtitle: m.handle != null ? Text(m.handle!) : null,
                       );
@@ -3624,7 +3624,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     'Conversation theme',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: textColor,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
@@ -3700,7 +3700,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               Expanded(
                 child: Text(
                   'This is an automated system account. Replies are disabled.',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Colors.grey.shade600,
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
@@ -3827,7 +3827,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   SizedBox(width: 6),
                                   Text(
                                     '${_recordingSeconds ~/ 60}:${(_recordingSeconds % 60).toString().padLeft(2, '0')}',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       color: isDarkComposer ? Colors.white : Colors.black87,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13.sp,
@@ -3878,14 +3878,14 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   setState(() {});
                                 },
                                 inputFormatters: [EmojiPresentationFormatter()],
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).colorScheme.onSurface,
                                   fontSize: 13.sp,
                                   height: 1.3,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
-                                  hintStyle: TextStyle(
+                                  hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                                     fontSize: 13.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
@@ -4572,7 +4572,7 @@ class _AttachmentIconLabel extends StatelessWidget {
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: Color(0xFF111827),
               fontSize: 12.sp,
               fontWeight: FontWeight.w700,
@@ -4694,7 +4694,7 @@ class _NewConversationIntro extends StatelessWidget {
             child: avatarUrl.isEmpty
                 ? Text(
                     other.initials,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       fontSize: 32.sp,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF111827),
@@ -4709,7 +4709,7 @@ class _NewConversationIntro extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: Color(0xFF111827),
               fontSize: 18.sp,
               fontWeight: FontWeight.w800,
@@ -4722,7 +4722,7 @@ class _NewConversationIntro extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: Color(0xFF6B7280),
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
@@ -4777,7 +4777,7 @@ class _FollowStateChip extends StatelessWidget {
           SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: fg,
               fontSize: 12.sp,
               fontWeight: FontWeight.w700,
@@ -4815,7 +4815,7 @@ class _EncryptionHint extends StatelessWidget {
             child: Text(
               'Messages and calls are encrypted. Only you two can read what’s inside.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: accent,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
@@ -4858,7 +4858,7 @@ class _DeliveryHint extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.left,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: Color(0xFF6B7280),
               fontSize: 11.5.sp,
               fontWeight: FontWeight.w500,
@@ -4902,7 +4902,7 @@ class _ThreadAvatar extends StatelessWidget {
       child: avatarUrl.isEmpty
           ? Text(
               user?.initials ?? 'K',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800),
             )
           : null,
     );
@@ -4936,7 +4936,7 @@ class _ConversationPresenceLabel extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: Color(0xFF6B7280),
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
@@ -5122,10 +5122,10 @@ class _MessageBubble extends StatelessWidget {
             else
               LinkifiedText(
                 text: body,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 13.sp,
-                  height: 1.3,
+                  fontSize: 12.sp,
+                  height: 1.33,
                 ),
               ),
           ],
@@ -5142,8 +5142,8 @@ class _MessageBubble extends StatelessWidget {
                   children: [
                     Text(
                       '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
-                      style: TextStyle(
-                        fontSize: 10.5.sp,
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w500,
                         color: sentByMe
                             ? Colors.white70
@@ -5224,7 +5224,7 @@ class _MessageBubble extends StatelessWidget {
             child: Center(
               child: Text(
                 _formatTimeLabel(t),
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Color(0xFF9CA3AF),
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
@@ -5281,7 +5281,7 @@ class _CallLogChip extends StatelessWidget {
           Flexible(
             child: Text(
               body,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
@@ -5592,7 +5592,7 @@ class _MessageImageGallery extends StatelessWidget {
                         child: Center(
                           child: Text(
                             '+${attachments.length - 4}',
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               color: Colors.white,
                               fontSize: 24.sp,
                               fontWeight: FontWeight.w900,
@@ -5839,7 +5839,7 @@ class _MessagePhotoViewerState extends State<_MessagePhotoViewer> {
                     ),
                     child: Text(
                       '${_index + 1}/${widget.attachments.length}',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Colors.white,
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
@@ -5896,7 +5896,7 @@ class _MessageAttachmentRow extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: textColor,
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
@@ -5907,7 +5907,7 @@ class _MessageAttachmentRow extends StatelessWidget {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: textColor,
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
@@ -6147,7 +6147,7 @@ class _MessagesThreadList extends StatelessWidget {
                         if (timeLabel.isNotEmpty)
                           Text(
                             timeLabel,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               color: thread.unreadCount > 0
                                   ? const Color(0xFFFF7A45)
                                   : const Color(0xFF9CA3AF),
@@ -6208,7 +6208,7 @@ class _MessagesThreadAvatar extends StatelessWidget {
       child: avatarUrl.isEmpty
           ? Text(
               thread.otherUser.initials,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: Color(0xFF111827),
                 fontWeight: FontWeight.w800,
               ),
@@ -6270,7 +6270,7 @@ class _MessagesInfoState extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Color(0xFF111827),
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
@@ -6279,7 +6279,7 @@ class _MessagesInfoState extends StatelessWidget {
                     SizedBox(height: 4),
                     Text(
                       description,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Color(0xFF6B7280),
                         fontSize: 13.sp,
                         height: 1.35,
@@ -6297,7 +6297,7 @@ class _MessagesInfoState extends StatelessWidget {
           child: Center(
             child: Text(
               emptyText,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: Color(0xFF9CA3AF),
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
@@ -6344,7 +6344,7 @@ class _ThreadTypingPreviewState extends State<_ThreadTypingPreview>
       children: [
         Text(
           'typing',
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: accent,
             fontSize: 13.sp,
             fontStyle: FontStyle.italic,
@@ -6411,7 +6411,7 @@ class _UnreadBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: TextStyle(fontFamily: 'SF Pro Rounded',
           color: Colors.white,
           fontSize: 11.5.sp,
           fontWeight: FontWeight.w900,
@@ -6501,7 +6501,7 @@ class _ThemePreviewCard extends StatelessWidget {
             SizedBox(height: 8),
             Text(
               displayTheme.label,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: selected
                     ? displayTheme.accent
                     : (isDark ? Colors.white : const Color(0xFF111827)),
@@ -6659,7 +6659,7 @@ class _ReplyingToBar extends StatelessWidget {
               children: [
                 Text(
                   'Replying to $senderName',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: accent,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -6671,7 +6671,7 @@ class _ReplyingToBar extends StatelessWidget {
                     preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFF6B7280),
                       fontSize: 13.sp,
                     ),
@@ -6731,11 +6731,11 @@ class _GhostPostReplyBar extends StatelessWidget {
                   children: [
                     Text(
                       '👻 ',
-                      style: TextStyle(fontSize: 12.sp),
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp),
                     ),
                     Text(
                       "Replying to $authorName's ghost post",
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Color(0xFFFF7A59),
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
@@ -6749,7 +6749,7 @@ class _GhostPostReplyBar extends StatelessWidget {
                     preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 11.sp,
                     ),
@@ -6813,7 +6813,7 @@ class _QuotedReplyChip extends StatelessWidget {
         children: [
           Text(
             senderLabel,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: nameColor,
               fontSize: 11.5.sp,
               fontWeight: FontWeight.w700,
@@ -6824,7 +6824,7 @@ class _QuotedReplyChip extends StatelessWidget {
             previewText,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: previewColor,
               fontSize: 13.sp,
             ),
@@ -6861,7 +6861,7 @@ class _CreateGroupButton extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Create new group',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Color(0xFF111827),
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w800,
@@ -6995,7 +6995,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
         backgroundColor: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7),
         elevation: 0,
         title: Text('New group',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: primaryTextColor, fontWeight: FontWeight.w800)),
         iconTheme: IconThemeData(color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827)),
         actions: [
@@ -7003,7 +7003,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
             onPressed: _submitting ? null : _submit,
             child: Text(
               _submitting ? 'Creating…' : 'Create',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
                 fontWeight: FontWeight.w800,
               ),
@@ -7018,10 +7018,10 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
           children: [
             TextField(
               controller: _nameController,
-              style: TextStyle(color: primaryTextColor),
+              style: TextStyle(fontFamily: 'SF Pro Rounded',color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Group name',
-                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
                 border: OutlineInputBorder(
@@ -7051,10 +7051,10 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
             TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
-              style: TextStyle(color: primaryTextColor),
+              style: TextStyle(fontFamily: 'SF Pro Rounded',color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Search users by name or @username',
-                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF9CA3AF)),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
@@ -7072,7 +7072,7 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
                       ? const Center(
                           child: Text(
                             'Type to search for members',
-                            style: TextStyle(color: Color(0xFF6B7280)),
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280)),
                           ),
                         )
                       : ListView.separated(
@@ -7093,18 +7093,18 @@ class _CreateGroupScreenState extends State<_CreateGroupScreen> {
                                     : null,
                                 child: avatarUrl.isEmpty
                                     ? Text(u.initials,
-                                        style: TextStyle(
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                                             fontWeight: FontWeight.w800,
                                             color: Colors.black))
                                     : null,
                               ),
                               title: Text(u.displayName,
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontWeight: FontWeight.w700,
                                       color: primaryTextColor)),
                               subtitle: u.handle != null
                                   ? Text(u.handle!,
-                                      style: TextStyle(
+                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                                           color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280)))
                                   : null,
                               trailing: Icon(
@@ -7243,7 +7243,7 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
         backgroundColor: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7),
         elevation: 0,
         title: Text('Add members',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: primaryTextColor, fontWeight: FontWeight.w800)),
         iconTheme: IconThemeData(color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827)),
         actions: [
@@ -7251,7 +7251,7 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
             onPressed: _submitting || _selected.isEmpty ? null : _submit,
             child: Text(
               _submitting ? 'Adding…' : 'Add',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: _selected.isEmpty
                     ? const Color(0xFF9CA3AF)
                     : (isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827)),
@@ -7286,10 +7286,10 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
             TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
-              style: TextStyle(color: primaryTextColor),
+              style: TextStyle(fontFamily: 'SF Pro Rounded',color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: 'Search users by name or @username',
-                hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF9CA3AF)),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
                 filled: true,
                 fillColor: inputBg,
@@ -7307,7 +7307,7 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
                       ? const Center(
                           child: Text(
                             'Type to search for users',
-                            style: TextStyle(color: Color(0xFF6B7280)),
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280)),
                           ),
                         )
                       : ListView.separated(
@@ -7330,20 +7330,20 @@ class _AddMembersScreenState extends State<_AddMembersScreen> {
                                     : null,
                                 child: avatarUrl.isEmpty
                                     ? Text(u.initials,
-                                        style: TextStyle(
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                                             fontWeight: FontWeight.w800,
                                             color: Colors.black))
                                     : null,
                               ),
                               title: Text(u.displayName,
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontWeight: FontWeight.w700,
                                       color: already ? const Color(0xFF9CA3AF) : primaryTextColor)),
                               subtitle: Text(
                                 already
                                     ? 'Already in group'
                                     : (u.handle ?? ''),
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                     color: already
                                         ? const Color(0xFF9CA3AF)
                                         : (isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280))),
@@ -7435,7 +7435,7 @@ class _MessagesRequestList extends StatelessWidget {
                                           : 'Group chat',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
+                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         color: Theme.of(context).colorScheme.onSurface,
                                         fontSize: 15.sp,
                                         fontWeight: FontWeight.w800,
@@ -7444,7 +7444,7 @@ class _MessagesRequestList extends StatelessWidget {
                                   : SpecialNameText(
                                       username: thread.otherUser.username ?? '',
                                       displayName: thread.otherUser.displayName,
-                                      style: TextStyle(
+                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         color: Theme.of(context).colorScheme.onSurface,
                                         fontSize: 15.sp,
                                         fontWeight: FontWeight.w800,
@@ -7455,7 +7455,7 @@ class _MessagesRequestList extends StatelessWidget {
                                 _previewFor(thread.lastMessage),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Color(0xFF6B7280),
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w500,
@@ -7480,7 +7480,7 @@ class _MessagesRequestList extends StatelessWidget {
                             ),
                             onPressed: () => onDecline(thread),
                             child: Text('Decline',
-                                style: TextStyle(fontWeight: FontWeight.w700)),
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w700)),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -7494,7 +7494,7 @@ class _MessagesRequestList extends StatelessWidget {
                             ),
                             onPressed: () => onAccept(thread),
                             child: Text('Accept',
-                                style: TextStyle(fontWeight: FontWeight.w800)),
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800)),
                           ),
                         ),
                       ],
@@ -7934,7 +7934,7 @@ class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
           ),
           child: Text(
             widget.emoji,
-            style: TextStyle(fontSize: 24.sp),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 24.sp),
           ),
         ),
       ),
@@ -7969,7 +7969,7 @@ class _OverlayActionTile extends StatelessWidget {
             SizedBox(width: 14),
             Text(
               title,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
                 color: textColor,
@@ -8181,7 +8181,7 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
             children: [
               Text(
                 widget.emoji,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 15.sp,
                   height: 1.1,
                 ),
@@ -8194,7 +8194,7 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
                   child: Text(
                     '${widget.count}',
                     key: ValueKey('${widget.emoji}_${widget.count}'),
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: widget.textColor,
@@ -8280,7 +8280,7 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Text(
                     'Reactions',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                       color: textColor,
@@ -8302,7 +8302,7 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                             selected: isSelected,
                             selectedColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE4E6EB),
                             backgroundColor: isDark ? const Color(0xFF18191A) : const Color(0xFFF0F2F5),
-                            labelStyle: TextStyle(
+                            labelStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                               color: isSelected ? textColor : textColor.withValues(alpha: 0.7),
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
@@ -8327,7 +8327,7 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                     padding: const EdgeInsets.all(24),
                     child: Text(
                       'No reactions yet',
-                      style: TextStyle(color: textColor.withValues(alpha: 0.6)),
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',color: textColor.withValues(alpha: 0.6)),
                     ),
                   )
                 else
@@ -8345,10 +8345,10 @@ class _ReactionsListModalContentState extends State<_ReactionsListModalContent> 
                             : (item['fullName']?.toString() ?? item['username']?.toString() ?? 'User');
 
                         return ListTile(
-                          leading: Text(emoji, style: TextStyle(fontSize: 22.sp)),
+                          leading: Text(emoji, style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 22.sp)),
                           title: Text(
                             name,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
                               color: textColor,
@@ -8485,18 +8485,18 @@ class _StandaloneVoiceTestScreenState extends State<StandaloneVoiceTestScreen> {
               Text(
                 'Test URL: $_testUrl',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 11.sp, color: Colors.grey),
               ),
               SizedBox(height: 20),
               Text(
                 'Duration: ${_duration.inSeconds}s | Position: ${_position.inSeconds}s',
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
               Text(
                 'Status: $_statusLog',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
                   color: _statusLog.startsWith('ERROR') ? Colors.red : Colors.blue,
                 ),
@@ -8548,7 +8548,7 @@ class _EditingMessageBar extends StatelessWidget {
               children: [
                 Text(
                   'Editing Message',
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: accent,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -8558,7 +8558,7 @@ class _EditingMessageBar extends StatelessWidget {
                   target.body,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: isDark ? Colors.white70 : Colors.black87,
                     fontSize: 12.sp,
                   ),
@@ -8884,7 +8884,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                   children: [
                     Text(
                       _isPlaying ? _formatTime(_position) : _formatTime(_duration),
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w600,
                         color: textColor,
@@ -8900,7 +8900,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                         ),
                         child: Text(
                           '${_playbackSpeed}x',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 9.sp,
                             fontWeight: FontWeight.bold,
                             color: textColor,
