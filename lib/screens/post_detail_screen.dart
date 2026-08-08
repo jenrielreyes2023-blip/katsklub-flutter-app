@@ -4462,21 +4462,23 @@ class _ReplyingToBar extends StatelessWidget {
           Expanded(
             child: Text(
               'Replying to $name',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 12,
+              style: TextStyle(
+                color: const Color(0xFF6B7280),
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
+                height: 1.33,
               ),
             ),
           ),
           GestureDetector(
             onTap: onClose,
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 12,
+                color: const Color(0xFF6B7280),
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
+                height: 1.33,
               ),
             ),
           ),
@@ -4543,10 +4545,11 @@ class _CommentLikeButton extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '${comment.likeCount}',
-            style: const TextStyle(
-              color: Color(0xFF8E8E93),
-              fontSize: 10,
+            style: TextStyle(
+              color: const Color(0xFF8E8E93),
+              fontSize: 10.sp,
               fontWeight: FontWeight.w500,
+              height: 1.33,
             ),
           ),
         ],
