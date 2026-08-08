@@ -126,4 +126,35 @@ class KatsText {
       height: 1.33,
     );
   }
+
+  /// Profile — Header, Bio, Stats
+  static TextStyle profileName(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded',
+        color: _isDark(c) ? _darkBody : _lightBody,
+        fontSize: 20.sp,
+        fontWeight: FontWeight.w800,
+        height: 1.33,
+        letterSpacing: -0.2,
+      );
+
+  static TextStyle profileBio(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded',
+        color: _isDark(c) ? _darkBody : _lightBody,
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w400,
+        height: 1.33,
+        letterSpacing: -0.2,
+      );
+
+  static TextStyle profileStats(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded',
+        color: _isDark(c) ? _darkBody : _lightBody,
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w700,
+        height: 1.33,
+      );
+
+  static TextStyle profileMeta(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded',
+        color: _isDark(c) ? _metaDark : _metaLight,
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w500,
+        height: 1.33,
+      );
 }

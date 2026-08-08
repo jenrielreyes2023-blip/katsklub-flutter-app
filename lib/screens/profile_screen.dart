@@ -38,6 +38,8 @@ import 'shop_screen.dart';
 import 'messages_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'settings_screen.dart';
+import '../theme/app_text_styles.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'edit_profile_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
@@ -431,12 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Text(
                         _profileUser.username ?? _profileUser.displayName,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          letterSpacing: -0.2,
-                        ),
+                        style: KatsText.profileName(context),
                       ),
                     ),
                   ],
@@ -635,12 +632,12 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'This account is private',
               style: TextStyle(
                 color: Color(0xFF111827),
                 fontWeight: FontWeight.w700,
-                fontSize: 17,
+                fontSize: 17.sp,
               ),
             ),
             const SizedBox(height: 6),
@@ -649,9 +646,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ? 'Your follow request is pending approval.'
                   : 'Follow this account to see their posts.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Color(0xFF6B7280),
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 1.4,
               ),
             ),
@@ -1437,17 +1434,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                 color: Color(0xFFD1D5DB),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'No reels yet',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF6B7280),
                 ),
               ),
               if (_reelsSuggestions.isNotEmpty) ...[
                 const SizedBox(height: 40),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
@@ -1456,7 +1453,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Text(
                         'Suggested Reels',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF111827),
                         ),
@@ -1552,7 +1549,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             Text(
               emptyMessage,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
               ),
@@ -1568,7 +1565,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Text(
                       'Suggested for you',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w800,
                         color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
                       ),
@@ -1647,7 +1644,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
                 color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF1F2937),
               ),
@@ -1658,7 +1655,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 10.sp,
                 color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF9CA3AF),
               ),
             ),
@@ -1688,9 +1685,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                             padding: EdgeInsets.zero,
                           ),
-                          child: const Text(
+                          child: Text(
                             'Following',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                            style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
                           ),
                         )
                       : user.isRequested
@@ -1704,9 +1701,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                                 padding: EdgeInsets.zero,
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Requested',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
                               ),
                             )
                           : ElevatedButton(
@@ -1720,9 +1717,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                                 padding: EdgeInsets.zero,
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Follow',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w700),
                               ),
                             ),
             ),
@@ -1960,8 +1957,8 @@ class _ProfileInlineCounters extends StatelessWidget {
             onTap: onTapFollowing,
             child: Text.rich(
               TextSpan(
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: 14.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
                 ),
@@ -1972,10 +1969,10 @@ class _ProfileInlineCounters extends StatelessWidget {
               ),
             ),
           ),
-          const Text(
+          Text(
             '  ·  ',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: Color(0xFF65676B),
             ),
           ),
@@ -1983,8 +1980,8 @@ class _ProfileInlineCounters extends StatelessWidget {
             onTap: onTapFollowers,
             child: Text.rich(
               TextSpan(
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: 14.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
                 ),
@@ -1995,17 +1992,17 @@ class _ProfileInlineCounters extends StatelessWidget {
               ),
             ),
           ),
-          const Text(
+          Text(
             '  ·  ',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: Color(0xFF65676B),
             ),
           ),
           Text.rich(
             TextSpan(
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: 14.sp,
                 color: Color(0xFF65676B),
                 height: 1.3,
               ),
@@ -2090,7 +2087,7 @@ class _ProfileBio extends StatelessWidget {
                   username: user.username ?? '',
                   displayName: user.displayName,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: -0.2,
@@ -2118,7 +2115,7 @@ class _ProfileBio extends StatelessWidget {
             Text(
               line.text,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: line.color,
               ),
             ),
@@ -2211,7 +2208,7 @@ class _ProfileBio extends StatelessWidget {
                         Text(
                           linkTitle,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             color: brandColor,
                           ),
@@ -2241,9 +2238,9 @@ class _ProfileBio extends StatelessWidget {
         const SizedBox(width: 2),
         Text(
           '$level',
-          style: const TextStyle(
+          style: TextStyle(
             color: Color(0xFFFF7A45),
-            fontSize: 9.5,
+            fontSize: 9.5.sp,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -2617,7 +2614,7 @@ class _AchievementPillLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseStyle = TextStyle(
-      fontSize: style.fontSize ?? 10.8,
+      fontSize: style.fontSize ?? 10.8.sp,
       fontWeight: FontWeight.w800,
       fontFamily: style.fontFamily,
       letterSpacing: style.fontFamily != null ? 0.3 : 0.02,
@@ -4177,7 +4174,7 @@ class _ProfileMetadataSvgItem extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.sp,
               color: textColor,
               fontWeight: FontWeight.w400,
             ),
@@ -4279,7 +4276,7 @@ class _ProfileActionRow extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                label: const Text('Message'),
+                label: Text('Message'),
               ),
             ),
           ),
@@ -4374,8 +4371,8 @@ class _EmptyTab extends StatelessWidget {
     return Center(
       child: Text(
         message,
-        style: const TextStyle(
-          fontSize: 16,
+        style: TextStyle(
+          fontSize: 16.sp,
           color: Color(0xFF9CA3AF),
         ),
       ),
@@ -4520,7 +4517,7 @@ class _MoreOptionsRow extends StatelessWidget {
                     label,
                     style: TextStyle(
                       color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0,
                     ),
@@ -4625,7 +4622,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                         'About account',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
                         ),
@@ -4670,7 +4667,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                                   color: Theme.of(context).brightness == Brightness.dark
                                       ? const Color(0xFF93C5FD)
                                       : const Color(0xFF2563EB),
-                                  fontSize: 18,
+                                  fontSize: 18.sp,
                                   fontWeight: FontWeight.w800,
                                 ),
                               )
@@ -4687,7 +4684,7 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -4697,9 +4694,9 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                                 user.handle!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFF65676B),
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -4729,13 +4726,13 @@ class _ProfileAboutAccountSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: items.isEmpty
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(16),
                             child: Text(
                               'No visible account information yet.',
                               style: TextStyle(
                                 color: Color(0xFF65676B),
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -4881,7 +4878,7 @@ class _AboutSectionHeader extends StatelessWidget {
           title,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,
           ),
@@ -4926,9 +4923,9 @@ class _AboutInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFF65676B),
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -4937,7 +4934,7 @@ class _AboutInfoRow extends StatelessWidget {
                   value,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
                     height: 1.25,
                   ),
