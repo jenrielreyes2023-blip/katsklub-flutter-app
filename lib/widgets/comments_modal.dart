@@ -983,13 +983,15 @@ class _CommentTile extends StatelessWidget {
                           onTap: () => onReply(comment),
                           child: Text(
                             'Reply',
-                            style: KatsText.countLabel(context, secondaryTextColor),
+                            style: KatsText.countLabel(context, secondaryTextColor)
+                                .copyWith(fontSize: 10.sp),
                           ),
                         ),
                         if (comment.replyCount > 0 && onToggleReplies != null) ...[
                           Text(
                             '·',
-                            style: KatsText.countLabel(context, dotColor),
+                            style: KatsText.countLabel(context, dotColor)
+                                .copyWith(fontSize: 10.sp),
                           ),
                           InkWell(
                             onTap: () => onToggleReplies!(comment),
@@ -999,7 +1001,8 @@ class _CommentTile extends StatelessWidget {
                                   : comment.replyCount == 1
                                       ? 'View 1 reply'
                                       : 'View ${comment.replyCount} replies',
-                              style: KatsText.viewReplies(context),
+                              style: KatsText.viewReplies(context)
+                                  .copyWith(fontSize: 10.sp),
                             ),
                           ),
                         ],
