@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/user.dart';
 import '../services/feed_service.dart';
@@ -57,17 +58,17 @@ class UserRelationsScreen extends StatelessWidget {
                   children: [
                     Text(
                       '@$username',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: titleColor,
-                        fontSize: 16,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
                       'Connections',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: subtitleColor,
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -83,8 +84,8 @@ class UserRelationsScreen extends StatelessWidget {
                       indicatorColor: tabIndicatorColor,
                       labelColor: titleColor,
                       unselectedLabelColor: subtitleColor,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                      labelStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w700, fontSize: 12.sp),
+                      unselectedLabelStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w500, fontSize: 12.sp),
                       tabs: const [
                         Tab(text: 'Followers'),
                         Tab(text: 'Following'),
@@ -285,10 +286,10 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: TextField(
             controller: _searchController,
-            style: TextStyle(fontSize: 15, color: searchTextColor),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, color: searchTextColor),
             decoration: InputDecoration(
               hintText: 'Search users...',
-              hintStyle: TextStyle(color: searchHintColor, fontSize: 15),
+              hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',color: searchHintColor, fontSize: 12.sp),
               prefixIcon: Icon(Icons.search, color: searchHintColor, size: 20),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -351,9 +352,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
           Text(
             'This ${widget.isFollowersList ? "followers" : "following"} list is private',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: titleColor,
-              fontSize: 17,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -361,9 +362,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
           Text(
             'This user has chosen to hide their $listName. Only they can view it.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: descColor,
-              fontSize: 14,
+              fontSize: 12.sp,
               height: 1.4,
             ),
           ),
@@ -387,9 +388,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
             children: [
               Text(
                 _searchQuery.isNotEmpty ? 'No matches found' : 'No users found',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: titleColor,
-                  fontSize: 16,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -398,9 +399,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
                 _searchQuery.isNotEmpty
                     ? 'Try searching with a different name or username.'
                     : 'This list is empty.',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: descColor,
-                  fontSize: 13,
+                  fontSize: 12.sp,
                 ),
               ),
             ],
@@ -446,9 +447,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
                         user.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           color: titleColor,
-                          fontSize: 15,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -457,9 +458,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
                         user.handle ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           color: descColor,
-                          fontSize: 13,
+                          fontSize: 12.sp,
                         ),
                       ),
                     ],
@@ -514,9 +515,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Following',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -537,9 +538,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Requested',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -560,9 +561,9 @@ class _RelationsTabState extends State<_RelationsTab> with AutomaticKeepAliveCli
           minimumSize: const Size(80, 32),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        child: const Text(
+        child: Text(
           'Follow',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -701,9 +702,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
               const SizedBox(height: 20),
               Text(
                 'No suggestions',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: titleColor,
-                  fontSize: 16,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -711,9 +712,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
               Text(
                 'You\'ve followed everyone we can recommend right now!',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: descColor,
-                  fontSize: 13,
+                  fontSize: 12.sp,
                 ),
               ),
             ],
@@ -759,9 +760,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
                         user.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           color: titleColor,
-                          fontSize: 15,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -770,9 +771,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
                         user.handle ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           color: descColor,
-                          fontSize: 13,
+                          fontSize: 12.sp,
                         ),
                       ),
                     ],
@@ -827,9 +828,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Following',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -850,9 +851,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
             minimumSize: const Size(80, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             'Requested',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -873,9 +874,9 @@ class _SuggestionsTabState extends State<_SuggestionsTab> with AutomaticKeepAliv
           minimumSize: const Size(80, 32),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        child: const Text(
+        child: Text(
           'Follow',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp, fontWeight: FontWeight.w600),
         ),
       ),
     );
