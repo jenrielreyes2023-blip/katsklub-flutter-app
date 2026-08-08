@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../theme/app_text_styles.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -528,7 +530,7 @@ class _FeedScreenState extends State<FeedScreen>
 
   Widget _buildFeedItem(BuildContext context, int index, List<Post> posts) {
     if (_isInitialLoading) {
-      return const Column(
+      return Column(
         children: [
           PostSkeletonCard(variant: 0),
           PostSkeletonCard(variant: 1),
@@ -555,29 +557,29 @@ class _FeedScreenState extends State<FeedScreen>
                 color: Color(0xFFEE8F3F),
               ),
             ),
-            const SizedBox(height: 14),
-            const Text(
+            SizedBox(height: 14),
+            Text(
               'Your feed is quiet',
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF111827),
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
+            SizedBox(height: 6),
+            Text(
               'Follow people to fill your feed with their posts.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 13.5.sp,
                 color: Color(0xFF6B7280),
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             FilledButton.icon(
               onPressed: () => setState(() => _activeTab = 'people'),
               icon: const Icon(Icons.person_add_alt_1, size: 18),
-              label: const Text('Discover people'),
+              label: Text('Discover people'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEE8F3F),
                 foregroundColor: Colors.white,
@@ -878,7 +880,7 @@ class _FeedScreenState extends State<FeedScreen>
     List<User> people,
   ) {
     if (_isSearchingPeople) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 28),
         child: Center(child: CircularProgressIndicator()),
       );
@@ -894,9 +896,9 @@ class _FeedScreenState extends State<FeedScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
         child: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             color: Color(0xFF6B7280),
-            fontSize: 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -910,9 +912,9 @@ class _FeedScreenState extends State<FeedScreen>
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             entry.label!,
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF6B7280),
-              fontSize: 13,
+              fontSize: 13.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1502,18 +1504,18 @@ class _ReelsRailState extends State<_ReelsRail>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Reels',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 18.sp,
               fontWeight: FontWeight.w800,
               color: Color(0xFF111827),
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         SizedBox(
           height: cardHeight,
           child: ListView.builder(
@@ -1617,16 +1619,16 @@ class _ReelPreviewCard extends StatelessWidget {
                 bottom: 8,
                 child: Text(
                   reel.authorFullName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Center(
+              Center(
                 child: Icon(
                   Icons.play_circle_outline,
                   color: Colors.white,
@@ -1803,7 +1805,7 @@ class _PeopleListRow extends StatelessWidget {
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1814,29 +1816,29 @@ class _PeopleListRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     user.handle ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF6B7280),
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   for (final line in extras) ...[
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       line,
                       softWrap: true,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF6B7280),
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         height: 1.3,
                       ),
                     ),
@@ -1844,7 +1846,7 @@ class _PeopleListRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             TextButton(
               onPressed: isFollowPending ? null : onFollow,
               style: TextButton.styleFrom(
@@ -1858,8 +1860,8 @@ class _PeopleListRow extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                 shape: const StadiumBorder(),
-                textStyle: const TextStyle(
-                  fontSize: 14,
+                textStyle: TextStyle(
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1963,16 +1965,16 @@ class _HashtagListRow extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Text(
+              child: Text(
                 '#',
                 style: TextStyle(
                   color: Color(0xFF111827),
-                  fontSize: 22,
+                  fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1981,25 +1983,25 @@ class _HashtagListRow extends StatelessWidget {
                     '#${hashtag.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF111111),
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  SizedBox(height: 3),
                   Text(
                     countLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF6B7280),
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             const Icon(
               Icons.chevron_right_rounded,
               color: Color(0xFF9CA3AF),
@@ -2047,7 +2049,7 @@ class _FeedTabButton extends StatelessWidget {
             style: TextStyle(
               color: isActive ? activeColor : inactiveColor,
               fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontSize: 15.sp,
             ),
           ),
         ),

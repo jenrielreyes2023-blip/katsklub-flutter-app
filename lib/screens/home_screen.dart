@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../theme/app_text_styles.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:async';
@@ -702,7 +704,7 @@ class _HomeScreenState extends State<HomeScreen>
     final inlineRailIndex = 3 + _kSuggestionsInlineAfter;
 
     if (index == _homeItemCount(posts) - 1) {
-      return const SizedBox(height: 18);
+      return SizedBox(height: 18);
     }
 
     if (_isLoadingMore && index >= _homeItemCount(posts) - 4) {
@@ -718,7 +720,7 @@ class _HomeScreenState extends State<HomeScreen>
       contentIndex -= 1;
     }
     if (_isInitialLoading) {
-      return const Column(
+      return Column(
         children: [
           PostSkeletonCard(variant: 0),
           PostSkeletonCard(variant: 1),
@@ -744,30 +746,30 @@ class _HomeScreenState extends State<HomeScreen>
                 color: Color(0xFFEE8F3F),
               ),
             ),
-            const SizedBox(height: 14),
-            const Text(
+            SizedBox(height: 14),
+            Text(
               'Nothing here yet',
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
                 color: Color(0xFF1C1E21),
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
+            SizedBox(height: 6),
+            Text(
               'Follow people from the Feed tab and their posts will land here.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 13.5.sp,
                 color: Color(0xFF65676B),
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             FilledButton.icon(
               onPressed: _refresh,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Refresh'),
+              label: Text('Refresh'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEE8F3F),
                 foregroundColor: Colors.white,
@@ -1284,7 +1286,7 @@ class _HomeMenuSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: ColoredBox(
@@ -1360,13 +1362,13 @@ class _HomeMenuSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: TextStyle(
                   color: footerColor,
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w400,
                 ),
                 children: const [
@@ -1416,7 +1418,7 @@ class _HomeMenuItem extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: resolvedColor,
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
                 ),
@@ -1470,7 +1472,7 @@ class _StoriesRowState extends State<_StoriesRow>
         padding: const EdgeInsets.symmetric(horizontal: 14),
         scrollDirection: Axis.horizontal,
         itemCount: widget.storyGroups.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => SizedBox(width: 8),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _OwnStoryAvatar(
@@ -1552,7 +1554,7 @@ class _OwnStoryAvatar extends StatelessWidget {
                                 child: Center(
                                   child: Text(
                                     user.initials,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF1C1E21),
                                     ),
@@ -1601,14 +1603,14 @@ class _OwnStoryAvatar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          SizedBox(height: 5),
           Text(
             hasStories ? 'Your Story' : 'Add Story',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: 11.sp,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1650,12 +1652,12 @@ class _NewPostsBadge extends StatelessWidget {
             children: [
               const Icon(Icons.arrow_upward_rounded,
                   size: 16, color: Colors.white),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.1,
                 ),
@@ -1708,7 +1710,7 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
             child: Text(
               'Suggested for you',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w800,
                 color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
                 letterSpacing: -0.2,
@@ -1723,7 +1725,7 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: widget.users.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, __) => SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final user = widget.users[index];
                 final username = (user.username ?? '').trim();
@@ -1740,7 +1742,7 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
               },
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
       ),
     );
@@ -1796,7 +1798,7 @@ class _SuggestionCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1C1E21),
-                            fontSize: 44,
+                            fontSize: 44.sp,
                           ),
                         ),
                       ),
@@ -1817,7 +1819,7 @@ class _SuggestionCard extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1C1E21),
-                              fontSize: 44,
+                              fontSize: 44.sp,
                             ),
                           ),
                         ),
@@ -1834,14 +1836,14 @@ class _SuggestionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                         color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
                         letterSpacing: -0.1,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   SizedBox(
                     height: 32,
                     child: FilledButton(
@@ -1859,8 +1861,8 @@ class _SuggestionCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        textStyle: const TextStyle(
-                          fontSize: 13,
+                        textStyle: TextStyle(
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
