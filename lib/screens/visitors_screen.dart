@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
@@ -141,9 +142,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
         ),
         title: Text(
           'Profile Visitors',
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: titleColor,
-            fontSize: 18,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w800,
             ),
         ),
@@ -193,10 +194,10 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                           Flexible(
                             child: Text(
                               visitor.displayName,
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 color: titleColor,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 14.5,
+                                fontSize: 12.sp,
                                 ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -217,9 +218,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                         children: [
                           Text(
                             '@$visitorUsername',
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               color: subtitleColor,
-                              fontSize: 12.5,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w500,
                               ),
                           ),
@@ -227,9 +228,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                             const SizedBox(height: 2),
                             Text(
                               'Visited ${_formatVisitedTime(visitedAtStr)}',
-                              style: const TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 color: Color(0xFFFF5E3A),
-                                fontSize: 11,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                                 ),
                             ),
@@ -268,11 +269,11 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                                       )
                                     : Text(
                                         isFollowing ? 'Following' : 'Follow Back',
-                                        style: TextStyle(
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                                           color: isFollowing
                                               ? (isDark ? Colors.white : const Color(0xFF111827))
                                               : Colors.white,
-                                          fontSize: 12,
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w700,
                                           ),
                                       ),
@@ -299,9 +300,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
             const SizedBox(height: 16),
             Text(
               'No visitors yet',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: isDark ? Colors.white : const Color(0xFF111827),
-                fontSize: 16,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
                 ),
             ),
@@ -309,9 +310,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
             Text(
               'Share your profile with friends to get more visits and views!',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 color: subtitleColor,
-                fontSize: 13,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 ),
             ),
