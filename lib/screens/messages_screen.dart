@@ -3880,13 +3880,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 inputFormatters: [EmojiPresentationFormatter()],
                                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 13.sp,
-                                  height: 1.3,
+                                  fontSize: 12.sp,
+                                  height: 1.33,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
                                   hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    fontSize: 13.sp,
+                                    fontSize: 12.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
