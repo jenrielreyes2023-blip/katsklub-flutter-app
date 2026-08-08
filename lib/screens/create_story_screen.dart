@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -137,11 +138,11 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       barrierColor: Colors.black.withValues(alpha: 0.65),
       builder: (sheetContext) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFF1F1F23),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
           ),
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 32.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -150,19 +151,19 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 height: 5,
                 decoration: BoxDecoration(
                   color: Colors.white24,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded', 
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
                   ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               Row(
                 children: [
                   Expanded(
@@ -175,7 +176,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Expanded(
                     child: _BottomSheetOption(
                       icon: Icons.videocam_outlined,
@@ -206,11 +207,11 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Create story',
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded', 
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w700,
             ),
         ),
@@ -222,12 +223,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
             Expanded(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 40.w, vertical: 16.h),
                   child: AspectRatio(
                     aspectRatio: 9 / 16,
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(24.r),
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -250,14 +251,14 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           Positioned.fill(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(24.r),
                                 color: Colors.black.withValues(alpha: 0.15),
                               ),
                             ),
                           ),
                           Center(
                             child: Padding(
-                              padding: const EdgeInsets.all(24),
+                              padding: EdgeInsets.all(24.r),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -274,23 +275,23 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                                       size: 32,
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
-                                  const Text(
+                                  SizedBox(height: 24.h),
+                                  Text(
                                     'Share your moment',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                       color: Colors.white,
-                                      fontSize: 20,
+                                      fontSize: 20.sp,
                                       fontWeight: FontWeight.w800,
                                       ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8.h),
                                   Text(
                                     'Post a photo, record a video, or write a thought for your followers.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                       color: Colors.white.withValues(alpha: 0.72),
-                                      fontSize: 13,
+                                      fontSize: 13.sp,
                                       fontWeight: FontWeight.w400,
                                       height: 1.4,
                                     ),
@@ -307,7 +308,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 24, top: 16),
+              padding: EdgeInsets.only(bottom: 24, top: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -356,9 +357,9 @@ class _StudioCenterShutterButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 4),
         ),
-        padding: const EdgeInsets.all(4),
+        padding: EdgeInsets.all(4.r),
         child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFFFF7A59), // Primary brand accent color
             shape: BoxShape.circle,
           ),
@@ -418,12 +419,12 @@ class _StudioOptionButton extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded', 
             color: Colors.white70,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w600,
             ),
         ),
@@ -447,21 +448,21 @@ class _BottomSheetOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: 20.h),
           child: Column(
             children: [
               Icon(icon, color: const Color(0xFFFF7A59), size: 36),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded', 
                   color: Colors.white,
-                  fontSize: 15,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                   ),
               ),
@@ -603,39 +604,39 @@ class _StoryMusicPickerSheetState extends State<_StoryMusicPickerSheet> {
         child: Container(
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 10),
+              SizedBox(height: 10.h),
               Container(
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
                   color: dragHandleColor,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Row(
                   children: [
                     Text(
                       'Add music',
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded', 
                         color: titleColor,
-                        fontSize: 18,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onChanged,
@@ -647,9 +648,9 @@ class _StoryMusicPickerSheetState extends State<_StoryMusicPickerSheet> {
                     prefixIcon: Icon(Icons.search, color: secondaryColor),
                     filled: true,
                     fillColor: inputFillColor,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -657,7 +658,7 @@ class _StoryMusicPickerSheetState extends State<_StoryMusicPickerSheet> {
               ),
               if (current != null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0.h),
                   child: _StorySelectedMusicChip(
                     music: current,
                     onRemove: () => Navigator.of(context).pop(current),
@@ -665,56 +666,56 @@ class _StoryMusicPickerSheetState extends State<_StoryMusicPickerSheet> {
                     compact: false,
                   ),
                 ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Flexible(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 420),
+                  constraints: BoxConstraints(maxHeight: 420),
                   child: _isLoading
-                      ? const Center(
+                      ? Center(
                           child: Padding(
-                            padding: EdgeInsets.all(24),
+                            padding: EdgeInsets.all(24.r),
                             child: CircularProgressIndicator(),
                           ),
                         )
                       : _error != null
                           ? Padding(
-                              padding: const EdgeInsets.all(24),
+                              padding: EdgeInsets.all(24.r),
                               child: Text(
                                 _error!,
-                                style: const TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                   color: Color(0xFF6B7280),
-                                  fontSize: 14,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             )
                           : _searchController.text.trim().length < 2
-                              ? const Padding(
-                                  padding: EdgeInsets.all(24),
+                              ? Padding(
+                                  padding: EdgeInsets.all(24.r),
                                   child: Text(
                                     'Search for a song title or artist.',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                       color: Color(0xFF6B7280),
-                                      fontSize: 14,
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 )
                               : _results.isEmpty
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(24),
+                                  ? Padding(
+                                      padding: EdgeInsets.all(24.r),
                                       child: Text(
                                         'No previewable tracks found.',
-                                        style: TextStyle(
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                           color: Color(0xFF6B7280),
-                                          fontSize: 14,
+                                          fontSize: 14.sp,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     )
                                   : ListView.separated(
                                       shrinkWrap: true,
-                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                      padding: EdgeInsets.fromLTRB(16.w, 0.h, 16.w, 16.h),
                                       itemBuilder: (context, index) {
                                         final song = _results[index];
                                         return _StoryMusicResultTile(
@@ -724,7 +725,7 @@ class _StoryMusicPickerSheetState extends State<_StoryMusicPickerSheet> {
                                           ),
                                         );
                                       },
-                                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                      separatorBuilder: (_, __) => SizedBox(height: 10.h),
                                       itemCount: _results.length,
                                     ),
                 ),
@@ -756,16 +757,16 @@ class _StoryMusicResultTile extends StatelessWidget {
 
     return Material(
       color: cardBg,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 child: song.artworkUrl.isEmpty
                     ? Container(
                         width: 54,
@@ -786,7 +787,7 @@ class _StoryMusicResultTile extends StatelessWidget {
                         ),
                       ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,27 +796,27 @@ class _StoryMusicResultTile extends StatelessWidget {
                       song.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded', 
                         color: titleColor,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     Text(
                       song.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded', 
                         color: secondaryColor,
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               const Icon(
                 Icons.add_circle_outline,
                 color: Color(0xFFFF7A45),
@@ -853,7 +854,7 @@ class _StorySelectedMusicChip extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14, vertical: compact ? 10 : 12),
       decoration: BoxDecoration(
         color: compact ? Colors.white.withValues(alpha: 0.16) : nonCompactBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18.r),
         border: Border.all(
           color: compact ? Colors.white.withValues(alpha: 0.25) : nonCompactBorder,
         ),
@@ -865,7 +866,7 @@ class _StorySelectedMusicChip extends StatelessWidget {
             size: 18,
             color: compact ? Colors.white : const Color(0xFFFF7A45),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -875,34 +876,34 @@ class _StorySelectedMusicChip extends StatelessWidget {
                   music.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded', 
                     color: compact ? Colors.white : nonCompactTitle,
-                    fontSize: 13,
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2.h),
                 Text(
                   music.artist,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded', 
                     color: compact ? Colors.white.withValues(alpha: 0.72) : nonCompactArtist,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           GestureDetector(
             onTap: onRemove,
             child: Text(
               removeLabel,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                 color: compact ? Colors.white : const Color(0xFFFF7A45),
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -940,12 +941,12 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     Color(0xFFFA709A),
     Color(0xFFFEE140),
   ];
-  final List<_StoryTextStylePreset> _textPresets = const [
+  final List<_StoryTextStylePreset> _textPresets = [
     _StoryTextStylePreset(
       label: 'Classic',
-      textStyle: TextStyle(
+      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
         color: Colors.white,
-        fontSize: 34,
+        fontSize: 34.sp,
         fontWeight: FontWeight.w700,
         height: 1.2,
         shadows: [
@@ -959,9 +960,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     ),
     _StoryTextStylePreset(
       label: 'Outline',
-      textStyle: TextStyle(
+      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
         color: Colors.black,
-        fontSize: 34,
+        fontSize: 34.sp,
         fontWeight: FontWeight.w800,
         height: 1.18,
       ),
@@ -973,9 +974,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     ),
     _StoryTextStylePreset(
       label: 'Soft',
-      textStyle: TextStyle(
+      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
         color: Colors.white,
-        fontSize: 32,
+        fontSize: 32.sp,
         fontWeight: FontWeight.w600,
         fontStyle: FontStyle.italic,
         height: 1.24,
@@ -987,9 +988,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     ),
     _StoryTextStylePreset(
       label: 'Bold',
-      textStyle: TextStyle(
+      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
         color: Colors.white,
-        fontSize: 38,
+        fontSize: 38.sp,
         fontWeight: FontWeight.w900,
         height: 1.1,
         letterSpacing: -0.3,
@@ -1271,7 +1272,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
               child: Row(
                 children: [
                   IconButton(
@@ -1326,16 +1327,16 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                               child: GestureDetector(
                                 onTap: () => _showTextDialog(context),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(24.r),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Tap to add text',
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                       color: Colors.white,
-                                      fontSize: 18,
+                                      fontSize: 18.sp,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1375,13 +1376,13 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_selectedMusic != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12),
                       child: _StorySelectedMusicChip(
                         music: _selectedMusic!,
                         onRemove: _removeMusic,
@@ -1389,24 +1390,24 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                     ),
                   if (hasText)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: EdgeInsets.only(bottom: 10),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               'Drag to move. Pinch to zoom. Tap background to change color.',
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded', 
                                 color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: 12,
+                                fontSize: 12.sp,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           Text(
                             _activePreset.label,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded', 
                               color: Colors.white.withValues(alpha: 0.88),
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1415,7 +1416,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                     ),
                   if (hasText)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12),
                       child: Row(
                         children: [
                           Expanded(
@@ -1426,16 +1427,16 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size.fromHeight(46),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23),
+                                  borderRadius: BorderRadius.circular(23.r),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Text style',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10.w),
                           Expanded(
                             child: OutlinedButton(
                               onPressed: _resetTextTransform,
@@ -1444,10 +1445,10 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size.fromHeight(46),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23),
+                                  borderRadius: BorderRadius.circular(23.r),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Reset text',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
@@ -1465,12 +1466,12 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(25.r),
                         ),
                         elevation: 0,
                       ),
                       child: _isSharing
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
@@ -1478,10 +1479,10 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                 color: Colors.black,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Your story',
-                              style: TextStyle(
-                                fontSize: 16,
+                              style: TextStyle(fontFamily: 'SF Pro Rounded', 
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1509,7 +1510,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
         return AlertDialog(
           backgroundColor: dialogBgColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           title: Text(
             'Add text',
@@ -1546,7 +1547,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                 });
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              child: Text(
                 'Done',
                 style: TextStyle(
                   color: Color(0xFFFF7A45),
@@ -1601,13 +1602,13 @@ class _StoryCanvasText extends StatelessWidget {
 
     if (!hasContainer) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
+        padding: EdgeInsets.symmetric(horizontal: 28.w),
         child: textWidget,
       );
     }
 
     return Container(
-      constraints: const BoxConstraints(maxWidth: 300),
+      constraints: BoxConstraints(maxWidth: 300),
       padding: EdgeInsets.symmetric(
         horizontal: preset.horizontalPadding,
         vertical: preset.verticalPadding,
@@ -1751,7 +1752,7 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
         return AlertDialog(
           backgroundColor: dialogBgColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           title: Text(
             'Add text',
@@ -1791,7 +1792,7 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                 }
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              child: Text(
                 'Add',
                 style: TextStyle(
                   color: Color(0xFFFF7A45),
@@ -2065,31 +2066,31 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w),
                   child: Row(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Edit story',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                       TextButton(
                         onPressed: _isSharing ? null : _shareStory,
-                        child: const Text(
+                        child: Text(
                           'Share',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -2119,14 +2120,14 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                               ),
                               Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(14),
+                                  padding: EdgeInsets.all(14.r),
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
                                       return InteractiveViewer(
                                         transformationController: _transformController,
                                         minScale: 1.0,
                                         maxScale: 8.0,
-                                        boundaryMargin: const EdgeInsets.all(280),
+                                        boundaryMargin: EdgeInsets.all(280.r),
                                         clipBehavior: Clip.none,
                                         child: SizedBox(
                                           width: constraints.maxWidth,
@@ -2150,7 +2151,7 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                                       color: Colors.transparent,
                                       child: _TextOverlayWidget(text: overlay.text),
                                     ),
-                                    childWhenDragging: const SizedBox.shrink(),
+                                    childWhenDragging: SizedBox.shrink(),
                                     onDragEnd: (details) {
                                       setState(() {
                                         final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -2172,13 +2173,13 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 16.h),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_selectedMusic != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: EdgeInsets.only(bottom: 12),
                           child: _StorySelectedMusicChip(
                             music: _selectedMusic!,
                             onRemove: _removeMusic,
@@ -2191,7 +2192,7 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                             onPressed: _pickMusic,
                             icon: const Icon(Icons.queue_music_outlined, color: Colors.white, size: 30),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           IconButton(
                             onPressed: _addText,
                             icon: const Icon(Icons.text_fields, color: Colors.white, size: 32),
@@ -2210,7 +2211,7 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                 color: Colors.black.withValues(alpha: 0.82),
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    padding: EdgeInsets.symmetric(horizontal: 40.w),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -2221,25 +2222,25 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                             color: const Color(0xFFFF7A59).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Center(
+                          child: Center(
                             child: CircularProgressIndicator(
                               color: Color(0xFFFF7A59),
                               strokeWidth: 4,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         Text(
                           _uploadStatus,
-                          style: const TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
                             ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(999.r),
                           child: SizedBox(
                             width: 240,
                             height: 8,
@@ -2250,12 +2251,12 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         Text(
                           '${(_uploadProgress * 100).toInt()}%',
-                          style: const TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white70,
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
                             ),
                         ),
@@ -2287,16 +2288,16 @@ class _TextOverlayWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(fontFamily: 'SF Pro Rounded', 
           color: Colors.white,
-          fontSize: 24,
+          fontSize: 24.sp,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -2369,7 +2370,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
         return AlertDialog(
           backgroundColor: dialogBgColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           title: Text(
             'Add text',
@@ -2409,7 +2410,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                 }
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              child: Text(
                 'Add',
                 style: TextStyle(
                   color: Color(0xFFFF7A45),
@@ -2655,31 +2656,31 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w),
                   child: Row(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Edit story',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                       TextButton(
                         onPressed: _isSharing ? null : _shareStory,
-                        child: const Text(
+                        child: Text(
                           'Share',
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -2704,7 +2705,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                                 ),
                               )
                             else
-                              const Center(
+                              Center(
                                 child: CircularProgressIndicator(color: Colors.white),
                               ),
                             Container(
@@ -2719,7 +2720,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                                     color: Colors.transparent,
                                     child: _TextOverlayWidget(text: overlay.text),
                                   ),
-                                  childWhenDragging: const SizedBox.shrink(),
+                                  childWhenDragging: SizedBox.shrink(),
                                   onDragEnd: (details) {
                                     setState(() {
                                       final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -2740,13 +2741,13 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 16.h),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_selectedMusic != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: EdgeInsets.only(bottom: 12),
                           child: _StorySelectedMusicChip(
                             music: _selectedMusic!,
                             onRemove: _removeMusic,
@@ -2759,7 +2760,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                             onPressed: _pickMusic,
                             icon: const Icon(Icons.queue_music_outlined, color: Colors.white, size: 30),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           IconButton(
                             onPressed: _addText,
                             icon: const Icon(Icons.text_fields, color: Colors.white, size: 32),
@@ -2778,7 +2779,7 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                 color: Colors.black.withValues(alpha: 0.82),
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    padding: EdgeInsets.symmetric(horizontal: 40.w),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -2789,25 +2790,25 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                             color: const Color(0xFFFF7A59).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Center(
+                          child: Center(
                             child: CircularProgressIndicator(
                               color: Color(0xFFFF7A59),
                               strokeWidth: 4,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         Text(
                           _uploadStatus,
-                          style: const TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
                             ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(999.r),
                           child: SizedBox(
                             width: 240,
                             height: 8,
@@ -2818,12 +2819,12 @@ class _VideoStoryEditorScreenState extends State<VideoStoryEditorScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         Text(
                           '${(_uploadProgress * 100).toInt()}%',
-                          style: const TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded', 
                             color: Colors.white70,
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
                             ),
                         ),
