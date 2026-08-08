@@ -77,10 +77,13 @@ class PostHeader extends StatelessWidget {
                               username: post.authorUsername,
                               displayName: post.authorFullName,
                               style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5.sp,
                                   letterSpacing: -0.2,
-                                  color: nameColor),
+                                  height: 1.33,
+                                  color: isDarkTheme
+                                      ? const Color(0xFFE4E6EB)
+                                      : const Color(0xFF050505)),
                             ),
                           ),
                         ),
@@ -522,8 +525,10 @@ class PostOptionsRow extends StatelessWidget {
                     action.label,
                     style: TextStyle(
                       color: color,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 1.33,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   if (action.subtitle != null) ...[
