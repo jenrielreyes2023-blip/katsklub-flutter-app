@@ -1795,6 +1795,8 @@ class _ProfileTabBar extends StatelessWidget {
             indicatorWeight: 1,
             labelColor: selectedColor,
             unselectedLabelColor: unselectedColor,
+            labelStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700),
+            unselectedLabelStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700),
             tabs: [
               Tab(
                 icon: _ProfileTabSvgIcon(
