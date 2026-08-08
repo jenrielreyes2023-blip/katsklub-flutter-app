@@ -28,7 +28,7 @@ class StoryAvatar extends StatelessWidget {
       customBorder: const CircleBorder(),
       onTap: onTap,
       child: SizedBox(
-        width: 72,
+        width: 82,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -36,8 +36,8 @@ class StoryAvatar extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 72,
+                  height: 72,
                   padding: const EdgeInsets.all(2.5),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
