@@ -262,13 +262,13 @@ class _PostCardState extends State<PostCard> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Report Post'),
+              title: Text('Report Post'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: reasons.map((reason) {
                     return RadioListTile<String>(
-                      title: Text(reason, style: const TextStyle(fontSize: 14)),
+                      title: Text(reason, style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp)),
                       value: reason,
                       groupValue: selectedReason,
                       dense: true,
@@ -692,7 +692,7 @@ class _PostCardState extends State<PostCard> {
                             children: [
                               Text(
                                 displayHeaderName,
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 13.5.sp,
                                   fontWeight: FontWeight.w800,
                                   color: textColor,
@@ -719,7 +719,7 @@ class _PostCardState extends State<PostCard> {
                                 ),
                                 child: Text(
                                   'SPONSORED',
-                                  style: TextStyle(
+                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                                     fontSize: 9.sp,
                                     fontWeight: FontWeight.w900,
                                     color: const Color(0xFFFF8A00),
@@ -803,7 +803,7 @@ class _PostCardState extends State<PostCard> {
                     Expanded(
                       child: Text(
                         'Ads: ${_post.promotionUrl}',
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 11.5.sp,
                           color: subtitleColor.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
@@ -831,7 +831,7 @@ class _PostCardState extends State<PostCard> {
                             _post.promotionButtonText.isNotEmpty
                                 ? _post.promotionButtonText
                                 : 'Learn More',
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               fontSize: 12.5.sp,
                               fontWeight: FontWeight.w800,
                             ),
@@ -2039,7 +2039,7 @@ class _PostCardState extends State<PostCard> {
                             const SizedBox(width: 6),
                             Text(
                               'Pinned Post',
-                              style: TextStyle(
+                              style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey[600],
@@ -2063,7 +2063,7 @@ class _PostCardState extends State<PostCard> {
                             Expanded(
                               child: Text(
                                 '${_post.repostedByText} reposted this',
-                                style: TextStyle(
+                                style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey[600],
@@ -2095,7 +2095,7 @@ class _PostCardState extends State<PostCard> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           displayTitle,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 16.5.sp,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
