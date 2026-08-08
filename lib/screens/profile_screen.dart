@@ -1958,7 +1958,7 @@ class _ProfileInlineCounters extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 14.sp,
+                  fontSize: 12.5.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
                 ),
@@ -1972,7 +1972,7 @@ class _ProfileInlineCounters extends StatelessWidget {
           Text(
             '  ·  ',
             style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 14.sp,
+              fontSize: 12.5.sp,
               color: Color(0xFF65676B),
             ),
           ),
@@ -1981,7 +1981,7 @@ class _ProfileInlineCounters extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 14.sp,
+                  fontSize: 12.5.sp,
                   color: Color(0xFF65676B),
                   height: 1.3,
                 ),
@@ -1995,14 +1995,14 @@ class _ProfileInlineCounters extends StatelessWidget {
           Text(
             '  ·  ',
             style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 14.sp,
+              fontSize: 12.5.sp,
               color: Color(0xFF65676B),
             ),
           ),
           Text.rich(
             TextSpan(
               style: TextStyle(fontFamily: 'SF Pro Rounded',
-                fontSize: 14.sp,
+                fontSize: 12.5.sp,
                 color: Color(0xFF65676B),
                 height: 1.3,
               ),
