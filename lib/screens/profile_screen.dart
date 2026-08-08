@@ -4241,11 +4241,12 @@ class _ProfileActionRow extends StatelessWidget {
                       : (showMuted ? const Color(0xFFF9FAFB) : const Color(0xFFFF7A45)),
                   foregroundColor: showMuted ? const Color(0xFFFF7A45) : Colors.white,
                   side: showMuted
-                      ? const BorderSide(color: Color(0xFFFF7A45), width: 1.2)
+                      ? const BorderSide(color: Color(0xFFFF7A45), width: 1)
                       : BorderSide.none,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(20),
                   ),
+                  textStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700),
                 ),
                 onPressed: isUpdatingFollow ? null : onToggleFollow,
                 child: isUpdatingFollow
@@ -4263,6 +4264,7 @@ class _ProfileActionRow extends StatelessWidget {
                             : isRequested
                                 ? 'Requested'
                                 : 'Follow',
+                        style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700),
                       ),
               ),
             ),
@@ -4278,10 +4280,12 @@ class _ProfileActionRow extends StatelessWidget {
                     color: Theme.of(context).brightness == Brightness.dark
                         ? const Color(0xFF2F3031)
                         : const Color(0xFFD1D5DB),
+                    width: 1,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(20),
                   ),
+                  textStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700),
                 ),
                 onPressed: isOpeningMessage ? null : onMessage,
                 icon: isOpeningMessage
@@ -4290,8 +4294,8 @@ class _ProfileActionRow extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                label: Text('Message'),
+                    : const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                label: Text('Message', style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.5.sp, fontWeight: FontWeight.w700)),
               ),
             ),
           ),
