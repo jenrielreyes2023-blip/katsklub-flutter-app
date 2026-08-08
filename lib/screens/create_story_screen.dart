@@ -42,65 +42,93 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   final picker = ImagePicker();
 
   Future<void> _pickImageFromGallery() async {
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null || !mounted) return;
+    try {
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked == null || !mounted) return;
 
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ImageStoryEditorScreen(
-          user: widget.user,
-          imageBytes: bytes,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ImageStoryEditorScreen(
+            user: widget.user,
+            imageBytes: bytes,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
   }
 
   Future<void> _pickVideoFromGallery() async {
-    final picked = await picker.pickVideo(source: ImageSource.gallery);
-    if (picked == null || !mounted) return;
+    try {
+      final picked = await picker.pickVideo(source: ImageSource.gallery);
+      if (picked == null || !mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => VideoStoryEditorScreen(
-          user: widget.user,
-          videoFile: picked,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => VideoStoryEditorScreen(
+            user: widget.user,
+            videoFile: picked,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick video: $e')),
+      );
+    }
   }
 
   Future<void> _capturePhoto() async {
-    final picked = await picker.pickImage(source: ImageSource.camera);
-    if (picked == null || !mounted) return;
+    try {
+      final picked = await picker.pickImage(source: ImageSource.camera);
+      if (picked == null || !mounted) return;
 
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ImageStoryEditorScreen(
-          user: widget.user,
-          imageBytes: bytes,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ImageStoryEditorScreen(
+            user: widget.user,
+            imageBytes: bytes,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to capture photo: $e')),
+      );
+    }
   }
 
   Future<void> _captureVideo() async {
-    final picked = await picker.pickVideo(source: ImageSource.camera);
-    if (picked == null || !mounted) return;
+    try {
+      final picked = await picker.pickVideo(source: ImageSource.camera);
+      if (picked == null || !mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => VideoStoryEditorScreen(
-          user: widget.user,
-          videoFile: picked,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => VideoStoryEditorScreen(
+            user: widget.user,
+            videoFile: picked,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to capture video: $e')),
+      );
+    }
   }
 
   void _openTextEditor() {
