@@ -921,9 +921,8 @@ class _CommentTile extends StatelessWidget {
                                     child: SpecialNameText(
                                       username: comment.authorUsername,
                                       displayName: comment.displayName,
-                                      style: TextStyle(
-                                        color: primaryTextColor,
-                                        fontSize: 13.5.sp,
+                                      style: KatsText.commentAuthor(context).copyWith(
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
