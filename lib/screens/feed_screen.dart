@@ -1691,9 +1691,11 @@ class _FeedHeader extends StatelessWidget {
                 textInputAction: TextInputAction.search,
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 12.sp,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search',
+                  hintStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp, color: Color(0xFF9CA3AF)),
                   prefixIcon: const Icon(
                     Icons.search,
                     color: Color(0xFF9CA3AF),

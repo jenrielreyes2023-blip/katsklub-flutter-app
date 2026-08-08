@@ -44,8 +44,10 @@ class _SearchScreenState extends State<SearchScreen> {
             autofocus: true,
             textInputAction: TextInputAction.search,
             onSubmitted: _search,
+            style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp),
             decoration: InputDecoration(
               hintText: 'Search KatsKlub',
+              hintStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp, color: Color(0xFF9CA3AF)),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(999),
