@@ -521,11 +521,11 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   _sortMode == CommentSortMode.relevance ? 'Most Relevant' : 'Newest First',
                   style: TextStyle(
                     color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF65676B),
-                    fontSize: 13,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
                   size: 16,
@@ -554,7 +554,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 width: 38,
                 height: 4,
@@ -563,7 +563,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ListTile(
                 leading: Icon(
                   Icons.star_rounded,
@@ -575,7 +575,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     fontWeight: _sortMode == CommentSortMode.relevance ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-                subtitle: const Text('Shows comments with more likes, replies, and author responses first.'),
+                subtitle: Text('Shows comments with more likes, replies, and author responses first.'),
                 onTap: () {
                   setState(() {
                     _sortMode = CommentSortMode.relevance;
@@ -594,7 +594,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     fontWeight: _sortMode == CommentSortMode.newest ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-                subtitle: const Text('Shows comments in chronological order, with the newest at the top.'),
+                subtitle: Text('Shows comments in chronological order, with the newest at the top.'),
                 onTap: () {
                   setState(() {
                     _sortMode = CommentSortMode.newest;
@@ -602,7 +602,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   Navigator.pop(context);
                 },
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
           ),
         );
@@ -676,7 +676,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Container(
                             width: 38,
                             height: 4,
@@ -723,7 +723,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       return Center(
         child: TextButton(
           onPressed: _loadInitialComments,
-          child: const Text('Retry loading comments'),
+          child: Text('Retry loading comments'),
         ),
       );
     }
@@ -741,21 +741,21 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 width: 96,
                 height: 96,
               ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 'No comments yet.',
                 style: TextStyle(
                   color: Color(0xFF9CA3AF),
-                  fontSize: 15,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
+              SizedBox(height: 4),
+              Text(
                 'Be the first one to start the conversation!',
                 style: TextStyle(
                   color: Color(0xFF6B7280),
-                  fontSize: 13,
+                  fontSize: 12.sp,
                 ),
               ),
             ],
@@ -769,10 +769,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       cacheExtent: 1200,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
       itemCount: sorted.length + (_isLoadingMore ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => SizedBox(height: 12),
       itemBuilder: (context, index) {
         if (index >= sorted.length) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: _CommentSkeletonTile(compact: true),
           );
@@ -817,7 +817,7 @@ class _CommentsHeader extends StatelessWidget {
       height: 50,
       child: Row(
         children: [
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
           Expanded(
             child: Center(
               child: Text(
@@ -826,7 +826,7 @@ class _CommentsHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 16,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -890,7 +890,7 @@ class _CommentTile extends StatelessWidget {
               onTap: () => _openAuthor(context, comment),
               child: _CommentAvatar(comment: comment),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -930,7 +930,7 @@ class _CommentTile extends StatelessWidget {
                                 ),
                                 if (comment.authorIsVerified ||
                                     comment.authorIsAdmin) ...[
-                                  const SizedBox(width: 4),
+                                  SizedBox(width: 4),
                                   const Icon(
                                     Icons.verified,
                                     size: 14,
@@ -938,7 +938,7 @@ class _CommentTile extends StatelessWidget {
                                   ),
                                 ],
                                 if (comment.timeAgo.isNotEmpty) ...[
-                                  const SizedBox(width: 6),
+                                  SizedBox(width: 6),
                                   Text(
                                     '·',
                                     style: TextStyle(
@@ -947,7 +947,7 @@ class _CommentTile extends StatelessWidget {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
+                                  SizedBox(width: 6),
                                   Text(
                                     comment.timeAgo,
                                     style: TextStyle(
@@ -959,7 +959,7 @@ class _CommentTile extends StatelessWidget {
                                 ],
                               ],
                             ),
-                            const SizedBox(height: 3),
+                            SizedBox(height: 3),
                             HashtagText(
                               text: comment.body,
                               style: KatsText.commentBody(context),
@@ -971,7 +971,7 @@ class _CommentTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Padding(
                     padding: const EdgeInsets.only(left: 12),
                     child: Wrap(
@@ -1021,7 +1021,7 @@ class _CommentTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _CommentLikeButton(
               comment: comment,
               onLike: () => onLikeComment(comment),
@@ -1029,7 +1029,7 @@ class _CommentTile extends StatelessWidget {
           ],
         ),
         if (isLoadingReplies)
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(46, 10, 0, 0),
             child: _ReplySkeletonList(),
           ),
@@ -1087,7 +1087,7 @@ class _ReplyTile extends StatelessWidget {
           onTap: () => _openAuthor(context, reply),
           child: _CommentAvatar(comment: reply, size: 30),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1126,7 +1126,7 @@ class _ReplyTile extends StatelessWidget {
                             ),
                             if (reply.authorIsVerified ||
                                 reply.authorIsAdmin) ...[
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               const Icon(
                                 Icons.verified,
                                 size: 14,
@@ -1134,7 +1134,7 @@ class _ReplyTile extends StatelessWidget {
                               ),
                             ],
                             if (reply.timeAgo.isNotEmpty) ...[
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Text(
                                 '·',
                                 style: TextStyle(
@@ -1143,7 +1143,7 @@ class _ReplyTile extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Text(
                                 reply.timeAgo,
                                 style: TextStyle(
@@ -1155,7 +1155,7 @@ class _ReplyTile extends StatelessWidget {
                             ],
                           ],
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: 3),
                         HashtagText(
                           text: reply.body,
                           style: KatsText.replyBody(context),
@@ -1177,7 +1177,7 @@ class _ReplyTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.only(left: 12),
                 child: Row(
@@ -1188,7 +1188,7 @@ class _ReplyTile extends StatelessWidget {
                         'Reply',
                         style: TextStyle(
                           color: secondaryTextColor,
-                          fontSize: 13,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1199,7 +1199,7 @@ class _ReplyTile extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         _CommentLikeButton(
           comment: reply,
           onLike: () => onLikeReply(reply),
@@ -1274,7 +1274,7 @@ class _InitialsAvatar extends StatelessWidget {
         initials,
         style: TextStyle(
           color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151),
-          fontSize: size <= 30 ? 10 : 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -1292,7 +1292,7 @@ class _CommentSkeletonList extends StatelessWidget {
     final list = ListView.separated(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
       itemCount: 6,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => SizedBox(height: 12),
       itemBuilder: (_, index) => _CommentSkeletonTile(variant: index % 6),
     );
 
@@ -1385,12 +1385,12 @@ class _CommentSkeletonTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SkeletonCircle(size: avatarSize),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 3),
+              SizedBox(height: 3),
               Row(
                 children: [
                   _SkeletonBox(width: nameWidth, height: 12),
@@ -1398,21 +1398,21 @@ class _CommentSkeletonTile extends StatelessWidget {
                   _SkeletonBox(width: metaWidth, height: 10),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               _SkeletonBox(width: firstLineWidth, height: 11),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _SkeletonBox(width: secondLineWidth, height: 11),
               if (hasThirdLine) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _SkeletonBox(width: thirdBodyLineWidth, height: 11),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   const _SkeletonBox(width: 34, height: 10),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   _SkeletonBox(width: secondActionWidth, height: 10),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   _SkeletonBox(width: thirdLineWidth, height: 10),
                 ],
               ),
@@ -1478,22 +1478,22 @@ class _ReplySkeletonTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SkeletonCircle(size: 30),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               _SkeletonBox(width: nameWidth, height: 12),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               _SkeletonBox(width: firstLineWidth, height: 11),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _SkeletonBox(width: secondLineWidth, height: 11),
               if (hasThirdLine) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _SkeletonBox(width: 112, height: 11),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _SkeletonBox(width: actionWidth, height: 10),
             ],
           ),
@@ -1572,7 +1572,7 @@ class _CommentComposer extends StatelessWidget {
                         'Replying to ${replyTarget!.displayName}',
                         style: TextStyle(
                           color: secondaryTextColor,
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1586,10 +1586,10 @@ class _CommentComposer extends StatelessWidget {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Cancel',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1649,7 +1649,7 @@ class _CommentComposer extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 SizedBox(
                   width: 42,
                   height: 42,
@@ -1659,7 +1659,7 @@ class _CommentComposer extends StatelessWidget {
                       disabledBackgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFD1D5DB),
                     ),
                     icon: isSending
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
@@ -1723,13 +1723,13 @@ Future<void> _showReportCommentDialog(BuildContext context, PostComment comment)
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Report Comment'),
+            title: Text('Report Comment'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: reasons.map((reason) {
                   return RadioListTile<String>(
-                    title: Text(reason, style: const TextStyle(fontSize: 14)),
+                    title: Text(reason, style: TextStyle(fontSize: 12.sp)),
                     value: reason,
                     groupValue: selectedReason,
                     dense: true,
@@ -1746,11 +1746,11 @@ Future<void> _showReportCommentDialog(BuildContext context, PostComment comment)
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+                child: Text('Cancel'),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Report'),
+                child: Text('Report'),
               ),
             ],
           );
@@ -1798,7 +1798,7 @@ class _CommentLikeButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onLike,
@@ -1813,12 +1813,12 @@ class _CommentLikeButton extends StatelessWidget {
           ),
         ),
         if (comment.likeCount > 0) ...[
-          const SizedBox(height: 2),
+          SizedBox(height: 2),
           Text(
             '${comment.likeCount}',
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF8E8E93),
-              fontSize: 10,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1843,7 +1843,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
               width: 38,
               height: 4,
@@ -1852,10 +1852,10 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             ListTile(
               leading: Icon(Icons.reply, color: tileColor),
-              title: const Text('Reply'),
+              title: Text('Reply'),
               onTap: () {
                 Navigator.pop(context);
                 onReply();
@@ -1863,7 +1863,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
             ),
             ListTile(
               leading: Icon(Icons.copy, color: tileColor),
-              title: const Text('Copy text'),
+              title: Text('Copy text'),
               onTap: () {
                 Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: comment.body));
@@ -1877,7 +1877,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
             ),
             ListTile(
               leading: Icon(Icons.share, color: tileColor),
-              title: const Text('Share comment'),
+              title: Text('Share comment'),
               onTap: () {
                 Navigator.pop(context);
                 Share.share(comment.body);
@@ -1885,7 +1885,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
             ),
             ListTile(
               leading: Icon(Icons.history, color: tileColor),
-              title: const Text('View edit history'),
+              title: Text('View edit history'),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1895,7 +1895,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
             ),
             ListTile(
               leading: Icon(Icons.visibility_off, color: tileColor),
-              title: const Text('Hide comment'),
+              title: Text('Hide comment'),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1905,7 +1905,7 @@ void _showCommentActionsMenu(BuildContext context, PostComment comment, {require
             ),
             ListTile(
               leading: const Icon(Icons.report, color: Colors.redAccent),
-              title: const Text('Report comment', style: TextStyle(color: Colors.redAccent)),
+              title: Text('Report comment', style: TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(context);
                 _showReportCommentDialog(context, comment);
