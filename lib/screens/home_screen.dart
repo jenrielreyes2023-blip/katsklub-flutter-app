@@ -749,7 +749,7 @@ class _HomeScreenState extends State<HomeScreen>
             SizedBox(height: 14),
             Text(
               'Nothing here yet',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
@@ -760,7 +760,7 @@ class _HomeScreenState extends State<HomeScreen>
             Text(
               'Follow people from the Feed tab and their posts will land here.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 13.5.sp,
                 color: Color(0xFF65676B),
               ),
@@ -1366,7 +1366,7 @@ class _HomeMenuSheet extends StatelessWidget {
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: footerColor,
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w400,
@@ -1375,7 +1375,7 @@ class _HomeMenuSheet extends StatelessWidget {
                   TextSpan(text: 'Katsklub © 2026 - '),
                   TextSpan(
                     text: 'Created by Riel Seyer',
-                    style: TextStyle(decoration: TextDecoration.underline),
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',decoration: TextDecoration.underline),
                   ),
                 ],
               ),
@@ -1416,7 +1416,7 @@ class _HomeMenuItem extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: resolvedColor,
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
@@ -1554,7 +1554,7 @@ class _OwnStoryAvatar extends StatelessWidget {
                                 child: Center(
                                   child: Text(
                                     user.initials,
-                                    style: TextStyle(
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF1C1E21),
                                     ),
@@ -1609,7 +1609,7 @@ class _OwnStoryAvatar extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
             ),
@@ -1655,7 +1655,7 @@ class _NewPostsBadge extends StatelessWidget {
               SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Colors.white,
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
@@ -1709,7 +1709,7 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text(
               'Suggested for you',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w800,
                 color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
@@ -1795,7 +1795,7 @@ class _SuggestionCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           user.initials,
-                          style: TextStyle(
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontWeight: FontWeight.w800,
                             color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1C1E21),
                             fontSize: 44.sp,
@@ -1816,7 +1816,7 @@ class _SuggestionCard extends StatelessWidget {
                         child: Center(
                           child: Text(
                             user.initials,
-                            style: TextStyle(
+                            style: TextStyle(fontFamily: 'SF Pro Rounded',
                               fontWeight: FontWeight.w800,
                               color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1C1E21),
                               fontSize: 44.sp,
@@ -1835,7 +1835,7 @@ class _SuggestionCard extends StatelessWidget {
                       displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                         color: isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827),
@@ -1861,7 +1861,7 @@ class _SuggestionCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        textStyle: TextStyle(
+                        textStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                         ),

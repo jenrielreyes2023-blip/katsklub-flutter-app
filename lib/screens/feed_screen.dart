@@ -560,7 +560,7 @@ class _FeedScreenState extends State<FeedScreen>
             SizedBox(height: 14),
             Text(
               'Your feed is quiet',
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF111827),
@@ -570,7 +570,7 @@ class _FeedScreenState extends State<FeedScreen>
             Text(
               'Follow people to fill your feed with their posts.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 13.5.sp,
                 color: Color(0xFF6B7280),
               ),
@@ -896,7 +896,7 @@ class _FeedScreenState extends State<FeedScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
         child: Text(
           message,
-          style: TextStyle(
+          style: TextStyle(fontFamily: 'SF Pro Rounded',
             color: Color(0xFF6B7280),
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
@@ -912,7 +912,7 @@ class _FeedScreenState extends State<FeedScreen>
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             entry.label!,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: Color(0xFF6B7280),
               fontSize: 13.sp,
               fontWeight: FontWeight.w700,
@@ -1508,7 +1508,7 @@ class _ReelsRailState extends State<_ReelsRail>
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Reels',
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 18.sp,
               fontWeight: FontWeight.w800,
               color: Color(0xFF111827),
@@ -1619,7 +1619,7 @@ class _ReelPreviewCard extends StatelessWidget {
                 bottom: 8,
                 child: Text(
                   reel.authorFullName,
-                  style: TextStyle(
+                  style: TextStyle(fontFamily: 'SF Pro Rounded',
                     color: Colors.white,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -1689,7 +1689,7 @@ class _FeedHeader extends StatelessWidget {
                 controller: searchController,
                 onChanged: onSearchChanged,
                 textInputAction: TextInputAction.search,
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
@@ -1798,7 +1798,7 @@ class _PeopleListRow extends StatelessWidget {
               child: user.avatarUrl == null || user.avatarUrl!.isEmpty
                   ? Text(
                       user.initials,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1814,7 +1814,7 @@ class _PeopleListRow extends StatelessWidget {
                     user.displayName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -1823,7 +1823,7 @@ class _PeopleListRow extends StatelessWidget {
                   SizedBox(height: 2),
                   Text(
                     user.handle ?? '',
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFF6B7280),
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
@@ -1836,7 +1836,7 @@ class _PeopleListRow extends StatelessWidget {
                       softWrap: true,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: TextStyle(fontFamily: 'SF Pro Rounded',
                         color: Color(0xFF6B7280),
                         fontSize: 13.sp,
                         height: 1.3,
@@ -1860,7 +1860,7 @@ class _PeopleListRow extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                 shape: const StadiumBorder(),
-                textStyle: TextStyle(
+                textStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1967,7 +1967,7 @@ class _HashtagListRow extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 '#',
-                style: TextStyle(
+                style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: Color(0xFF111827),
                   fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
@@ -1983,7 +1983,7 @@ class _HashtagListRow extends StatelessWidget {
                     '#${hashtag.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFF111111),
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -1992,7 +1992,7 @@ class _HashtagListRow extends StatelessWidget {
                   SizedBox(height: 3),
                   Text(
                     countLabel,
-                    style: TextStyle(
+                    style: TextStyle(fontFamily: 'SF Pro Rounded',
                       color: Color(0xFF6B7280),
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
@@ -2046,7 +2046,7 @@ class _FeedTabButton extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
+            style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: isActive ? activeColor : inactiveColor,
               fontWeight: FontWeight.w800,
               fontSize: 15.sp,
