@@ -130,7 +130,7 @@ class KatsText {
   /// Profile — Header, Bio, Stats
   static TextStyle profileName(BuildContext c) => TextStyle(fontFamily: 'SF Pro Rounded',
         color: _isDark(c) ? _darkBody : _lightBody,
-        fontSize: 20.sp,
+        fontSize: 15.sp,
         fontWeight: FontWeight.w800,
         height: 1.33,
         letterSpacing: -0.2,
