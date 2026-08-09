@@ -3085,6 +3085,20 @@ class _MessagesScreenState extends State<MessagesScreen>
       }
     }
 
+    if (path.startsWith('data:')) {
+      try {
+        final base64Str = path.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+        );
+      } catch (_) {
+        return Container(color: const Color(0xFF111827));
+      }
+    }
+
     final file = File(path);
     if (file.existsSync()) {
       return Image.file(
@@ -3167,7 +3181,15 @@ class _MessagesScreenState extends State<MessagesScreen>
                       onTap: () async {
                         final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
                         if (picked != null) {
-                          setSheetState(() => tempPath = picked.path);
+                          try {
+                            final bytes = await picked.readAsBytes();
+                            final ext = picked.path.split('.').last.toLowerCase();
+                            final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+                            final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+                            setSheetState(() => tempPath = dataUrl);
+                          } catch (_) {
+                            setSheetState(() => tempPath = picked.path);
+                          }
                         }
                       },
                       borderRadius: BorderRadius.circular(14),
