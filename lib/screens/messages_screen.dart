@@ -381,6 +381,13 @@ class _MessagesScreenState extends State<MessagesScreen>
             final wDim = double.tryParse(parts[2]) ?? 0.35;
             _saveWallpaperSettings(wPath, wDim, broadcast: false);
           }
+        } else if (att.url.startsWith('theme|')) {
+          final parts = att.url.split('|');
+          if (parts.length >= 2) {
+            final themeId = parts[1];
+            ConversationThemeStore.setTheme(t.id, themeId);
+            if (mounted) setState(() {});
+          }
         }
       }
       // Other side is no longer typing if we just got their message.
@@ -2376,6 +2383,46 @@ class _MessagesScreenState extends State<MessagesScreen>
             );
           }
 
+          if (message.attachments.any((a) => a.url.startsWith('theme|')) ||
+              message.body.contains('Changed the chat theme')) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final themeName = message.attachments.isNotEmpty && message.attachments.first.url.startsWith('theme|')
+                ? message.attachments.first.url.split('|').length > 1
+                    ? message.attachments.first.url.split('|')[1]
+                    : null
+                : null;
+            final displayName = themeName != null && themeName.isNotEmpty ? ' to $themeName' : '';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.palette_rounded, size: 14, color: Color(0xFF3B82F6)),
+                      SizedBox(width: 6),
+                      Text(
+                        message.sentByMe
+                            ? 'You changed the chat theme$displayName'
+                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat theme$displayName',
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           final prev = chatMessage.prevMessage;
           final next = chatMessage.nextMessage;
           final isLastOwn = chatMessage.isLastOwn;
@@ -3666,6 +3713,14 @@ class _MessagesScreenState extends State<MessagesScreen>
                               t.id,
                               preset.id,
                             );
+                            try {
+                              await _feedService.sendDirectMessage(
+                                t.id,
+                                '🎨 Changed the chat theme to ${preset.label}',
+                                attachmentDataUrl: 'theme|${preset.id}',
+                                attachmentType: 'system_theme',
+                              );
+                            } catch (_) {}
                             if (sheetContext.mounted) {
                               Navigator.of(sheetContext).pop();
                             }
