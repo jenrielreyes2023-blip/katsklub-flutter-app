@@ -158,6 +158,9 @@ class MessageThread {
     this.createdBy = '',
     this.members = const <User>[],
     this.state = 'active',
+    this.wallpaperPath,
+    this.wallpaperDim = 0.35,
+    this.themeId,
   });
 
   final int id;
@@ -171,6 +174,9 @@ class MessageThread {
   final String createdBy;
   final List<User> members;
   final String state;
+  final String? wallpaperPath;
+  final double wallpaperDim;
+  final String? themeId;
 
   bool get isActive => state == 'active';
   bool get isRequested => state == 'requested';
@@ -203,6 +209,11 @@ class MessageThread {
       createdBy: json['createdBy']?.toString() ?? '',
       members: members,
       state: json['state']?.toString() ?? 'active',
+      wallpaperPath: json['wallpaperPath']?.toString(),
+      wallpaperDim: json['wallpaperDim'] is num
+          ? (json['wallpaperDim'] as num).toDouble()
+          : (double.tryParse(json['wallpaperDim']?.toString() ?? '') ?? 0.35),
+      themeId: json['themeId']?.toString(),
     );
   }
 }
@@ -2049,6 +2060,46 @@ class FeedService {
   Future<MessageThread?> unarchiveMessageThread(int threadId) async {
     if (threadId <= 0) return null;
     final data = await _authenticatedPost('/api/messages/threads/$threadId/unarchive');
+    final thread = data['thread'];
+    if (data['ok'] == true && thread is Map<String, dynamic>) {
+      return MessageThread.fromJson(thread);
+    }
+    return null;
+  }
+
+  Future<MessageThread?> updateThreadWallpaper(
+    int threadId, {
+    String? wallpaperPath,
+    double wallpaperDim = 0.35,
+    String? dataUrl,
+    String? mime,
+  }) async {
+    if (threadId <= 0) return null;
+    final payload = <String, dynamic>{
+      'wallpaperPath': wallpaperPath ?? 'none',
+      'wallpaperDim': wallpaperDim,
+    };
+    if (dataUrl != null && dataUrl.isNotEmpty) {
+      payload['dataUrl'] = dataUrl;
+      payload['mime'] = mime ?? 'image/jpeg';
+    }
+    final data = await _authenticatedPut(
+      '/api/messages/threads/$threadId/wallpaper',
+      body: payload,
+    );
+    final thread = data['thread'];
+    if (data['ok'] == true && thread is Map<String, dynamic>) {
+      return MessageThread.fromJson(thread);
+    }
+    return null;
+  }
+
+  Future<MessageThread?> updateThreadTheme(int threadId, String themeId) async {
+    if (threadId <= 0) return null;
+    final data = await _authenticatedPut(
+      '/api/messages/threads/$threadId/theme',
+      body: {'themeId': themeId},
+    );
     final thread = data['thread'];
     if (data['ok'] == true && thread is Map<String, dynamic>) {
       return MessageThread.fromJson(thread);

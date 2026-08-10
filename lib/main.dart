@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -36,16 +37,18 @@ void _disableDebugPaintOverlays() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _disableDebugPaintOverlays();
-  try {
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.katsklub.app.channel.audio',
-      androidNotificationChannelName: 'KatsKlub Audio Playback',
-      androidNotificationOngoing: true,
-    );
-  } catch (_) {}
-  try {
-    await Firebase.initializeApp();
-  } catch (_) {}
+  if (!kIsWeb) {
+    try {
+      await JustAudioBackground.init(
+        androidNotificationChannelId: 'com.katsklub.app.channel.audio',
+        androidNotificationChannelName: 'KatsKlub Audio Playback',
+        androidNotificationOngoing: true,
+      );
+    } catch (_) {}
+    try {
+      await Firebase.initializeApp();
+    } catch (_) {}
+  }
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.white,

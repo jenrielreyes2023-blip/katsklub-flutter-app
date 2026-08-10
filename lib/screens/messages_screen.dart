@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -381,6 +382,13 @@ class _MessagesScreenState extends State<MessagesScreen>
             final wDim = double.tryParse(parts[2]) ?? 0.35;
             _saveWallpaperSettings(wPath, wDim, broadcast: false);
           }
+        } else if (att.url.startsWith('theme|')) {
+          final parts = att.url.split('|');
+          if (parts.length >= 2) {
+            final themeId = parts[1];
+            ConversationThemeStore.setTheme(t.id, themeId);
+            if (mounted) setState(() {});
+          }
         }
       }
       // Other side is no longer typing if we just got their message.
@@ -402,7 +410,14 @@ class _MessagesScreenState extends State<MessagesScreen>
     final t = _thread;
     if (t != null && updated.id == t.id) {
       if (!mounted) return;
-      setState(() => _thread = updated);
+      setState(() {
+        _thread = updated;
+        _chatWallpaperPath = updated.wallpaperPath;
+        _chatWallpaperDim = updated.wallpaperDim;
+      });
+      if (updated.themeId != null && updated.themeId!.isNotEmpty) {
+        ConversationThemeStore.setTheme(updated.id, updated.themeId!);
+      }
     }
     _patchThreadInList(updated);
   }
@@ -2376,6 +2391,46 @@ class _MessagesScreenState extends State<MessagesScreen>
             );
           }
 
+          if (message.attachments.any((a) => a.url.startsWith('theme|')) ||
+              message.body.contains('Changed the chat theme')) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final themeName = message.attachments.isNotEmpty && message.attachments.first.url.startsWith('theme|')
+                ? message.attachments.first.url.split('|').length > 1
+                    ? message.attachments.first.url.split('|')[1]
+                    : null
+                : null;
+            final displayName = themeName != null && themeName.isNotEmpty ? ' to $themeName' : '';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.palette_rounded, size: 14, color: Color(0xFF3B82F6)),
+                      SizedBox(width: 6),
+                      Text(
+                        message.sentByMe
+                            ? 'You changed the chat theme$displayName'
+                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat theme$displayName',
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           final prev = chatMessage.prevMessage;
           final next = chatMessage.nextMessage;
           final isLastOwn = chatMessage.isLastOwn;
@@ -2965,27 +3020,37 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return;
-      final keyPath = 'chat_wallpaper_path_$tId';
-      final keyDim = 'chat_wallpaper_dim_$tId';
+      String? path = _thread?.wallpaperPath;
+      double dim = _thread?.wallpaperDim ?? 0.35;
+      final themeId = _thread?.themeId;
 
-      String? path = prefs.getString(keyPath);
-      double dim = prefs.getDouble(keyDim) ?? 0.35;
+      if (path == null || path.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final keyPath = 'chat_wallpaper_path_$tId';
+        final keyDim = 'chat_wallpaper_dim_$tId';
 
-      for (final m in _messages.reversed) {
-        for (final att in m.attachments) {
-          if (att.url.startsWith('wallpaper|')) {
-            final parts = att.url.split('|');
-            if (parts.length >= 3) {
-              path = parts[1] == 'none' ? null : parts[1];
-              dim = double.tryParse(parts[2]) ?? 0.35;
-              break;
+        path = prefs.getString(keyPath);
+        dim = prefs.getDouble(keyDim) ?? 0.35;
+
+        for (final m in _messages.reversed) {
+          for (final att in m.attachments) {
+            if (att.url.startsWith('wallpaper|')) {
+              final parts = att.url.split('|');
+              if (parts.length >= 3) {
+                path = parts[1] == 'none' ? null : parts[1];
+                dim = double.tryParse(parts[2]) ?? 0.35;
+                break;
+              }
             }
           }
         }
       }
 
+      if (themeId != null && themeId.isNotEmpty) {
+        ConversationThemeStore.setTheme(tId, themeId);
+      }
+
+      if (!mounted) return;
       setState(() {
         _chatWallpaperPath = path;
         _chatWallpaperDim = dim;
@@ -2995,7 +3060,13 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
-  Future<void> _saveWallpaperSettings(String? path, double dim, {bool broadcast = true}) async {
+  Future<void> _saveWallpaperSettings(
+    String? path,
+    double dim, {
+    bool broadcast = true,
+    String? dataUrl,
+    String? mime,
+  }) async {
     final tId = _thread?.id;
     if (tId == null || tId <= 0) return;
 
@@ -3018,13 +3089,20 @@ class _MessagesScreenState extends State<MessagesScreen>
       });
 
       if (broadcast) {
-        final payload = 'wallpaper|${path ?? 'none'}|$dim';
-        await _feedService.sendDirectMessage(
+        final updated = await _feedService.updateThreadWallpaper(
           tId,
-          '🎨 Changed the chat wallpaper',
-          attachmentDataUrl: payload,
-          attachmentType: 'system_wallpaper',
+          wallpaperPath: path,
+          wallpaperDim: dim,
+          dataUrl: dataUrl,
+          mime: mime,
         );
+        if (updated != null && mounted) {
+          setState(() {
+            _thread = updated;
+            _chatWallpaperPath = updated.wallpaperPath;
+            _chatWallpaperDim = updated.wallpaperDim;
+          });
+        }
       }
     } catch (e) {
       debugPrint('[Wallpaper] Error saving wallpaper: $e');
@@ -3085,21 +3163,40 @@ class _MessagesScreenState extends State<MessagesScreen>
       }
     }
 
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
-      );
+    if (path.startsWith('data:')) {
+      try {
+        final base64Str = path.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+        );
+      } catch (_) {
+        return Container(color: const Color(0xFF111827));
+      }
     }
 
-    if (path.startsWith('http://') || path.startsWith('https://')) {
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) {
+      final fullUrl = ApiConfig.assetUrl(path);
       return CachedNetworkImage(
-        imageUrl: path,
+        imageUrl: fullUrl,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => Container(color: const Color(0xFF111827)),
       );
+    }
+
+    if (!kIsWeb) {
+      try {
+        final file = File(path);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+          );
+        }
+      } catch (_) {}
     }
 
     return Container(color: const Color(0xFF111827));
@@ -3112,6 +3209,8 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     String? tempPath = _chatWallpaperPath;
     double tempDim = _chatWallpaperDim;
+    String? tempDataUrl;
+    String? tempMime;
 
     final presets = [
       {'key': 'preset:dark_mesh', 'name': 'Dark Mesh', 'color1': 0xFF0F172A, 'color2': 0xFF1E1B4B},
@@ -3149,7 +3248,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     ),
                     SizedBox(height: 16),
                     Row(
-                      children: [
+                       children: [
                         const Icon(Icons.wallpaper_rounded, color: Color(0xFF3B82F6), size: 24),
                         SizedBox(width: 10),
                         Text(
@@ -3167,7 +3266,19 @@ class _MessagesScreenState extends State<MessagesScreen>
                       onTap: () async {
                         final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
                         if (picked != null) {
-                          setSheetState(() => tempPath = picked.path);
+                          try {
+                            final bytes = await picked.readAsBytes();
+                            final ext = picked.path.split('.').last.toLowerCase();
+                            final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+                            final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+                            setSheetState(() {
+                              tempPath = dataUrl;
+                              tempDataUrl = dataUrl;
+                              tempMime = mime;
+                            });
+                          } catch (_) {
+                            setSheetState(() => tempPath = picked.path);
+                          }
                         }
                       },
                       borderRadius: BorderRadius.circular(14),
@@ -3241,7 +3352,11 @@ class _MessagesScreenState extends State<MessagesScreen>
                           final isSelected = tempPath == key;
 
                           return GestureDetector(
-                            onTap: () => setSheetState(() => tempPath = key),
+                            onTap: () => setSheetState(() {
+                              tempPath = key;
+                              tempDataUrl = null;
+                              tempMime = null;
+                            }),
                             child: Container(
                               width: 80,
                               decoration: BoxDecoration(
@@ -3313,6 +3428,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 setSheetState(() {
                                   tempPath = null;
                                   tempDim = 0.35;
+                                  tempDataUrl = null;
+                                  tempMime = null;
                                 });
                                 _saveWallpaperSettings(null, 0.35);
                                 Navigator.of(sheetContext).pop();
@@ -3331,7 +3448,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                           flex: 2,
                           child: ElevatedButton(
                             onPressed: () {
-                              _saveWallpaperSettings(tempPath, tempDim);
+                              _saveWallpaperSettings(
+                                tempPath,
+                                tempDim,
+                                dataUrl: tempDataUrl,
+                                mime: tempMime,
+                              );
                               Navigator.of(sheetContext).pop();
                             },
                             style: ElevatedButton.styleFrom(
@@ -3644,6 +3766,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                               t.id,
                               preset.id,
                             );
+                            try {
+                              await _feedService.updateThreadTheme(
+                                t.id,
+                                preset.id,
+                              );
+                            } catch (_) {}
                             if (sheetContext.mounted) {
                               Navigator.of(sheetContext).pop();
                             }
@@ -3880,13 +4008,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 inputFormatters: [EmojiPresentationFormatter()],
                                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 12.sp,
+                                  fontSize: 13.5.sp,
                                   height: 1.33,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
                                   hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    fontSize: 12.sp,
+                                    fontSize: 13.5.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
@@ -5124,7 +5252,7 @@ class _MessageBubble extends StatelessWidget {
                 text: body,
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 12.sp,
+                  fontSize: 13.5.sp,
                   height: 1.33,
                 ),
               ),
@@ -8732,7 +8860,7 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
         final base64Str = commaIndex != -1 ? rawUrl.substring(commaIndex + 1) : rawUrl;
         final bytes = base64Decode(base64Str);
         source = ap.BytesSource(bytes);
-      } else if (rawUrl.startsWith('/') || rawUrl.startsWith('file://') || File(rawUrl).existsSync()) {
+      } else if (!kIsWeb && (rawUrl.startsWith('file://') || rawUrl.startsWith('/data/') || rawUrl.startsWith('/storage/'))) {
         final cleanPath = rawUrl.startsWith('file://') ? Uri.parse(rawUrl).toFilePath() : rawUrl;
         source = ap.DeviceFileSource(cleanPath);
       } else {
