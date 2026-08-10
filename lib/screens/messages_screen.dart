@@ -3957,13 +3957,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 inputFormatters: [EmojiPresentationFormatter()],
                                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 12.sp,
+                                  fontSize: 13.5.sp,
                                   height: 1.33,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
                                   hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    fontSize: 12.sp,
+                                    fontSize: 13.5.sp,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
@@ -5201,7 +5201,7 @@ class _MessageBubble extends StatelessWidget {
                 text: body,
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 12.sp,
+                  fontSize: 13.5.sp,
                   height: 1.33,
                 ),
               ),
