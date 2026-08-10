@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
@@ -12,7 +13,15 @@ class PushNotificationService {
   factory PushNotificationService() => _instance;
   PushNotificationService._internal();
 
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  FirebaseMessaging? get _fcm {
+    if (kIsWeb) return null;
+    try {
+      return FirebaseMessaging.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static const MethodChannel _nativeTapChannel =
       MethodChannel('com.katsklub.app/notification_taps');
 
@@ -36,14 +45,23 @@ class PushNotificationService {
   Stream<Map<String, dynamic>> get clickStream => _clickStreamController.stream;
 
   Future<void> initialize() async {
+    if (kIsWeb) {
+      return;
+    }
     if (_initialized) {
       return;
     }
     _initialized = true;
     _attachNativeTapHandler();
+
+    final fcm = _fcm;
+    if (fcm == null) {
+      return;
+    }
+
     // 1. Request permissions
     try {
-      await _fcm.requestPermission(
+      await fcm.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -52,7 +70,7 @@ class PushNotificationService {
 
     // 2. Configure foreground notification behavior
     try {
-      await _fcm.setForegroundNotificationPresentationOptions(
+      await fcm.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
         sound: true,
@@ -63,21 +81,25 @@ class PushNotificationService {
     await _registerCurrentToken();
 
     // 4. Listen to token refresh
-    _tokenRefreshSubscription ??= _fcm.onTokenRefresh.listen((newToken) async {
-      try {
-        await _authService.registerPushToken(newToken, 'android');
-      } catch (_) {}
-    });
+    try {
+      _tokenRefreshSubscription ??= fcm.onTokenRefresh.listen((newToken) async {
+        try {
+          await _authService.registerPushToken(newToken, 'android');
+        } catch (_) {}
+      });
+    } catch (_) {}
 
     // 5. Handle notification click when app is in background but alive
-    _messageOpenedSubscription ??=
-        FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _clickStreamController.add(message.data);
-    });
+    try {
+      _messageOpenedSubscription ??=
+          FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        _clickStreamController.add(message.data);
+      });
+    } catch (_) {}
 
     // 6. Handle notification click when app is launched from terminated state
     try {
-      RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+      RemoteMessage? initialMessage = await fcm.getInitialMessage();
       if (initialMessage != null) {
         final messageId = initialMessage.messageId ?? '';
         final prefs = await SharedPreferences.getInstance();
@@ -101,7 +123,7 @@ class PushNotificationService {
   }
 
   void _attachNativeTapHandler() {
-    if (_nativeTapHandlerAttached) {
+    if (_nativeTapHandlerAttached || kIsWeb) {
       return;
     }
     _nativeTapHandlerAttached = true;
@@ -119,6 +141,7 @@ class PushNotificationService {
   }
 
   Future<void> _consumeInitialNativeTap() async {
+    if (kIsWeb) return;
     try {
       final data = _readNativeTapData(
         await _nativeTapChannel.invokeMethod<Object?>(
@@ -190,13 +213,15 @@ class PushNotificationService {
   }
 
   Future<void> _registerCurrentToken() async {
+    final fcm = _fcm;
+    if (fcm == null) return;
     try {
-      final settings = await _fcm.getNotificationSettings();
+      final settings = await fcm.getNotificationSettings();
       final status = settings.authorizationStatus;
       if (status == AuthorizationStatus.denied) {
         return;
       }
-      final token = await _fcm.getToken();
+      final token = await fcm.getToken();
       if (token == null || token.isEmpty) {
         return;
       }
