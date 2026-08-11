@@ -24,7 +24,8 @@ class ReactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const inactiveColor = Color(0xFF65676B);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor = isDark ? Colors.white : const Color(0xFF111827);
     const likedColor = Color(0xFFE11D48);
     
     final showCounts = !(post.isGhost && !post.ownedByMe);
@@ -131,18 +132,29 @@ class ReactionRow extends StatelessWidget {
   }
 }
 
-class _ActionIcon extends StatelessWidget {
+class _ActionIcon extends StatefulWidget {
   const _ActionIcon({
     required this.icon,
     required this.count,
     this.color = const Color(0xFF65676B),
     this.onTap,
+    super.key,
   });
 
   final Widget icon;
   final int count;
   final Color color;
   final VoidCallback? onTap;
+
+  @override
+  State<_ActionIcon> createState() => _ActionIconState();
+}
+
+class _ActionIconState extends State<_ActionIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  int _prevCount = 0;
 
   String _formatCount(int value) {
     if (value >= 1000000) {
@@ -161,21 +173,59 @@ class _ActionIcon extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 1.25).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+    _prevCount = widget.count;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActionIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.count != oldWidget.count && widget.count > oldWidget.count) {
+      _controller.forward().then((_) => _controller.reverse());
+    }
+    _prevCount = widget.count;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
+      borderRadius: BorderRadius.circular(999.r),
+      onTap: widget.onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            icon,
-            if (count > 0) ...[
-              const SizedBox(width: 5),
-              Text(
-                _formatCount(count),
-                style: KatsText.countLabel(context, color),
+            ScaleTransition(scale: _scale, child: widget.icon),
+            if (widget.count > 0) ...[
+              SizedBox(width: 5.w),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(
+                    scale: animation,
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
+                child: Text(
+                  _formatCount(widget.count),
+                  key: ValueKey<int>(widget.count),
+                  style: KatsText.countLabel(context, widget.color),
+                ),
               ),
             ],
           ],

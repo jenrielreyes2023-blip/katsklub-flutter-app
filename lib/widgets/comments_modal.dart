@@ -1773,44 +1773,102 @@ Future<void> _showReportCommentDialog(BuildContext context, PostComment comment)
 
 
 
-class _CommentLikeButton extends StatelessWidget {
+class _CommentLikeButton extends StatefulWidget {
   const _CommentLikeButton({
     required this.comment,
     required this.onLike,
+    super.key,
   });
 
   final PostComment comment;
   final VoidCallback onLike;
 
   @override
+  State<_CommentLikeButton> createState() => _CommentLikeButtonState();
+}
+
+class _CommentLikeButtonState extends State<_CommentLikeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 1.30).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _CommentLikeButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.comment.likeCount != oldWidget.comment.likeCount &&
+        widget.comment.likeCount > oldWidget.comment.likeCount) {
+      _controller.forward().then((_) => _controller.reverse());
+    }
+    if (widget.comment.likedByMe != oldWidget.comment.likedByMe &&
+        widget.comment.likedByMe) {
+      _controller.forward().then((_) => _controller.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isLiked = comment.likedByMe;
+    final isLiked = widget.comment.likedByMe;
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(height: 12),
+        SizedBox(height: 12.h),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: onLike,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.all(4),
-            child: Icon(
-              isLiked ? Icons.favorite : Icons.favorite_border,
-              size: 15,
-              color: isLiked ? Colors.redAccent : const Color(0xFF8E8E93),
+          onTap: widget.onLike,
+          child: ScaleTransition(
+            scale: _scale,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: EdgeInsets.all(4.r),
+              child: Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border,
+                size: 15.r,
+                color: isLiked ? Colors.redAccent : const Color(0xFF8E8E93),
+              ),
             ),
           ),
         ),
-        if (comment.likeCount > 0) ...[
-          SizedBox(height: 2),
-          Text(
-            '${comment.likeCount}',
-            style: TextStyle(
-              color: Color(0xFF8E8E93),
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
+        if (widget.comment.likeCount > 0) ...[
+          SizedBox(height: 2.h),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onLike,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: animation,
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: Text(
+                '${widget.comment.likeCount}',
+                key: ValueKey<int>(widget.comment.likeCount),
+                style: TextStyle(
+                  color: Color(0xFF8E8E93),
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],
