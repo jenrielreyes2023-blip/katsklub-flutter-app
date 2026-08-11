@@ -241,7 +241,12 @@ class _ActionIconState extends State<_ActionIcon>
                 child: Text(
                   _formatCount(widget.count),
                   key: ValueKey<int>(widget.count),
-                  style: KatsText.countLabel(context, widget.color),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w400,
+                    color: widget.color,
+                  ),
                 ),
               ),
             ],

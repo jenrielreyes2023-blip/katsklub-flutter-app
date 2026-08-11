@@ -1864,9 +1864,12 @@ class _CommentLikeButtonState extends State<_CommentLikeButton>
                 '${widget.comment.likeCount}',
                 key: ValueKey<int>(widget.comment.likeCount),
                 style: TextStyle(
-                  color: Color(0xFF8E8E93),
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
+                  fontFamily: 'SF Pro Rounded',
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF111827),
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
