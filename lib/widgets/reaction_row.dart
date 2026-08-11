@@ -40,7 +40,7 @@ class ReactionRow extends StatelessWidget {
                 ? CustomIcons.heartFilled(color: likedColor, size: 23)
                 : CustomIcons.heart(color: inactiveColor, size: 23),
             count: showCounts ? post.likeCount : 0,
-            color: post.likedByMe ? likedColor : inactiveColor,
+            color: inactiveColor,
             onTap: onLike,
           ),
           const SizedBox(width: 24),
