@@ -1469,10 +1469,10 @@ class _StoriesRowState extends State<_StoriesRow>
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
         ),
-        padding: EdgeInsets.symmetric(horizontal: 14.w),
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
         scrollDirection: Axis.horizontal,
         itemCount: widget.storyGroups.length + 1,
-        separatorBuilder: (_, __) => SizedBox(width: 8.w),
+        separatorBuilder: (_, __) => SizedBox(width: 4.w),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _OwnStoryAvatar(
