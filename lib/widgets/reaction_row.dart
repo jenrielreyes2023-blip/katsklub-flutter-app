@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
 import '../theme/app_text_styles.dart';
@@ -80,26 +81,38 @@ class ReactionRow extends StatelessWidget {
               ? CustomIcons.heartFilled(color: likedColor, size: 23)
               : CustomIcons.heart(color: inactiveColor, size: 23),
           count: showCounts ? post.likeCount : 0,
-          color: post.likedByMe ? likedColor : inactiveColor,
-          onTap: onLike,
+          color: inactiveColor,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onLike();
+          },
         ),
         const SizedBox(width: 24),
         _ActionIcon(
           icon: CustomIcons.comment(color: inactiveColor, size: 23),
           count: showCounts ? post.commentCount : 0,
-          onTap: onComment,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onComment();
+          },
         ),
         const SizedBox(width: 24),
         _ActionIcon(
           icon: CustomIcons.repost(color: inactiveColor, size: 23),
           count: showCounts ? post.repostCount : 0,
-          onTap: onRepost,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onRepost();
+          },
         ),
         const SizedBox(width: 24),
         _ActionIcon(
           icon: CustomIcons.share(color: inactiveColor, size: 23),
           count: 0,
-          onTap: onShare,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onShare();
+          },
         ),
         const Spacer(),
         _ActionIcon(
@@ -111,7 +124,10 @@ class ReactionRow extends StatelessWidget {
             isFilled: post.bookmarkedByMe,
           ),
           count: 0,
-          onTap: onBookmark,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onBookmark();
+          },
         ),
       ],
     );
@@ -177,9 +193,9 @@ class _ActionIconState extends State<_ActionIcon>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 170),
     );
-    _scale = Tween<double>(begin: 1.0, end: 1.25).animate(
+    _scale = Tween<double>(begin: 1.0, end: 1.22).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
     _prevCount = widget.count;
@@ -189,6 +205,7 @@ class _ActionIconState extends State<_ActionIcon>
   void didUpdateWidget(covariant _ActionIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.count != oldWidget.count && widget.count > oldWidget.count) {
+      HapticFeedback.lightImpact();
       _controller.forward().then((_) => _controller.reverse());
     }
     _prevCount = widget.count;

@@ -1797,9 +1797,9 @@ class _CommentLikeButtonState extends State<_CommentLikeButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 170),
     );
-    _scale = Tween<double>(begin: 1.0, end: 1.30).animate(
+    _scale = Tween<double>(begin: 1.0, end: 1.22).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
   }
@@ -1807,12 +1807,12 @@ class _CommentLikeButtonState extends State<_CommentLikeButton>
   @override
   void didUpdateWidget(covariant _CommentLikeButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.comment.likeCount != oldWidget.comment.likeCount &&
-        widget.comment.likeCount > oldWidget.comment.likeCount) {
-      _controller.forward().then((_) => _controller.reverse());
-    }
-    if (widget.comment.likedByMe != oldWidget.comment.likedByMe &&
-        widget.comment.likedByMe) {
+    final likedNow = widget.comment.likeCount != oldWidget.comment.likeCount &&
+        widget.comment.likeCount > oldWidget.comment.likeCount;
+    final heartLikedNow = widget.comment.likedByMe != oldWidget.comment.likedByMe &&
+        widget.comment.likedByMe;
+    if (likedNow || heartLikedNow) {
+      HapticFeedback.lightImpact();
       _controller.forward().then((_) => _controller.reverse());
     }
   }
