@@ -28,7 +28,7 @@ class StoryAvatar extends StatelessWidget {
       customBorder: const CircleBorder(),
       onTap: onTap,
       child: SizedBox(
-        width: 82,
+        width: 82.w,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -36,9 +36,9 @@ class StoryAvatar extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 72,
-                  height: 72,
-                  padding: const EdgeInsets.all(2.5),
+                  width: 72.w,
+                  height: 72.w,
+                  padding: EdgeInsets.all(2.5.r),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -48,7 +48,7 @@ class StoryAvatar extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: EdgeInsets.all(2.r),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
@@ -93,23 +93,23 @@ class StoryAvatar extends StatelessWidget {
                     right: 0,
                     bottom: 0,
                     child: Container(
-                      width: 20,
-                      height: 20,
+                      width: 20.w,
+                      height: 20.w,
                       decoration: BoxDecoration(
                         color: const Color(0xFF2563EB),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(color: Colors.white, width: 1.5.w),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add,
                         color: Colors.white,
-                        size: 14,
+                        size: 14.r,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 5),
+            SizedBox(height: 5.h),
             Text(
               label,
               maxLines: 1,
