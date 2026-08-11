@@ -609,7 +609,7 @@ class _PostCardState extends State<PostCard> {
         : _post.authorFullName;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      margin: EdgeInsets.symmetric(vertical: 6.h, horizontal: 8.w),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -636,7 +636,7 @@ class _PostCardState extends State<PostCard> {
               },
               behavior: HitTestBehavior.opaque,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.r),
                 child: Row(
                   children: [
                     // Avatar Image
@@ -683,7 +683,7 @@ class _PostCardState extends State<PostCard> {
                           size: 20,
                         ),
                       ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,7 +699,7 @@ class _PostCardState extends State<PostCard> {
                                 ),
                               ),
                               if (_post.promotionTargetUsername.isNotEmpty) ...[
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 const Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 11,
@@ -708,11 +708,11 @@ class _PostCardState extends State<PostCard> {
                               ],
                             ],
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2.h),
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFF8A00).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
@@ -738,7 +738,7 @@ class _PostCardState extends State<PostCard> {
             ),
             // Text Content (Title & Description)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -748,7 +748,7 @@ class _PostCardState extends State<PostCard> {
                       _post.authorFullName,
                       style: KatsText.postAuthor(context),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                   ],
                   if (_post.text.isNotEmpty)
                     Text(
@@ -760,7 +760,7 @@ class _PostCardState extends State<PostCard> {
             ),
             // Image Content
             if (_post.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               CachedNetworkImage(
                 imageUrl: _post.imageUrls.first,
                 height: 180,
@@ -796,7 +796,7 @@ class _PostCardState extends State<PostCard> {
             // CTA Button / Action Row
             if (_post.promotionUrl.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.r),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -812,7 +812,7 @@ class _PostCardState extends State<PostCard> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF8A00),
@@ -821,7 +821,7 @@ class _PostCardState extends State<PostCard> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                       ),
                       onPressed: () => _handlePromotionTap(context),
                       child: Row(
@@ -836,7 +836,7 @@ class _PostCardState extends State<PostCard> {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           const Icon(Icons.arrow_forward_rounded, size: 14),
                         ],
                       ),
@@ -845,7 +845,7 @@ class _PostCardState extends State<PostCard> {
                 ),
               )
             else
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
           ],
         ),
       ),
@@ -2022,13 +2022,13 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
+                padding: EdgeInsets.fromLTRB(0, 10.h, 0, 8.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (widget.showPinnedBadge && _post.isPinned) ...[
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
                         child: Row(
                           children: [
                             Icon(
@@ -2036,7 +2036,7 @@ class _PostCardState extends State<PostCard> {
                               size: 14,
                               color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6.w),
                             Text(
                               'Pinned Post',
                               style: TextStyle(fontFamily: 'SF Pro Rounded',
@@ -2052,14 +2052,14 @@ class _PostCardState extends State<PostCard> {
                     if (_post.repostedByText != null &&
                         _post.repostedByText!.isNotEmpty) ...[
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
                         child: Row(
                           children: [
                             CustomIcons.repost(
                               size: 13,
                               color: Colors.grey[600]!,
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6.w),
                             Expanded(
                               child: Text(
                                 '${_post.repostedByText} reposted this',
@@ -2075,7 +2075,7 @@ class _PostCardState extends State<PostCard> {
                       ),
                     ],
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
                       child: PostHeader(
                         post: _post,
                         onOpenAuthor: () => widget.onOpenAuthor?.call(_post),
@@ -2090,9 +2090,9 @@ class _PostCardState extends State<PostCard> {
                       ),
                     ),
                     if (displayTitle.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Text(
                           displayTitle,
                           style: TextStyle(fontFamily: 'SF Pro Rounded',
@@ -2105,17 +2105,17 @@ class _PostCardState extends State<PostCard> {
                       ),
                     ],
                     if (showPostText && _post.text.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       isGhost
                           ? Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
                               child: CustomPaint(
                                 painter: DottedChatBubblePainter(
                                   fillColor: ghostBgColor,
                                   dotColor: ghostBorderColor,
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
+                                  padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
                                   child: ExpandablePostText(
                                     text: _post.text,
                                     expanded: _isTextExpanded,
@@ -2130,7 +2130,7 @@ class _PostCardState extends State<PostCard> {
                               ),
                             )
                           : Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
                               child: ExpandablePostText(
                                 text: _post.text,
                                 expanded: _isTextExpanded,
@@ -2144,9 +2144,9 @@ class _PostCardState extends State<PostCard> {
                             ),
                     ],
                     if (_post.isPoll) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: PostPoll(
                           post: _post,
                           isBusy: _isVotingPoll,
@@ -2155,9 +2155,9 @@ class _PostCardState extends State<PostCard> {
                       ),
                     ],
                     if (_post.originalPost != null) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: RepostSourcePreview(
                           post: _post.originalPost!,
                           onTap: _openOriginalPost,
@@ -2166,7 +2166,7 @@ class _PostCardState extends State<PostCard> {
                     ],
                     if (_post.resolvedLinkPreview != null &&
                         _post.imageUrls.isEmpty) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       if (_post.youtubeVideoId.trim().isNotEmpty)
                         YouTubePreviewCard(
                           preview: _post.resolvedLinkPreview!,
@@ -2175,7 +2175,7 @@ class _PostCardState extends State<PostCard> {
                         )
                       else
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: LinkPreviewCard(
                             preview: _post.resolvedLinkPreview!,
                             isYouTube: false,
@@ -2185,7 +2185,7 @@ class _PostCardState extends State<PostCard> {
                         ),
                     ],
                     if (_post.imageUrls.isNotEmpty || _post.hasVideo) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       SensitiveContentWrapper(
                         isSensitive: _post.isSensitive,
                         child: Column(
@@ -2219,7 +2219,7 @@ class _PostCardState extends State<PostCard> {
                             ],
                              if (_post.hasVideo) ...[
                                if (_post.imageUrls.isNotEmpty)
-                                 const SizedBox(height: 12),
+                                 SizedBox(height: 12.h),
                                if (_post.isReel)
                                  Stack(
                                    clipBehavior: Clip.none,
@@ -2238,9 +2238,9 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
                       child: ReactionRow(
                         post: _post,
                         onLike: _toggleLike,

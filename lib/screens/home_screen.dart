@@ -496,8 +496,8 @@ class _HomeScreenState extends State<HomeScreen>
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 slivers: [
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: _homeHeaderHeight),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: _homeHeaderHeight.h),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -524,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,
                   child: SizedBox(
-                    height: _homeHeaderHeight,
+                    height: _homeHeaderHeight.h,
                     child: KatsTopBar(
                       unreadNotifications: _unreadNotifications,
                       isMenuOpen: _isHomeMenuOpen,
@@ -538,7 +538,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           if (_pendingNewPosts.isNotEmpty)
             Positioned(
-              top: _homeHeaderHeight + 8,
+              top: _homeHeaderHeight.h + 8.h,
               left: 0,
               right: 0,
               child: Center(
@@ -551,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen>
           Positioned(
             left: 0,
             right: 0,
-            bottom: 24,
+            bottom: 24.h,
             child: Center(
               child: MediaLoadingChip(visible: _isMediaClamping),
             ),
@@ -704,7 +704,7 @@ class _HomeScreenState extends State<HomeScreen>
     final inlineRailIndex = 3 + _kSuggestionsInlineAfter;
 
     if (index == _homeItemCount(posts) - 1) {
-      return SizedBox(height: 18);
+      return SizedBox(height: 18.h);
     }
 
     if (_isLoadingMore && index >= _homeItemCount(posts) - 4) {
@@ -730,23 +730,23 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (posts.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
         child: Column(
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 64.w,
+              height: 64.w,
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF1E3),
-                borderRadius: BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(32.r),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.dynamic_feed_outlined,
-                size: 30,
+                size: 30.r,
                 color: Color(0xFFEE8F3F),
               ),
             ),
-            SizedBox(height: 14),
+            SizedBox(height: 14.h),
             Text(
               'Nothing here yet',
               style: TextStyle(fontFamily: 'SF Pro Rounded',
@@ -756,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen>
                 color: Color(0xFF1C1E21),
               ),
             ),
-            SizedBox(height: 6),
+            SizedBox(height: 6.h),
             Text(
               'Follow people from the Feed tab and their posts will land here.',
               textAlign: TextAlign.center,
@@ -765,19 +765,19 @@ class _HomeScreenState extends State<HomeScreen>
                 color: Color(0xFF65676B),
               ),
             ),
-            SizedBox(height: 14),
+            SizedBox(height: 14.h),
             FilledButton.icon(
               onPressed: _refresh,
-              icon: const Icon(Icons.refresh, size: 18),
+              icon: Icon(Icons.refresh, size: 18.r),
               label: Text('Refresh'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEE8F3F),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
               ),
             ),
           ],
@@ -1272,21 +1272,21 @@ class _HomeMenuSheet extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: sheetBgColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 18.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 5,
+              width: 44.w,
+              height: 5.h,
               decoration: BoxDecoration(
                 color: dragHandleColor,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 16.h),
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: ColoredBox(
@@ -1362,7 +1362,7 @@ class _HomeMenuSheet extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 18),
+            SizedBox(height: 18.h),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
@@ -1410,7 +1410,7 @@ class _HomeMenuItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         child: Row(
           children: [
             Expanded(
@@ -1424,7 +1424,7 @@ class _HomeMenuItem extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(icon, color: resolvedColor, size: 23),
+            Icon(icon, color: resolvedColor, size: 23.r),
           ],
         ),
       ),
@@ -1464,15 +1464,15 @@ class _StoriesRowState extends State<_StoriesRow>
     final hasOwnStories = widget.ownStories.isNotEmpty;
 
     return SizedBox(
-      height: 102,
+      height: 102.h,
       child: ListView.separated(
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: EdgeInsets.symmetric(horizontal: 14.w),
         scrollDirection: Axis.horizontal,
         itemCount: widget.storyGroups.length + 1,
-        separatorBuilder: (_, __) => SizedBox(width: 8),
+        separatorBuilder: (_, __) => SizedBox(width: 8.w),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _OwnStoryAvatar(
@@ -1520,7 +1520,7 @@ class _OwnStoryAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 82,
+      width: 82.w,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1531,9 +1531,9 @@ class _OwnStoryAvatar extends StatelessWidget {
                 customBorder: const CircleBorder(),
                 onTap: onOpenViewer ?? onCreateStory,
                 child: Container(
-                  width: 72,
-                  height: 72,
-                  padding: const EdgeInsets.all(2.5),
+                  width: 72.w,
+                  height: 72.w,
+                  padding: EdgeInsets.all(2.5.r),
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -1541,7 +1541,7 @@ class _OwnStoryAvatar extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: EdgeInsets.all(2.r),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
@@ -1586,24 +1586,24 @@ class _OwnStoryAvatar extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onCreateStory,
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: 20.w,
+                    height: 20.w,
                     decoration: BoxDecoration(
                       color: const Color(0xFF2563EB),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+                      border: Border.all(color: Colors.white, width: 1.5.w),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.add,
                       color: Colors.white,
-                      size: 14,
+                      size: 14.r,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 5),
+          SizedBox(height: 5.h),
           Text(
             hasStories ? 'Your Story' : 'Add Story',
             maxLines: 1,
@@ -1632,27 +1632,27 @@ class _NewPostsBadge extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(999.r),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
           decoration: BoxDecoration(
             color: const Color(0xFFEE8F3F),
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: const [
+            borderRadius: BorderRadius.circular(999.r),
+            boxShadow: [
               BoxShadow(
                 color: Color(0x33000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
+                blurRadius: 10.r,
+                offset: Offset(0, 3.h),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_upward_rounded,
-                  size: 16, color: Colors.white),
-              SizedBox(width: 6),
+              Icon(Icons.arrow_upward_rounded,
+                  size: 16.r, color: Colors.white),
+              SizedBox(width: 6.w),
               Text(
                 label,
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
@@ -1700,13 +1700,13 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: EdgeInsets.symmetric(vertical: 8.h),
       color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 10.h),
             child: Text(
               'Suggested for you',
               style: TextStyle(fontFamily: 'SF Pro Rounded',
@@ -1718,14 +1718,14 @@ class _SuggestionsRailState extends State<_SuggestionsRail>
             ),
           ),
           SizedBox(
-            height: 260,
+            height: 260.h,
             child: ListView.separated(
               key: const PageStorageKey<String>('home-suggestions-rail'),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: widget.users.length,
-              separatorBuilder: (_, __) => SizedBox(width: 10),
+              separatorBuilder: (_, __) => SizedBox(width: 10.w),
               itemBuilder: (context, index) {
                 final user = widget.users[index];
                 final username = (user.username ?? '').trim();
@@ -1827,7 +1827,7 @@ class _SuggestionCard extends StatelessWidget {
                     ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 10, 12),
+              padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 12.h),
               child: Row(
                 children: [
                   Expanded(
@@ -1843,9 +1843,9 @@ class _SuggestionCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   SizedBox(
-                    height: 32,
+                    height: 32.h,
                     child: FilledButton(
                       onPressed: isLoading ? null : onFollowTap,
                       style: FilledButton.styleFrom(
@@ -1857,9 +1857,9 @@ class _SuggestionCard extends StatelessWidget {
                             : Colors.white,
                         disabledBackgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                         padding:
-                            const EdgeInsets.symmetric(horizontal: 14),
+                            EdgeInsets.symmetric(horizontal: 14.w),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(999.r),
                         ),
                         textStyle: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
