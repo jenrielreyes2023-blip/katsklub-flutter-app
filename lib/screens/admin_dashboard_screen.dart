@@ -100,6 +100,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   List<Promotion> _promotionsList = [];
   bool _isLoadingPromotions = false;
 
+  // Broadcast state (inside Ads & Promo)
+  String _broadcastAudience = 'all';
+  final TextEditingController _broadcastController = TextEditingController();
+  bool _isBroadcastSending = false;
+  String? _broadcastResult;
+
   // Action Pending flags
   bool _isTestingR2 = false;
   bool _isTestingAWS = false;
@@ -144,6 +150,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _tabController.dispose();
     _userSearchController.dispose();
     _postSearchController.dispose();
+    _broadcastController.dispose();
     super.dispose();
   }
 
@@ -3016,6 +3023,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     setState(() => _isLoadingPromotions = false);
   }
 
+  Future<void> _sendBroadcast() async {
+    final body = _broadcastController.text.trim();
+    if (body.isEmpty) {
+      _showErrorSnackBar('Message is required');
+      return;
+    }
+    setState(() {
+      _isBroadcastSending = true;
+      _broadcastResult = null;
+    });
+    try {
+      final token = await _getToken();
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/admin/broadcast'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+          if (widget.sessionCookie != null && widget.sessionCookie!.isNotEmpty) 'Cookie': widget.sessionCookie!,
+        },
+        body: jsonEncode({'audience': _broadcastAudience, 'body': body}),
+      );
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['ok'] == true) {
+        setState(() => _broadcastResult = data['message'] ?? 'Sent');
+        _showSuccessSnackBar(data['message'] ?? 'Broadcast sent');
+      } else {
+        _showErrorSnackBar(data['error'] ?? 'Failed to send broadcast');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error: $e');
+    }
+    setState(() => _isBroadcastSending = false);
+  }
+
   String _themeKeyForPublic(ThemeProductType type) {
     switch (type) {
       case ThemeProductType.sunrise:
@@ -3243,8 +3284,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _buildPromotionsTab() {
     return _isLoadingPromotions
         ? const Center(child: CircularProgressIndicator())
-        : Scaffold(
-            body: RefreshIndicator(
+        : DefaultTabController(
+            length: 2,
+            child: Scaffold(
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Container(
+                  color: Colors.white,
+                  child: const TabBar(
+                    labelColor: Color(0xFF2563EB),
+                    unselectedLabelColor: Color(0xFF6B7280),
+                    indicatorColor: Color(0xFF2563EB),
+                    tabs: [
+                      Tab(icon: Icon(Icons.campaign_outlined), text: 'Ads'),
+                      Tab(icon: Icon(Icons.send_outlined), text: 'Broadcast'),
+                    ],
+                  ),
+                ),
+              ),
+              body: TabBarView(
+                children: [
+                  RefreshIndicator(
               onRefresh: _fetchPromotions,
               child: ListView(
                 padding: const EdgeInsets.all(16.0),
@@ -3422,7 +3482,73 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 ],
               ),
             ),
+                  _buildBroadcastTab(),
+                ],
+              ),
+            ),
           );
+  }
+
+  Widget _buildBroadcastTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Broadcast Message',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Send a KatsBot hello to selected audience. Static message — 0 API cost. Uses /api/admin/broadcast.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: _broadcastAudience,
+            decoration: const InputDecoration(labelText: 'Audience', border: OutlineInputBorder()),
+            items: const [
+              DropdownMenuItem(value: 'all', child: Text('All Users (105k)')),
+              DropdownMenuItem(value: 'admin', child: Text('Admin only (gemini)')),
+              DropdownMenuItem(value: 'author', child: Text('Author only')),
+              DropdownMenuItem(value: 'admin_author', child: Text('Admin + Author')),
+            ],
+            onChanged: (v) => setState(() => _broadcastAudience = v ?? 'all'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _broadcastController,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: 'Message (2-1000 chars)',
+              hintText: 'Hello! 👋 Ako si KatsBot AI...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+              icon: _isBroadcastSending
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send_outlined),
+              label: Text(_isBroadcastSending ? 'Sending...' : 'Send Broadcast'),
+              onPressed: _isBroadcastSending ? null : _sendBroadcast,
+            ),
+          ),
+          if (_broadcastResult != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFBFDBFE))),
+              child: Text(_broadcastResult!, style: const TextStyle(fontSize: 13, color: Color(0xFF1E40AF))),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Future<void> _deletePromotion(Promotion promo) async {
