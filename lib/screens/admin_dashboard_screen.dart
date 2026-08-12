@@ -103,6 +103,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   // Broadcast state (inside Ads & Promo)
   String _broadcastAudience = 'all';
   final TextEditingController _broadcastController = TextEditingController();
+  final TextEditingController _broadcastSenderController = TextEditingController(text: 'katsbot');
   bool _isBroadcastSending = false;
   String? _broadcastResult;
 
@@ -151,6 +152,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _userSearchController.dispose();
     _postSearchController.dispose();
     _broadcastController.dispose();
+    _broadcastSenderController.dispose();
     super.dispose();
   }
 
@@ -3042,7 +3044,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           if (token != null) 'Authorization': 'Bearer $token',
           if (widget.sessionCookie != null && widget.sessionCookie!.isNotEmpty) 'Cookie': widget.sessionCookie!,
         },
-        body: jsonEncode({'audience': _broadcastAudience, 'body': body}),
+        body: jsonEncode({'audience': _broadcastAudience, 'body': body, 'senderUsername': _broadcastSenderController.text.trim()}),
       );
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 && data['ok'] == true) {
@@ -3515,6 +3517,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               DropdownMenuItem(value: 'admin_author', child: Text('Admin + Author')),
             ],
             onChanged: (v) => setState(() => _broadcastAudience = v ?? 'all'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _broadcastSenderController,
+            decoration: const InputDecoration(
+              labelText: 'Sender username (e.g. katsbot, gemini)',
+              hintText: 'katsbot',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
