@@ -502,6 +502,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   void _showBorderSelectionDialog(String userId, String currentBorder) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final borders = [
       {'value': '', 'label': 'None'},
       {'value': 'heart', 'label': 'Heart'},
@@ -511,12 +512,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
+          ),
           title: Text(
             'Select Profile Border',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           content: SingleChildScrollView(
@@ -530,11 +539,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Color(0xFF2563EB))
+                      ? const Icon(Icons.check, color: Color(0xFF3B82F6))
                       : null,
                   onTap: () {
                     Navigator.pop(context);
@@ -552,7 +563,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: Colors.grey,
+                  color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                 ),
               ),
             ),
@@ -564,6 +575,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   Future<void> _updateUserRoleTitle(
       String userId, String currentRoleTitle) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textController = TextEditingController(text: currentRoleTitle);
     final formKey = GlobalKey<FormState>();
 
@@ -571,12 +583,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
+          ),
           title: Text(
             'Update Role Title',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           content: Form(
@@ -586,17 +606,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: isDark ? Colors.white : const Color(0xFF111827),
               ),
               decoration: InputDecoration(
                 labelText: 'Role Title',
                 labelStyle: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
+                  color: isDark
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF4B5563),
                 ),
                 hintText: 'e.g., Verified Creator, Admin',
                 hintStyle: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
+                  color: const Color(0xFF9CA3AF),
                 ),
                 border: const OutlineInputBorder(),
               ),
@@ -614,7 +639,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: Colors.grey,
+                  color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                 ),
               ),
             ),
@@ -712,6 +737,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     String userId,
     List<String> currentAchievements,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selected = currentAchievements.toSet();
 
     showDialog<void>(
@@ -720,12 +746,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
+              ),
               title: Text(
                 'Grant Achievements',
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
                 ),
               ),
               content: SizedBox(
@@ -738,11 +774,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         value: selected.contains(option.key),
                         contentPadding: EdgeInsets.zero,
                         dense: true,
+                        activeColor: const Color(0xFF3B82F6),
                         title: Text(
                           option.label,
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             fontSize: 13.sp,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
                           ),
                         ),
                         controlAffinity: ListTileControlAffinity.leading,
@@ -768,7 +808,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
-                      color: Colors.grey,
+                      color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                     ),
                   ),
                 ),
@@ -1076,15 +1116,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   void _confirmResetPostcards() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          ),
+        ),
         title: Text(
           'Reset Postcard Themes?',
           style: TextStyle(
             fontFamily: 'SF Pro Rounded',
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF111827),
           ),
         ),
         content: Text(
@@ -1093,7 +1142,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           style: TextStyle(
             fontFamily: 'SF Pro Rounded',
             fontSize: 13.sp,
-            color: const Color(0xFF4B5563),
+            color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
           ),
         ),
         actions: [
@@ -1104,7 +1153,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
-                color: Colors.grey,
+                color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
               ),
             ),
           ),
@@ -1310,16 +1359,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     required String content,
     bool isDestructive = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
+          ),
           title: Text(
             title,
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           content: Text(
@@ -1327,7 +1385,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
-              color: const Color(0xFF374151),
+              color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
             ),
           ),
           actions: [
@@ -1338,7 +1396,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: Colors.grey,
+                  color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                 ),
               ),
             ),
@@ -1365,6 +1423,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Show bottom sheet to update Rclone Credentials
   void _showRcloneCredsDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final remoteController = TextEditingController(text: 'gdrive');
     final clientIdController = TextEditingController();
     final secretController = TextEditingController();
@@ -1374,12 +1433,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
+          ),
           title: Text(
             'Rclone Credentials',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           content: Form(
@@ -1393,12 +1460,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                     decoration: InputDecoration(
                       labelText: 'Remote Name',
                       labelStyle: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark
+                            ? const Color(0xFF9CA3AF)
+                            : const Color(0xFF4B5563),
                       ),
                       border: const OutlineInputBorder(),
                     ),
@@ -1411,12 +1482,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                     decoration: InputDecoration(
                       labelText: 'Client ID',
                       labelStyle: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark
+                            ? const Color(0xFF9CA3AF)
+                            : const Color(0xFF4B5563),
                       ),
                       border: const OutlineInputBorder(),
                     ),
@@ -1429,12 +1504,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                     decoration: InputDecoration(
                       labelText: 'Client Secret',
                       labelStyle: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark
+                            ? const Color(0xFF9CA3AF)
+                            : const Color(0xFF4B5563),
                       ),
                       border: const OutlineInputBorder(),
                     ),
@@ -1454,7 +1533,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: Colors.grey,
+                  color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                 ),
               ),
             ),
@@ -1485,6 +1564,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Show dialog to update R2 settings
   void _showR2ConfigDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool enabledVal = _r2Status?['enabled'] == true;
     final accountController = TextEditingController();
     final keyController = TextEditingController();
@@ -1501,12 +1581,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
+              ),
               title: Text(
                 'Cloudflare R2 Storage',
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
                 ),
               ),
               content: SingleChildScrollView(
@@ -1520,10 +1610,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       value: isEnabled,
                       contentPadding: EdgeInsets.zero,
+                      activeColor: const Color(0xFF3B82F6),
                       onChanged: (val) {
                         setDialogState(() {
                           isEnabled = val ?? false;
@@ -1536,18 +1629,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'Account ID',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'Cloudflare Account ID',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                     ),
@@ -1557,12 +1655,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'Access Key ID',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                       ),
@@ -1573,18 +1675,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'Secret Access Key',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'Leave empty to keep existing',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                       obscureText: true,
@@ -1595,12 +1702,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'R2 Bucket Name',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                       ),
@@ -1611,6 +1722,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText:
@@ -1618,12 +1730,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'https://cdn.example.com',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                     ),
@@ -1638,7 +1754,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
-                      color: Colors.grey,
+                      color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                     ),
                   ),
                 ),
@@ -1673,6 +1789,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Show dialog to update AWS settings
   void _showAWSConfigDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool enabledVal = _awsStatus?['enabled'] == true;
     final regionController =
         TextEditingController(text: _awsStatus?['region'] ?? '');
@@ -1690,12 +1807,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
+              ),
               title: Text(
                 'AWS Video Storage (S3)',
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
                 ),
               ),
               content: SingleChildScrollView(
@@ -1709,10 +1836,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       value: isEnabled,
                       contentPadding: EdgeInsets.zero,
+                      activeColor: const Color(0xFF3B82F6),
                       onChanged: (val) {
                         setDialogState(() {
                           isEnabled = val ?? false;
@@ -1725,18 +1855,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'AWS Region',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'e.g., ap-northeast-1',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                     ),
@@ -1746,12 +1881,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'S3 Bucket Name',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                       ),
@@ -1762,12 +1901,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'Access Key ID',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                       ),
@@ -1778,18 +1921,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'Secret Access Key',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'Leave empty to keep existing',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                       obscureText: true,
@@ -1800,18 +1948,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       decoration: InputDecoration(
                         labelText: 'CloudFront / Public URL',
                         labelStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF4B5563),
                         ),
                         border: const OutlineInputBorder(),
                         hintText: 'https://video.example.com',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                     ),
@@ -1826,7 +1979,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
-                      color: Colors.grey,
+                      color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                     ),
                   ),
                 ),
@@ -1861,6 +2014,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Bottom action sheet for user administration options
   void _showUserActionOptions(dynamic user) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String userId = user['id'];
     final String fullName = user['fullName'] ?? '';
     final String username = user['username'] ?? '';
@@ -1873,6 +2027,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1891,7 +2046,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         fontFamily: 'SF Pro Rounded',
                         fontWeight: FontWeight.bold,
                         fontSize: 16.sp,
-                        color: const Color(0xFF111827),
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1899,18 +2054,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       '@$username',
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
-                        color: const Color(0xFF6B7280),
+                        color: isDark
+                            ? const Color(0xFF9CA3AF)
+                            : const Color(0xFF6B7280),
                         fontSize: 13.sp,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                color:
+                    isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+              ),
               ListTile(
                 leading: Icon(
                   isVerified ? Icons.verified_user : Icons.verified,
-                  color: isVerified ? Colors.grey : const Color(0xFF2563EB),
+                  color: isVerified ? Colors.grey : const Color(0xFF3B82F6),
                 ),
                 title: Text(
                   isVerified
@@ -1920,6 +2081,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 onTap: () {
@@ -1940,6 +2102,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 onTap: () {
@@ -1955,6 +2118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 onTap: () {
@@ -1971,6 +2135,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 onTap: () {
@@ -1987,6 +2152,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 subtitle: Text(
@@ -1996,7 +2162,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 11.5.sp,
-                    color: const Color(0xFF6B7280),
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
                   ),
                 ),
                 onTap: () {
@@ -2012,6 +2180,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 onTap: () {
@@ -2045,27 +2214,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   // BUILD UI tabs
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor =
+        isDark ? const Color(0xFF111827) : const Color(0xFFF9FAFB);
+    final appBarBg = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: Text(
           'Admin Console',
           style: TextStyle(
             fontFamily: 'SF Pro Rounded',
-            color: const Color(0xFF111827),
+            color: titleColor,
             fontWeight: FontWeight.w800,
             fontSize: 17.sp,
             letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF2563EB),
-          unselectedLabelColor: const Color(0xFF6B7280),
-          indicatorColor: const Color(0xFF2563EB),
+          labelColor: const Color(0xFF3B82F6),
+          unselectedLabelColor:
+              isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+          indicatorColor: const Color(0xFF3B82F6),
           indicatorSize: TabBarIndicatorSize.tab,
           isScrollable: true,
           labelStyle: TextStyle(
@@ -2089,13 +2265,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           ],
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF111827)),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: titleColor),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF111827)),
+            icon: Icon(Icons.refresh_rounded, color: titleColor),
             onPressed: () {
               _refreshAll();
               _showSuccessSnackBar('Data reloaded from server.');
@@ -2118,8 +2293,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
-  // 1. Overview Tab (Fully dynamic with real live database stats)
+  // 1. Overview Tab (Fully dynamic with real live database stats & dark mode)
   Widget _buildOverviewTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final reportsCount = _flaggedPosts.length + _flaggedStories.length;
     final totalUsers = _overviewStats != null &&
             _overviewStats!['totalUsers'] != null
@@ -2159,7 +2335,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 17.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF111827),
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
                 if (_isLoadingOverview)
@@ -2176,7 +2352,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 12.sp,
-                color: const Color(0xFF6B7280),
+                color: isDark
+                    ? const Color(0xFF9CA3AF)
+                    : const Color(0xFF6B7280),
               ),
             ),
             const SizedBox(height: 14),
@@ -2187,7 +2365,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     title: 'Total Users',
                     value: totalUsers,
                     icon: Icons.people_alt_rounded,
-                    color: const Color(0xFF2563EB),
+                    color: const Color(0xFF3B82F6),
                     onTap: () => _tabController.animateTo(1),
                   ),
                 ),
@@ -2258,16 +2436,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 15.sp,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF111827),
+                color: isDark ? Colors.white : const Color(0xFF111827),
               ),
             ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F2937) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 children: [
@@ -2295,28 +2477,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1F2937) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(5),
+              color: Colors.black.withAlpha(isDark ? 30 : 5),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
           ],
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF374151)
+                : const Color(0xFFE5E7EB),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundColor: color.withAlpha(25),
+              backgroundColor: color.withAlpha(isDark ? 40 : 25),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 14),
@@ -2326,7 +2513,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
+                color: isDark ? Colors.white : const Color(0xFF111827),
               ),
             ),
             const SizedBox(height: 4),
@@ -2335,7 +2522,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 12.5.sp,
-                color: const Color(0xFF6B7280),
+                color: isDark
+                    ? const Color(0xFF9CA3AF)
+                    : const Color(0xFF6B7280),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -2346,10 +2535,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildGuidelineRow(IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF4B5563), size: 18),
+        Icon(icon,
+            color:
+                isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563),
+            size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
@@ -2357,7 +2550,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
-              color: const Color(0xFF4B5563),
+              color:
+                  isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
               height: 1.35,
             ),
           ),
@@ -2368,6 +2562,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // 2. Users Tab
   Widget _buildUsersTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         _buildSearchField(
@@ -2399,7 +2594,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             fontSize: 13.sp,
-                            color: const Color(0xFF6B7280),
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
                           ),
                         ),
                       )
@@ -2424,10 +2621,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF1F2937)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border:
-                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF374151)
+                                    : const Color(0xFFE5E7EB),
+                              ),
                             ),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
@@ -2438,7 +2640,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     ? CachedNetworkImageProvider(
                                         ApiConfig.assetUrl(avatarUrl))
                                     : null,
-                                backgroundColor: Colors.blue.shade100,
+                                backgroundColor: isDark
+                                    ? const Color(0xFF374151)
+                                    : Colors.blue.shade100,
                                 child: avatarUrl.toString().isEmpty
                                     ? Text(
                                         fullName.isNotEmpty
@@ -2448,6 +2652,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                           fontFamily: 'SF Pro Rounded',
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14.sp,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1E3A8A),
                                         ),
                                       )
                                     : null,
@@ -2461,7 +2668,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                         fontFamily: 'SF Pro Rounded',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13.5.sp,
-                                        color: const Color(0xFF111827),
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF111827),
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -2469,7 +2678,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                   ),
                                   if (isVerified)
                                     const Icon(Icons.verified,
-                                        color: Color(0xFF2563EB), size: 16),
+                                        color: Color(0xFF3B82F6), size: 16),
                                   if (isAuthor) const SizedBox(width: 4),
                                   if (isAuthor)
                                     const Icon(Icons.border_color_rounded,
@@ -2483,7 +2692,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     '@$username',
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
-                                      color: const Color(0xFF6B7280),
+                                      color: isDark
+                                          ? const Color(0xFF9CA3AF)
+                                          : const Color(0xFF6B7280),
                                       fontSize: 12.sp,
                                     ),
                                   ),
@@ -2494,7 +2705,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.shade50,
+                                        color: isDark
+                                            ? const Color(0xFF1E3A8A)
+                                            : Colors.blue.shade50,
                                         borderRadius:
                                             BorderRadius.circular(4),
                                       ),
@@ -2502,7 +2715,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                         roleTitle,
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
-                                          color: Colors.blue.shade700,
+                                          color: isDark
+                                              ? const Color(0xFF93C5FD)
+                                              : Colors.blue.shade700,
                                           fontSize: 11.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2515,17 +2730,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.amber.shade50,
+                                        color: isDark
+                                            ? const Color(0xFF78350F)
+                                            : Colors.amber.shade50,
                                         borderRadius:
                                             BorderRadius.circular(4),
                                         border: Border.all(
-                                            color: Colors.amber.shade200),
+                                          color: isDark
+                                              ? const Color(0xFF92400E)
+                                              : Colors.amber.shade200,
+                                        ),
                                       ),
                                       child: Text(
                                         'Border: ${profileBorder.toString().substring(0, 1).toUpperCase()}${profileBorder.toString().substring(1)}',
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
-                                          color: Colors.amber.shade800,
+                                          color: isDark
+                                              ? const Color(0xFFFCD34D)
+                                              : Colors.amber.shade800,
                                           fontSize: 11.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2538,19 +2760,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.deepPurple.shade50,
+                                        color: isDark
+                                            ? const Color(0xFF4C1D95)
+                                            : Colors.deepPurple.shade50,
                                         borderRadius:
                                             BorderRadius.circular(4),
                                         border: Border.all(
-                                            color:
-                                                Colors.deepPurple.shade100),
+                                          color: isDark
+                                              ? const Color(0xFF6D28D9)
+                                              : Colors.deepPurple.shade100,
+                                        ),
                                       ),
                                       child: Text(
                                         '${achievements.length} achievement${achievements.length == 1 ? '' : 's'}',
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
-                                          color:
-                                              Colors.deepPurple.shade700,
+                                          color: isDark
+                                              ? const Color(0xFFC4B5FD)
+                                              : Colors.deepPurple.shade700,
                                           fontSize: 11.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2561,14 +2788,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     '$postCount posts • $sessions active sessions',
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
-                                      color: const Color(0xFF9CA3AF),
+                                      color: isDark
+                                          ? const Color(0xFF9CA3AF)
+                                          : const Color(0xFF9CA3AF),
                                       fontSize: 11.5.sp,
                                     ),
                                   ),
                                 ],
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.more_vert),
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: isDark
+                                      ? const Color(0xFF9CA3AF)
+                                      : const Color(0xFF6B7280),
+                                ),
                                 onPressed: () => _showUserActionOptions(u),
                               ),
                             ),
@@ -2583,6 +2817,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // 3. Posts Tab
   Widget _buildPostsTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         _buildSearchField(
@@ -2614,7 +2849,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             fontSize: 13.sp,
-                            color: const Color(0xFF6B7280),
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
                           ),
                         ),
                       )
@@ -2637,10 +2874,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF1F2937)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border:
-                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF374151)
+                                    : const Color(0xFFE5E7EB),
+                              ),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -2679,8 +2921,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       fontSize: 13.5.sp,
-                                                      color: const Color(
-                                                          0xFF111827),
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF111827),
                                                     ),
                                                     maxLines: 1,
                                                     overflow:
@@ -2697,22 +2941,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                         horizontal: 6,
                                                         vertical: 2),
                                                     decoration: BoxDecoration(
-                                                      color:
-                                                          Colors.amber.shade50,
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF78350F)
+                                                          : Colors
+                                                              .amber.shade50,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               4),
                                                       border: Border.all(
-                                                          color: Colors.amber
-                                                              .shade200),
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFF92400E)
+                                                            : Colors.amber
+                                                                .shade200,
+                                                      ),
                                                     ),
                                                     child: Text(
                                                       'SENSITIVE',
                                                       style: TextStyle(
                                                         fontFamily:
                                                             'SF Pro Rounded',
-                                                        color: Colors.amber
-                                                            .shade800,
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFFFCD34D)
+                                                            : Colors.amber
+                                                                .shade800,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 9.sp,
@@ -2730,7 +2984,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                   : '',
                                               style: TextStyle(
                                                 fontFamily: 'SF Pro Rounded',
-                                                color: const Color(0xFF9CA3AF),
+                                                color: isDark
+                                                    ? const Color(0xFF9CA3AF)
+                                                    : const Color(0xFF9CA3AF),
                                                 fontSize: 11.sp,
                                               ),
                                             ),
@@ -2742,7 +2998,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Colors.red.shade50,
+                                            color: isDark
+                                                ? const Color(0xFF7F1D1D)
+                                                : Colors.red.shade50,
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),
@@ -2750,7 +3008,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                             '🚨 $reports',
                                             style: TextStyle(
                                               fontFamily: 'SF Pro Rounded',
-                                              color: Colors.red.shade700,
+                                              color: isDark
+                                                  ? const Color(0xFFFCA5A5)
+                                                  : Colors.red.shade700,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 12.sp,
                                             ),
@@ -2788,7 +3048,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
                                       color: postText.isNotEmpty
-                                          ? const Color(0xFF1F2937)
+                                          ? (isDark
+                                              ? const Color(0xFFE5E7EB)
+                                              : const Color(0xFF1F2937))
                                           : Colors.grey,
                                       fontSize: 13.sp,
                                       height: 1.35,
@@ -2804,26 +3066,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     children: [
                                       Icon(Icons.favorite_border,
                                           size: 15,
-                                          color: Colors.grey.shade500),
+                                          color: isDark
+                                              ? const Color(0xFF9CA3AF)
+                                              : Colors.grey.shade500),
                                       const SizedBox(width: 4),
                                       Text(
                                         '$likes',
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
-                                          color: const Color(0xFF6B7280),
+                                          color: isDark
+                                              ? const Color(0xFF9CA3AF)
+                                              : const Color(0xFF6B7280),
                                           fontSize: 12.sp,
                                         ),
                                       ),
                                       const SizedBox(width: 16),
                                       Icon(Icons.chat_bubble_outline,
                                           size: 15,
-                                          color: Colors.grey.shade500),
+                                          color: isDark
+                                              ? const Color(0xFF9CA3AF)
+                                              : Colors.grey.shade500),
                                       const SizedBox(width: 4),
                                       Text(
                                         '$comments',
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
-                                          color: const Color(0xFF6B7280),
+                                          color: isDark
+                                              ? const Color(0xFF9CA3AF)
+                                              : const Color(0xFF6B7280),
                                           fontSize: 12.sp,
                                         ),
                                       ),
@@ -2843,10 +3113,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // 4. Flags/Reports Tab
   Widget _buildFlagsTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Container(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1F2937) : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -2868,7 +3139,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildSegmentButton(int index, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = _flagSegmentIndex == index;
+    final selectedBg =
+        isDark ? const Color(0xFF312E81) : const Color(0xFFE0E7FF);
+    final selectedTextColor =
+        isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4338CA);
+    final unselectedTextColor =
+        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+
     return TextButton(
       onPressed: () {
         setState(() {
@@ -2876,8 +3155,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         });
       },
       style: TextButton.styleFrom(
-        backgroundColor:
-            isSelected ? const Color(0xFFE0E7FF) : Colors.transparent,
+        backgroundColor: isSelected ? selectedBg : Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
@@ -2886,8 +3164,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         style: TextStyle(
           fontFamily: 'SF Pro Rounded',
           fontSize: 13.sp,
-          color:
-              isSelected ? const Color(0xFF4338CA) : const Color(0xFF4B5563),
+          color: isSelected ? selectedTextColor : unselectedTextColor,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -2895,6 +3172,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildFlaggedPostsList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_isLoadingFlaggedPosts) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -2905,7 +3183,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           style: TextStyle(
             fontFamily: 'SF Pro Rounded',
             fontSize: 13.sp,
-            color: const Color(0xFF6B7280),
+            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
           ),
         ),
       );
@@ -2928,9 +3206,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1F2937) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.shade100),
+              border: Border.all(
+                color: isDark
+                    ? Colors.red.shade900.withAlpha(120)
+                    : Colors.red.shade100,
+              ),
             ),
             child: ExpansionTile(
               title: Row(
@@ -2945,6 +3227,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               fontFamily: 'SF Pro Rounded',
                               fontWeight: FontWeight.bold,
                               fontSize: 13.5.sp,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -2955,16 +3240,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
+                              color: isDark
+                                  ? const Color(0xFF78350F)
+                                  : Colors.amber.shade50,
                               borderRadius: BorderRadius.circular(4),
-                              border:
-                                  Border.all(color: Colors.amber.shade200),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF92400E)
+                                    : Colors.amber.shade200,
+                              ),
                             ),
                             child: Text(
                               'SENSITIVE',
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
-                                color: Colors.amber.shade800,
+                                color: isDark
+                                    ? const Color(0xFFFCD34D)
+                                    : Colors.amber.shade800,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 9.sp,
                               ),
@@ -2977,14 +3269,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: isDark
+                          ? const Color(0xFF7F1D1D)
+                          : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       '🚨 $count',
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
-                        color: Colors.red.shade700,
+                        color: isDark
+                            ? const Color(0xFFFCA5A5)
+                            : Colors.red.shade700,
                         fontWeight: FontWeight.bold,
                         fontSize: 12.5.sp,
                       ),
@@ -3001,12 +3297,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
-                    color: const Color(0xFF4B5563),
+                    color: isDark
+                        ? const Color(0xFFD1D5DB)
+                        : const Color(0xFF4B5563),
                   ),
                 ),
               ),
               children: [
-                const Divider(height: 1),
+                Divider(
+                  height: 1,
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -3018,7 +3321,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           fontFamily: 'SF Pro Rounded',
                           fontWeight: FontWeight.bold,
                           fontSize: 13.sp,
-                          color: const Color(0xFF111827),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -3033,7 +3337,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     fontFamily: 'SF Pro Rounded',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12.5.sp,
-                                    color: const Color(0xFF111827),
+                                    color: isDark
+                                        ? const Color(0xFF93C5FD)
+                                        : const Color(0xFF111827),
                                   ),
                                 ),
                                 Expanded(
@@ -3042,7 +3348,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
                                       fontSize: 12.5.sp,
-                                      color: const Color(0xFF4B5563),
+                                      color: isDark
+                                          ? const Color(0xFFD1D5DB)
+                                          : const Color(0xFF4B5563),
                                     ),
                                   ),
                                 ),
@@ -3072,7 +3380,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.amber.shade300),
+                              side: BorderSide(
+                                  color: isDark
+                                      ? Colors.amber.shade700
+                                      : Colors.amber.shade300),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -3083,7 +3394,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 12.sp,
-                                color: const Color(0xFF2563EB),
+                                color: const Color(0xFF3B82F6),
                               ),
                             ),
                           ),
@@ -3116,6 +3427,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildFlaggedStoriesList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_isLoadingFlaggedStories) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -3126,7 +3438,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           style: TextStyle(
             fontFamily: 'SF Pro Rounded',
             fontSize: 13.sp,
-            color: const Color(0xFF6B7280),
+            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
           ),
         ),
       );
@@ -3150,9 +3462,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1F2937) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.shade100),
+              border: Border.all(
+                color: isDark
+                    ? Colors.red.shade900.withAlpha(120)
+                    : Colors.red.shade100,
+              ),
             ),
             child: ExpansionTile(
               title: Row(
@@ -3164,6 +3480,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         fontFamily: 'SF Pro Rounded',
                         fontWeight: FontWeight.bold,
                         fontSize: 13.5.sp,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                     ),
                   ),
@@ -3171,14 +3488,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: isDark
+                          ? const Color(0xFF7F1D1D)
+                          : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       '🚨 $count',
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
-                        color: Colors.red.shade700,
+                        color: isDark
+                            ? const Color(0xFFFCA5A5)
+                            : Colors.red.shade700,
                         fontWeight: FontWeight.bold,
                         fontSize: 12.5.sp,
                       ),
@@ -3211,7 +3532,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         style: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
-                          color: const Color(0xFF4B5563),
+                          color: isDark
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF4B5563),
                         ),
                       ),
                     ),
@@ -3219,7 +3542,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 ),
               ),
               children: [
-                const Divider(height: 1),
+                Divider(
+                  height: 1,
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -3231,7 +3559,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           fontFamily: 'SF Pro Rounded',
                           fontWeight: FontWeight.bold,
                           fontSize: 13.sp,
-                          color: const Color(0xFF111827),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -3246,7 +3575,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     fontFamily: 'SF Pro Rounded',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12.5.sp,
-                                    color: const Color(0xFF111827),
+                                    color: isDark
+                                        ? const Color(0xFF93C5FD)
+                                        : const Color(0xFF111827),
                                   ),
                                 ),
                                 Expanded(
@@ -3255,7 +3586,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
                                       fontSize: 12.5.sp,
-                                      color: const Color(0xFF4B5563),
+                                      color: isDark
+                                          ? const Color(0xFFD1D5DB)
+                                          : const Color(0xFF4B5563),
                                     ),
                                   ),
                                 ),
@@ -3273,7 +3606,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 12.sp,
-                                color: const Color(0xFF2563EB),
+                                color: const Color(0xFF3B82F6),
                               ),
                             ),
                           ),
@@ -3307,6 +3640,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // 5. Cloud & Services Tab (AWS, Cloudflare R2, Rclone)
   Widget _buildServicesTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_rcloneStatus == null && _r2Status == null && _awsStatus == null) {
       if (_isLoadingRclone || _isLoadingR2 || _isLoadingAWS) {
         return const Center(child: CircularProgressIndicator());
@@ -3338,9 +3672,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F2937) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 children: [
@@ -3350,14 +3688,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     activeText: 'Active & running',
                     inactiveText: 'Inactive / stopped',
                   ),
-                  const Divider(height: 24),
+                  Divider(
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   _buildStatusRow(
                     label: 'Rclone mount active',
                     isActive: _rcloneStatus?['isMountpoint'] == true,
                     activeText: 'Mounted successfully',
                     inactiveText: 'Unmounted',
                   ),
-                  const Divider(height: 24),
+                  Divider(
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   _buildStatusRow(
                     label: 'Google Drive response test',
                     isActive: _rcloneStatus?['rcloneConnected'] == true,
@@ -3376,6 +3724,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                             style: TextStyle(
                               fontFamily: 'SF Pro Rounded',
                               fontSize: 12.5.sp,
+                              color: isDark
+                                  ? const Color(0xFF93C5FD)
+                                  : const Color(0xFF2563EB),
                             ),
                           ),
                         ),
@@ -3425,9 +3776,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F2937) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3438,14 +3793,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     activeText: 'R2 Storage Enabled',
                     inactiveText: 'Disabled (fallback to local)',
                   ),
-                  const Divider(height: 24),
+                  Divider(
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   Text(
                     'Configuration:',
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontWeight: FontWeight.bold,
                       fontSize: 13.sp,
-                      color: const Color(0xFF374151),
+                      color: isDark
+                          ? const Color(0xFFD1D5DB)
+                          : const Color(0xFF374151),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -3469,6 +3831,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                             style: TextStyle(
                               fontFamily: 'SF Pro Rounded',
                               fontSize: 12.5.sp,
+                              color: isDark
+                                  ? const Color(0xFF93C5FD)
+                                  : const Color(0xFF2563EB),
                             ),
                           ),
                         ),
@@ -3516,9 +3881,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F2937) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3529,14 +3898,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     activeText: 'AWS S3 Upload Enabled',
                     inactiveText: 'Disabled (fallback to local)',
                   ),
-                  const Divider(height: 24),
+                  Divider(
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   Text(
                     'Configuration:',
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontWeight: FontWeight.bold,
                       fontSize: 13.sp,
-                      color: const Color(0xFF374151),
+                      color: isDark
+                          ? const Color(0xFFD1D5DB)
+                          : const Color(0xFF374151),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -3562,6 +3938,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                             style: TextStyle(
                               fontFamily: 'SF Pro Rounded',
                               fontSize: 12.5.sp,
+                              color: isDark
+                                  ? const Color(0xFF93C5FD)
+                                  : const Color(0xFF2563EB),
                             ),
                           ),
                         ),
@@ -3610,9 +3989,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F2937) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3623,7 +4006,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       fontFamily: 'SF Pro Rounded',
                       fontWeight: FontWeight.bold,
                       fontSize: 13.sp,
-                      color: const Color(0xFF1F2937),
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -3632,7 +4015,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 12.5.sp,
-                      color: const Color(0xFF4B5563),
+                      color: isDark
+                          ? const Color(0xFFD1D5DB)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -3682,11 +4067,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     required IconData icon,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: color.withAlpha(25),
+          backgroundColor: color.withAlpha(isDark ? 40 : 25),
           child: Icon(icon, color: color, size: 18),
         ),
         const SizedBox(width: 10),
@@ -3700,7 +4086,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   fontFamily: 'SF Pro Rounded',
                   fontWeight: FontWeight.bold,
                   fontSize: 15.sp,
-                  color: const Color(0xFF111827),
+                  color: isDark ? Colors.white : const Color(0xFF111827),
                 ),
               ),
               Text(
@@ -3708,7 +4094,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 12.sp,
-                  color: const Color(0xFF6B7280),
+                  color: isDark
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF6B7280),
                 ),
               )
             ],
@@ -3724,6 +4112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     required String activeText,
     required String inactiveText,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Expanded(
@@ -3733,14 +4122,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               fontFamily: 'SF Pro Rounded',
               fontWeight: FontWeight.w500,
               fontSize: 13.sp,
-              color: const Color(0xFF374151),
+              color: isDark ? Colors.white : const Color(0xFF374151),
             ),
           ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isActive ? Colors.green.shade50 : Colors.red.shade50,
+            color: isActive
+                ? (isDark ? const Color(0xFF064E3B) : Colors.green.shade50)
+                : (isDark ? const Color(0xFF7F1D1D) : Colors.red.shade50),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -3756,8 +4147,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: isActive
-                      ? Colors.green.shade700
-                      : Colors.red.shade700,
+                      ? (isDark
+                          ? const Color(0xFF6EE7B7)
+                          : Colors.green.shade700)
+                      : (isDark
+                          ? const Color(0xFFFCA5A5)
+                          : Colors.red.shade700),
                   fontSize: 11.5.sp,
                   fontWeight: FontWeight.bold,
                 ),
@@ -3770,6 +4165,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildConfigTextRow(String key, String val) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Row(
@@ -3781,7 +4177,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               fontFamily: 'SF Pro Rounded',
               fontSize: 12.5.sp,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF4B5563),
+              color:
+                  isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563),
             ),
           ),
           Expanded(
@@ -3790,7 +4187,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 12.5.sp,
-                color: const Color(0xFF1F2937),
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -3808,16 +4205,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     required ValueChanged<String> onChanged,
     required VoidCallback onClear,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
-      color: Colors.white,
+      color: isDark ? const Color(0xFF1F2937) : Colors.white,
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         style: TextStyle(
           fontFamily: 'SF Pro Rounded',
           fontSize: 13.sp,
-          color: const Color(0xFF111827),
+          color: isDark ? Colors.white : const Color(0xFF111827),
         ),
         decoration: InputDecoration(
           hintText: hint,
@@ -3834,7 +4232,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 )
               : null,
           filled: true,
-          fillColor: const Color(0xFFF3F4F6),
+          fillColor:
+              isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
           border: OutlineInputBorder(
@@ -4009,6 +4408,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildShopTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _isShopStateLoading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
@@ -4023,10 +4423,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1F2937) : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF374151)
+                          : const Color(0xFFE5E7EB),
+                    ),
                   ),
                   elevation: 0,
                   child: Column(
@@ -4090,13 +4494,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       fontFamily: 'SF Pro Rounded',
                                       fontSize: 15.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF111827),
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF111827),
                                     ),
                                   ),
                                 ),
                                 Switch(
                                   value: isEnabled,
-                                  activeThumbColor: const Color(0xFF2563EB),
+                                  activeThumbColor: const Color(0xFF3B82F6),
                                   onChanged: (value) async {
                                     await _toggleThemePublicStatus(
                                         themeKey, value);
@@ -4110,7 +4516,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 13.sp,
-                                color: const Color(0xFF4B5563),
+                                color: isDark
+                                    ? const Color(0xFFD1D5DB)
+                                    : const Color(0xFF4B5563),
                                 height: 1.35,
                               ),
                             ),
@@ -4122,8 +4530,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: isEnabled
-                                        ? const Color(0xFFDCFCE7)
-                                        : const Color(0xFFF3F4F6),
+                                        ? (isDark
+                                            ? const Color(0xFF064E3B)
+                                            : const Color(0xFFDCFCE7))
+                                        : (isDark
+                                            ? const Color(0xFF374151)
+                                            : const Color(0xFFF3F4F6)),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -4133,8 +4545,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
                                       color: isEnabled
-                                          ? const Color(0xFF16A34A)
-                                          : const Color(0xFF4B5563),
+                                          ? (isDark
+                                              ? const Color(0xFF6EE7B7)
+                                              : const Color(0xFF16A34A))
+                                          : (isDark
+                                              ? const Color(0xFF9CA3AF)
+                                              : const Color(0xFF4B5563)),
                                       fontSize: 11.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -4146,7 +4562,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFEFF6FF),
+                                      color: isDark
+                                          ? const Color(0xFF1E3A8A)
+                                          : const Color(0xFFEFF6FF),
                                       borderRadius:
                                           BorderRadius.circular(6),
                                     ),
@@ -4154,7 +4572,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                       theme.badgeText,
                                       style: TextStyle(
                                         fontFamily: 'SF Pro Rounded',
-                                        color: const Color(0xFF2563EB),
+                                        color: isDark
+                                            ? const Color(0xFF93C5FD)
+                                            : const Color(0xFF2563EB),
                                         fontSize: 11.sp,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -4174,19 +4594,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildPromotionsTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _isLoadingPromotions
         ? const Center(child: CircularProgressIndicator())
         : DefaultTabController(
             length: 2,
             child: Scaffold(
+              backgroundColor: isDark
+                  ? const Color(0xFF111827)
+                  : const Color(0xFFF9FAFB),
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: Container(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1F2937) : Colors.white,
                   child: TabBar(
-                    labelColor: const Color(0xFF2563EB),
-                    unselectedLabelColor: const Color(0xFF6B7280),
-                    indicatorColor: const Color(0xFF2563EB),
+                    labelColor: const Color(0xFF3B82F6),
+                    unselectedLabelColor: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
+                    indicatorColor: const Color(0xFF3B82F6),
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
@@ -4220,12 +4646,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF111827),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827),
                               ),
                             ),
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB),
+                                backgroundColor: const Color(0xFF3B82F6),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
@@ -4251,7 +4679,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             fontSize: 12.5.sp,
-                            color: const Color(0xFF6B7280),
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -4263,7 +4693,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.campaign_outlined,
-                                    size: 48, color: Colors.grey[400]),
+                                    size: 48,
+                                    color: isDark
+                                        ? const Color(0xFF6B7280)
+                                        : Colors.grey[400]),
                                 const SizedBox(height: 12),
                                 Text(
                                   'No promotions configured',
@@ -4271,7 +4704,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     fontFamily: 'SF Pro Rounded',
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[600],
+                                    color: isDark
+                                        ? const Color(0xFF9CA3AF)
+                                        : Colors.grey[600],
                                   ),
                                 ),
                               ],
@@ -4286,11 +4721,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               final promo = _promotionsList[index];
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 12),
+                                color: isDark
+                                    ? const Color(0xFF1F2937)
+                                    : Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side:
-                                      const BorderSide(color: Color(0xFFE5E7EB)),
+                                  side: BorderSide(
+                                    color: isDark
+                                        ? const Color(0xFF374151)
+                                        : const Color(0xFFE5E7EB),
+                                  ),
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
@@ -4307,15 +4748,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                 fontFamily: 'SF Pro Rounded',
                                                 fontSize: 15.sp,
                                                 fontWeight: FontWeight.bold,
-                                                color:
-                                                    const Color(0xFF111827),
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : const Color(0xFF111827),
                                               ),
                                             ),
                                           ),
                                           Switch(
                                             value: promo.isEnabled,
                                             activeThumbColor:
-                                                const Color(0xFF2563EB),
+                                                const Color(0xFF3B82F6),
                                             onChanged: (val) async {
                                               final list = List<Promotion>.from(
                                                   _promotionsList);
@@ -4343,7 +4785,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Rounded',
                                           fontSize: 13.sp,
-                                          color: const Color(0xFF4B5563),
+                                          color: isDark
+                                              ? const Color(0xFFD1D5DB)
+                                              : const Color(0xFF4B5563),
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -4389,7 +4833,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                   fontFamily: 'SF Pro Rounded',
                                                   fontSize: 12.sp,
                                                   color:
-                                                      const Color(0xFF2563EB),
+                                                      const Color(0xFF3B82F6),
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                                 maxLines: 1,
@@ -4398,9 +4842,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                               ),
                                             ),
                                           IconButton(
-                                            icon: const Icon(
-                                                Icons.edit_outlined,
-                                                color: Color(0xFF4B5563)),
+                                            icon: Icon(
+                                              Icons.edit_outlined,
+                                              color: isDark
+                                                  ? const Color(0xFF9CA3AF)
+                                                  : const Color(0xFF4B5563),
+                                            ),
                                             onPressed: () =>
                                                 _showAddEditPromotionDialog(
                                                     promotion: promo),
@@ -4431,6 +4878,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildBroadcastTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -4442,7 +4890,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               fontFamily: 'SF Pro Rounded',
               fontSize: 17.sp,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           const SizedBox(height: 6),
@@ -4451,22 +4899,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 12.5.sp,
-              color: const Color(0xFF6B7280),
+              color: isDark
+                  ? const Color(0xFF9CA3AF)
+                  : const Color(0xFF6B7280),
             ),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             initialValue: _broadcastAudience,
+            dropdownColor:
+                isDark ? const Color(0xFF1F2937) : Colors.white,
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
-              color: const Color(0xFF111827),
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
             decoration: InputDecoration(
               labelText: 'Audience',
               labelStyle: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: isDark
+                    ? const Color(0xFF9CA3AF)
+                    : const Color(0xFF4B5563),
               ),
               border: const OutlineInputBorder(),
             ),
@@ -4478,6 +4933,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
               ),
@@ -4488,6 +4944,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
               ),
@@ -4498,6 +4955,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
               ),
@@ -4508,6 +4966,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
               ),
@@ -4520,17 +4979,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
             decoration: InputDecoration(
               labelText: 'Sender username (e.g. katsbot, gemini)',
               labelStyle: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: isDark
+                    ? const Color(0xFF9CA3AF)
+                    : const Color(0xFF4B5563),
               ),
               hintText: 'katsbot',
               hintStyle: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: const Color(0xFF9CA3AF),
               ),
               border: const OutlineInputBorder(),
             ),
@@ -4542,17 +5006,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
             decoration: InputDecoration(
               labelText: 'Message (2-1000 chars)',
               labelStyle: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: isDark
+                    ? const Color(0xFF9CA3AF)
+                    : const Color(0xFF4B5563),
               ),
               hintText: 'Hello! 👋 Ako si KatsBot AI...',
               hintStyle: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
+                color: const Color(0xFF9CA3AF),
               ),
               border: const OutlineInputBorder(),
             ),
@@ -4562,7 +5031,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -4589,16 +5058,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFBFDBFE),
+                ),
               ),
               child: Text(
                 _broadcastResult!,
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: const Color(0xFF1E40AF),
+                  color: isDark
+                      ? const Color(0xFF93C5FD)
+                      : const Color(0xFF1E40AF),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -4616,6 +5093,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   void _showAddEditPromotionDialog({Promotion? promotion}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleCtrl = TextEditingController(text: promotion?.title ?? '');
     final textCtrl = TextEditingController(text: promotion?.text ?? '');
     final imageCtrl = TextEditingController(text: promotion?.imageUrl ?? '');
@@ -4628,14 +5106,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            ),
+          ),
           title: Text(
             promotion == null ? 'Add Promotion' : 'Edit Promotion',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           content: SingleChildScrollView(
@@ -4647,12 +5131,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText: 'Title / Sponsor Name',
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4663,12 +5151,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText: 'Description / Message',
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4678,12 +5170,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText: 'Image URL (optional)',
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4693,6 +5189,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText:
@@ -4700,6 +5197,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4709,12 +5209,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText: 'Button Label (e.g. Learn More)',
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4724,6 +5228,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
                     labelText:
@@ -4731,6 +5236,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     labelStyle: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       fontSize: 13.sp,
+                      color: isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
@@ -4745,13 +5253,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   fontSize: 13.sp,
-                  color: Colors.grey,
+                  color: isDark ? const Color(0xFF9CA3AF) : Colors.grey,
                 ),
               ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
