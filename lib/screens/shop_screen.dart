@@ -522,7 +522,7 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isThemeStateLoading = true;
   List<ThemeProductData> _visibleProducts = [];
   ThemeProductData? _selectedTheme;
-  String _equippedAdminFrame = 'assets/frames/bframe.png';
+  String _equippedAdminFrame = 'assets/frames/ice_crystal_frame.webp';
 
   Future<void> _equipAdminFrame(String framePath, String frameName) async {
     final prefs = await SharedPreferences.getInstance();
@@ -1741,7 +1741,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Option 5: Remove Avatar Frame (none)
+          // Option 5: Ice Crystal Frame (ice_crystal_frame.json - Lottie + WebP/PNG variants)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Ice Crystal Frame',
+            description: 'Frozen diamond shards & snowflake shimmer — winter exclusive (Lottie animated).',
+            framePath: 'assets/frames/ice_crystal_frame.json',
+            badgeText: 'ICE CRYSTAL',
+            badgeGradient: const [Color(0xFF38BDF8), Color(0xFF0EA5E9)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/ice_crystal_frame.json',
+            onEquip: () => _equipAdminFrame('assets/frames/ice_crystal_frame.json', 'Ice Crystal Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Ice Crystal Frame'),
+          ),
+          const SizedBox(height: 12),
+
+          // Option 6: Remove Avatar Frame (none)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
             initials: initials,

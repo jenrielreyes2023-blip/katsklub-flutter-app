@@ -5,7 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_svga/flutter_svga.dart';
 import '../config/api_config.dart';
 
-final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('assets/frames/bframe.png');
+final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('assets/frames/ice_crystal_frame.webp');
 
 class UserAvatarWithFrame extends StatelessWidget {
   const UserAvatarWithFrame({
@@ -83,6 +83,7 @@ class UserAvatarWithFrame extends StatelessWidget {
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
         final isSpringFrame = pathLower.contains('spring_blossom_frame');
+        final isIceCrystalFrame = pathLower.contains('ice_crystal_frame');
 
         final double frameSize;
         if (isWingFrame) {
@@ -91,6 +92,8 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.48;
         } else if (isSpringFrame) {
           frameSize = size * 1.35;
+        } else if (isIceCrystalFrame) {
+          frameSize = size * 1.38;
         } else {
           frameSize = size * 1.25;
         }
