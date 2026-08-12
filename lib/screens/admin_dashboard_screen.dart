@@ -3036,7 +3036,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     try {
       final token = await _getToken();
       final res = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/admin/broadcast'),
+        Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/broadcast'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
