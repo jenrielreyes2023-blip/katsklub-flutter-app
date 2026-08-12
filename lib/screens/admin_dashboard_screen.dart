@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -77,6 +77,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   late TabController _tabController;
   final AuthService _authService = AuthService();
 
+  // Dynamic Overview & Stats
+  Map<String, dynamic>? _overviewStats;
+  bool _isLoadingOverview = false;
+
   // State Lists
   List<dynamic> _users = [];
   List<dynamic> _posts = [];
@@ -103,7 +107,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   // Broadcast state (inside Ads & Promo)
   String _broadcastAudience = 'all';
   final TextEditingController _broadcastController = TextEditingController();
-  final TextEditingController _broadcastSenderController = TextEditingController(text: 'katsbot');
+  final TextEditingController _broadcastSenderController =
+      TextEditingController(text: 'katsbot');
   bool _isBroadcastSending = false;
   String? _broadcastResult;
 
@@ -135,6 +140,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _tabController.addListener(_handleTabSelection);
 
     // Initial loads
+    _refreshAll();
+  }
+
+  void _refreshAll() {
+    _fetchOverview();
     _fetchUsers();
     _fetchPosts();
     _fetchFlaggedPosts();
@@ -177,7 +187,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     };
   }
 
+  String _formatNumber(dynamic number) {
+    if (number == null) return '0';
+    final n = int.tryParse(number.toString()) ?? 0;
+    if (n >= 1000000) {
+      return '${(n / 1000000).toStringAsFixed(1)}M';
+    }
+    if (n >= 10000) {
+      return '${(n / 1000).toStringAsFixed(1)}k';
+    }
+    return n.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+
   // API calls - Fetching
+  Future<void> _fetchOverview() async {
+    setState(() => _isLoadingOverview = true);
+    try {
+      final token = await _getToken();
+      if (token == null) return;
+
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/overview');
+      final res = await http.get(url, headers: _headers(token));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['overview'] != null) {
+          setState(() {
+            _overviewStats = data['overview'];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching admin overview: $e');
+    } finally {
+      setState(() => _isLoadingOverview = false);
+    }
+  }
+
   Future<void> _fetchUsers() async {
     setState(() {
       _isLoadingUsers = true;
@@ -462,16 +511,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Select Profile Border'),
+          title: Text(
+            'Select Profile Border',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: borders.map((b) {
                 final isSelected = b['value'] == currentBorder;
                 return ListTile(
-                  title: Text(b['label']!),
+                  title: Text(
+                    b['label']!,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Colors.blue)
+                      ? const Icon(Icons.check, color: Color(0xFF2563EB))
                       : null,
                   onTap: () {
                     Navigator.pop(context);
@@ -484,7 +547,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: Colors.grey,
+                ),
+              ),
             ),
           ],
         );
@@ -501,16 +571,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Update Role Title',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Update Role Title',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: textController,
-              decoration: const InputDecoration(
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
+              decoration: InputDecoration(
                 labelText: 'Role Title',
+                labelStyle: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                ),
                 hintText: 'e.g., Verified Creator, Admin',
-                border: OutlineInputBorder(),
+                hintStyle: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                ),
+                border: const OutlineInputBorder(),
               ),
               maxLength: 40,
               validator: (val) => val == null || val.trim().isEmpty
@@ -521,7 +609,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -550,7 +645,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   _showErrorSnackBar('An error occurred.');
                 }
               },
-              child: const Text('Save'),
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           ],
         );
@@ -618,9 +720,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              title: const Text(
+              title: Text(
                 'Grant Achievements',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               content: SizedBox(
                 width: double.maxFinite,
@@ -632,7 +738,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         value: selected.contains(option.key),
                         contentPadding: EdgeInsets.zero,
                         dense: true,
-                        title: Text(option.label),
+                        title: Text(
+                          option.label,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 13.sp,
+                          ),
+                        ),
                         controlAffinity: ListTileControlAffinity.leading,
                         onChanged: (value) {
                           setModalState(() {
@@ -651,7 +763,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -662,7 +781,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         .toList();
                     _updateUserAchievements(userId, achievements);
                   },
-                  child: const Text('Save'),
+                  child: Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -713,10 +839,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       final res = await http.delete(url, headers: _headers(token));
 
       if (res.statusCode == 200) {
-        _fetchUsers();
-        _fetchPosts();
-        _fetchFlaggedPosts();
-        _fetchFlaggedStories();
+        _refreshAll();
         _showSuccessSnackBar('User account deleted successfully.');
       } else {
         final data = jsonDecode(res.body);
@@ -747,9 +870,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       if (res.statusCode == 200) {
         _fetchPosts();
         _fetchFlaggedPosts();
+        _fetchOverview();
         _showSuccessSnackBar('Post deleted successfully.');
       } else {
-        _showErrorSnackBar('Failed to delete post.');
+        final data = jsonDecode(res.body);
+        _showErrorSnackBar(data['error'] ?? 'Failed to delete post.');
       }
     } catch (e) {
       _showErrorSnackBar('An error occurred.');
@@ -778,7 +903,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         _fetchFlaggedStories();
         _showSuccessSnackBar('Story deleted successfully.');
       } else {
-        _showErrorSnackBar('Failed to delete story.');
+        final data = jsonDecode(res.body);
+        _showErrorSnackBar(data['error'] ?? 'Failed to delete story.');
       }
     } catch (e) {
       _showErrorSnackBar('An error occurred.');
@@ -805,7 +931,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
-  Future<void> _togglePostSensitivity(dynamic postId, bool currentSensitive) async {
+  Future<void> _togglePostSensitivity(
+      dynamic postId, bool currentSensitive) async {
     try {
       final token = await _getToken();
       if (token == null) return;
@@ -821,8 +948,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       if (res.statusCode == 200) {
         _fetchFlaggedPosts();
         _fetchPosts();
-        _showSuccessSnackBar(
-            !currentSensitive ? 'Post marked as sensitive.' : 'Post marked as safe.');
+        _showSuccessSnackBar(!currentSensitive
+            ? 'Post marked as sensitive.'
+            : 'Post marked as safe.');
       } else {
         _showErrorSnackBar('Failed to update post sensitivity.');
       }
@@ -932,7 +1060,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         await FeedService().clearAllCachedPostcardThemes();
         FeedService.notifyPostcardThemesReset();
         final data = jsonDecode(res.body);
-        _showSuccessSnackBar(data['message'] ?? 'All postcard themes have been reset.');
+        _showSuccessSnackBar(
+            data['message'] ?? 'All postcard themes have been reset.');
       } else {
         final data = jsonDecode(res.body);
         _showErrorSnackBar(data['error'] ?? 'Failed to reset postcard themes.');
@@ -950,15 +1079,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Postcard Themes?'),
-        content: const Text(
+        title: Text(
+          'Reset Postcard Themes?',
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
           'Are you sure you want to remove postcard themes from all users? '
           'This will return all posts to the default layout.',
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            color: const Color(0xFF4B5563),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+                color: Colors.grey,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -966,7 +1114,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               _resetAllPostcardThemes();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Reset All'),
+            child: Text(
+              'Reset All',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -1116,7 +1271,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Text(
+          msg,
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
       ),
@@ -1127,7 +1290,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Text(
+          msg,
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
       ),
@@ -1143,21 +1314,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title:
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          content: Text(content),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            content,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+              color: const Color(0xFF374151),
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: isDestructive
                   ? ElevatedButton.styleFrom(backgroundColor: Colors.red)
                   : null,
-              child: Text('Confirm',
-                  style: TextStyle(color: isDestructive ? Colors.white : null)),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDestructive ? Colors.white : null,
+                ),
+              ),
             )
           ],
         );
@@ -1176,8 +1374,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Rclone Credentials',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Rclone Credentials',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           content: Form(
             key: formKey,
             child: SingleChildScrollView(
@@ -1186,25 +1390,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 children: [
                   TextFormField(
                     controller: remoteController,
-                    decoration: const InputDecoration(
-                        labelText: 'Remote Name', border: OutlineInputBorder()),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Remote Name',
+                      labelStyle: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
                     validator: (val) =>
                         val == null || val.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: clientIdController,
-                    decoration: const InputDecoration(
-                        labelText: 'Client ID', border: OutlineInputBorder()),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Client ID',
+                      labelStyle: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
                     validator: (val) =>
                         val == null || val.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: secretController,
-                    decoration: const InputDecoration(
-                        labelText: 'Client Secret',
-                        border: OutlineInputBorder()),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Client Secret',
+                      labelStyle: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
                     obscureText: true,
                     validator: (val) =>
                         val == null || val.trim().isEmpty ? 'Required' : null,
@@ -1216,7 +1449,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -1228,7 +1468,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   clientSecret: secretController.text.trim(),
                 );
               },
-              child: const Text('Save'),
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           ],
         );
@@ -1254,14 +1501,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Cloudflare R2 Storage',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                'Cloudflare R2 Storage',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CheckboxListTile(
-                      title: const Text('Enable Cloudflare R2'),
+                      title: Text(
+                        'Enable Cloudflare R2',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       value: isEnabled,
                       contentPadding: EdgeInsets.zero,
                       onChanged: (val) {
@@ -1273,42 +1533,99 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     const SizedBox(height: 12),
                     TextField(
                       controller: accountController,
-                      decoration: const InputDecoration(
-                          labelText: 'Account ID',
-                          border: OutlineInputBorder(),
-                          hintText: 'Cloudflare Account ID'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Account ID',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'Cloudflare Account ID',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: keyController,
-                      decoration: const InputDecoration(
-                          labelText: 'Access Key ID',
-                          border: OutlineInputBorder()),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Access Key ID',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: secretController,
-                      decoration: const InputDecoration(
-                          labelText: 'Secret Access Key',
-                          border: OutlineInputBorder(),
-                          hintText: 'Leave empty to keep existing'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Secret Access Key',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'Leave empty to keep existing',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                       obscureText: true,
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: bucketController,
-                      decoration: const InputDecoration(
-                          labelText: 'R2 Bucket Name',
-                          border: OutlineInputBorder()),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'R2 Bucket Name',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: urlController,
-                      decoration: const InputDecoration(
-                          labelText:
-                              'Public Base URL (must start with http/https)',
-                          border: OutlineInputBorder(),
-                          hintText: 'https://cdn.example.com'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText:
+                            'Public Base URL (must start with http/https)',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'https://cdn.example.com',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1316,7 +1633,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -1330,7 +1654,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       publicBaseUrl: urlController.text.trim(),
                     );
                   },
-                  child: const Text('Save'),
+                  child: Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 )
               ],
             );
@@ -1359,14 +1690,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('AWS Video Storage (S3)',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                'AWS Video Storage (S3)',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CheckboxListTile(
-                      title: const Text('Enable AWS Storage'),
+                      title: Text(
+                        'Enable AWS Storage',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       value: isEnabled,
                       contentPadding: EdgeInsets.zero,
                       onChanged: (val) {
@@ -1378,41 +1722,98 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     const SizedBox(height: 12),
                     TextField(
                       controller: regionController,
-                      decoration: const InputDecoration(
-                          labelText: 'AWS Region',
-                          border: OutlineInputBorder(),
-                          hintText: 'e.g., ap-northeast-1'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'AWS Region',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'e.g., ap-northeast-1',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: bucketController,
-                      decoration: const InputDecoration(
-                          labelText: 'S3 Bucket Name',
-                          border: OutlineInputBorder()),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'S3 Bucket Name',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: keyController,
-                      decoration: const InputDecoration(
-                          labelText: 'Access Key ID',
-                          border: OutlineInputBorder()),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Access Key ID',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: secretController,
-                      decoration: const InputDecoration(
-                          labelText: 'Secret Access Key',
-                          border: OutlineInputBorder(),
-                          hintText: 'Leave empty to keep existing'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Secret Access Key',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'Leave empty to keep existing',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                       obscureText: true,
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: urlController,
-                      decoration: const InputDecoration(
-                          labelText: 'CloudFront / Public URL',
-                          border: OutlineInputBorder(),
-                          hintText: 'https://video.example.com'),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'CloudFront / Public URL',
+                        labelStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                        border: const OutlineInputBorder(),
+                        hintText: 'https://video.example.com',
+                        hintStyle: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1420,7 +1821,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -1434,7 +1842,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       publicBaseUrl: urlController.text.trim(),
                     );
                   },
-                  child: const Text('Save'),
+                  child: Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 )
               ],
             );
@@ -1472,12 +1887,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   children: [
                     Text(
                       fullName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.sp,
+                        color: const Color(0xFF111827),
+                      ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       '@$username',
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: const Color(0xFF6B7280),
+                        fontSize: 13.sp,
+                      ),
                     ),
                   ],
                 ),
@@ -1486,11 +1910,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ListTile(
                 leading: Icon(
                   isVerified ? Icons.verified_user : Icons.verified,
-                  color: isVerified ? Colors.grey : Colors.blue,
+                  color: isVerified ? Colors.grey : const Color(0xFF2563EB),
                 ),
-                title: Text(isVerified
-                    ? 'Remove Verification Badge'
-                    : 'Grant Verification Badge'),
+                title: Text(
+                  isVerified
+                      ? 'Remove Verification Badge'
+                      : 'Grant Verification Badge',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _toggleUserVerification(userId, isVerified);
@@ -1501,9 +1932,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   isAuthor ? Icons.edit_off : Icons.create,
                   color: isAuthor ? Colors.grey : Colors.green,
                 ),
-                title: Text(isAuthor
-                    ? 'Revoke Author Privileges'
-                    : 'Grant Author Privileges'),
+                title: Text(
+                  isAuthor
+                      ? 'Revoke Author Privileges'
+                      : 'Grant Author Privileges',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _toggleUserAuthor(userId, isAuthor);
@@ -1511,7 +1949,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.badge, color: Colors.amber),
-                title: const Text('Update Role Title'),
+                title: Text(
+                  'Update Role Title',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _updateUserRoleTitle(userId, roleTitle);
@@ -1520,7 +1965,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ListTile(
                 leading: const Icon(Icons.palette_outlined,
                     color: Colors.blueAccent),
-                title: const Text('Update Profile Border'),
+                title: Text(
+                  'Update Profile Border',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _showBorderSelectionDialog(userId, currentBorder);
@@ -1529,10 +1981,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ListTile(
                 leading: const Icon(Icons.workspace_premium_outlined,
                     color: Colors.deepPurple),
-                title: const Text('Grant Achievements'),
-                subtitle: currentAchievements.isEmpty
-                    ? const Text('No achievements granted yet')
-                    : Text('${currentAchievements.length} granted'),
+                title: Text(
+                  'Grant Achievements',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  currentAchievements.isEmpty
+                      ? 'No achievements granted yet'
+                      : '${currentAchievements.length} granted',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 11.5.sp,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _showGrantAchievementDialog(userId, currentAchievements);
@@ -1540,7 +2006,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.orange),
-                title: const Text('Force Revoke All Sessions'),
+                title: Text(
+                  'Force Revoke All Sessions',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _revokeUserSessions(userId);
@@ -1548,9 +2021,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
-                title: const Text('Delete Account',
-                    style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold)),
+                title: Text(
+                  'Delete Account',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.sp,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteUserAccount(userId);
@@ -1569,12 +2048,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Admin Console',
           style: TextStyle(
-            color: Color(0xFF111827),
+            fontFamily: 'SF Pro Rounded',
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+            fontSize: 17.sp,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -1587,6 +2068,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           indicatorColor: const Color(0xFF2563EB),
           indicatorSize: TabBarIndicatorSize.tab,
           isScrollable: true,
+          labelStyle: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w700,
+          ),
+          unselectedLabelStyle: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+          ),
           tabs: const [
             Tab(icon: Icon(Icons.analytics_outlined), text: 'Stats'),
             Tab(icon: Icon(Icons.people_outline), text: 'Users'),
@@ -1606,16 +2097,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF111827)),
             onPressed: () {
-              _fetchUsers();
-              _fetchPosts();
-              _fetchFlaggedPosts();
-              _fetchFlaggedStories();
-              _fetchRcloneStatus();
-              _fetchR2Status();
-              _fetchAWSStatus();
-              _loadAdminShopSettings();
-              _fetchPromotions();
-              _showSuccessSnackBar('Data reloaded.');
+              _refreshAll();
+              _showSuccessSnackBar('Data reloaded from server.');
             },
           )
         ],
@@ -1635,99 +2118,172 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
-  // 1. Overview Tab
+  // 1. Overview Tab (Fully dynamic with real live database stats)
   Widget _buildOverviewTab() {
     final reportsCount = _flaggedPosts.length + _flaggedStories.length;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'System Activity',
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111827)),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Flagged Content',
-                  value: '$reportsCount',
-                  icon: Icons.report_problem,
-                  color: Colors.red,
-                  onTap: () => _tabController.animateTo(3),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Active Users',
-                  value: '${_users.length}',
-                  icon: Icons.people,
-                  color: Colors.blue,
-                  onTap: () => _tabController.animateTo(1),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Posts Managed',
-                  value: '${_posts.length}',
-                  icon: Icons.post_add,
-                  color: Colors.green,
-                  onTap: () => _tabController.animateTo(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Integration Status',
-                  value: 'Cloud & Sync',
-                  icon: Icons.cloud_done_outlined,
-                  color: Colors.purple,
-                  onTap: () => _tabController.animateTo(4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Admin Guidelines',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111827)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
+    final totalUsers = _overviewStats != null &&
+            _overviewStats!['totalUsers'] != null
+        ? _formatNumber(_overviewStats!['totalUsers'])
+        : _formatNumber(_users.length);
+    final totalPosts = _overviewStats != null &&
+            _overviewStats!['totalPosts'] != null
+        ? _formatNumber(_overviewStats!['totalPosts'])
+        : _formatNumber(_posts.length);
+    final activeSessions = _overviewStats != null &&
+            _overviewStats!['activeSessions'] != null
+        ? _formatNumber(_overviewStats!['activeSessions'])
+        : '0';
+    final totalComments = _overviewStats != null &&
+            _overviewStats!['totalComments'] != null
+        ? _formatNumber(_overviewStats!['totalComments'])
+        : '0';
+    final superAdmin =
+        _overviewStats?['superAdminUsername']?.toString() ?? 'gemini';
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        _refreshAll();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildGuidelineRow(Icons.check_circle_outline,
-                    'Verify original creators by toggling the badge in the Users tab.'),
-                const SizedBox(height: 12),
-                _buildGuidelineRow(Icons.security,
-                    'Promptly review content flagged under the Flags tab. Dismiss reports if they comply with platform policies.'),
-                const SizedBox(height: 12),
-                _buildGuidelineRow(Icons.sync_alt,
-                    'Manage AWS S3, Cloudflare R2, and Rclone mount configuration parameters in the Services tab.'),
+                Text(
+                  'System Activity & Live Stats',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                if (_isLoadingOverview)
+                  SizedBox(
+                    width: 16.w,
+                    height: 16.w,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  ),
               ],
             ),
-          )
-        ],
+            const SizedBox(height: 4),
+            Text(
+              'Super Admin: @$superAdmin • Live Database Metrics',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.sp,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Total Users',
+                    value: totalUsers,
+                    icon: Icons.people_alt_rounded,
+                    color: const Color(0xFF2563EB),
+                    onTap: () => _tabController.animateTo(1),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Posts Created',
+                    value: totalPosts,
+                    icon: Icons.article_rounded,
+                    color: const Color(0xFF10B981),
+                    onTap: () => _tabController.animateTo(2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Flagged Content',
+                    value: '$reportsCount',
+                    icon: Icons.report_problem_rounded,
+                    color: const Color(0xFFEF4444),
+                    onTap: () => _tabController.animateTo(3),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Active Sessions',
+                    value: activeSessions,
+                    icon: Icons.devices_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () => _tabController.animateTo(1),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Total Comments',
+                    value: totalComments,
+                    icon: Icons.chat_bubble_rounded,
+                    color: const Color(0xFFF59E0B),
+                    onTap: () => _tabController.animateTo(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    title: 'Cloud & Services',
+                    value: 'Sync OK',
+                    icon: Icons.cloud_done_rounded,
+                    color: const Color(0xFF06B6D4),
+                    onTap: () => _tabController.animateTo(4),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Admin Guidelines',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 15.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                children: [
+                  _buildGuidelineRow(Icons.check_circle_outline,
+                      'Verify original creators and authors by toggling badges in the Users tab.'),
+                  const SizedBox(height: 12),
+                  _buildGuidelineRow(Icons.security,
+                      'Promptly review content flagged under the Flags tab. Dismiss reports or mark content sensitive/safe.'),
+                  const SizedBox(height: 12),
+                  _buildGuidelineRow(Icons.sync_alt,
+                      'Manage Cloudflare R2, AWS S3 Video Storage, and Rclone mount parameters in the Services tab.'),
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -1743,13 +2299,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withAlpha(5),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -1760,21 +2316,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
-              child: Icon(icon, color: color),
+              backgroundColor: color.withAlpha(25),
+              child: Icon(icon, color: color, size: 20),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               value,
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF111827)),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF111827),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.5.sp,
+                color: const Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -1786,13 +2349,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF4B5563), size: 20),
-        const SizedBox(width: 12),
+        Icon(icon, color: const Color(0xFF4B5563), size: 18),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-                fontSize: 14, color: Color(0xFF4B5563), height: 1.4),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+              color: const Color(0xFF4B5563),
+              height: 1.35,
+            ),
           ),
         ),
       ],
@@ -1821,153 +2388,194 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           },
         ),
         Expanded(
-          child: _isLoadingUsers
-              ? const Center(child: CircularProgressIndicator())
-              : _users.isEmpty
-                  ? const Center(child: Text('No users found.'))
-                  : ListView.builder(
-                      itemCount: _users.length,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemBuilder: (context, index) {
-                        final u = _users[index];
-                        final avatarUrl = u['avatarUrl'] ?? '';
-                        final fullName = u['fullName'] ?? '';
-                        final username = u['username'] ?? '';
-                        final isVerified = u['isVerified'] == true;
-                        final isAuthor = u['isAuthor'] == true;
-                        final roleTitle = u['roleTitle'] ?? '';
-                        final postCount = u['postCount'] ?? 0;
-                        final sessions = u['activeSessionCount'] ?? 0;
-                        final profileBorder = u['profileBorder'] ?? '';
-                        final achievements =
-                            _readAchievementKeys(u['achievements']);
+          child: RefreshIndicator(
+            onRefresh: _fetchUsers,
+            child: _isLoadingUsers
+                ? const Center(child: CircularProgressIndicator())
+                : _users.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No users found.',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 13.sp,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _users.length,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemBuilder: (context, index) {
+                          final u = _users[index];
+                          final avatarUrl = u['avatarUrl'] ?? '';
+                          final fullName = u['fullName'] ?? '';
+                          final username = u['username'] ?? '';
+                          final isVerified = u['isVerified'] == true;
+                          final isAuthor = u['isAuthor'] == true;
+                          final roleTitle = u['roleTitle'] ?? '';
+                          final postCount = u['postCount'] ?? 0;
+                          final sessions = u['activeSessionCount'] ?? 0;
+                          final profileBorder = u['profileBorder'] ?? '';
+                          final achievements =
+                              _readAchievementKeys(u['achievements']);
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            leading: CircleAvatar(
-                              radius: 24,
-                              backgroundImage: avatarUrl.toString().isNotEmpty
-                                  ? CachedNetworkImageProvider(
-                                      ApiConfig.assetUrl(avatarUrl))
-                                  : null,
-                              backgroundColor: Colors.blue.shade100,
-                              child: avatarUrl.toString().isEmpty
-                                  ? Text(fullName.isNotEmpty
-                                      ? fullName[0].toUpperCase()
-                                      : '?')
-                                  : null,
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
                             ),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    fullName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              leading: CircleAvatar(
+                                radius: 22,
+                                backgroundImage: avatarUrl.toString().isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        ApiConfig.assetUrl(avatarUrl))
+                                    : null,
+                                backgroundColor: Colors.blue.shade100,
+                                child: avatarUrl.toString().isEmpty
+                                    ? Text(
+                                        fullName.isNotEmpty
+                                            ? fullName[0].toUpperCase()
+                                            : '?',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14.sp,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      fullName,
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.5.sp,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                                if (isVerified)
-                                  const Icon(Icons.verified,
-                                      color: Colors.blue, size: 16),
-                                if (isAuthor) const SizedBox(width: 4),
-                                if (isAuthor)
-                                  const Icon(Icons.border_color_rounded,
-                                      color: Colors.green, size: 16),
-                              ],
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('@$username',
+                                  if (isVerified)
+                                    const Icon(Icons.verified,
+                                        color: Color(0xFF2563EB), size: 16),
+                                  if (isAuthor) const SizedBox(width: 4),
+                                  if (isAuthor)
+                                    const Icon(Icons.border_color_rounded,
+                                        color: Colors.green, size: 16),
+                                ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '@$username',
                                     style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 13)),
-                                if (roleTitle.toString().isNotEmpty)
-                                  Container(
-                                    margin: const EdgeInsets.only(
-                                        top: 4, bottom: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(4),
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF6B7280),
+                                      fontSize: 12.sp,
                                     ),
-                                    child: Text(
-                                      roleTitle,
-                                      style: TextStyle(
+                                  ),
+                                  if (roleTitle.toString().isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 4, bottom: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade50,
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        roleTitle,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
                                           color: Colors.blue.shade700,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold),
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                if (profileBorder.toString().isNotEmpty)
-                                  Container(
-                                    margin: const EdgeInsets.only(
-                                        top: 2, bottom: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.shade50,
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                          color: Colors.amber.shade200),
-                                    ),
-                                    child: Text(
-                                      'Border: ${profileBorder.toString().substring(0, 1).toUpperCase()}${profileBorder.toString().substring(1)}',
-                                      style: TextStyle(
+                                  if (profileBorder.toString().isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 2, bottom: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade50,
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                        border: Border.all(
+                                            color: Colors.amber.shade200),
+                                      ),
+                                      child: Text(
+                                        'Border: ${profileBorder.toString().substring(0, 1).toUpperCase()}${profileBorder.toString().substring(1)}',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
                                           color: Colors.amber.shade800,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold),
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  if (achievements.isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 2, bottom: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.deepPurple.shade50,
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                        border: Border.all(
+                                            color:
+                                                Colors.deepPurple.shade100),
+                                      ),
+                                      child: Text(
+                                        '${achievements.length} achievement${achievements.length == 1 ? '' : 's'}',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          color:
+                                              Colors.deepPurple.shade700,
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$postCount posts • $sessions active sessions',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF9CA3AF),
+                                      fontSize: 11.5.sp,
                                     ),
                                   ),
-                                if (achievements.isNotEmpty)
-                                  Container(
-                                    margin: const EdgeInsets.only(
-                                        top: 2, bottom: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepPurple.shade50,
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                          color: Colors.deepPurple.shade100),
-                                    ),
-                                    child: Text(
-                                      '${achievements.length} achievement${achievements.length == 1 ? '' : 's'}',
-                                      style: TextStyle(
-                                          color: Colors.deepPurple.shade700,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$postCount posts • $sessions active sessions',
-                                  style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 12),
-                                ),
-                              ],
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.more_vert),
+                                onPressed: () => _showUserActionOptions(u),
+                              ),
                             ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.more_vert),
-                              onPressed: () => _showUserActionOptions(u),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
+          ),
         )
       ],
     );
@@ -1995,188 +2603,239 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           },
         ),
         Expanded(
-          child: _isLoadingPosts
-              ? const Center(child: CircularProgressIndicator())
-              : _posts.isEmpty
-                  ? const Center(child: Text('No posts found.'))
-                  : ListView.builder(
-                      itemCount: _posts.length,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemBuilder: (context, index) {
-                        final p = _posts[index];
-                        final postId = p['id'];
-                        final authorName =
-                            p['author_full_name'] ?? p['author'] ?? '';
-                        final postText = p['text'] ?? '';
-                        final likes = p['like_count'] ?? 0;
-                        final comments = p['comment_count'] ?? 0;
-                        final reports = p['report_count'] ?? 0;
-                        final authorAvatar = p['author_avatar_url'] ?? '';
-                        final isSensitive = p['is_sensitive'] == true;
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+          child: RefreshIndicator(
+            onRefresh: _fetchPosts,
+            child: _isLoadingPosts
+                ? const Center(child: CircularProgressIndicator())
+                : _posts.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No posts found.',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 13.sp,
+                            color: const Color(0xFF6B7280),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 18,
-                                      backgroundImage: authorAvatar
-                                              .toString()
-                                              .isNotEmpty
-                                          ? CachedNetworkImageProvider(
-                                              ApiConfig.assetUrl(authorAvatar))
-                                          : null,
-                                      child: authorAvatar.toString().isEmpty
-                                          ? const Icon(Icons.person, size: 18)
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  authorName,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              if (isSensitive)
-                                                Container(
-                                                  margin: const EdgeInsets.only(left: 6),
-                                                  padding: const EdgeInsets.symmetric(
-                                                      horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.amber.shade50,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                    border: Border.all(color: Colors.amber.shade200),
-                                                  ),
-                                                  child: Text(
-                                                    'SENSITIVE',
-                                                    style: TextStyle(
-                                                        color: Colors.amber.shade800,
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 9),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          Text(
-                                            p['created_at'] != null
-                                                ? p['created_at']
-                                                    .toString()
-                                                    .split('T')
-                                                    .first
-                                                : '',
-                                            style: TextStyle(
-                                                color: Colors.grey.shade500,
-                                                fontSize: 11),
-                                          ),
-                                        ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _posts.length,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemBuilder: (context, index) {
+                          final p = _posts[index];
+                          final postId = p['id'];
+                          final authorName =
+                              p['author_full_name'] ?? p['author'] ?? '';
+                          final postText = p['text'] ?? '';
+                          final likes = p['like_count'] ?? 0;
+                          final comments = p['comment_count'] ?? 0;
+                          final reports = p['report_count'] ?? 0;
+                          final authorAvatar = p['author_avatar_url'] ?? '';
+                          final isSensitive = p['is_sensitive'] == true;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 18,
+                                        backgroundImage: authorAvatar
+                                                .toString()
+                                                .isNotEmpty
+                                            ? CachedNetworkImageProvider(
+                                                ApiConfig.assetUrl(
+                                                    authorAvatar))
+                                            : null,
+                                        child: authorAvatar.toString().isEmpty
+                                            ? const Icon(Icons.person, size: 18)
+                                            : null,
                                       ),
-                                    ),
-                                    if (reports > 0)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(6),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    authorName,
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'SF Pro Rounded',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 13.5.sp,
+                                                      color: const Color(
+                                                          0xFF111827),
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (isSensitive)
+                                                  Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                            left: 6),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.amber.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
+                                                      border: Border.all(
+                                                          color: Colors.amber
+                                                              .shade200),
+                                                    ),
+                                                    child: Text(
+                                                      'SENSITIVE',
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            'SF Pro Rounded',
+                                                        color: Colors.amber
+                                                            .shade800,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 9.sp,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            Text(
+                                              p['created_at'] != null
+                                                  ? p['created_at']
+                                                      .toString()
+                                                      .split('T')
+                                                      .first
+                                                  : '',
+                                              style: TextStyle(
+                                                fontFamily: 'SF Pro Rounded',
+                                                color: const Color(0xFF9CA3AF),
+                                                fontSize: 11.sp,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        child: Text(
-                                          '🚨 $reports',
-                                          style: TextStyle(
+                                      ),
+                                      if (reports > 0)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '🚨 $reports',
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
                                               color: Colors.red.shade700,
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 12),
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: Icon(
+                                          isSensitive
+                                              ? Icons.warning_amber_rounded
+                                              : Icons.warning_amber_outlined,
+                                          color: isSensitive
+                                              ? Colors.amber.shade700
+                                              : Colors.grey.shade400,
+                                        ),
+                                        onPressed: () => _togglePostSensitivity(
+                                            postId, isSensitive),
+                                        tooltip: isSensitive
+                                            ? 'Mark Safe'
+                                            : 'Mark Sensitive',
+                                      ),
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            color: Colors.red),
+                                        onPressed: () => _deletePost(postId),
+                                      )
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    postText.isNotEmpty
+                                        ? postText
+                                        : '(No text content)',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: postText.isNotEmpty
+                                          ? const Color(0xFF1F2937)
+                                          : Colors.grey,
+                                      fontSize: 13.sp,
+                                      height: 1.35,
+                                      fontStyle: postText.isNotEmpty
+                                          ? FontStyle.normal
+                                          : FontStyle.italic,
+                                    ),
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.favorite_border,
+                                          size: 15,
+                                          color: Colors.grey.shade500),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$likes',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          color: const Color(0xFF6B7280),
+                                          fontSize: 12.sp,
                                         ),
                                       ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: Icon(
-                                        isSensitive
-                                            ? Icons.warning_amber_rounded
-                                            : Icons.warning_amber_outlined,
-                                        color: isSensitive
-                                            ? Colors.amber.shade700
-                                            : Colors.grey.shade400,
+                                      const SizedBox(width: 16),
+                                      Icon(Icons.chat_bubble_outline,
+                                          size: 15,
+                                          color: Colors.grey.shade500),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$comments',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          color: const Color(0xFF6B7280),
+                                          fontSize: 12.sp,
+                                        ),
                                       ),
-                                      onPressed: () =>
-                                          _togglePostSensitivity(postId, isSensitive),
-                                      tooltip: isSensitive
-                                          ? 'Mark Safe'
-                                          : 'Mark Sensitive',
-                                    ),
-                                    const SizedBox(width: 4),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red),
-                                      onPressed: () => _deletePost(postId),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  postText.isNotEmpty
-                                      ? postText
-                                      : '(No text content)',
-                                  style: TextStyle(
-                                    color: postText.isNotEmpty
-                                        ? const Color(0xFF1F2937)
-                                        : Colors.grey,
-                                    fontSize: 14,
-                                    fontStyle: postText.isNotEmpty
-                                        ? FontStyle.normal
-                                        : FontStyle.italic,
-                                  ),
-                                  maxLines: 4,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Icon(Icons.favorite_border,
-                                        size: 16, color: Colors.grey.shade500),
-                                    const SizedBox(width: 4),
-                                    Text('$likes',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12)),
-                                    const SizedBox(width: 16),
-                                    Icon(Icons.chat_bubble_outline,
-                                        size: 16, color: Colors.grey.shade500),
-                                    const SizedBox(width: 4),
-                                    Text('$comments',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12)),
-                                  ],
-                                )
-                              ],
+                                    ],
+                                  )
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
+          ),
         )
       ],
     );
@@ -2194,7 +2853,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             children: [
               _buildSegmentButton(0, 'Post Flags (${_flaggedPosts.length})'),
               const SizedBox(width: 8),
-              _buildSegmentButton(1, 'Story Flags (${_flaggedStories.length})'),
+              _buildSegmentButton(
+                  1, 'Story Flags (${_flaggedStories.length})'),
             ],
           ),
         ),
@@ -2224,7 +2884,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? const Color(0xFF4338CA) : const Color(0xFF4B5563),
+          fontFamily: 'SF Pro Rounded',
+          fontSize: 13.sp,
+          color:
+              isSelected ? const Color(0xFF4338CA) : const Color(0xFF4B5563),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -2236,165 +2899,219 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_flaggedPosts.isEmpty) {
-      return const Center(child: Text('No flagged posts reported.'));
+      return Center(
+        child: Text(
+          'No flagged posts reported.',
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+      );
     }
 
-    return ListView.builder(
-      itemCount: _flaggedPosts.length,
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) {
-        final g = _flaggedPosts[index];
-        final postId = g['post_id'];
-        final count = g['report_count'] ?? 0;
-        final author = g['post_author_full_name'] ?? g['post_author'] ?? '';
-        final text = g['post_text'] ?? '';
-        final reports = g['reports'] as List<dynamic>? ?? [];
-        final isSensitive = g['post_is_sensitive'] == true;
+    return RefreshIndicator(
+      onRefresh: _fetchFlaggedPosts,
+      child: ListView.builder(
+        itemCount: _flaggedPosts.length,
+        padding: const EdgeInsets.all(16),
+        itemBuilder: (context, index) {
+          final g = _flaggedPosts[index];
+          final postId = g['post_id'];
+          final count = g['report_count'] ?? 0;
+          final author = g['post_author_full_name'] ?? g['post_author'] ?? '';
+          final text = g['post_text'] ?? '';
+          final reports = g['reports'] as List<dynamic>? ?? [];
+          final isSensitive = g['post_is_sensitive'] == true;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.shade100),
-          ),
-          child: ExpansionTile(
-            title: Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          author,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isSensitive)
-                        Container(
-                          margin: const EdgeInsets.only(left: 6),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.amber.shade200),
-                          ),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.shade100),
+            ),
+            child: ExpansionTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
                           child: Text(
-                            'SENSITIVE',
+                            author,
                             style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.5.sp,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isSensitive)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border:
+                                  Border.all(color: Colors.amber.shade200),
+                            ),
+                            child: Text(
+                              'SENSITIVE',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
                                 color: Colors.amber.shade800,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 9),
+                                fontSize: 9.sp,
+                              ),
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '🚨 $count',
-                    style: TextStyle(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '🚨 $count',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.red.shade700,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13),
+                        fontSize: 12.5.sp,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: Text(
+                  text.isNotEmpty ? text : '(No text content)',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    color: const Color(0xFF4B5563),
+                  ),
+                ),
+              ),
+              children: [
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reports Reason List:',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.sp,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...reports.map((r) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '@${r['reporter_username'] ?? 'anonymous'}: ',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.5.sp,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    r['reason'] ?? '',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 12.5.sp,
+                                      color: const Color(0xFF4B5563),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () =>
+                                _togglePostSensitivity(postId, isSensitive),
+                            icon: Icon(
+                              isSensitive
+                                  ? Icons.warning_amber_rounded
+                                  : Icons.warning_amber_outlined,
+                              size: 16,
+                              color: Colors.amber.shade800,
+                            ),
+                            label: Text(
+                              isSensitive ? 'Mark Safe' : 'Mark Sensitive',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
+                                color: Colors.amber.shade800,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.amber.shade300),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton(
+                            onPressed: () => _dismissPostReports(postId),
+                            child: Text(
+                              'Dismiss Flags',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
+                                color: const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => _deletePost(postId),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red),
+                            child: Text(
+                              'Delete Post',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 )
               ],
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-              child: Text(
-                text.isNotEmpty ? text : '(No text content)',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey.shade800),
-              ),
-            ),
-            children: [
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Reports Reason List:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    ...reports.map((r) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '@${r['reporter_username'] ?? 'anonymous'}: ',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  r['reason'] ?? '',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade700),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              _togglePostSensitivity(postId, isSensitive),
-                          icon: Icon(
-                            isSensitive
-                                ? Icons.warning_amber_rounded
-                                : Icons.warning_amber_outlined,
-                            size: 16,
-                            color: Colors.amber.shade800,
-                          ),
-                          label: Text(
-                            isSensitive ? 'Mark Safe' : 'Mark Sensitive',
-                            style: TextStyle(color: Colors.amber.shade800),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.amber.shade300),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: () => _dismissPostReports(postId),
-                          child: const Text('Dismiss Flags',
-                              style: TextStyle(color: Colors.blue)),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _deletePost(postId),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
-                          child: const Text('Delete Post',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -2403,141 +3120,188 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_flaggedStories.isEmpty) {
-      return const Center(child: Text('No flagged stories reported.'));
+      return Center(
+        child: Text(
+          'No flagged stories reported.',
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+      );
     }
 
-    return ListView.builder(
-      itemCount: _flaggedStories.length,
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) {
-        final g = _flaggedStories[index];
-        final storyId = g['story_id'];
-        final count = g['report_count'] ?? 0;
-        final author =
-            g['story_author_full_name'] ?? g['story_author_username'] ?? '';
-        final text = g['story_text'] ?? '';
-        final imageUrl = g['story_image_url'] ?? '';
-        final reports = g['reports'] as List<dynamic>? ?? [];
+    return RefreshIndicator(
+      onRefresh: _fetchFlaggedStories,
+      child: ListView.builder(
+        itemCount: _flaggedStories.length,
+        padding: const EdgeInsets.all(16),
+        itemBuilder: (context, index) {
+          final g = _flaggedStories[index];
+          final storyId = g['story_id'];
+          final count = g['report_count'] ?? 0;
+          final author =
+              g['story_author_full_name'] ?? g['story_author_username'] ?? '';
+          final text = g['story_text'] ?? '';
+          final imageUrl = g['story_image_url'] ?? '';
+          final reports = g['reports'] as List<dynamic>? ?? [];
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.shade100),
-          ),
-          child: ExpansionTile(
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    author,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.shade100),
+            ),
+            child: ExpansionTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      author,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5.sp,
+                      ),
+                    ),
                   ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '🚨 $count',
-                    style: TextStyle(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '🚨 $count',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.red.shade700,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13),
+                        fontSize: 12.5.sp,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: Row(
+                  children: [
+                    if (imageUrl.toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: Text(
+                        text.isNotEmpty ? text : '(Image Story)',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              children: [
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reports Reason List:',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.sp,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...reports.map((r) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '@${r['reporter_username'] ?? 'anonymous'}: ',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.5.sp,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    r['reason'] ?? '',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 12.5.sp,
+                                      color: const Color(0xFF4B5563),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            onPressed: () => _dismissStoryReports(storyId),
+                            child: Text(
+                              'Dismiss Flags',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
+                                color: const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => _deleteStory(storyId),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red),
+                            child: Text(
+                              'Delete Story',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 )
               ],
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-              child: Row(
-                children: [
-                  if (imageUrl.toString().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: Text(
-                      text.isNotEmpty ? text : '(Image Story)',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.grey.shade800),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            children: [
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Reports Reason List:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    ...reports.map((r) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '@${r['reporter_username'] ?? 'anonymous'}: ',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  r['reason'] ?? '',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade700),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => _dismissStoryReports(storyId),
-                          child: const Text('Dismiss Flags',
-                              style: TextStyle(color: Colors.blue)),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _deleteStory(storyId),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
-                          child: const Text('Delete Story',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -2549,296 +3313,365 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       }
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section A: Rclone Config
-          _buildServiceHeaderCard(
-            title: 'Rclone (Google Drive mount)',
-            subtitle: 'Syncing and serving audio library files',
-            icon: Icons.sync,
-            color: Colors.blue.shade600,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.wait([
+          _fetchRcloneStatus(),
+          _fetchR2Status(),
+          _fetchAWSStatus(),
+        ]);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section A: Rclone Config
+            _buildServiceHeaderCard(
+              title: 'Rclone (Google Drive mount)',
+              subtitle: 'Syncing and serving audio library files',
+              icon: Icons.sync,
+              color: Colors.blue.shade600,
             ),
-            child: Column(
-              children: [
-                _buildStatusRow(
-                  label: 'Systemctl daemon status',
-                  isActive: _rcloneStatus?['serviceActive'] == true,
-                  activeText: 'Active & running',
-                  inactiveText: 'Inactive / stopped',
-                ),
-                const Divider(height: 24),
-                _buildStatusRow(
-                  label: 'Rclone mount active',
-                  isActive: _rcloneStatus?['isMountpoint'] == true,
-                  activeText: 'Mounted successfully',
-                  inactiveText: 'Unmounted',
-                ),
-                const Divider(height: 24),
-                _buildStatusRow(
-                  label: 'Google Drive response test',
-                  isActive: _rcloneStatus?['rcloneConnected'] == true,
-                  activeText: 'Connected & listing files',
-                  inactiveText: 'Connection failed',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _showRcloneCredsDialog,
-                        icon: const Icon(Icons.vpn_key_outlined, size: 16),
-                        label: const Text('Update Credentials'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isRestartingRclone
-                            ? null
-                            : _restartRcloneAudioMount,
-                        icon: _isRestartingRclone
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.restart_alt_rounded, size: 16),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4B5563)),
-                        label: const Text('Restart Mount',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Section B: Cloudflare R2
-          _buildServiceHeaderCard(
-            title: 'Cloudflare R2 Storage',
-            subtitle: 'Dynamic image uploads and avatar media hosting',
-            icon: Icons.cloud_outlined,
-            color: Colors.orange.shade700,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatusRow(
-                  label: 'Cloudflare R2 Status',
-                  isActive: _r2Status?['enabled'] == true,
-                  activeText: 'R2 Storage Enabled',
-                  inactiveText: 'Disabled (fallback to local)',
-                ),
-                const Divider(height: 24),
-                Text(
-                  'Configuration:',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.grey.shade800),
-                ),
-                const SizedBox(height: 6),
-                _buildConfigTextRow(
-                    'Bucket Name', _r2Status?['bucket'] ?? '(Not set)'),
-                _buildConfigTextRow('Public Domain',
-                    _r2Status?['publicBaseUrl'] ?? '(Not set)'),
-                _buildConfigTextRow('Access Key Configured',
-                    _r2Status?['accessKeyIdSet'] == true ? 'Yes' : 'No'),
-                _buildConfigTextRow('Secret Key Configured',
-                    _r2Status?['secretAccessKeySet'] == true ? 'Yes' : 'No'),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _showR2ConfigDialog,
-                        icon: const Icon(Icons.settings, size: 16),
-                        label: const Text('Update Settings'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isTestingR2 ? null : _testR2Connection,
-                        icon: _isTestingR2
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.flourescent_outlined, size: 16),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange.shade700),
-                        label: const Text('Test Connection',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Section C: AWS S3 Video Storage
-          _buildServiceHeaderCard(
-            title: 'AWS S3 Video Storage',
-            subtitle: 'CDN optimized video streaming & uploads',
-            icon: Icons.video_library_outlined,
-            color: Colors.amber.shade800,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatusRow(
-                  label: 'AWS Video Integration',
-                  isActive: _awsStatus?['enabled'] == true,
-                  activeText: 'AWS S3 Upload Enabled',
-                  inactiveText: 'Disabled (fallback to local)',
-                ),
-                const Divider(height: 24),
-                Text(
-                  'Configuration:',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.grey.shade800),
-                ),
-                const SizedBox(height: 6),
-                _buildConfigTextRow(
-                    'S3 Bucket', _awsStatus?['bucket'] ?? '(Not set)'),
-                _buildConfigTextRow(
-                    'AWS Region', _awsStatus?['region'] ?? '(Not set)'),
-                _buildConfigTextRow('CloudFront URL',
-                    _awsStatus?['publicBaseUrl'] ?? '(Not set)'),
-                _buildConfigTextRow('Access Key Configured',
-                    _awsStatus?['accessKeyIdSet'] == true ? 'Yes' : 'No'),
-                _buildConfigTextRow('Secret Key Configured',
-                    _awsStatus?['secretAccessKeySet'] == true ? 'Yes' : 'No'),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _showAWSConfigDialog,
-                        icon: const Icon(Icons.settings, size: 16),
-                        label: const Text('Update Settings'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isTestingAWS ? null : _testAWSConnection,
-                        icon: _isTestingAWS
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.flourescent_outlined, size: 16),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber.shade800),
-                        label: const Text('Test Connection',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Section D: System Utilities / Database Tools
-          _buildServiceHeaderCard(
-            title: 'Database Utilities',
-            subtitle: 'Global operations and resets',
-            icon: Icons.storage_outlined,
-            color: Colors.red.shade600,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Postcard UI Themes:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Color(0xFF1F2937),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                children: [
+                  _buildStatusRow(
+                    label: 'Systemctl daemon status',
+                    isActive: _rcloneStatus?['serviceActive'] == true,
+                    activeText: 'Active & running',
+                    inactiveText: 'Inactive / stopped',
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'This will clear the postcard_theme setting for all users, resetting all posts back to the default UI layout.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF4B5563),
+                  const Divider(height: 24),
+                  _buildStatusRow(
+                    label: 'Rclone mount active',
+                    isActive: _rcloneStatus?['isMountpoint'] == true,
+                    activeText: 'Mounted successfully',
+                    inactiveText: 'Unmounted',
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isResettingPostcards ? null : _confirmResetPostcards,
-                    icon: _isResettingPostcards
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                  const Divider(height: 24),
+                  _buildStatusRow(
+                    label: 'Google Drive response test',
+                    isActive: _rcloneStatus?['rcloneConnected'] == true,
+                    activeText: 'Connected & listing files',
+                    inactiveText: 'Connection failed',
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showRcloneCredsDialog,
+                          icon: const Icon(Icons.vpn_key_outlined, size: 16),
+                          label: Text(
+                            'Update Credentials',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isRestartingRclone
+                              ? null
+                              : _restartRcloneAudioMount,
+                          icon: _isRestartingRclone
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : const Icon(Icons.restart_alt_rounded,
+                                  size: 16),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4B5563)),
+                          label: Text(
+                            'Restart Mount',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
-                          )
-                        : const Icon(Icons.cleaning_services_outlined, size: 16),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
-                      foregroundColor: Colors.white,
-                    ),
-                    label: const Text('Reset All Postcard Themes'),
-                  ),
-                ),
-              ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            // Section B: Cloudflare R2
+            _buildServiceHeaderCard(
+              title: 'Cloudflare R2 Storage',
+              subtitle: 'Dynamic image uploads and avatar media hosting',
+              icon: Icons.cloud_outlined,
+              color: Colors.orange.shade700,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatusRow(
+                    label: 'Cloudflare R2 Status',
+                    isActive: _r2Status?['enabled'] == true,
+                    activeText: 'R2 Storage Enabled',
+                    inactiveText: 'Disabled (fallback to local)',
+                  ),
+                  const Divider(height: 24),
+                  Text(
+                    'Configuration:',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _buildConfigTextRow(
+                      'Bucket Name', _r2Status?['bucket'] ?? '(Not set)'),
+                  _buildConfigTextRow('Public Domain',
+                      _r2Status?['publicBaseUrl'] ?? '(Not set)'),
+                  _buildConfigTextRow('Access Key Configured',
+                      _r2Status?['accessKeyIdSet'] == true ? 'Yes' : 'No'),
+                  _buildConfigTextRow('Secret Key Configured',
+                      _r2Status?['secretAccessKeySet'] == true ? 'Yes' : 'No'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showR2ConfigDialog,
+                          icon: const Icon(Icons.settings, size: 16),
+                          label: Text(
+                            'Update Settings',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isTestingR2 ? null : _testR2Connection,
+                          icon: _isTestingR2
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2))
+                              : const Icon(Icons.flourescent_outlined,
+                                  size: 16),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.shade700),
+                          label: Text(
+                            'Test Connection',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Section C: AWS S3 Video Storage
+            _buildServiceHeaderCard(
+              title: 'AWS S3 Video Storage',
+              subtitle: 'CDN optimized video streaming & uploads',
+              icon: Icons.video_library_outlined,
+              color: Colors.amber.shade800,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatusRow(
+                    label: 'AWS Video Integration',
+                    isActive: _awsStatus?['enabled'] == true,
+                    activeText: 'AWS S3 Upload Enabled',
+                    inactiveText: 'Disabled (fallback to local)',
+                  ),
+                  const Divider(height: 24),
+                  Text(
+                    'Configuration:',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _buildConfigTextRow(
+                      'S3 Bucket', _awsStatus?['bucket'] ?? '(Not set)'),
+                  _buildConfigTextRow(
+                      'AWS Region', _awsStatus?['region'] ?? '(Not set)'),
+                  _buildConfigTextRow('CloudFront URL',
+                      _awsStatus?['publicBaseUrl'] ?? '(Not set)'),
+                  _buildConfigTextRow('Access Key Configured',
+                      _awsStatus?['accessKeyIdSet'] == true ? 'Yes' : 'No'),
+                  _buildConfigTextRow('Secret Key Configured',
+                      _awsStatus?['secretAccessKeySet'] == true ? 'Yes' : 'No'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showAWSConfigDialog,
+                          icon: const Icon(Icons.settings, size: 16),
+                          label: Text(
+                            'Update Settings',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isTestingAWS ? null : _testAWSConnection,
+                          icon: _isTestingAWS
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2))
+                              : const Icon(Icons.flourescent_outlined,
+                                  size: 16),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber.shade800),
+                          label: Text(
+                            'Test Connection',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Section D: System Utilities / Database Tools
+            _buildServiceHeaderCard(
+              title: 'Database Utilities',
+              subtitle: 'Global operations and resets',
+              icon: Icons.storage_outlined,
+              color: Colors.red.shade600,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Postcard UI Themes:',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This will clear the postcard_theme setting for all users, resetting all posts back to the default UI layout.',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 12.5.sp,
+                      color: const Color(0xFF4B5563),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isResettingPostcards
+                          ? null
+                          : _confirmResetPostcards,
+                      icon: _isResettingPostcards
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.cleaning_services_outlined,
+                              size: 16),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                      ),
+                      label: Text(
+                        'Reset All Postcard Themes',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2853,7 +3686,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withAlpha(25),
           child: Icon(icon, color: color, size: 18),
         ),
         const SizedBox(width: 10),
@@ -2863,14 +3696,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF111827)),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15.sp,
+                  color: const Color(0xFF111827),
+                ),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
+                  color: const Color(0xFF6B7280),
+                ),
               )
             ],
           ),
@@ -2890,10 +3729,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Color(0xFF374151)),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontWeight: FontWeight.w500,
+              fontSize: 13.sp,
+              color: const Color(0xFF374151),
+            ),
           ),
         ),
         Container(
@@ -2913,8 +3754,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               Text(
                 isActive ? activeText : inactiveText,
                 style: TextStyle(
-                  color: isActive ? Colors.green.shade700 : Colors.red.shade700,
-                  fontSize: 12,
+                  fontFamily: 'SF Pro Rounded',
+                  color: isActive
+                      ? Colors.green.shade700
+                      : Colors.red.shade700,
+                  fontSize: 11.5.sp,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -2931,15 +3775,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$key: ',
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF4B5563))),
+          Text(
+            '$key: ',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF4B5563),
+            ),
+          ),
           Expanded(
             child: Text(
               val,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF1F2937)),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.5.sp,
+                color: const Color(0xFF1F2937),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -2962,12 +3814,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: TextField(
         controller: controller,
         onChanged: onChanged,
+        style: TextStyle(
+          fontFamily: 'SF Pro Rounded',
+          fontSize: 13.sp,
+          color: const Color(0xFF111827),
+        ),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          hintStyle: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            color: const Color(0xFF9CA3AF),
+          ),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
                   onPressed: onClear,
                 )
               : null,
@@ -2998,13 +3860,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final List<dynamic> disabledList = data['disabledThemes'] ?? [];
-        final disabledSet = disabledList.map((e) => e.toString().trim().toLowerCase()).toSet();
+        final disabledSet =
+            disabledList.map((e) => e.toString().trim().toLowerCase()).toSet();
 
         setState(() {
           _enabledThemes.clear();
           for (final theme in themeProducts) {
             final themeKey = _themeKeyForPublic(theme.type);
-            _enabledThemes[themeKey] = !disabledSet.contains(themeKey.toLowerCase());
+            _enabledThemes[themeKey] =
+                !disabledSet.contains(themeKey.toLowerCase());
           }
         });
       }
@@ -3042,9 +3906,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
-          if (widget.sessionCookie != null && widget.sessionCookie!.isNotEmpty) 'Cookie': widget.sessionCookie!,
+          if (widget.sessionCookie != null && widget.sessionCookie!.isNotEmpty)
+            'Cookie': widget.sessionCookie!,
         },
-        body: jsonEncode({'audience': _broadcastAudience, 'body': body, 'senderUsername': _broadcastSenderController.text.trim()}),
+        body: jsonEncode({
+          'audience': _broadcastAudience,
+          'body': body,
+          'senderUsername': _broadcastSenderController.text.trim()
+        }),
       );
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 && data['ok'] == true) {
@@ -3142,144 +4011,165 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _buildShopTab() {
     return _isShopStateLoading
         ? const Center(child: CircularProgressIndicator())
-        : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: themeProducts.length,
-            itemBuilder: (context, index) {
-              final theme = themeProducts[index];
-              final themeKey = _themeKeyForPublic(theme.type);
-              final isEnabled = _enabledThemes[themeKey] ?? true;
+        : RefreshIndicator(
+            onRefresh: _loadAdminShopSettings,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: themeProducts.length,
+              itemBuilder: (context, index) {
+                final theme = themeProducts[index];
+                final themeKey = _themeKeyForPublic(theme.type);
+                final isEnabled = _enabledThemes[themeKey] ?? true;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                elevation: 0,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header preview gradient
-                    Container(
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: theme.previewGradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  elevation: 0,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header preview gradient
+                      Container(
+                        height: 60,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: theme.previewGradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16)),
                         ),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: theme.previewAvatarColor,
-                            child: Text(
-                              theme.previewInitial,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: theme.previewAvatarColor,
+                              child: Text(
+                                theme.previewInitial,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: theme.previewInitialColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              theme.previewLabel,
                               style: TextStyle(
-                                color: theme.previewInitialColor,
+                                fontFamily: 'SF Pro Rounded',
+                                color: const Color(0xFF111827),
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 13.5.sp,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            theme.previewLabel,
-                            style: const TextStyle(
-                              color: Color(0xFF111827),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  theme.title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF111827),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    theme.title,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF111827),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Switch(
-                                value: isEnabled,
-                                activeThumbColor: const Color(0xFF2563EB),
-                                onChanged: (value) async {
-                                  await _toggleThemePublicStatus(themeKey, value);
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            theme.description,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF4B5563),
-                              height: 1.4,
+                                Switch(
+                                  value: isEnabled,
+                                  activeThumbColor: const Color(0xFF2563EB),
+                                  onChanged: (value) async {
+                                    await _toggleThemePublicStatus(
+                                        themeKey, value);
+                                  },
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: isEnabled ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  isEnabled ? 'Visible in Shop' : 'Hidden from Shop',
-                                  style: TextStyle(
-                                    color: isEnabled ? const Color(0xFF16A34A) : const Color(0xFF4B5563),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                            const SizedBox(height: 6),
+                            Text(
+                              theme.description,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 13.sp,
+                                color: const Color(0xFF4B5563),
+                                height: 1.35,
                               ),
-                              const SizedBox(width: 8),
-                              if (theme.badgeText.isNotEmpty)
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
+                                    color: isEnabled
+                                        ? const Color(0xFFDCFCE7)
+                                        : const Color(0xFFF3F4F6),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    theme.badgeText,
-                                    style: const TextStyle(
-                                      color: Color(0xFF2563EB),
-                                      fontSize: 11,
+                                    isEnabled
+                                        ? 'Visible in Shop'
+                                        : 'Hidden from Shop',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: isEnabled
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFF4B5563),
+                                      fontSize: 11.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 8),
+                                if (theme.badgeText.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEFF6FF),
+                                      borderRadius:
+                                          BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      theme.badgeText,
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        color: const Color(0xFF2563EB),
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                    ],
+                  ),
+                );
+              },
+            ),
           );
   }
 
@@ -3293,11 +4183,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 preferredSize: const Size.fromHeight(48),
                 child: Container(
                   color: Colors.white,
-                  child: const TabBar(
-                    labelColor: Color(0xFF2563EB),
-                    unselectedLabelColor: Color(0xFF6B7280),
-                    indicatorColor: Color(0xFF2563EB),
-                    tabs: [
+                  child: TabBar(
+                    labelColor: const Color(0xFF2563EB),
+                    unselectedLabelColor: const Color(0xFF6B7280),
+                    indicatorColor: const Color(0xFF2563EB),
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: const [
                       Tab(icon: Icon(Icons.campaign_outlined), text: 'Ads'),
                       Tab(icon: Icon(Icons.send_outlined), text: 'Broadcast'),
                     ],
@@ -3307,183 +4207,222 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               body: TabBarView(
                 children: [
                   RefreshIndicator(
-              onRefresh: _fetchPromotions,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Feed Promotions & Ads',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: () => _showAddEditPromotionDialog(),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Promotions are injected into the home feed list after every 15 posts. Toggle the switch to activate or deactivate them.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_promotionsList.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 40),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.campaign_outlined, size: 48, color: Colors.grey[400]),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No promotions configured',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[600],
+                    onRefresh: _fetchPromotions,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16.0),
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Feed Promotions & Ads',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF111827),
+                              ),
                             ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2563EB),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              onPressed: () => _showAddEditPromotionDialog(),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: Text(
+                                'Add',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Promotions are injected into the home feed list after every 15 posts. Toggle the switch to activate or deactivate them.',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 12.5.sp,
+                            color: const Color(0xFF6B7280),
                           ),
-                        ],
-                      ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _promotionsList.length,
-                      itemBuilder: (context, index) {
-                        final promo = _promotionsList[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFFE5E7EB)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_promotionsList.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            alignment: Alignment.center,
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        promo.title,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF111827),
-                                        ),
-                                      ),
-                                    ),
-                                    Switch(
-                                      value: promo.isEnabled,
-                                      activeColor: const Color(0xFF2563EB),
-                                      onChanged: (val) async {
-                                        final list = List<Promotion>.from(_promotionsList);
-                                        list[index] = Promotion(
-                                          id: promo.id,
-                                          title: promo.title,
-                                          text: promo.text,
-                                          imageUrl: promo.imageUrl,
-                                          actionUrl: promo.actionUrl,
-                                          buttonText: promo.buttonText,
-                                          isEnabled: val,
-                                        );
-                                        await PromotionsService().savePromotions(list);
-                                        _fetchPromotions();
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
+                                Icon(Icons.campaign_outlined,
+                                    size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 12),
                                 Text(
-                                  promo.text,
-                                  style: const TextStyle(
-                                    fontSize: 13.5,
-                                    color: Color(0xFF4B5563),
+                                  'No promotions configured',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                if (promo.imageUrl != null && promo.imageUrl!.isNotEmpty) ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      promo.imageUrl!,
-                                      height: 120,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                                if (promo.targetUsername != null && promo.targetUsername!.trim().isNotEmpty) ...[
-                                  Text(
-                                    'Linked Profile: @${promo.targetUsername}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFFD97706),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                ],
-                                Row(
-                                  children: [
-                                    if (promo.actionUrl != null && promo.actionUrl!.isNotEmpty)
-                                      Expanded(
-                                        child: Text(
-                                          'Action: ${promo.actionUrl} (${promo.buttonText})',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF2563EB),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF4B5563)),
-                                      onPressed: () => _showAddEditPromotionDialog(promotion: promo),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                      onPressed: () => _deletePromotion(promo),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _promotionsList.length,
+                            itemBuilder: (context, index) {
+                              final promo = _promotionsList[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side:
+                                      const BorderSide(color: Color(0xFFE5E7EB)),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              promo.title,
+                                              style: TextStyle(
+                                                fontFamily: 'SF Pro Rounded',
+                                                fontSize: 15.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    const Color(0xFF111827),
+                                              ),
+                                            ),
+                                          ),
+                                          Switch(
+                                            value: promo.isEnabled,
+                                            activeThumbColor:
+                                                const Color(0xFF2563EB),
+                                            onChanged: (val) async {
+                                              final list = List<Promotion>.from(
+                                                  _promotionsList);
+                                              list[index] = Promotion(
+                                                id: promo.id,
+                                                title: promo.title,
+                                                text: promo.text,
+                                                imageUrl: promo.imageUrl,
+                                                actionUrl: promo.actionUrl,
+                                                buttonText: promo.buttonText,
+                                                isEnabled: val,
+                                                targetUsername:
+                                                    promo.targetUsername,
+                                              );
+                                              await PromotionsService()
+                                                  .savePromotions(list);
+                                              _fetchPromotions();
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        promo.text,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 13.sp,
+                                          color: const Color(0xFF4B5563),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (promo.imageUrl != null &&
+                                          promo.imageUrl!.isNotEmpty) ...[
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Image.network(
+                                            promo.imageUrl!,
+                                            height: 120,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                const SizedBox.shrink(),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                      ],
+                                      if (promo.targetUsername != null &&
+                                          promo.targetUsername!
+                                              .trim()
+                                              .isNotEmpty) ...[
+                                        Text(
+                                          'Linked Profile: @${promo.targetUsername}',
+                                          style: TextStyle(
+                                            fontFamily: 'SF Pro Rounded',
+                                            fontSize: 12.sp,
+                                            color: const Color(0xFFD97706),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                      ],
+                                      Row(
+                                        children: [
+                                          if (promo.actionUrl != null &&
+                                              promo.actionUrl!.isNotEmpty)
+                                            Expanded(
+                                              child: Text(
+                                                'Action: ${promo.actionUrl} (${promo.buttonText})',
+                                                style: TextStyle(
+                                                  fontFamily: 'SF Pro Rounded',
+                                                  fontSize: 12.sp,
+                                                  color:
+                                                      const Color(0xFF2563EB),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.edit_outlined,
+                                                color: Color(0xFF4B5563)),
+                                            onPressed: () =>
+                                                _showAddEditPromotionDialog(
+                                                    promotion: promo),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.redAccent),
+                                            onPressed: () =>
+                                                _deletePromotion(promo),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
                   _buildBroadcastTab(),
                 ],
               ),
@@ -3497,55 +4436,151 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Broadcast Message',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 17.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF111827),
+            ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          const SizedBox(height: 6),
+          Text(
             'Send a KatsBot hello to selected audience. Static message — 0 API cost. Uses /api/admin/broadcast.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.5.sp,
+              color: const Color(0xFF6B7280),
+            ),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _broadcastAudience,
-            decoration: const InputDecoration(labelText: 'Audience', border: OutlineInputBorder()),
-            items: const [
-              DropdownMenuItem(value: 'all', child: Text('All Users (105k)')),
-              DropdownMenuItem(value: 'admin', child: Text('Admin only (gemini)')),
-              DropdownMenuItem(value: 'author', child: Text('Author only')),
-              DropdownMenuItem(value: 'admin_author', child: Text('Admin + Author')),
+            initialValue: _broadcastAudience,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+              color: const Color(0xFF111827),
+            ),
+            decoration: InputDecoration(
+              labelText: 'Audience',
+              labelStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
+              border: const OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'all',
+                child: Text(
+                  'All Users (105k)',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'admin',
+                child: Text(
+                  'Admin only (gemini)',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'author',
+                child: Text(
+                  'Author only',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'admin_author',
+                child: Text(
+                  'Admin + Author',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ),
             ],
             onChanged: (v) => setState(() => _broadcastAudience = v ?? 'all'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _broadcastSenderController,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+            ),
+            decoration: InputDecoration(
               labelText: 'Sender username (e.g. katsbot, gemini)',
+              labelStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
               hintText: 'katsbot',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _broadcastController,
             maxLines: 5,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+            ),
+            decoration: InputDecoration(
               labelText: 'Message (2-1000 chars)',
+              labelStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
               hintText: 'Hello! 👋 Ako si KatsBot AI...',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+              ),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
               icon: _isBroadcastSending
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.send_outlined),
-              label: Text(_isBroadcastSending ? 'Sending...' : 'Send Broadcast'),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send_outlined, size: 18),
+              label: Text(
+                _isBroadcastSending ? 'Sending...' : 'Send Broadcast',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               onPressed: _isBroadcastSending ? null : _sendBroadcast,
             ),
           ),
@@ -3553,8 +4588,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFBFDBFE))),
-              child: Text(_broadcastResult!, style: const TextStyle(fontSize: 13, color: Color(0xFF1E40AF))),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: Text(
+                _broadcastResult!,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: const Color(0xFF1E40AF),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         ],
@@ -3574,47 +4621,118 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final imageCtrl = TextEditingController(text: promotion?.imageUrl ?? '');
     final actionCtrl = TextEditingController(text: promotion?.actionUrl ?? '');
     final buttonCtrl = TextEditingController(text: promotion?.buttonText ?? '');
-    final targetUserCtrl = TextEditingController(text: promotion?.targetUsername ?? '');
+    final targetUserCtrl =
+        TextEditingController(text: promotion?.targetUsername ?? '');
 
     showDialog<void>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(promotion == null ? 'Add Promotion' : 'Edit Promotion'),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            promotion == null ? 'Add Promotion' : 'Edit Promotion',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Title / Sponsor Name'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Title / Sponsor Name',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: textCtrl,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Description / Message'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Description / Message',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: imageCtrl,
-                  decoration: const InputDecoration(labelText: 'Image URL (optional)'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Image URL (optional)',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: actionCtrl,
-                  decoration: const InputDecoration(labelText: 'Action Link (e.g. katsklub://shop or https://...)'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText:
+                        'Action Link (e.g. katsklub://shop or https://...)',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: buttonCtrl,
-                  decoration: const InputDecoration(labelText: 'Button Label (e.g. Learn More)'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Button Label (e.g. Learn More)',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: targetUserCtrl,
-                  decoration: const InputDecoration(labelText: 'Target User Profile Link (e.g. human_equality) (optional)'),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                  ),
+                  decoration: InputDecoration(
+                    labelText:
+                        'Target User Profile Link (e.g. human_equality) (optional)',
+                    labelStyle: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -3622,7 +4740,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -3666,7 +4791,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 _fetchPromotions();
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              child: const Text('Save'),
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
