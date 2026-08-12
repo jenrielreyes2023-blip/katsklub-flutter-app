@@ -127,6 +127,10 @@ class UserAvatarWithFrame extends StatelessWidget {
                                 width: frameSize,
                                 height: frameSize,
                                 fit: BoxFit.contain,
+                                gaplessPlayback: true,
+                                filterQuality: FilterQuality.low,
+                                isAntiAlias: true,
+                                cacheWidth: frameSize.toInt(),
                                 errorBuilder: (context, error, stackTrace) =>
                                     const SizedBox.shrink(),
                               ),
