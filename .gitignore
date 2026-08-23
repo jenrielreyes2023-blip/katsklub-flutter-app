@@ -53,3 +53,7 @@ app.*.map.json
 .agents/
 .gemini/
 
+# Large deployment assets & generated analysis
+graphify-out/
+deploy_gifts/
+deploy_postcards/
