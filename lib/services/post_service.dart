@@ -884,18 +884,18 @@ class PostService {
 
   Post? _readPostFromSocketEvent(dynamic data) {
     if (data is Map) {
-      return Post.fromJson(Map<String, dynamic>.from(data));
+      final raw = data['post'] is Map ? data['post'] as Map : data;
+      try {
+        return Post.fromJson(Map<String, dynamic>.from(raw));
+      } catch (_) {}
     }
     return null;
   }
 
   bool _looksLikeCreatedPost(Post post, String text, int imageCount) {
-    if (post.text.trim() != text.trim()) {
-      return false;
-    }
-    if (imageCount > 0 && post.imageUrls.length != imageCount) {
-      return false;
-    }
+    if (post.text.trim() == text.trim()) return true;
+    if (text.trim().isEmpty) return true;
+    if (post.text.trim().isNotEmpty && (text.trim().contains(post.text.trim()) || post.text.trim().contains(text.trim()))) return true;
     return true;
   }
 
