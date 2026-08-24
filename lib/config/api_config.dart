@@ -1,7 +1,7 @@
 class ApiConfig {
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://katsklub.top',
+    defaultValue: 'https://laws-johnson-forums-accounts.trycloudflare.com',
   );
 
   static const String loginPath = '/api/auth/login';
