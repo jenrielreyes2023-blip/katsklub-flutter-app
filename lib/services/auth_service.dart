@@ -975,12 +975,16 @@ class AuthService {
     required Map<String, dynamic> responseData,
     required User user,
   }) async {
-    final cookie = _extractCookieHeader(response.headers['set-cookie']);
     final responseToken = responseData['token'];
-    final cookieToken = _extractSessionToken(cookie);
+    final cookieHeader = _extractCookieHeader(response.headers['set-cookie']);
+    final cookieToken = _extractSessionToken(cookieHeader);
     final token = responseToken is String && responseToken.isNotEmpty
         ? responseToken
         : cookieToken;
+    final cookie = cookieHeader ??
+        (token != null && token.isNotEmpty
+            ? 'katsklub_session=$token; katsklub_auth_token=$token'
+            : null);
 
     // Always cache in memory so the active session works regardless of
     // persistence preference.

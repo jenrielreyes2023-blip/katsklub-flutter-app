@@ -678,8 +678,15 @@ class PostService {
 
   Future<String?> _readSessionCookie() async {
     final prefs = await SharedPreferences.getInstance();
-    return _normalizeCookieHeader(
-        prefs.getString(AuthService.sessionCookieKey));
+    final cookie = prefs.getString(AuthService.sessionCookieKey);
+    if (cookie != null && cookie.trim().isNotEmpty) {
+      return _normalizeCookieHeader(cookie);
+    }
+    final token = prefs.getString('katsklub_auth_token');
+    if (token != null && token.trim().isNotEmpty) {
+      return 'katsklub_session=${token.trim()}; katsklub_auth_token=${token.trim()}';
+    }
+    return null;
   }
 
   Future<SelectedPostImage?> pickSinglePreparedImage({
