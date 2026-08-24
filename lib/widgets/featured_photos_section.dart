@@ -24,6 +24,57 @@ Future<String> _fileToDataUrl(File file) async {
   return 'data:$mime;base64,${base64Encode(bytes)}';
 }
 
+Widget _buildFeaturedImage(String rawUrl, {BoxFit fit = BoxFit.cover, int? memCacheWidth, double? iconSize}) {
+  final cleanUrl = rawUrl.trim();
+  if (cleanUrl.isEmpty) {
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      child: Center(child: Icon(Icons.image_outlined, color: Colors.grey, size: iconSize ?? 24)),
+    );
+  }
+  if (cleanUrl.startsWith('data:')) {
+    try {
+      final base64Part = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
+      return Image.memory(
+        base64Decode(base64Part),
+        fit: fit,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFFF3F4F6),
+          child: Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: iconSize ?? 24)),
+        ),
+      );
+    } catch (_) {}
+  }
+  return CachedNetworkImage(
+    imageUrl: ApiConfig.assetUrl(cleanUrl),
+    fit: fit,
+    width: double.infinity,
+    height: double.infinity,
+    memCacheWidth: memCacheWidth,
+    placeholder: (context, url) => Container(
+      color: const Color(0xFFF3F4F6),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00)),
+          ),
+        ),
+      ),
+    ),
+    errorWidget: (context, url, error) => Container(
+      color: const Color(0xFFF3F4F6),
+      child: Center(
+        child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: iconSize ?? 24),
+      ),
+    ),
+  );
+}
+
 class FeaturedPhotosSection extends StatefulWidget {
   final User user;
   final bool isOwnProfile;
@@ -513,32 +564,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
             borderRadius: BorderRadius.circular(8),
             child: Stack(
               children: [
-                CachedNetworkImage(
-                  imageUrl: ApiConfig.assetUrl(photo.photoUrl),
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  memCacheWidth: 200,
-                  placeholder: (context, url) => Container(
-                    color: const Color(0xFFF3F4F6),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00)),
-                        ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: const Color(0xFFF3F4F6),
-                    child: const Center(
-                      child: Icon(Icons.broken_image_outlined, color: Colors.grey),
-                    ),
-                  ),
-                ),
+                _buildFeaturedImage(photo.photoUrl, fit: BoxFit.cover, memCacheWidth: 200),
                 if (photo.caption.isNotEmpty)
                   Positioned(
                     left: 6,
@@ -791,18 +817,7 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                           Positioned.fill(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: ApiConfig.assetUrl(photo.photoUrl),
-                                fit: BoxFit.cover,
-                                memCacheWidth: 200,
-                                placeholder: (c, u) => Container(color: const Color(0xFFF3F4F6)),
-                                errorWidget: (c, u, e) => Container(
-                                  color: const Color(0xFFF3F4F6),
-                                  child: const Center(
-                                    child: Icon(Icons.broken_image_outlined, color: Colors.grey),
-                                  ),
-                                ),
-                              ),
+                              child: _buildFeaturedImage(photo.photoUrl, fit: BoxFit.cover, memCacheWidth: 200),
                             ),
                           ),
                           Positioned(
@@ -1587,25 +1602,7 @@ class _ZoomableImageItemState extends State<_ZoomableImageItem> {
         panEnabled: _panEnabled,
         scaleEnabled: true,
         child: Center(
-          child: CachedNetworkImage(
-            imageUrl: ApiConfig.assetUrl(widget.photoUrl),
-            fit: BoxFit.contain,
-            useOldImageOnUrlChange: true,
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-            placeholderFadeInDuration: Duration.zero,
-            imageBuilder: (context, imageProvider) => Image(
-              image: imageProvider,
-              fit: BoxFit.contain,
-              gaplessPlayback: true,
-            ),
-            placeholder: (context, url) => const SizedBox.shrink(),
-            errorWidget: (context, url, error) => const Icon(
-              Icons.broken_image,
-              color: Colors.grey,
-              size: 64,
-            ),
-          ),
+          child: _buildFeaturedImage(widget.photoUrl, fit: BoxFit.contain, iconSize: 64),
         ),
       ),
     );

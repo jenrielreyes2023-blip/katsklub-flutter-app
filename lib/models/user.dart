@@ -473,7 +473,7 @@ class FeaturedPhoto {
   factory FeaturedPhoto.fromJson(Map<String, dynamic> json) {
     return FeaturedPhoto(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      photoUrl: (json['photoUrl'] ?? json['photo_url'] ?? '').toString(),
+      photoUrl: (json['photoUrl'] ?? json['photo_url'] ?? json['imageUrl'] ?? json['image_url'] ?? json['url'] ?? '').toString(),
       caption: (json['caption'] ?? '').toString(),
       position: int.tryParse(json['position']?.toString() ?? '') ?? 0,
     );
