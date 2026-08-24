@@ -5,12 +5,10 @@ on:
   push:
     branches:
       - main
-      - rescue-lost-1d1b
-      - 'feature/**'
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_OPTS: "-Xmx3072m"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  JAVA_OPTS: "-Xmx4096m"
 
 jobs:
   build-android:
@@ -32,95 +30,24 @@ jobs:
         with:
           channel: stable
           cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:-:hash:"
-
-      - name: Cache Pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
-      - name: Ensure Android folder exists
-        run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android --org com.katsklub --project-name katsklub_flutter
-          fi
-
-      - name: Add Android internet permission
-        run: |
-          manifest="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$manifest" ]; then
-            if ! grep -q 'android.permission.INTERNET' "$manifest"; then
-              sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
-            fi
-          fi
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Android APK (Single Arch)
+      - name: Build Android APK (ARM64 Release)
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
-      - name: Upload APK Artifact
+      - name: Upload APK Artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: katsklub-release-apk
+          name: katsklub-arm64-release-apk
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
-      - name: Deploy APK to VPS via SCP
+      - name: Deploy APK to https://katsklub.top/katsklub-latest.apk
         continue-on-error: true
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
-          target: "/var/www/katsklub/"
-          strip_components: 4
-
-      - name: Deploy SVGA Gift Assets to VPS
-        continue-on-error: true
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "deploy_gifts/*"
-          target: "/var/www/katsklub/gifts/"
-          strip_components: 1
-
-      - name: Deploy Postcard Theme Assets to VPS
-        continue-on-error: true
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "deploy_postcards/*"
-          target: "/var/www/katsklub/postcards/"
-          strip_components: 1
-
-      - name: Update APK link and Nginx Permissions on VPS
-        continue-on-error: true
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            mv -f /var/www/katsklub/app-arm64-v8a-release.apk /var/www/katsklub/katsklub-latest.apk
-            chmod 644 /var/www/katsklub/katsklub-latest.apk
-            mkdir -p /var/www/katsklub/gifts /var/www/katsklub/postcards
-            chmod -R 755 /var/www/katsklub/gifts /var/www/katsklub/postcards
-            if [ -f /etc/nginx/sites-available/katsklub ]; then
-              if ! grep -q 'location /postcards/' /etc/nginx/sites-available/katsklub; then
-                sed -i '/server_name/a \    location /postcards/ { alias /var/www/katsklub/postcards/; expires 30d; add_header Access-Control-Allow-Origin *; try_files $uri =404; }\n    location /gifts/ { alias /var/www/katsklub/gifts/; expires 30d; add_header Access-Control-Allow-Origin *; try_files $uri =404; }' /etc/nginx/sites-available/katsklub
-                nginx -t && systemctl reload nginx || true
-              fi
-            fi
+        run: |
+          echo "Deploying APK to server..."
+          curl -s -X POST https://katsklub.top/api/admin/deploy-apk \
+            -H "x-deploy-token: katsklub_apk_secret_2026" \
+            -F "apk=@build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          echo "Deployment step completed."
