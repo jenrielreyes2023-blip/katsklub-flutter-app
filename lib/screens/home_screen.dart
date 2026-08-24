@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen>
   StreamSubscription<void>? _storyCreatedSubscription;
 
   bool _isHomeMenuOpen = false;
-  bool _isHeaderVisible = true;
+  final ValueNotifier<bool> _isHeaderVisibleNotifier = ValueNotifier<bool>(true);
   bool _isMediaClamping = false;
   final Set<String> _prefetchedPostImages = <String>{};
 
@@ -513,24 +513,30 @@ class _HomeScreenState extends State<HomeScreen>
             top: 0,
             left: 0,
             right: 0,
-            child: AnimatedSlide(
-              offset: _isHeaderVisible ? Offset.zero : const Offset(0, -1),
-              duration: _homeHeaderAnimationDuration,
-              curve: Curves.easeOutCubic,
-              child: AnimatedOpacity(
-                opacity: _isHeaderVisible ? 1 : 0,
-                duration: _homeHeaderAnimationDuration,
-                curve: Curves.easeOutCubic,
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: SizedBox(
-                    height: _homeHeaderHeight.h,
-                    child: KatsTopBar(
-                      unreadNotifications: _unreadNotifications,
-                      isMenuOpen: _isHomeMenuOpen,
-                      onHomeTap: _showHomeMenu,
-                      onNotificationsTap: _openNotifications,
-                    ),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isHeaderVisibleNotifier,
+              builder: (context, isHeaderVisible, child) {
+                return AnimatedSlide(
+                  offset: isHeaderVisible ? Offset.zero : const Offset(0, -1),
+                  duration: _homeHeaderAnimationDuration,
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    opacity: isHeaderVisible ? 1 : 0,
+                    duration: _homeHeaderAnimationDuration,
+                    curve: Curves.easeOutCubic,
+                    child: child,
+                  ),
+                );
+              },
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: SizedBox(
+                  height: _homeHeaderHeight.h,
+                  child: KatsTopBar(
+                    unreadNotifications: _unreadNotifications,
+                    isMenuOpen: _isHomeMenuOpen,
+                    onHomeTap: _showHomeMenu,
+                    onNotificationsTap: _openNotifications,
                   ),
                 ),
               ),
@@ -602,13 +608,10 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _setHeaderVisible(bool visible) {
-    if (_isHeaderVisible == visible || !mounted) {
+    if (_isHeaderVisibleNotifier.value == visible || !mounted) {
       return;
     }
-
-    setState(() {
-      _isHeaderVisible = visible;
-    });
+    _isHeaderVisibleNotifier.value = visible;
   }
 
   void _handleClampStateChanged(bool isClamping) {
@@ -803,9 +806,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildSnappablePostCard(Post post) {
-    return KeyedSubtree(
-      key: _mediaSnapCoordinator.keyForPost(post),
-      child: _postCard(post),
+    return RepaintBoundary(
+      child: KeyedSubtree(
+        key: _mediaSnapCoordinator.keyForPost(post),
+        child: _postCard(post),
+      ),
     );
   }
 
@@ -1130,8 +1135,8 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       _isHomeMenuOpen = true;
-      _isHeaderVisible = true;
     });
+    _isHeaderVisibleNotifier.value = true;
 
     await showModalBottomSheet<void>(
       context: context,

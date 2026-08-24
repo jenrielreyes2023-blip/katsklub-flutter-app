@@ -649,9 +649,11 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Widget _buildSnappablePostCard(Post post) {
-    return KeyedSubtree(
-      key: _mediaSnapCoordinator.keyForPost(post),
-      child: _postCard(post),
+    return RepaintBoundary(
+      child: KeyedSubtree(
+        key: _mediaSnapCoordinator.keyForPost(post),
+        child: _postCard(post),
+      ),
     );
   }
 
