@@ -2289,7 +2289,11 @@ class _MessagesScreenState extends State<MessagesScreen>
           text: message.body,
           time: DateTime.tryParse(message.createdAt)?.toLocal() ?? DateTime.now(),
           author: ChatAuthor(
-            id: message.sender.id?.toString() ?? '',
+            id: message.sentByMe
+                ? 'outgoing_me'
+                : (message.sender.id?.toString().isNotEmpty == true
+                    ? message.sender.id!.toString()
+                    : 'incoming_other'),
             name: message.sender.displayName ?? message.sender.username ?? '',
             avatar: message.sender.avatarUrl != null
                 ? NetworkImage(message.sender.avatarUrl!)
@@ -2317,7 +2321,9 @@ class _MessagesScreenState extends State<MessagesScreen>
           text: '',
           time: DateTime.now(),
           author: ChatAuthor(
-            id: t.otherUser.id?.toString() ?? '',
+            id: t.otherUser.id?.toString().isNotEmpty == true
+                ? t.otherUser.id!.toString()
+                : 'incoming_other',
             name: t.otherUser.displayName ?? t.otherUser.username ?? '',
             avatar: t.otherUser.avatarUrl != null
                 ? NetworkImage(t.otherUser.avatarUrl!)
@@ -2327,12 +2333,10 @@ class _MessagesScreenState extends State<MessagesScreen>
       );
     }
 
-    final currentUserId = _currentUser?.id?.toString() ?? '';
-
     final chatWidget = SfChat(
       key: ValueKey('sfchat_${t?.id}_${theme.id}_${_chatWallpaperPath}_${Theme.of(context).brightness}'),
       messages: chatMessages,
-      outgoingUser: currentUserId,
+      outgoingUser: 'outgoing_me',
       incomingMessageSettings: const ChatMessageSettings(
         backgroundColor: Colors.transparent,
         showAuthorAvatar: false,
