@@ -216,6 +216,40 @@ class MessageThread {
       themeId: json['themeId']?.toString(),
     );
   }
+
+  MessageThread copyWith({
+    int? id,
+    User? otherUser,
+    DirectMessage? lastMessage,
+    String? lastReadAt,
+    String? otherLastReadAt,
+    int? unreadCount,
+    bool? isGroup,
+    String? name,
+    String? createdBy,
+    List<User>? members,
+    String? state,
+    String? wallpaperPath,
+    double? wallpaperDim,
+    String? themeId,
+  }) {
+    return MessageThread(
+      id: id ?? this.id,
+      otherUser: otherUser ?? this.otherUser,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastReadAt: lastReadAt ?? this.lastReadAt,
+      otherLastReadAt: otherLastReadAt ?? this.otherLastReadAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+      isGroup: isGroup ?? this.isGroup,
+      name: name ?? this.name,
+      createdBy: createdBy ?? this.createdBy,
+      members: members ?? this.members,
+      state: state ?? this.state,
+      wallpaperPath: wallpaperPath ?? this.wallpaperPath,
+      wallpaperDim: wallpaperDim ?? this.wallpaperDim,
+      themeId: themeId ?? this.themeId,
+    );
+  }
 }
 
 class DirectMessageAttachment {
@@ -540,6 +574,18 @@ class DirectMessageEvent {
   final MessageThread? thread;
 }
 
+class DirectMessageReadEvent {
+  const DirectMessageReadEvent({
+    required this.threadId,
+    required this.readerUserId,
+    required this.readAt,
+  });
+
+  final int threadId;
+  final String readerUserId;
+  final String readAt;
+}
+
 class DirectTypingEvent {
   const DirectTypingEvent({
     required this.threadId,
@@ -624,6 +670,8 @@ class FeedService {
       StreamController<MessageThread>.broadcast();
   static final StreamController<DirectTypingEvent> _dmTypingController =
       StreamController<DirectTypingEvent>.broadcast();
+  static final StreamController<DirectMessageReadEvent> _dmReadController =
+      StreamController<DirectMessageReadEvent>.broadcast();
   static final StreamController<DirectMessageReactionEvent> _dmReactionController =
       StreamController<DirectMessageReactionEvent>.broadcast();
   static final StreamController<DirectMessageDeletedEvent>
@@ -681,6 +729,8 @@ class FeedService {
       _dmThreadUpdatedController.stream;
   static Stream<DirectTypingEvent> get dmTypingStream =>
       _dmTypingController.stream;
+  static Stream<DirectMessageReadEvent> get dmReadStream =>
+      _dmReadController.stream;
   static Stream<DirectMessageReactionEvent> get dmReactionStream =>
       _dmReactionController.stream;
   static  Stream<DirectMessageDeletedEvent> get onDmMessageDeleted =>
@@ -999,7 +1049,9 @@ class FeedService {
       );
       final threadId = _readStaticInt(map['threadId']);
       final user = map['user'];
-      final userId = user is Map ? user['id']?.toString() ?? '' : '';
+      final userId = (user is Map ? user['id']?.toString() : null) ??
+          map['userId']?.toString() ??
+          '';
       if (threadId <= 0 || userId.isEmpty) {
         return;
       }
@@ -1009,6 +1061,28 @@ class FeedService {
           threadId: threadId,
           userId: userId,
           typing: map['typing'] == true,
+        ),
+      );
+    });
+
+    socket.on('dm:read', (payload) {
+      if (payload is! Map) return;
+      final map = Map<String, dynamic>.from(
+        payload.map((key, value) => MapEntry(key.toString(), value)),
+      );
+      final threadId = _readStaticInt(map['threadId']);
+      final readerUserId = map['readerUserId']?.toString() ??
+          map['userId']?.toString() ??
+          '';
+      final readAt =
+          map['readAt']?.toString() ?? DateTime.now().toIso8601String();
+      if (threadId <= 0) return;
+
+      _dmReadController.add(
+        DirectMessageReadEvent(
+          threadId: threadId,
+          readerUserId: readerUserId,
+          readAt: readAt,
         ),
       );
     });
@@ -2242,6 +2316,22 @@ class FeedService {
     return null;
   }
 
+  void joinThread(int threadId) {
+    if (threadId <= 0) return;
+    final socket = _socket;
+    if (socket != null && socket.connected) {
+      socket.emit('dm:join', {'threadId': threadId});
+    }
+  }
+
+  void leaveThread(int threadId) {
+    if (threadId <= 0) return;
+    final socket = _socket;
+    if (socket != null && socket.connected) {
+      socket.emit('dm:leave', {'threadId': threadId});
+    }
+  }
+
   Future<void> markThreadRead(int threadId) async {
     if (threadId <= 0) {
       return;
@@ -2261,9 +2351,17 @@ class FeedService {
     if (socket == null || !socket.connected) {
       return;
     }
+    final user = AuthService.currentMemoryUser;
     socket.emit('dm:typing', {
       'threadId': threadId,
       'typing': typing,
+      'userId': user?.id?.toString() ?? '',
+      'user': {
+        'id': user?.id?.toString() ?? '',
+        'username': user?.username ?? '',
+        'fullName': user?.fullName ?? user?.username ?? '',
+        'avatarUrl': user?.avatarUrl ?? '',
+      },
     });
   }
 

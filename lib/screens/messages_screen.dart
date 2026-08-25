@@ -154,6 +154,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   StreamSubscription<DirectMessageEvent>? _dmMessageSub;
   StreamSubscription<MessageThread>? _dmThreadSub;
   StreamSubscription<DirectTypingEvent>? _dmTypingSub;
+  StreamSubscription<DirectMessageReadEvent>? _dmReadSub;
   StreamSubscription<DirectMessageReactionEvent>? _dmReactionSub;
   StreamSubscription<DirectMessageDeletedEvent>? _dmDeletedSub;
   StreamSubscription<DirectMessageEditedEvent>? _dmEditedSub;
@@ -187,6 +188,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmMessageSub = FeedService.dmMessageStream.listen(_onDmMessage);
     _dmThreadSub = FeedService.dmThreadUpdatedStream.listen(_onDmThreadUpdated);
     _dmTypingSub = FeedService.dmTypingStream.listen(_onDmTyping);
+    _dmReadSub = FeedService.dmReadStream.listen(_onDmRead);
     _dmReactionSub = FeedService.dmReactionStream.listen(_onDmMessageReaction);
     _dmDeletedSub = FeedService.onDmMessageDeleted.listen(_onDmMessageDeleted);
     _dmEditedSub = _feedService.onDmMessageEdited.listen(_onDmMessageEdited);
@@ -206,6 +208,17 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   void _onThemeChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _onDmRead(DirectMessageReadEvent event) {
+    final t = _thread;
+    if (t != null && t.id == event.threadId) {
+      if (mounted) {
+        setState(() {
+          _thread = t.copyWith(otherLastReadAt: event.readAt);
+        });
+      }
+    }
   }
 
   @override
@@ -235,8 +248,11 @@ class _MessagesScreenState extends State<MessagesScreen>
     WidgetsBinding.instance.removeObserver(this);
     ConversationThemeStore.selections.removeListener(_onThemeChanged);
     final t = _thread;
-    if (t != null && _iAmTyping) {
-      _feedService.emitTyping(t.id, false);
+    if (t != null) {
+      _feedService.leaveThread(t.id);
+      if (_iAmTyping) {
+        _feedService.emitTyping(t.id, false);
+      }
     }
     _typingStopDebounce?.cancel();
     for (final timer in _typingExpireTimers.values) {
@@ -246,6 +262,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     _dmMessageSub?.cancel();
     _dmThreadSub?.cancel();
     _dmTypingSub?.cancel();
+    _dmReadSub?.cancel();
     _dmReactionSub?.cancel();
     _dmDeletedSub?.cancel();
     _dmEditedSub?.cancel();
@@ -2052,6 +2069,8 @@ class _MessagesScreenState extends State<MessagesScreen>
       return;
     }
 
+    _feedService.joinThread(thread.id);
+
     setState(() {
       _isLoadingThread = !_hasLoadedThreadOnce && _messages.isEmpty;
       _otherUserProfile = null;
@@ -2130,6 +2149,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Future<void> _loadThreadById(int threadId) async {
+    _feedService.joinThread(threadId);
     setState(() {
       _isLoadingThread = true;
       _otherUserProfile = null;
