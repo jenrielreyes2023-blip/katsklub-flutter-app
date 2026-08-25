@@ -525,19 +525,19 @@ class _ProfileOptionsSheet extends StatelessWidget {
           color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 42.w,
-              height: 4.5.h,
+              width: 38.w,
+              height: 4.h,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 10.h),
             _ProfileOptionGroup(
               children: [
                 _ProfileOptionRow(
@@ -557,7 +557,7 @@ class _ProfileOptionsSheet extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h),
             _ProfileOptionGroup(
               children: [
                 _ProfileOptionRow(
@@ -643,18 +643,18 @@ class _ProfileOptionRow extends StatelessWidget {
         splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
         highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
         child: Container(
-          constraints: BoxConstraints(minHeight: 52.h),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          constraints: BoxConstraints(minHeight: 46.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, size: 22.r, color: iconColor),
-              SizedBox(width: 14.w),
+              Icon(icon, size: 20.r, color: iconColor),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 13.5.sp,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                     color: textColor,
                     letterSpacing: -0.1,

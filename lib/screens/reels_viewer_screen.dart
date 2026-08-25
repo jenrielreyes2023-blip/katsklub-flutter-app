@@ -1227,12 +1227,12 @@ class _ReelAudienceSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(6.w, 4.h, 6.w, 10.h),
+            padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 8.h),
             child: Text(
               'Audience privacy',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF111827),
-                fontSize: 15.sp,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1243,7 +1243,7 @@ class _ReelAudienceSheet extends StatelessWidget {
               label: option.label,
               subtitle: option.subtitle,
               trailing: currentVisibility == option.value
-                  ? Icon(Icons.check_circle, color: const Color(0xFF2563EB), size: 20.r)
+                  ? Icon(Icons.check_circle, color: const Color(0xFF2563EB), size: 18.r)
                   : null,
               onTap: () => Navigator.of(context).pop(option.value),
             ),
@@ -1279,28 +1279,28 @@ class _DeleteReelSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(6.w, 4.h, 6.w, 8.h),
+            padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 6.h),
             child: Text(
               'Delete reel?',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF111827),
-                fontSize: 18.sp,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6.w),
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: Text(
               "This reel will be permanently deleted. This can't be undone.",
               style: TextStyle(
                 color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
-                fontSize: 13.5.sp,
+                fontSize: 12.sp,
                 height: 1.35,
               ),
             ),
           ),
-          SizedBox(height: 18.h),
+          SizedBox(height: 14.h),
           Row(
             children: [
               Expanded(
@@ -1312,11 +1312,11 @@ class _DeleteReelSheet extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 13.h),
+                    padding: EdgeInsets.symmetric(vertical: 11.h),
                   ),
                   child: Text(
                     'Cancel',
-                    style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1330,11 +1330,11 @@ class _DeleteReelSheet extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 13.h),
+                    padding: EdgeInsets.symmetric(vertical: 11.h),
                   ),
                   child: Text(
                     'Delete',
-                    style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1361,19 +1361,19 @@ class _ReelBottomSheetFrame extends StatelessWidget {
           color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 42.w,
-              height: 4.5.h,
+              width: 38.w,
+              height: 4.h,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 10.h),
             child,
           ],
         ),
@@ -1412,27 +1412,28 @@ class _ReelOptionItem extends StatelessWidget {
         : (isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827));
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.only(bottom: 6.h),
       child: Material(
         color: isDark ? const Color(0xFF242526) : Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(14.r),
         child: ListTile(
           enabled: !isLoading,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
+          minVerticalPadding: 8.h,
           leading: isLoading
               ? SizedBox(
-                  width: 20.r,
-                  height: 20.r,
+                  width: 18.r,
+                  height: 18.r,
                   child: const CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Icon(icon, color: iconColor, size: 22.r),
+              : Icon(icon, color: iconColor, size: 20.r),
           title: Text(
             label,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w700,
-              fontSize: 13.5.sp,
+              fontSize: 12.sp,
               letterSpacing: -0.1,
             ),
           ),
@@ -1442,7 +1443,7 @@ class _ReelOptionItem extends StatelessWidget {
                   subtitle!,
                   style: TextStyle(
                     color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
-                    fontSize: 11.5.sp,
+                    fontSize: 10.5.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

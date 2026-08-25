@@ -451,7 +451,7 @@ class PostOptionsSheet extends StatelessWidget {
 
     return SmoothSheetContainer(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: ColoredBox(
           color: cardBgColor,
           child: Column(
@@ -495,39 +495,37 @@ class PostOptionsRow extends StatelessWidget {
         await action.onTap();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Icon(action.icon, color: color, size: 23),
-            ),
-            const SizedBox(width: 14),
+            Icon(action.icon, color: color, size: 20.r),
+            SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     action.label,
                     style: TextStyle(
                       color: color,
-                      fontSize: 13.5.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
-                      height: 1.33,
-                      letterSpacing: -0.2,
+                      height: 1.3,
+                      letterSpacing: -0.1,
                     ),
                   ),
                   if (action.subtitle != null) ...[
-                    const SizedBox(height: 3),
+                    SizedBox(height: 2.h),
                     Text(
                       action.subtitle!,
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? const Color(0xFFB0B3B8)
                             : const Color(0xFF65676B),
-                        fontSize: 13.sp,
-                        height: 1.35,
+                        fontSize: 10.5.sp,
+                        height: 1.3,
                       ),
                     ),
                   ],

@@ -133,19 +133,19 @@ class _SharePostSheetBody extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 42.w,
-              height: 4.5.h,
+              width: 38.w,
+              height: 4.h,
               decoration: BoxDecoration(
                 color: handleColor,
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 10.h),
             SizedBox(
               width: double.infinity,
               child: ClipRRect(
@@ -153,7 +153,7 @@ class _SharePostSheetBody extends StatelessWidget {
                 child: ColoredBox(
                   color: cardColor,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 18.h),
+                    padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 14.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -162,33 +162,33 @@ class _SharePostSheetBody extends StatelessWidget {
                           'Share post',
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 16.sp,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 6.h),
+                        SizedBox(height: 4.h),
                         Text(
                           author,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 13.5.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(height: 4.h),
+                        SizedBox(height: 3.h),
                         Text(
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: subtitleColor,
-                            fontSize: 12.sp,
-                            height: 1.35,
+                            fontSize: 11.sp,
+                            height: 1.3,
                           ),
                         ),
-                        SizedBox(height: 16.h),
+                        SizedBox(height: 12.h),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -198,19 +198,19 @@ class _SharePostSheetBody extends StatelessWidget {
                                 label: 'Share',
                                 onTap: () => _systemShare(context),
                               ),
-                              SizedBox(width: 16.w),
+                              SizedBox(width: 14.w),
                               _ShareActionButton(
                                 icon: Icons.content_copy_rounded,
                                 label: 'Copy link',
                                 onTap: () => _copyLink(context),
                               ),
-                              SizedBox(width: 16.w),
+                              SizedBox(width: 14.w),
                               _ShareActionButton(
                                 icon: Icons.chat_bubble_outline_rounded,
                                 label: 'Message',
                                 onTap: () => _sendInMessage(context),
                               ),
-                              SizedBox(width: 16.w),
+                              SizedBox(width: 14.w),
                               _ShareActionButton(
                                 icon: Icons.auto_stories_outlined,
                                 label: 'Story',
@@ -254,13 +254,13 @@ class _ShareActionButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 72.w,
+        width: 64.w,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 54.r,
-              height: 54.r,
+              width: 48.r,
+              height: 48.r,
               decoration: BoxDecoration(
                 color: buttonBgColor,
                 shape: BoxShape.circle,
@@ -268,10 +268,10 @@ class _ShareActionButton extends StatelessWidget {
               child: Icon(
                 icon,
                 color: iconColor,
-                size: 24.r,
+                size: 22.r,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 6.h),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -279,7 +279,7 @@ class _ShareActionButton extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: textColor,
-                fontSize: 12.sp,
+                fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
                 height: 1.2,
               ),

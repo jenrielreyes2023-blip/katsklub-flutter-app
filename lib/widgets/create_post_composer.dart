@@ -1579,37 +1579,37 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
             color: isDark ? Theme.of(sheetContext).colorScheme.surface : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
-          padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 20.h + bottomPadding),
+          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Container(
-                  width: 42.w,
-                  height: 4.5.h,
+                  width: 38.w,
+                  height: 4.h,
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
                     borderRadius: BorderRadius.circular(999.r),
                   ),
                 ),
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 10.h),
               Row(
                 children: [
-                  Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent, size: 20.r),
-                  SizedBox(width: 8.w),
+                  Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent, size: 18.r),
+                  SizedBox(width: 6.w),
                   Text(
                     'Gemini Caption Suggestions',
                     style: TextStyle(
-                      fontSize: 15.sp,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 10.h),
               _buildSuggestionCard(
                 title: '😎 Casual / Chill',
                 text: suggestions.casual,
@@ -1617,7 +1617,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 borderColor: isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE),
                 textColor: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
               ),
-              SizedBox(height: 10.h),
+              SizedBox(height: 8.h),
               _buildSuggestionCard(
                 title: '✨ Creative / Aesthetic',
                 text: suggestions.creative,
@@ -1625,7 +1625,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 borderColor: isDark ? const Color(0xFF4C1D95) : const Color(0xFFDDD6FE),
                 textColor: isDark ? const Color(0xFFC4B5FD) : const Color(0xFF6D28D9),
               ),
-              SizedBox(height: 10.h),
+              SizedBox(height: 8.h),
               _buildSuggestionCard(
                 title: '💬 Engaging (invites replies)',
                 text: suggestions.engaging,
@@ -1651,22 +1651,22 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: borderColor),
       ),
-      padding: EdgeInsets.all(14.r),
+      padding: EdgeInsets.all(12.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11.5.sp,
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 6.h),
           Text(
             text,
             style: const TextStyle(

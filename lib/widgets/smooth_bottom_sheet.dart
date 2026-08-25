@@ -74,7 +74,7 @@ class KatsSheetItem {
 }
 
 /// Centralized Bottom Sheet modal manager for the KatsKlub app.
-/// Ensures 100% uniform design, typography (13.5.sp bold), and ScreenUtil responsiveness.
+/// Ensures 100% uniform design, typography (12.sp bold), compact spacing, and ScreenUtil responsiveness.
 class KatsBottomSheet {
   /// Shows a standardized action menu modal (e.g. Plus [+] Create Menu, More options).
   static Future<T?> showMenu<T>(
@@ -101,15 +101,15 @@ class KatsBottomSheet {
                 : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
-          padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 16.h + bottomPadding),
+          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Standard Drag Handle Pill
               Container(
-                width: 42.w,
-                height: 4.5.h,
-                margin: EdgeInsets.only(bottom: 14.h),
+                width: 38.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 10.h),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xFF3E4042)
@@ -120,12 +120,12 @@ class KatsBottomSheet {
 
               if (title != null && title.isNotEmpty) ...[
                 Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
+                  padding: EdgeInsets.only(bottom: 10.h),
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
@@ -147,7 +147,7 @@ class KatsBottomSheet {
                         ),
                         if (i != items.length - 1)
                           Padding(
-                            padding: EdgeInsets.only(left: 16.w),
+                            padding: EdgeInsets.only(left: 14.w),
                             child: Divider(
                               height: 1,
                               thickness: 1,
@@ -184,7 +184,7 @@ class KatsBottomSheet {
       builder: (sheetContext) {
         return SmoothSheetContainer(
           maxHeightFraction: maxHeightFraction,
-          padding: padding ?? EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 18.h),
+          padding: padding ?? EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
           child: child,
         );
       },
@@ -215,7 +215,7 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
     final iconWidget = Icon(
       item.icon,
       color: iconColor,
-      size: 22.r,
+      size: 20.r,
     );
 
     final titleColumn = Expanded(
@@ -227,7 +227,7 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
             item.title,
             style: TextStyle(
               color: itemFg,
-              fontSize: 13.5.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.1,
             ),
@@ -238,7 +238,7 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
               item.subtitle!,
               style: TextStyle(
                 color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
-                fontSize: 11.5.sp,
+                fontSize: 10.5.sp,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -254,13 +254,13 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
         splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
         highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
         child: Container(
-          constraints: BoxConstraints(minHeight: 52.h),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          constraints: BoxConstraints(minHeight: 46.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
           child: Row(
             children: [
               if (!iconOnRight) ...[
                 iconWidget,
-                SizedBox(width: 14.w),
+                SizedBox(width: 12.w),
               ],
               titleColumn,
               if (item.trailing != null) ...[
@@ -296,7 +296,7 @@ class SmoothSheetContainer extends StatelessWidget {
     final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
     final handleColor = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
     final screenHeight = MediaQuery.of(context).size.height;
-    final effectivePadding = padding ?? EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 18.h);
+    final effectivePadding = padding ?? EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -314,14 +314,14 @@ class SmoothSheetContainer extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 42.w,
-                height: 4.5.h,
+                width: 38.w,
+                height: 4.h,
                 decoration: BoxDecoration(
                   color: handleColor,
                   borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 10.h),
               Flexible(child: child),
             ],
           ),

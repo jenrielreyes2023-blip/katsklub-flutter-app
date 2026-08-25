@@ -1279,19 +1279,19 @@ class _HomeMenuSheet extends StatelessWidget {
           color: sheetBgColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 42.w,
-              height: 4.5.h,
+              width: 38.w,
+              height: 4.h,
               decoration: BoxDecoration(
                 color: dragHandleColor,
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 10.h),
             ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
               child: ColoredBox(
@@ -1367,14 +1367,14 @@ class _HomeMenuSheet extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: footerColor,
-                  fontSize: 12.sp,
+                  fontSize: 11.5.sp,
                   fontWeight: FontWeight.w400,
                 ),
                 children: const [
@@ -1421,8 +1421,8 @@ class _HomeMenuItem extends StatelessWidget {
       splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
       highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
       child: Container(
-        constraints: BoxConstraints(minHeight: 52.h),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        constraints: BoxConstraints(minHeight: 46.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
         child: Row(
           children: [
             Expanded(
@@ -1431,13 +1431,13 @@ class _HomeMenuItem extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: resolvedColor,
-                  fontSize: 13.5.sp,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.1,
                 ),
               ),
             ),
-            Icon(icon, color: resolvedColor, size: 22.r),
+            Icon(icon, color: resolvedColor, size: 20.r),
           ],
         ),
       ),
