@@ -215,6 +215,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (t != null && t.id == event.threadId) {
       if (mounted) {
         setState(() {
+          _highestSeenOwnMessageIndex = _messages.length - 1;
           _thread = t.copyWith(otherLastReadAt: event.readAt);
         });
       }
