@@ -471,7 +471,12 @@ class DirectMessage {
       sender: sender is Map<String, dynamic>
           ? User.fromJson(sender)
           : User.fromJson(const <String, dynamic>{}),
-      sentByMe: json['sentByMe'] == true,
+      sentByMe: json['sentByMe'] == true ||
+          ((AuthService.currentMemoryUser?.id?.toString() ?? '').isNotEmpty &&
+              (sender is Map<String, dynamic>
+                      ? (sender['id']?.toString() ?? '')
+                      : (json['senderId']?.toString() ?? json['sender_id']?.toString() ?? '')) ==
+                  (AuthService.currentMemoryUser?.id?.toString() ?? '')),
       attachment: parsedAttachments.isEmpty ? null : parsedAttachments.first,
       attachments: List<DirectMessageAttachment>.unmodifiable(
         parsedAttachments,
