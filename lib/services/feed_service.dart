@@ -292,12 +292,21 @@ class DirectMessageAttachment {
   bool get isVideo => type == 'video' || mime.startsWith('video/');
 
   factory DirectMessageAttachment.fromJson(Map<String, dynamic> json) {
+    final rawUrl = _readStaticString(json['url'] ?? json['attachmentUrl'] ?? json['attachment_url'] ?? json['mediaUrl'] ?? json['media_url']);
+    final rawType = _readStaticString(json['type'] ?? json['attachmentType'] ?? json['attachment_type'] ?? json['mediaType'] ?? json['media_type']);
+    final rawName = _readStaticString(json['name'] ?? json['attachmentName'] ?? json['attachment_name']);
+    final rawMime = _readStaticString(json['mime'] ?? json['attachmentMime'] ?? json['attachment_mime']);
+    final rawSize = _readStaticInt(json['size'] ?? json['attachmentSize'] ?? json['attachment_size']);
     return DirectMessageAttachment(
-      url: _readStaticString(json['url'] ?? json['attachmentUrl']),
-      type: _readStaticString(json['type'] ?? json['attachmentType']),
-      name: _readStaticString(json['name'] ?? json['attachmentName']),
-      mime: _readStaticString(json['mime'] ?? json['attachmentMime']),
-      size: _readStaticInt(json['size'] ?? json['attachmentSize']),
+      url: rawUrl,
+      type: rawType.isNotEmpty
+          ? rawType
+          : (rawUrl.endsWith('.m4a') || rawUrl.endsWith('.mp3') || rawUrl.endsWith('.aac') || rawUrl.endsWith('.wav') ? 'audio' : 'image'),
+      name: rawName,
+      mime: rawMime.isNotEmpty
+          ? rawMime
+          : (rawUrl.endsWith('.m4a') ? 'audio/m4a' : (rawUrl.endsWith('.mp3') ? 'audio/mp3' : 'image/jpeg')),
+      size: rawSize,
     );
   }
 }
@@ -454,15 +463,18 @@ class DirectMessage {
     }
 
     final attachmentUrl = _readStaticString(
-      json['attachmentUrl'] ?? json['attachment_url'],
+      json['attachmentUrl'] ?? json['attachment_url'] ?? json['mediaUrl'] ?? json['media_url'],
     );
     if (parsedAttachments.isEmpty && attachmentUrl.isNotEmpty) {
+      final rawType = _readStaticString(
+        json['attachmentType'] ?? json['attachment_type'] ?? json['mediaType'] ?? json['media_type'],
+      );
       parsedAttachments.add(
         DirectMessageAttachment(
           url: attachmentUrl,
-          type: _readStaticString(
-            json['attachmentType'] ?? json['attachment_type'],
-          ),
+          type: rawType.isNotEmpty
+              ? rawType
+              : (attachmentUrl.endsWith('.m4a') || attachmentUrl.endsWith('.mp3') || attachmentUrl.endsWith('.aac') || attachmentUrl.endsWith('.wav') ? 'audio' : 'image'),
           name: _readStaticString(
             json['attachmentName'] ?? json['attachment_name'],
           ),
