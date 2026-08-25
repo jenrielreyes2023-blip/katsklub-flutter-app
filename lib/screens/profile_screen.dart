@@ -164,6 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     _unreadNotifications = FeedService.unreadNotificationsNotifier.value;
     _bindFeedEvents();
+    _reloadUserProfile();
     _loadProfilePosts();
     _loadStories();
     _loadSuggestions();
@@ -182,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (oldWidget.user.username != widget.user.username) {
         _hasLoadedInitialContent = false;
       }
+      _reloadUserProfile();
       _loadProfilePosts();
       _loadStories();
       _loadSuggestions();
@@ -381,9 +383,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            _loadProfilePosts();
-            _loadStories();
-            await Future.delayed(const Duration(milliseconds: 600));
+            await Future.wait([
+              _reloadUserProfile(),
+              _loadProfilePosts(),
+              _loadStories(),
+            ]);
+            await Future.delayed(const Duration(milliseconds: 300));
           },
           child: NotificationListener<ScrollNotification>(
           onNotification: (notification) => _handleProfileScrollNotification(
@@ -806,6 +811,24 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
     }
+  }
+
+  Future<void> _reloadUserProfile() async {
+    final username = _profileUser.username?.trim().toLowerCase() ?? '';
+    if (username.isEmpty) return;
+    try {
+      final user = await _feedService.loadUserProfile(username);
+      if (user != null && mounted) {
+        final currentSaved = await AuthService().getSavedUser();
+        if (currentSaved != null &&
+            currentSaved.username?.trim().toLowerCase() == user.username?.trim().toLowerCase()) {
+          await AuthService().saveCurrentUser(user);
+        }
+        setState(() {
+          _profileUser = user;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadProfilePosts() async {

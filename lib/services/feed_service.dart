@@ -1112,6 +1112,23 @@ class FeedService {
       _notesUpdatedController.add(null);
     });
 
+    socket.on('user:updated', (payload) async {
+      try {
+        if (payload is Map) {
+          final userMap = payload['user'];
+          if (userMap is Map<String, dynamic>) {
+            final user = User.fromJson(userMap);
+            final currentSaved = await AuthService().getSavedUser();
+            if (currentSaved != null &&
+                currentSaved.username?.trim().toLowerCase() == user.username?.trim().toLowerCase()) {
+              await AuthService().saveCurrentUser(user);
+            }
+            FeedService.notifyProfileStatsChanged(username: user.username ?? '', user: user);
+          }
+        }
+      } catch (_) {}
+    });
+
     socket.connect();
     _socket = socket;
     PresenceService.attach(socket);

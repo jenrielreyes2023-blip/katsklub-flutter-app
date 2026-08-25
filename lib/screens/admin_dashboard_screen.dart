@@ -370,6 +370,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
+  Future<void> _syncUserChanges(dynamic data) async {
+    if (data is Map<String, dynamic> && data['user'] is Map<String, dynamic>) {
+      final updatedUser = User.fromJson(data['user'] as Map<String, dynamic>);
+      final updatedUsername = updatedUser.username?.trim().toLowerCase() ?? '';
+      if (updatedUsername.isNotEmpty) {
+        final currentUser = await _authService.getSavedUser();
+        final currentUsername = currentUser?.username?.trim().toLowerCase() ?? '';
+        if (currentUsername.isNotEmpty && currentUsername == updatedUsername) {
+          await _authService.saveCurrentUser(updatedUser);
+        }
+        FeedService.notifyProfileStatsChanged(
+          username: updatedUsername,
+          user: updatedUser,
+        );
+      }
+    }
+  }
+
   // API Actions
   Future<void> _toggleUserVerification(String userId, bool isVerified) async {
     try {
@@ -385,6 +403,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       );
 
       if (res.statusCode == 200) {
+        try {
+          await _syncUserChanges(jsonDecode(res.body));
+        } catch (_) {}
         _fetchUsers();
         _showSuccessSnackBar('User verification status updated.');
       } else {
@@ -409,6 +430,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       );
 
       if (res.statusCode == 200) {
+        try {
+          await _syncUserChanges(jsonDecode(res.body));
+        } catch (_) {}
         _fetchUsers();
         _showSuccessSnackBar('User author status updated.');
       } else {
@@ -433,6 +457,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       );
 
       if (res.statusCode == 200) {
+        try {
+          await _syncUserChanges(jsonDecode(res.body));
+        } catch (_) {}
         _fetchUsers();
         _showSuccessSnackBar('User profile border updated.');
       } else {
@@ -532,6 +559,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   );
 
                   if (res.statusCode == 200) {
+                    try {
+                      await _syncUserChanges(jsonDecode(res.body));
+                    } catch (_) {}
                     _fetchUsers();
                     _showSuccessSnackBar('Role title updated.');
                   } else {
