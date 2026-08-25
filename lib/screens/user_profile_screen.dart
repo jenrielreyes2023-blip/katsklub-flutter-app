@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -521,22 +522,22 @@ class _ProfileOptionsSheet extends StatelessWidget {
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF7F7F7),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 5,
+              width: 42.w,
+              height: 4.5.h,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
-                borderRadius: BorderRadius.circular(999),
+                color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 14.h),
             _ProfileOptionGroup(
               children: [
                 _ProfileOptionRow(
@@ -556,7 +557,7 @@ class _ProfileOptionsSheet extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 10.h),
             _ProfileOptionGroup(
               children: [
                 _ProfileOptionRow(
@@ -608,7 +609,7 @@ class _ProfileOptionGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: ColoredBox(
         color: isDark ? const Color(0xFF242526) : Colors.white,
         child: Column(children: children),
@@ -634,29 +635,34 @@ class _ProfileOptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Icon(icon, size: 23, color: iconColor),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: isDark ? const Color(0xFF242526) : Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+        highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+        child: Container(
+          constraints: BoxConstraints(minHeight: 52.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22.r, color: iconColor),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -668,11 +674,15 @@ class _ProfileOptionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      color: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF3E4042)
-          : const Color(0xFFE5E7EB),
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF3E4042)
+            : const Color(0xFFE5E7EB),
+      ),
     );
   }
 }

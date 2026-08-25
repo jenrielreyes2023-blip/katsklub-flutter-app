@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
@@ -130,29 +131,29 @@ class _SharePostSheetBody extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 5,
+              width: 42.w,
+              height: 4.5.h,
               decoration: BoxDecoration(
                 color: handleColor,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 14.h),
             SizedBox(
               width: double.infinity,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 child: ColoredBox(
                   color: cardColor,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 18.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -161,33 +162,33 @@ class _SharePostSheetBody extends StatelessWidget {
                           'Share post',
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 18,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6.h),
                         Text(
                           author,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 14,
+                            fontSize: 13.5.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: subtitleColor,
-                            fontSize: 13,
+                            fontSize: 12.sp,
                             height: 1.35,
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        SizedBox(height: 16.h),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -197,19 +198,19 @@ class _SharePostSheetBody extends StatelessWidget {
                                 label: 'Share',
                                 onTap: () => _systemShare(context),
                               ),
-                              const SizedBox(width: 18),
+                              SizedBox(width: 16.w),
                               _ShareActionButton(
                                 icon: Icons.content_copy_rounded,
                                 label: 'Copy link',
                                 onTap: () => _copyLink(context),
                               ),
-                              const SizedBox(width: 18),
+                              SizedBox(width: 16.w),
                               _ShareActionButton(
                                 icon: Icons.chat_bubble_outline_rounded,
                                 label: 'Message',
                                 onTap: () => _sendInMessage(context),
                               ),
-                              const SizedBox(width: 18),
+                              SizedBox(width: 16.w),
                               _ShareActionButton(
                                 icon: Icons.auto_stories_outlined,
                                 label: 'Story',
@@ -253,13 +254,13 @@ class _ShareActionButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 78,
+        width: 72.w,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 58,
-              height: 58,
+              width: 54.r,
+              height: 54.r,
               decoration: BoxDecoration(
                 color: buttonBgColor,
                 shape: BoxShape.circle,
@@ -267,10 +268,10 @@ class _ShareActionButton extends StatelessWidget {
               child: Icon(
                 icon,
                 color: iconColor,
-                size: 26,
+                size: 24.r,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -278,7 +279,7 @@ class _ShareActionButton extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: textColor,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 height: 1.2,
               ),

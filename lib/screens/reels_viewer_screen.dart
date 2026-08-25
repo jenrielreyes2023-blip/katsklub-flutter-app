@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
 
 import '../config/api_config.dart';
@@ -1219,18 +1220,19 @@ class _ReelAudienceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _ReelBottomSheetFrame(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(6, 4, 6, 10),
+          Padding(
+            padding: EdgeInsets.fromLTRB(6.w, 4.h, 6.w, 10.h),
             child: Text(
               'Audience privacy',
               style: TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 18,
+                color: isDark ? Colors.white : const Color(0xFF111827),
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1241,7 +1243,7 @@ class _ReelAudienceSheet extends StatelessWidget {
               label: option.label,
               subtitle: option.subtitle,
               trailing: currentVisibility == option.value
-                  ? const Icon(Icons.check_circle, color: Color(0xFF2563EB))
+                  ? Icon(Icons.check_circle, color: const Color(0xFF2563EB), size: 20.r)
                   : null,
               onTap: () => Navigator.of(context).pop(option.value),
             ),
@@ -1270,51 +1272,55 @@ class _DeleteReelSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _ReelBottomSheetFrame(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(6, 4, 6, 8),
+          Padding(
+            padding: EdgeInsets.fromLTRB(6.w, 4.h, 6.w, 8.h),
             child: Text(
               'Delete reel?',
               style: TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 18,
+                color: isDark ? Colors.white : const Color(0xFF111827),
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6.w),
             child: Text(
               "This reel will be permanently deleted. This can't be undone.",
               style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14,
+                color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
+                fontSize: 13.5.sp,
                 height: 1.35,
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18.h),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(false),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF111827),
-                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                    foregroundColor: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                    side: BorderSide(color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
@@ -1322,11 +1328,14 @@ class _DeleteReelSheet extends StatelessWidget {
                     backgroundColor: const Color(0xFFDC2626),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
                   ),
-                  child: const Text('Delete'),
+                  child: Text(
+                    'Delete',
+                    style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -1344,26 +1353,27 @@ class _ReelBottomSheetFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF7F7F7),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 5,
+              width: 42.w,
+              height: 4.5.h,
               decoration: BoxDecoration(
-                color: const Color(0xFFD1D5DB),
-                borderRadius: BorderRadius.circular(999),
+                color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14.h),
             child,
           ],
         ),
@@ -1393,39 +1403,48 @@ class _ReelOptionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? const Color(0xFFDC2626) : const Color(0xFF111827);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDestructive
+        ? const Color(0xFFDC2626)
+        : (isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827));
+    final iconColor = isDestructive
+        ? const Color(0xFFDC2626)
+        : (isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? const Color(0xFF242526) : Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
         child: ListTile(
           enabled: !isLoading,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
           leading: isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+              ? SizedBox(
+                  width: 20.r,
+                  height: 20.r,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Icon(icon, color: color),
+              : Icon(icon, color: iconColor, size: 22.r),
           title: Text(
             label,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w700,
-              fontSize: 15,
+              fontSize: 13.5.sp,
+              letterSpacing: -0.1,
             ),
           ),
           subtitle: subtitle == null
               ? null
               : Text(
                   subtitle!,
-                  style:
-                      const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
           trailing: trailing,
           onTap: isLoading ? null : onTap,

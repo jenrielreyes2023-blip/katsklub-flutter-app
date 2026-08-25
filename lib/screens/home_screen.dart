@@ -1279,21 +1279,21 @@ class _HomeMenuSheet extends StatelessWidget {
           color: sheetBgColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 18.h),
+        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 18.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44.w,
-              height: 5.h,
+              width: 42.w,
+              height: 4.5.h,
               decoration: BoxDecoration(
                 color: dragHandleColor,
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 14.h),
             ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               child: ColoredBox(
                 color: cardBgColor,
                 child: Column(
@@ -1367,11 +1367,12 @@ class _HomeMenuSheet extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 18.h),
+            SizedBox(height: 16.h),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: footerColor,
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w400,
@@ -1380,7 +1381,10 @@ class _HomeMenuSheet extends StatelessWidget {
                   TextSpan(text: 'Katsklub © 2026 - '),
                   TextSpan(
                     text: 'Created by Riel Seyer',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',decoration: TextDecoration.underline),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ],
               ),
@@ -1414,22 +1418,26 @@ class _HomeMenuItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+      highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+      child: Container(
+        constraints: BoxConstraints(minHeight: 52.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: resolvedColor,
-                  fontSize: 16.sp,
+                  fontSize: 13.5.sp,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
+                  letterSpacing: -0.1,
                 ),
               ),
             ),
-            Icon(icon, color: resolvedColor, size: 23.r),
+            Icon(icon, color: resolvedColor, size: 22.r),
           ],
         ),
       ),

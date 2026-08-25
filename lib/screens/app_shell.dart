@@ -12,9 +12,7 @@ import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../widgets/global_audio_mini_player.dart';
 import '../widgets/normal_video_overlay.dart';
-import '../widgets/normal_video_overlay_host.dart';
 import '../widgets/smooth_bottom_sheet.dart';
-import 'admin_dashboard_screen.dart';
 import 'create_post_screen.dart';
 import 'create_story_screen.dart';
 import 'feed_screen.dart';
@@ -221,68 +219,26 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _showCreateMenu() {
-    final shellContext = context;
-
-    showModalBottomSheet(
-      context: shellContext,
-      barrierColor: Colors.black54,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final bottomPadding = MediaQuery.paddingOf(sheetContext).bottom;
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? Theme.of(sheetContext).colorScheme.surface : const Color(0xFFF3F4F6),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.fromLTRB(14, 10, 14, 18 + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 42,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF242526) : Colors.white,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _CreateMenuItem(
-                        title: 'Create post',
-                        icon: Icons.edit_outlined,
-                        onTap: () {
-                          Navigator.of(sheetContext).pop();
-                          _navigateToCreatePost();
-                        },
-                      ),
-                      const _CreateMenuDivider(),
-                      _CreateMenuItem(
-                        title: 'Create story',
-                        icon: Icons.auto_stories_outlined,
-                        onTap: () {
-                          Navigator.of(sheetContext).pop();
-                          _navigateToCreateStory();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    KatsBottomSheet.showMenu(
+      context,
+      items: [
+        KatsSheetItem(
+          title: 'Create post',
+          icon: Icons.edit_outlined,
+          onTap: () {
+            Navigator.of(context).pop();
+            _navigateToCreatePost();
+          },
+        ),
+        KatsSheetItem(
+          title: 'Create story',
+          icon: Icons.auto_stories_outlined,
+          onTap: () {
+            Navigator.of(context).pop();
+            _navigateToCreateStory();
+          },
+        ),
+      ],
     );
   }
 
@@ -695,77 +651,6 @@ class _PostNavIcon extends StatelessWidget {
   }
 }
 
-class _CreateMenuItem extends StatelessWidget {
-  const _CreateMenuItem({
-    required this.title,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final itemBg = isDark ? const Color(0xFF242526) : Colors.white;
-    final itemFg = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
-    final activeIconColor = isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827);
-
-    return Material(
-      color: itemBg,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-        highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-        child: SizedBox(
-          height: 58,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: itemFg,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-                Icon(
-                  icon,
-                  color: activeIconColor,
-                  size: 24,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateMenuDivider extends StatelessWidget {
-  const _CreateMenuDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(left: 18),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
-      ),
-    );
-  }
-}
 
 class _ProfileNavIcon extends StatelessWidget {
   const _ProfileNavIcon({

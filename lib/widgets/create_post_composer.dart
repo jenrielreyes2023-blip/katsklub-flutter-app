@@ -1567,72 +1567,71 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   }
 
   void _showSuggestionsBottomSheet(GeminiCaptionSuggestions suggestions) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
+        final bottomPadding = MediaQuery.paddingOf(sheetContext).bottom;
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(28),
-              topRight: Radius.circular(28),
-            ),
+          decoration: BoxDecoration(
+            color: isDark ? Theme.of(sheetContext).colorScheme.surface : const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 20.h + bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 42.w,
+                  height: 4.5.h,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(2),
+                    color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
+                    borderRadius: BorderRadius.circular(999.r),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 14.h),
               Row(
-                children: const [
-                  Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent, size: 22),
-                  SizedBox(width: 8),
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent, size: 20.r),
+                  SizedBox(width: 8.w),
                   Text(
                     'Gemini Caption Suggestions',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 14.h),
               _buildSuggestionCard(
                 title: '😎 Casual / Chill',
                 text: suggestions.casual,
-                color: const Color(0xFFEFF6FF),
-                borderColor: const Color(0xFFBFDBFE),
-                textColor: const Color(0xFF1D4ED8),
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                borderColor: isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE),
+                textColor: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 10.h),
               _buildSuggestionCard(
                 title: '✨ Creative / Aesthetic',
                 text: suggestions.creative,
-                color: const Color(0xFFF5F3FF),
-                borderColor: const Color(0xFFDDD6FE),
-                textColor: const Color(0xFF6D28D9),
+                color: isDark ? const Color(0xFF2E1065) : const Color(0xFFF5F3FF),
+                borderColor: isDark ? const Color(0xFF4C1D95) : const Color(0xFFDDD6FE),
+                textColor: isDark ? const Color(0xFFC4B5FD) : const Color(0xFF6D28D9),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 10.h),
               _buildSuggestionCard(
                 title: '💬 Engaging (invites replies)',
                 text: suggestions.engaging,
-                color: const Color(0xFFECFDF5),
-                borderColor: const Color(0xFFA7F3D0),
-                textColor: const Color(0xFF047857),
+                color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+                borderColor: isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0),
+                textColor: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857),
               ),
             ],
           ),
@@ -1652,10 +1651,10 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: borderColor),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(14.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
