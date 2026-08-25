@@ -2036,15 +2036,18 @@ class FeedService {
     );
   }
 
-  Future<MessageThread?> startMessageThread(String username) async {
+  Future<MessageThread?> startMessageThread(String username, {String? targetUserId}) async {
     final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
-    if (cleanUsername.isEmpty) {
+    if (cleanUsername.isEmpty && (targetUserId == null || targetUserId.isEmpty)) {
       return null;
     }
 
     final data = await _authenticatedPost(
       '/api/messages/start',
-      body: {'username': cleanUsername},
+      body: {
+        if (cleanUsername.isNotEmpty) 'username': cleanUsername,
+        if (targetUserId != null && targetUserId.isNotEmpty) 'recipientUserId': targetUserId,
+      },
     );
     final thread = data['thread'];
     if (data['ok'] == true && thread is Map<String, dynamic>) {
@@ -2957,10 +2960,21 @@ class FeedService {
 
   Future<UserNote?> saveUserNote(String text) async {
     final data = await _authenticatedPost('/api/notes', body: {'text': text});
-    if (data['ok'] != true || data['note'] is! Map<String, dynamic>) {
-      return null;
+    if (data['ok'] == true) {
+      if (data['note'] is Map<String, dynamic>) {
+        return UserNote.fromJson(data['note'] as Map<String, dynamic>);
+      }
+      return UserNote(
+        userId: AuthService.currentUserIdSync,
+        username: '',
+        fullName: '',
+        avatarUrl: '',
+        text: text,
+        createdAt: DateTime.now().toIso8601String(),
+        expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+      );
     }
-    return UserNote.fromJson(data['note'] as Map<String, dynamic>);
+    return null;
   }
 
   Future<bool> deleteUserNote() async {

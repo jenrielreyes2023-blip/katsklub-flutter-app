@@ -1493,9 +1493,15 @@ class _MessagesScreenState extends State<MessagesScreen>
     final hasNote = ownNote != null;
     final avatarUrl = _currentUser?.avatarUrl ?? '';
     final resolvedAvatar = ApiConfig.assetUrl(avatarUrl);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final ownStories = _stories.where((s) => s.ownedByMe).toList();
     final hasStories = ownStories.isNotEmpty;
+
+    final bubbleBg = isDark ? const Color(0xFF262626) : Colors.white;
+    final bubbleTextColor = isDark ? Colors.white : const Color(0xFF111827);
+    final bubbleBorder = isDark ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFE5E7EB);
+    final plusBadgeBorder = isDark ? const Color(0xFF18181B) : Colors.white;
 
     return SizedBox(
       width: 80,
@@ -1528,13 +1534,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                           ),
                           child: Container(
                             padding: const EdgeInsets.all(1.5),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF18181B) : Colors.white,
                               shape: BoxShape.circle,
                             ),
                             child: CircleAvatar(
                               radius: 31,
-                              backgroundColor: const Color(0xFFE5E7EB),
+                              backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                               backgroundImage: resolvedAvatar.isNotEmpty
                                   ? NetworkImage(resolvedAvatar) as ImageProvider
                                   : null,
@@ -1546,7 +1552,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                       style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF4B5563),
+                                        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                       ),
                                     )
                                   : null,
@@ -1559,7 +1565,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           alignment: Alignment.center,
                           child: CircleAvatar(
                             radius: 34,
-                            backgroundColor: const Color(0xFFE5E7EB),
+                            backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                             backgroundImage: resolvedAvatar.isNotEmpty
                                 ? NetworkImage(resolvedAvatar) as ImageProvider
                                 : null,
@@ -1571,7 +1577,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                     style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF4B5563),
+                                      color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                     ),
                                   )
                                 : null,
@@ -1589,13 +1595,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: bubbleBg,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFFE5E7EB), width: 0.5),
+                            border: Border.all(color: bubbleBorder, width: 0.5),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 3,
+                                color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 4,
                                 offset: const Offset(0, 1.5),
                               ),
                             ],
@@ -1607,7 +1613,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                             style: TextStyle(fontFamily: 'SF Pro Rounded',
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
+                              color: bubbleTextColor,
                             ),
                           ),
                         ),
@@ -1626,7 +1632,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         decoration: BoxDecoration(
                           color: const Color(0xFF2563EB),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(color: plusBadgeBorder, width: 1.5),
                         ),
                         child: const Icon(
                           Icons.add,
@@ -1646,7 +1652,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             overflow: TextOverflow.ellipsis,
             style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
-              color: Color(0xFF6B7280),
+              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1657,9 +1663,15 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Widget _buildOtherNoteItem(UserNote note) {
     final resolvedAvatar = ApiConfig.assetUrl(note.avatarUrl);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final userStories = _stories.where((s) => s.authorUsername.toLowerCase() == note.username.toLowerCase()).toList();
     final hasStories = userStories.isNotEmpty;
+
+    final bubbleBg = isDark ? const Color(0xFF262626) : Colors.white;
+    final bubbleTextColor = isDark ? Colors.white : const Color(0xFF111827);
+    final bubbleBorder = isDark ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFE5E7EB);
+    final nameTextColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
 
     return SizedBox(
       width: 80,
@@ -1690,13 +1702,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                           ),
                           child: Container(
                             padding: const EdgeInsets.all(1.5),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF18181B) : Colors.white,
                               shape: BoxShape.circle,
                             ),
                             child: CircleAvatar(
                               radius: 31,
-                              backgroundColor: const Color(0xFFE5E7EB),
+                              backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                               backgroundImage: resolvedAvatar.isNotEmpty
                                   ? NetworkImage(resolvedAvatar) as ImageProvider
                                   : null,
@@ -1706,7 +1718,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                       style: TextStyle(fontFamily: 'SF Pro Rounded',
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF4B5563),
+                                        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                       ),
                                     )
                                   : null,
@@ -1719,7 +1731,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           alignment: Alignment.center,
                           child: CircleAvatar(
                             radius: 34,
-                            backgroundColor: const Color(0xFFE5E7EB),
+                            backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                             backgroundImage: resolvedAvatar.isNotEmpty
                                 ? NetworkImage(resolvedAvatar) as ImageProvider
                                 : null,
@@ -1729,7 +1741,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                     style: TextStyle(fontFamily: 'SF Pro Rounded',
                                       fontSize: 18.sp,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF4B5563),
+                                      color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                     ),
                                   )
                                 : null,
@@ -1746,13 +1758,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: bubbleBg,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE5E7EB), width: 0.5),
+                          border: Border.all(color: bubbleBorder, width: 0.5),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 3,
+                              color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 4,
                               offset: const Offset(0, 1.5),
                             ),
                           ],
@@ -1764,7 +1776,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           style: TextStyle(fontFamily: 'SF Pro Rounded',
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827),
+                            color: bubbleTextColor,
                           ),
                         ),
                       ),
@@ -1781,7 +1793,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             overflow: TextOverflow.ellipsis,
             style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
-              color: Color(0xFF111827),
+              color: nameTextColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1796,9 +1808,16 @@ class _MessagesScreenState extends State<MessagesScreen>
       return;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final quoteColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF4B5563);
+    final handleColor = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE5E7EB);
+    final actionColor = isDark ? Colors.white : const Color(0xFF111827);
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1812,7 +1831,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
+                  color: handleColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1822,7 +1841,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+                  color: titleColor,
                 ),
               ),
               SizedBox(height: 8),
@@ -1834,14 +1853,14 @@ class _MessagesScreenState extends State<MessagesScreen>
                   style: TextStyle(fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontStyle: FontStyle.italic,
-                    color: Color(0xFF4B5563),
+                    color: quoteColor,
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.edit_outlined, color: Color(0xFF2563EB)),
-                title: Text('Leave a new note'),
+                title: Text('Leave a new note', style: TextStyle(fontFamily: 'SF Pro Rounded', color: actionColor, fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.of(context).pop();
                   _showCreateNoteDialog(currentText: ownNote.text);
@@ -1849,7 +1868,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
-                title: Text('Delete note', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFFDC2626))),
+                title: Text('Delete note', style: TextStyle(fontFamily: 'SF Pro Rounded', color: const Color(0xFFDC2626), fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.of(context).pop();
                   _deleteNote();
@@ -1865,6 +1884,12 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   void _showCreateNoteDialog({String? currentText}) {
     final textController = TextEditingController(text: currentText);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final inputBg = isDark ? const Color(0xFF27272A) : const Color(0xFFF9FAFB);
+    final inputBorder = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE5E7EB);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -1872,10 +1897,11 @@ class _MessagesScreenState extends State<MessagesScreen>
           builder: (context, setDialogState) {
             final length = textController.text.length;
             return AlertDialog(
+              backgroundColor: dialogBg,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
                 'Share a thought',
-                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800, fontSize: 18.sp),
+                style: TextStyle(fontFamily: 'SF Pro Rounded', fontWeight: FontWeight.w800, fontSize: 18.sp, color: textColor),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1886,15 +1912,22 @@ class _MessagesScreenState extends State<MessagesScreen>
                     maxLength: 60,
                     maxLines: 2,
                     autofocus: true,
+                    style: TextStyle(fontFamily: 'SF Pro Rounded', color: textColor, fontSize: 14.sp),
                     onChanged: (val) {
                       setDialogState(() {});
                     },
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: inputBg,
                       hintText: "What's on your mind? (up to 60 characters)...",
-                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1911,7 +1944,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       '$length / 60',
                       style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 12.sp,
-                        color: length > 50 ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                        color: length > 50 ? const Color(0xFFDC2626) : const Color(0xFF9CA3AF),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1921,7 +1954,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded', color: const Color(0xFF9CA3AF))),
                 ),
                 ElevatedButton(
                   onPressed: textController.text.trim().isEmpty
@@ -1932,9 +1965,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
+                    disabledBackgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('Share', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white)),
+                  child: Text('Share', style: TextStyle(fontFamily: 'SF Pro Rounded', color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
               ],
             );
@@ -1945,41 +1979,88 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   void _saveNote(String text) async {
+    final myId = _currentUser?.id ?? AuthService.currentUserIdSync;
+    // Dynamic optimistic local update
+    final optimisticNote = UserNote(
+      userId: myId,
+      username: _currentUser?.username ?? '',
+      fullName: _currentUser?.displayName ?? '',
+      avatarUrl: _currentUser?.avatarUrl ?? '',
+      text: text,
+      createdAt: DateTime.now().toIso8601String(),
+      expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+    );
+    if (mounted) {
+      setState(() {
+        _notes.removeWhere((n) => n.userId == myId);
+        _notes.insert(0, optimisticNote);
+      });
+    }
+
     final note = await _feedService.saveUserNote(text);
     if (note != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note shared!')),
-      );
-      _loadNotes();
+      if (mounted) {
+        setState(() {
+          _notes.removeWhere((n) => n.userId == myId);
+          _notes.insert(0, note);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note shared!')),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to share note.')),
-      );
+      _loadNotes();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to share note.')),
+        );
+      }
     }
   }
 
   void _deleteNote() async {
+    final myId = _currentUser?.id ?? AuthService.currentUserIdSync;
+    // Dynamic optimistic local update
+    if (mounted) {
+      setState(() {
+        _notes.removeWhere((n) => n.userId == myId);
+      });
+    }
+
     final ok = await _feedService.deleteUserNote();
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note deleted.')),
-      );
-      _loadNotes();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note deleted.')),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete note.')),
-      );
+      _loadNotes();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete note.')),
+        );
+      }
     }
   }
 
   void _openReplyNoteDialog(UserNote note) {
     final replyController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final quoteBg = isDark ? const Color(0xFF27272A) : const Color(0xFFF3F4F6);
+    final quoteTextColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151);
+    final inputBg = isDark ? const Color(0xFF27272A) : const Color(0xFFF9FAFB);
+    final inputBorder = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE5E7EB);
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: dialogBg,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
               content: Column(
@@ -1989,7 +2070,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: const Color(0xFFE5E7EB),
+                        backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                         backgroundImage: note.avatarUrl.isNotEmpty
                             ? NetworkImage(ApiConfig.assetUrl(note.avatarUrl))
                             : null,
@@ -1999,7 +2080,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                                 style: TextStyle(fontFamily: 'SF Pro Rounded',
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF4B5563),
+                                  color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                 ),
                               )
                             : null,
@@ -2007,14 +2088,14 @@ class _MessagesScreenState extends State<MessagesScreen>
                       SizedBox(width: 10),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               note.fullName.isNotEmpty ? note.fullName : '@${note.username}',
                               style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF111827),
+                                color: textColor,
                               ),
                             ),
                             SizedBox(height: 2),
@@ -2022,7 +2103,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               '@${note.username}',
                               style: TextStyle(fontFamily: 'SF Pro Rounded',
                                 fontSize: 11.sp,
-                                color: Color(0xFF6B7280),
+                                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                               ),
                             ),
                           ],
@@ -2035,7 +2116,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
+                      color: quoteBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -2043,7 +2124,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                       style: TextStyle(fontFamily: 'SF Pro Rounded',
                         fontSize: 13.sp,
                         fontStyle: FontStyle.italic,
-                        color: Color(0xFF374151),
+                        color: quoteTextColor,
                       ),
                     ),
                   ),
@@ -2051,13 +2132,20 @@ class _MessagesScreenState extends State<MessagesScreen>
                   TextField(
                     controller: replyController,
                     autofocus: true,
+                    style: TextStyle(fontFamily: 'SF Pro Rounded', color: textColor, fontSize: 14.sp),
                     onChanged: (val) => setDialogState(() {}),
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: inputBg,
                       hintText: 'Send message...',
-                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 13.sp, color: Color(0xFF9CA3AF)),
+                      hintStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -2071,7 +2159,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Color(0xFF6B7280))),
+                  child: Text('Cancel', style: TextStyle(fontFamily: 'SF Pro Rounded', color: const Color(0xFF9CA3AF))),
                 ),
                 ElevatedButton(
                   onPressed: replyController.text.trim().isEmpty
@@ -2082,9 +2170,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
+                    disabledBackgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('Send', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white)),
+                  child: Text('Send', style: TextStyle(fontFamily: 'SF Pro Rounded', color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
               ],
             );
@@ -2102,35 +2191,44 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
 
     try {
-      final thread = await _feedService.startMessageThread(note.username);
+      final thread = await _feedService.startMessageThread(note.username, targetUserId: note.userId);
       if (thread != null) {
         final messageBody = 'Replying to your note "${note.text}":\n\n$replyText';
         final message = await _feedService.sendDirectMessage(thread.id, messageBody);
         
-        Navigator.of(context).pop(); // dismiss loading
+        if (mounted) Navigator.of(context).pop(); // dismiss loading
 
-        if (message != null) {
-          Navigator.of(context).push(
+        if (message != null && mounted) {
+          _markThreadReadLocally(thread.id);
+          _feedService.markThreadRead(thread.id);
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => MessagesScreen(initialThread: thread),
             ),
           );
-        } else {
+          if (mounted) {
+            _loadThreads();
+          }
+        } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to send reply.')),
           );
         }
       } else {
-        Navigator.of(context).pop(); // dismiss loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to start chat.')),
-        );
+        if (mounted) Navigator.of(context).pop(); // dismiss loading
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to start chat.')),
+          );
+        }
       }
     } catch (_) {
-      Navigator.of(context).pop(); // dismiss loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error replying to note.')),
-      );
+      if (mounted) Navigator.of(context).pop(); // dismiss loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error replying to note.')),
+        );
+      }
     }
   }
 
