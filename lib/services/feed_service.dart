@@ -329,15 +329,19 @@ class MessageReplyRef {
     final id = _readStaticInt(raw['id']);
     if (id <= 0) return null;
     final sender = raw['sender'];
-    String name = '';
-    if (sender is Map) {
+    String name = (raw['senderDisplayName'] ?? raw['sender_display_name'] ?? raw['senderFullName'] ?? raw['senderUsername'] ?? '').toString();
+    if (name.isEmpty && sender is Map) {
       name = (sender['fullName'] ?? sender['username'] ?? '').toString();
     }
+    final myId = AuthService.currentUserIdSync;
+    final senderId = (sender is Map ? sender['id']?.toString() : null) ?? raw['senderId']?.toString() ?? raw['sender_id']?.toString() ?? '';
+    final bool isSentByMe = (myId.isNotEmpty && senderId.isNotEmpty) ? (myId == senderId) : (raw['sentByMe'] == true);
+
     return MessageReplyRef(
       id: id,
-      body: raw['body']?.toString() ?? '',
-      senderDisplayName: name,
-      sentByMe: raw['sentByMe'] == true,
+      body: (raw['body'] ?? raw['text'] ?? '').toString(),
+      senderDisplayName: name.isNotEmpty ? name : (isSentByMe ? 'You' : 'User'),
+      sentByMe: isSentByMe,
     );
   }
 }
