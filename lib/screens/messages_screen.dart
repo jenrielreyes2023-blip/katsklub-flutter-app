@@ -220,6 +220,36 @@ class _MessagesScreenState extends State<MessagesScreen>
         });
       }
     }
+    if (mounted && _threads.isNotEmpty) {
+      setState(() {
+        final next = List<MessageThread>.from(_threads);
+        final idx = next.indexWhere((th) => th.id == event.threadId);
+        if (idx >= 0) {
+          final cur = next[idx];
+          final lastMsg = cur.lastMessage;
+          final updatedLastMsg = lastMsg != null && lastMsg.sentByMe
+              ? lastMsg.copyWith(seenByOther: true)
+              : lastMsg;
+          next[idx] = cur.copyWith(
+            otherLastReadAt: event.readAt,
+            lastMessage: updatedLastMsg,
+          );
+          _threads = next;
+        }
+      });
+    }
+  }
+
+  void _markThreadReadLocally(int threadId) {
+    if (!mounted || _threads.isEmpty) return;
+    setState(() {
+      final next = List<MessageThread>.from(_threads);
+      final idx = next.indexWhere((th) => th.id == threadId);
+      if (idx >= 0) {
+        next[idx] = next[idx].copyWith(unreadCount: 0);
+        _threads = next;
+      }
+    });
   }
 
   @override
@@ -367,9 +397,23 @@ class _MessagesScreenState extends State<MessagesScreen>
     debugPrint(
         '[DM-DBG] socket dm:message threadId=${event.threadId} msgId=${event.message.id} body="${event.message.body}" currentThread=${t?.id} mounted=$mounted');
     if (t == null || event.threadId != t.id) {
-      // Not the open thread — bump the thread row to the top of the list.
-      if (event.thread != null) {
-        _bumpThreadInList(event.thread!);
+      // User is on the thread list or in another conversation
+      if (mounted) {
+        setState(() {
+          final next = List<MessageThread>.from(_threads);
+          final idx = next.indexWhere((th) => th.id == event.threadId);
+          if (idx >= 0) {
+            final existing = next.removeAt(idx);
+            final updated = existing.copyWith(
+              lastMessage: event.message,
+              unreadCount: event.message.sentByMe ? existing.unreadCount : (existing.unreadCount + 1),
+            );
+            next.insert(0, updated);
+            _threads = next;
+          } else {
+            _loadThreads();
+          }
+        });
       }
       // Other side is no longer typing once we receive their message.
       final senderId = event.message.sender.id ?? '';
@@ -394,6 +438,19 @@ class _MessagesScreenState extends State<MessagesScreen>
       if (event.thread != null) {
         _thread = event.thread;
       }
+      // Keep thread in _threads list updated in background
+      final next = List<MessageThread>.from(_threads);
+      final idx = next.indexWhere((th) => th.id == event.threadId);
+      if (idx >= 0) {
+        final existing = next.removeAt(idx);
+        final updated = existing.copyWith(
+          lastMessage: event.message,
+          unreadCount: 0,
+        );
+        next.insert(0, updated);
+        _threads = next;
+      }
+
       for (final att in event.message.attachments) {
         if (att.url.startsWith('wallpaper|')) {
           final parts = att.url.split('|');
@@ -871,12 +928,17 @@ class _MessagesScreenState extends State<MessagesScreen>
                     .where((e) => e.value.isNotEmpty)
                     .map((e) => e.key)
                     .toSet(),
-                onOpenThread: (thread) {
-                  Navigator.of(context).push(
+                onOpenThread: (thread) async {
+                  _markThreadReadLocally(thread.id);
+                  _feedService.markThreadRead(thread.id);
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => MessagesScreen(initialThread: thread),
                     ),
                   );
+                  if (mounted) {
+                    _loadThreads();
+                  }
                 },
               ),
           ],
@@ -901,12 +963,17 @@ class _MessagesScreenState extends State<MessagesScreen>
         }
         return _MessagesRequestList(
           threads: reqThreads,
-          onOpen: (thread) {
-            Navigator.of(context).push(
+          onOpen: (thread) async {
+            _markThreadReadLocally(thread.id);
+            _feedService.markThreadRead(thread.id);
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => MessagesScreen(initialThread: thread),
               ),
             );
+            if (mounted) {
+              _loadThreads();
+            }
           },
           onAccept: _acceptRequest,
           onDecline: _declineRequest,
@@ -935,12 +1002,17 @@ class _MessagesScreenState extends State<MessagesScreen>
               .where((e) => e.value.isNotEmpty)
               .map((e) => e.key)
               .toSet(),
-          onOpenThread: (thread) {
-            Navigator.of(context).push(
+          onOpenThread: (thread) async {
+            _markThreadReadLocally(thread.id);
+            _feedService.markThreadRead(thread.id);
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => MessagesScreen(initialThread: thread),
               ),
             );
+            if (mounted) {
+              _loadThreads();
+            }
           },
         );
       case _MessagesPageState.general:
@@ -977,12 +1049,17 @@ class _MessagesScreenState extends State<MessagesScreen>
                     .where((e) => e.value.isNotEmpty)
                     .map((e) => e.key)
                     .toSet(),
-                onOpenThread: (thread) {
-                  Navigator.of(context).push(
+                onOpenThread: (thread) async {
+                  _markThreadReadLocally(thread.id);
+                  _feedService.markThreadRead(thread.id);
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => MessagesScreen(initialThread: thread),
                     ),
                   );
+                  if (mounted) {
+                    _loadThreads();
+                  }
                 },
               ),
           ],
@@ -1160,12 +1237,17 @@ class _MessagesScreenState extends State<MessagesScreen>
                 .where((e) => e.value.isNotEmpty)
                 .map((e) => e.key)
                 .toSet(),
-            onOpenThread: (thread) {
-              Navigator.of(context).push(
+            onOpenThread: (thread) async {
+              _markThreadReadLocally(thread.id);
+              _feedService.markThreadRead(thread.id);
+              await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => MessagesScreen(initialThread: thread),
                 ),
               );
+              if (mounted) {
+                _loadThreads();
+              }
             },
           ),
           SizedBox(height: 20),
