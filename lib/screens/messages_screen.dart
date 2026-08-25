@@ -2310,6 +2310,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     final currentUserId = _currentUser?.id?.toString() ?? '';
 
     final chatWidget = SfChat(
+      key: ValueKey('sfchat_${t?.id}_${theme.id}_${_chatWallpaperPath}_${Theme.of(context).brightness}'),
       messages: chatMessages,
       outgoingUser: currentUserId,
       incomingMessageSettings: const ChatMessageSettings(
@@ -3753,11 +3754,16 @@ class _MessagesScreenState extends State<MessagesScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    for (final preset in ConversationTheme.presets) ...[
-                      Expanded(
+                SizedBox(
+                  height: 116,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: ConversationTheme.presets.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (context, index) {
+                      final preset = ConversationTheme.presets[index];
+                      return SizedBox(
+                        width: 96,
                         child: _ThemePreviewCard(
                           theme: preset,
                           selected: preset.id == current.id,
@@ -3766,6 +3772,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               t.id,
                               preset.id,
                             );
+                            if (mounted) setState(() {});
                             try {
                               await _feedService.updateThreadTheme(
                                 t.id,
@@ -3777,11 +3784,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                             }
                           },
                         ),
-                      ),
-                      if (preset.id != ConversationTheme.presets.last.id)
-                        const SizedBox(width: 10),
-                    ],
-                  ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
