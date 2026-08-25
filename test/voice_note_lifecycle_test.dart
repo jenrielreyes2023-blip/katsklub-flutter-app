@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../lib/services/feed_service.dart';
 import '../lib/services/conversation_theme.dart';
 import '../lib/screens/messages_screen.dart';
@@ -19,17 +20,20 @@ void main() {
     debugPrint('\n=== STARTING FLUTTER WIDGET HARNESS TEST ===');
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ListView(
-            children: [
-              VoiceNotePlayerForTest(
-                key: const ValueKey('https://media.katsklub.top/messages/message-97f4cc4c-4635-4f56-a18d-b0cc9112ab65.m4a'),
-                attachment: testAttachment,
-                sentByMe: true,
-                theme: theme,
-              ),
-            ],
+      ScreenUtilInit(
+        designSize: const Size(375, 812),
+        builder: (context, child) => MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                VoiceNotePlayerForTest(
+                  key: const ValueKey('https://media.katsklub.top/messages/message-97f4cc4c-4635-4f56-a18d-b0cc9112ab65.m4a'),
+                  attachment: testAttachment,
+                  sentByMe: true,
+                  theme: theme,
+                ),
+              ],
+            ),
           ),
         ),
       ),
