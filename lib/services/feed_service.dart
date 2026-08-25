@@ -497,6 +497,16 @@ class DirectMessage {
 
     final myReaction = json['myReaction']?.toString() ?? json['my_reaction']?.toString() ?? json['reaction']?.toString();
 
+    final myId = AuthService.currentUserIdSync;
+    final senderId = (sender is Map<String, dynamic> ? sender['id']?.toString() : null) ??
+        json['senderId']?.toString() ??
+        json['sender_id']?.toString() ??
+        '';
+
+    final bool isSentByMe = (myId.isNotEmpty && senderId.isNotEmpty)
+        ? (myId == senderId)
+        : (json['sentByMe'] == true);
+
     return DirectMessage(
       id: _readStaticInt(json['id']),
       conversationId: _readStaticInt(json['conversationId']),
@@ -505,12 +515,7 @@ class DirectMessage {
       sender: sender is Map<String, dynamic>
           ? User.fromJson(sender)
           : User.fromJson(const <String, dynamic>{}),
-      sentByMe: json['sentByMe'] == true ||
-          ((AuthService.currentMemoryUser?.id?.toString() ?? '').isNotEmpty &&
-              (sender is Map<String, dynamic>
-                      ? (sender['id']?.toString() ?? '')
-                      : (json['senderId']?.toString() ?? json['sender_id']?.toString() ?? '')) ==
-                  (AuthService.currentMemoryUser?.id?.toString() ?? '')),
+      sentByMe: isSentByMe,
       attachment: parsedAttachments.isEmpty ? null : parsedAttachments.first,
       attachments: List<DirectMessageAttachment>.unmodifiable(
         parsedAttachments,

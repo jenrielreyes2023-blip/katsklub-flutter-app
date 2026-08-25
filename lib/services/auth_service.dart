@@ -150,8 +150,10 @@ class AuthService {
   static String? _memoryToken;
   static String? _memoryCookie;
   static User? _memoryUser;
+  static String? _cachedUserId;
 
   static User? get currentMemoryUser => _memoryUser;
+  static String get currentUserIdSync => _memoryUser?.id?.toString() ?? _cachedUserId ?? '';
   User? get currentUser => _memoryUser;
 
   final http.Client _client;
@@ -815,6 +817,7 @@ class AuthService {
 
   Future<User?> getSavedUser() async {
     if (_memoryUser != null) {
+      _cachedUserId = _memoryUser!.id?.toString();
       return _memoryUser;
     }
 
@@ -827,7 +830,10 @@ class AuthService {
     try {
       final decoded = jsonDecode(savedUser);
       if (decoded is Map<String, dynamic>) {
-        return User.fromJson(decoded);
+        final user = User.fromJson(decoded);
+        _memoryUser = user;
+        _cachedUserId = user.id?.toString();
+        return user;
       }
     } catch (_) {
       return null;
@@ -837,6 +843,8 @@ class AuthService {
   }
 
   Future<void> saveCurrentUser(User user) async {
+    _memoryUser = user;
+    _cachedUserId = user.id?.toString();
     final oldUser = await getSavedUser();
     if (oldUser != null && oldUser.username == user.username) {
       bool hasKey(List<String> keys) {
