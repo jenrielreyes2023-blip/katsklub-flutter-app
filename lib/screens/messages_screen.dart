@@ -2134,8 +2134,14 @@ class _MessagesScreenState extends State<MessagesScreen>
 
       setState(() {
         if (page != null && page.messages.isNotEmpty) {
-          _messages = [...page.messages, ..._messages];
-          _hasMoreMessages = page.messages.length >= 30;
+          final existingIds = _messages.map((m) => m.id).toSet();
+          final newUnique = page.messages.where((m) => !existingIds.contains(m.id)).toList();
+          if (newUnique.isNotEmpty) {
+            _messages = [...newUnique, ..._messages];
+            _hasMoreMessages = page.messages.length >= 30;
+          } else {
+            _hasMoreMessages = false;
+          }
         } else {
           _hasMoreMessages = false;
         }
