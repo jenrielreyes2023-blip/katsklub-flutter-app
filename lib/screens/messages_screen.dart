@@ -280,14 +280,16 @@ class _MessagesScreenState extends State<MessagesScreen>
     final t = _thread;
     if (t == null || event.threadId != t.id || !mounted) return;
 
+    final myId = AuthService.currentUserIdSync;
     setState(() {
       final idx = _messages.indexWhere((m) => m.id == event.messageId);
       if (idx >= 0) {
         final currentMsg = _messages[idx];
+        final isMine = (event.userId.isNotEmpty && myId.isNotEmpty && event.userId == myId);
         _messages[idx] = currentMsg.copyWith(
-          myReaction: event.myReaction ?? currentMsg.myReaction,
-          reactions: event.reactions.isNotEmpty ? event.reactions : currentMsg.reactions,
-          reactionSummary: event.reactionSummary.isNotEmpty ? event.reactionSummary : currentMsg.reactionSummary,
+          myReaction: isMine ? (event.myReaction ?? '') : currentMsg.myReaction,
+          reactions: event.reactions,
+          reactionSummary: event.reactionSummary,
         );
       }
     });
