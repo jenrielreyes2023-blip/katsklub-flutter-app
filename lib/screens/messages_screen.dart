@@ -6215,15 +6215,17 @@ class _MessagesThreadList extends StatelessWidget {
     final body = message.body.trim();
     if (body.isNotEmpty) return ensureEmojiPresentation(body);
     final attachments = message.attachments;
-    if (attachments.isEmpty) return 'No messages yet';
-    if (attachments.length > 1 && attachments.every((a) => a.isImage)) {
-      return '${attachments.length} photos';
+    if (attachments.isNotEmpty) {
+      if (attachments.length > 1 && attachments.every((a) => a.isImage)) {
+        return '📷 ${attachments.length} photos';
+      }
+      final attachment = attachments.first;
+      if (attachment.isImage) return '📷 Photo';
+      if (attachment.isAudio) return '🎙️ Voice message';
+      if (attachment.isVideo) return '🎥 Video';
+      return attachment.name.isEmpty ? '📁 Attachment' : '📁 ${attachment.name}';
     }
-    final attachment = attachments.first;
-    if (attachment.isImage) return 'Photo';
-    if (attachment.isAudio) return 'Voice message';
-    if (attachment.isVideo) return 'Video';
-    return attachment.name.isEmpty ? 'Attachment' : attachment.name;
+    return 'No messages yet';
   }
 
   String _formatRelativeTime(String? dateStr) {
@@ -6261,6 +6263,10 @@ class _MessagesThreadList extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
             final thread = threads[index];
+            final otherId = thread.otherUser.id ?? '';
+            if (otherId.isNotEmpty) {
+              PresenceService.ensureLoaded(otherId);
+            }
             final isTyping = typingThreadIds.contains(thread.id);
             final timeLabel = _formatRelativeTime(thread.lastMessage?.createdAt);
 
@@ -6295,12 +6301,30 @@ class _MessagesThreadList extends StatelessWidget {
                           if (isTyping)
                             const _ThreadTypingPreview()
                           else
-                            Text(
-                              _previewFor(thread.lastMessage),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: KatsText.threadPreview(context,
-                                  unread: thread.unreadCount > 0),
+                            Row(
+                              children: [
+                                if (thread.lastMessage != null && thread.lastMessage!.sentByMe) ...[
+                                  Icon(
+                                    thread.lastMessage!.seenByOther
+                                        ? Icons.done_all_rounded
+                                        : Icons.check_rounded,
+                                    size: 14.sp,
+                                    color: thread.lastMessage!.seenByOther
+                                        ? const Color(0xFF3897F0)
+                                        : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    _previewFor(thread.lastMessage),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: KatsText.threadPreview(context,
+                                        unread: thread.unreadCount > 0),
+                                  ),
+                                ),
+                              ],
                             ),
                         ],
                       ),
