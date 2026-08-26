@@ -1409,19 +1409,9 @@ class _SignupScreenState extends State<SignupScreen> {
           height: 60,
           fit: BoxFit.contain,
         ),
-        const SizedBox(height: 10),
-        Text(
-          'KatsKlub',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w700,
-            color: primaryText,
-          ),
-        ),
         const SizedBox(height: 24),
         Text(
-          _showOnboarding ? "You're almost there!" : "Sign up for KatsKlub",
+          _showOnboarding ? "You're almost there!" : "Create an account",
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20.sp,
