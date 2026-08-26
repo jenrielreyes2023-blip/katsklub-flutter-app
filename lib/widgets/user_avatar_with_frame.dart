@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -30,45 +32,76 @@ class UserAvatarWithFrame extends StatelessWidget {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
 
-    final avatarChild = cleanUrl.isEmpty
-        ? CircleAvatar(
-            radius: radius,
-            backgroundColor: const Color(0xFFE5E7EB),
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
-                fontSize: (radius * 0.7).sp,
-              ),
+    Widget avatarChild;
+    if (cleanUrl.isEmpty) {
+      avatarChild = CircleAvatar(
+        radius: radius,
+        backgroundColor: const Color(0xFFE5E7EB),
+        child: Text(
+          initials,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF111827),
+            fontSize: (radius * 0.7).sp,
+          ),
+        ),
+      );
+    } else if (cleanUrl.startsWith('data:')) {
+      Uint8List? memoryBytes;
+      try {
+        final commaIdx = cleanUrl.indexOf(',');
+        final b64Str = commaIdx != -1 ? cleanUrl.substring(commaIdx + 1) : cleanUrl;
+        memoryBytes = base64Decode(b64Str);
+      } catch (_) {}
+
+      if (memoryBytes != null && memoryBytes.isNotEmpty) {
+        avatarChild = CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFFE5E7EB),
+          backgroundImage: MemoryImage(memoryBytes),
+        );
+      } else {
+        avatarChild = CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFFE5E7EB),
+          child: Text(
+            initials,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF111827),
+              fontSize: (radius * 0.7).sp,
             ),
-          )
-        : CachedNetworkImage(
-            imageUrl: ApiConfig.assetUrl(cleanUrl),
-            memCacheWidth: 300,
-            maxWidthDiskCache: 300,
-            imageBuilder: (context, imageProvider) => CircleAvatar(
-              radius: radius,
-              backgroundColor: const Color(0xFFE5E7EB),
-              backgroundImage: imageProvider,
+          ),
+        );
+      }
+    } else {
+      avatarChild = CachedNetworkImage(
+        imageUrl: ApiConfig.assetUrl(cleanUrl),
+        memCacheWidth: 300,
+        maxWidthDiskCache: 300,
+        imageBuilder: (context, imageProvider) => CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFFE5E7EB),
+          backgroundImage: imageProvider,
+        ),
+        placeholder: (context, url) => CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFFF3F4F6),
+        ),
+        errorWidget: (context, url, error) => CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFFE5E7EB),
+          child: Text(
+            initials,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF111827),
+              fontSize: (radius * 0.7).sp,
             ),
-            placeholder: (context, url) => CircleAvatar(
-              radius: radius,
-              backgroundColor: const Color(0xFFF3F4F6),
-            ),
-            errorWidget: (context, url, error) => CircleAvatar(
-              radius: radius,
-              backgroundColor: const Color(0xFFE5E7EB),
-              child: Text(
-                initials,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
-                  fontSize: (radius * 0.7).sp,
-                ),
-              ),
-            ),
-          );
+          ),
+        ),
+      );
+    }
 
     return ValueListenableBuilder<String>(
       valueListenable: equippedAdminFrameNotifier,

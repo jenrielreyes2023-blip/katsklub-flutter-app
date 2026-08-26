@@ -847,6 +847,7 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -855,9 +856,9 @@ class _SignupScreenState extends State<SignupScreen> {
         return SafeArea(
           top: false,
           child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFF7F7F7),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
             child: Column(
@@ -867,14 +868,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: 44,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD1D5DB),
+                    color: isDark ? const Color(0xFF4E4F50) : const Color(0xFFD1D5DB),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF2B2C2E) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -884,7 +885,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         label: 'Take photo',
                         onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
                       ),
-                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                      Divider(
+                        height: 1,
+                        color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
+                      ),
                       _AvatarSourceRow(
                         icon: Icons.photo_library_outlined,
                         label: 'Choose from gallery',
@@ -2830,27 +2834,32 @@ class _AvatarSourceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : const Color(0xFF0F1419);
+    final chevronColor = isDark ? const Color(0xFF8E9598) : const Color(0xFF9CA3AF);
+
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         child: Row(
           children: <Widget>[
-            Icon(icon, size: 22, color: const Color(0xFF0F1419)),
+            Icon(icon, size: 22, color: primaryColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F1419),
+                  color: primaryColor,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: Color(0xFF9CA3AF),
+              color: chevronColor,
             ),
           ],
         ),
@@ -2959,19 +2968,25 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
+    final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
+    final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+    final outlineColor = isDark ? const Color(0xFF3A3B3C) : const Color(0xFFD1D5DB);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: scaffoldBg,
         elevation: 0,
         leading: IconButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: primaryText),
         ),
-        title: const Text(
+        title: Text(
           'Adjust avatar',
           style: TextStyle(
-            color: Colors.black,
+            color: primaryText,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -3011,21 +3026,21 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
           padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
           child: Column(
             children: <Widget>[
-              const Text(
+              Text(
                 'Pinch to zoom and drag to position your profile photo.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF6C7174),
+                  color: secondaryText,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'The photo inside the circle is what will be saved.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF9CA3AF),
+                  color: secondaryText.withOpacity(0.8),
                 ),
               ),
               const SizedBox(height: 24),
@@ -3048,8 +3063,8 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: <Widget>[
-                                  const ColoredBox(
-                                    color: Color(0xFFF3F4F7),
+                                  ColoredBox(
+                                    color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F7),
                                   ),
                                   InteractiveViewer(
                                     transformationController:
@@ -3110,8 +3125,8 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _isSaving ? null : _resetTransform,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0F1419),
-                        side: const BorderSide(color: Color(0xFFD1D5DB)),
+                        foregroundColor: primaryText,
+                        side: BorderSide(color: outlineColor),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -3129,7 +3144,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                       child: FilledButton(
                         onPressed: _isSaving ? null : _saveAvatar,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F1419),
+                          backgroundColor: const Color(0xFFFF7A59),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
