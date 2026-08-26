@@ -331,28 +331,59 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _userSvgIcon(Color color, {double size = 18}) {
+    final hex = '#${(color.toARGB32() & 0x00FFFFFF).toRadixString(16).padLeft(6, '0')}';
+    return SvgPicture.string(
+      '''<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7614.0 5-2.23858 5-5 0-2.76142-2.2386-5-5-5C9.23858 2 7 4.23858 7 7c0 2.76142 2.23858 5 5 5z" stroke="$hex" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M20.5901 22c0-3.87-3.8499-7-8.5899-7-4.74005.0-8.59004 3.13-8.59004 7" stroke="$hex" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
+      width: size,
+      height: size,
+    );
+  }
+
+  Widget _passwordSvgIcon(Color color, {double size = 18}) {
+    final hex = '#${(color.toARGB32() & 0x00FFFFFF).toRadixString(16).padLeft(6, '0')}';
+    return SvgPicture.string(
+      '''<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18.25 7c0 .69036-.5596 1.25-1.25 1.25S15.75 7.69036 15.75 7 16.3096 5.75 17 5.75s1.25.55964 1.25 1.25z" fill="$hex"/><path d="M15.5 2.04999c-3.6143.0-6.55005 2.93578-6.55005 6.55C8.94995 8.9872 9.00013 9.36035 9.06042 9.704 9.07822 9.80547 9.04566 9.89362 8.99119 9.94809L2.75541 16.1839C2.23968 16.6996 1.94995 17.3991 1.94995 18.1284V20.3c0 .9665.7835 1.75 1.75 1.75h2.5c.9665.0 1.75-.7835 1.75-1.75V19.05h1.75C10.3903 19.05 10.95 18.4903 10.95 17.8V16.05H12.7C13.3748 16.05 13.9248 15.5151 13.9491 14.8462 14.4458 14.974 14.9696 15.05 15.5 15.05c3.6142.0 6.5499-2.9358 6.5499-6.55001.0-3.63115-2.9529-6.45-6.5499-6.45zm-5.05 6.55c0-2.78579 2.2642-5.05 5.05-5.05 2.8029.0 5.0499 2.18115 5.0499 4.95.0 2.78581-2.2642 5.05001-5.0499 5.05001C14.8206 13.55 14.1213 13.3789 13.4954 13.1106 13.2637 13.0113 12.9976 13.0351 12.7871 13.1739 12.5766 13.3126 12.45 13.5479 12.45 13.8v.75H10.7C10.0096 14.55 9.44995 15.1096 9.44995 15.8v1.75h-1.75c-.69036.0-1.25.5596-1.25 1.25v1.5c0 .138099999999998-.11193.25-.25.25h-2.5c-.13807.0-.25-.111900000000002-.25-.25V18.1284C3.44995 17.7969 3.58165 17.479 3.81607 17.2445l6.23573-6.2358C10.4702 10.5904 10.6356 10.002 10.5379 9.44479 10.4842 9.13883 10.45 8.86239 10.45 8.59999z" fill="$hex"/></svg>''',
+      width: size,
+      height: size,
+    );
+  }
+
   InputDecoration _inputDecoration({
     required String hintText,
-    required IconData icon,
+    IconData? icon,
+    Widget? prefixWidget,
     Widget? suffixIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isDark ? const Color(0xFF262626) : const Color(0x1F787878);
+    final iconColor = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
+    final prefix = prefixWidget ??
+        (icon != null
+            ? Icon(
+                icon,
+                size: 17.sp,
+                color: iconColor,
+              )
+            : null);
     return InputDecoration(
       filled: true,
       fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
       isDense: true,
       hintText: hintText,
       hintStyle: TextStyle(
-        fontSize: 12.5.sp,
-        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
+        fontSize: 12.sp,
+        color: iconColor,
       ),
-      prefixIcon: Icon(
-        icon,
-        size: 18.sp,
-        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
-      ),
+      prefixIcon: prefix == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(left: 10, right: 8),
+              child: prefix,
+            ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       suffixIcon: suffixIcon,
+      suffixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: borderColor),
@@ -373,7 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
     );
   }
 
@@ -397,9 +428,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
               child: Column(
                 children: [
                   Expanded(
@@ -409,15 +440,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             Center(
                               child: SvgPicture.asset(
                                 isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
-                                height: 60,
+                                height: 56,
                                 fit: BoxFit.contain,
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 22),
                             Text(
                               'Welcome back',
                               textAlign: TextAlign.center,
@@ -437,7 +468,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: secondaryText,
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 22),
                             if (_isPhoneLogin) ...[
                               TextFormField(
                                 controller: _identifierController,
@@ -465,7 +496,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                               ),
                               if (_phoneOtpSent) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 TextFormField(
                                   controller: _otpController,
                                   enabled: !_isLoading,
@@ -477,7 +508,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   decoration: _inputDecoration(
                                     hintText: 'Enter 6-digit OTP code',
-                                    icon: Icons.lock_outline_rounded,
+                                    prefixWidget: _passwordSvgIcon(secondaryText),
                                   ).copyWith(counterText: ''),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -486,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -537,7 +568,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 decoration: _inputDecoration(
                                   hintText: 'Username, Email, or Phone number',
-                                  icon: Icons.person_outline_rounded,
+                                  prefixWidget: _userSvgIcon(secondaryText),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
@@ -547,7 +578,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                               ),
                               if (_showPasswordStep) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 TextFormField(
                                   controller: _passwordController,
                                   enabled: !_isLoading,
@@ -565,8 +596,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   decoration: _inputDecoration(
                                     hintText: 'Password',
-                                    icon: Icons.lock_outline_rounded,
+                                    prefixWidget: _passwordSvgIcon(secondaryText),
                                     suffixIcon: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                                       onPressed: _isLoading
                                           ? null
                                           : () {
@@ -579,6 +612,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined,
                                         color: secondaryText,
+                                        size: 18.sp,
                                       ),
                                     ),
                                   ),
@@ -1087,9 +1121,9 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                 style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   labelText: 'Email or Phone Number',
-                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.sp, color: secondaryText),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
@@ -1101,7 +1135,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
@@ -1143,7 +1177,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               TextFormField(
                 controller: _otpController,
                 enabled: !_isLoading,
@@ -1152,9 +1186,9 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                 style: TextStyle(fontSize: 13.5.sp, color: primaryText),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   labelText: 'Verification Code',
-                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.sp, color: secondaryText),
                   counterText: '',
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -1167,7 +1201,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _passwordController,
                 enabled: !_isLoading,
@@ -1175,9 +1209,9 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                 style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   labelText: 'New Password',
-                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.sp, color: secondaryText),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
