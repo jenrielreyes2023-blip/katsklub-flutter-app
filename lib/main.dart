@@ -159,6 +159,7 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 themeMode: themeProvider.themeMode,
                 theme: ThemeData(
                   useMaterial3: true,
+                  fontFamily: 'SF Pro Rounded',
                   fontFamilyFallback: const [
                     'Apple Color Emoji',
                     'Noto Color Emoji',
@@ -259,6 +260,7 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                 ),
                 darkTheme: ThemeData(
                   useMaterial3: true,
+                  fontFamily: 'SF Pro Rounded',
                   fontFamilyFallback: const [
                     'Apple Color Emoji',
                     'Noto Color Emoji',

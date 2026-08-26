@@ -2482,8 +2482,8 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final harmonyTheme = theme.copyWith(
-      textTheme: theme.textTheme.apply(fontFamily: 'HarmonyOS Sans'),
+    final sfTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: 'SF Pro Rounded'),
     );
     final isDark = theme.brightness == Brightness.dark;
     final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
@@ -2491,7 +2491,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
 
     return Theme(
-      data: harmonyTheme,
+      data: sfTheme,
       child: Scaffold(
         backgroundColor: scaffoldBg,
       body: SafeArea(

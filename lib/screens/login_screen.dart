@@ -378,8 +378,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final harmonyTheme = theme.copyWith(
-      textTheme: theme.textTheme.apply(fontFamily: 'HarmonyOS Sans'),
+    final sfTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: 'SF Pro Rounded'),
     );
     final isDark = theme.brightness == Brightness.dark;
     final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
@@ -389,7 +389,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
 
     return Theme(
-      data: harmonyTheme,
+      data: sfTheme,
       child: Scaffold(
         backgroundColor: scaffoldBg,
       body: SafeArea(
@@ -1017,8 +1017,8 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final harmonyTheme = theme.copyWith(
-      textTheme: theme.textTheme.apply(fontFamily: 'HarmonyOS Sans'),
+    final sfTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: 'SF Pro Rounded'),
     );
     final isDark = theme.brightness == Brightness.dark;
     final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
@@ -1026,7 +1026,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
         isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
 
     return Theme(
-      data: harmonyTheme,
+      data: sfTheme,
       child: Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
