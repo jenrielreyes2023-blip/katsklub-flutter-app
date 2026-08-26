@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/gestures.dart';
@@ -1356,14 +1357,14 @@ class _SignupScreenState extends State<SignupScreen> {
       fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
       hintText: hintText,
       hintStyle: TextStyle(
-        fontSize: 14,
+        fontSize: 15.sp,
         color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       prefixIcon: icon == null
           ? null
           : Icon(
               icon,
-              size: 20,
+              size: 21.sp,
               color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
             ),
       border: OutlineInputBorder(
@@ -1386,7 +1387,7 @@ class _SignupScreenState extends State<SignupScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 17.h),
     );
   }
 
@@ -1407,7 +1408,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'KatsKlub',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 22.sp,
             fontWeight: FontWeight.w700,
             color: primaryText,
           ),
@@ -1417,7 +1418,7 @@ class _SignupScreenState extends State<SignupScreen> {
           _showOnboarding ? "You're almost there!" : "Sign up for KatsKlub",
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 23.sp,
             fontWeight: FontWeight.w600,
             color: primaryText,
           ),
@@ -1429,7 +1430,7 @@ class _SignupScreenState extends State<SignupScreen> {
               : "Join us, it's easy and fast.",
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 15.5.sp,
             color: secondaryText,
           ),
         ),
@@ -1440,7 +1441,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Text(
               'Signing up $_currentProgressStep/4',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1492,7 +1493,7 @@ class _SignupScreenState extends State<SignupScreen> {
             });
           },
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 15.5.sp,
             color: primaryText,
           ),
           decoration: _inputDecoration(
@@ -1519,21 +1520,21 @@ class _SignupScreenState extends State<SignupScreen> {
       children: <Widget>[
         const SizedBox(height: 12),
         Row(
-          children: const <Widget>[
+          children: <Widget>[
             Text(
               'Suggestions',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0F1419),
+                color: const Color(0xFF0F1419),
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               'Tap one to use it',
               style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6C7174),
+                fontSize: 12.5.sp,
+                color: const Color(0xFF6C7174),
               ),
             ),
           ],
@@ -1573,7 +1574,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Text(
                       '@$suggestion',
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         color: isUnavailable
                             ? const Color(0xFF6C7174)
@@ -1622,7 +1623,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Text(
               status.message,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w500,
                 color: status.color,
               ),
@@ -1639,7 +1640,7 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Text(
         message,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13.sp,
           color: isError ? const Color(0xFFDC2626) : const Color(0xFF6C7174),
         ),
       ),
@@ -1679,7 +1680,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -1707,7 +1708,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -1725,7 +1726,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Date of birth',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1777,9 +1778,9 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 8),
               Text(
                 _birthdayErrorText!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFFDC2626),
+                style: TextStyle(
+                  fontSize: 13.5.sp,
+                  color: const Color(0xFFDC2626),
                 ),
               ),
             ],
@@ -1787,7 +1788,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Enter your date of birth, even if creating an account for an organization or pet.',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.5.sp,
                 color: secondaryText,
                 height: 1.5,
               ),
@@ -1796,7 +1797,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Gender',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1830,6 +1831,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   }
                   return isDark ? Colors.white : const Color(0xFF0F1419);
                 }),
+                textStyle: WidgetStateProperty.all(
+                  TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+                ),
                 side: WidgetStateProperty.all(BorderSide.none),
                 shape: WidgetStateProperty.all(
                   RoundedRectangleBorder(
@@ -1845,9 +1849,9 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 8),
               Text(
                 _genderErrorText!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFFDC2626),
+                style: TextStyle(
+                  fontSize: 13.5.sp,
+                  color: const Color(0xFFDC2626),
                 ),
               ),
             ],
@@ -1855,7 +1859,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'This information will not be made publicly available.',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.5.sp,
                 color: secondaryText,
                 height: 1.5,
               ),
@@ -1879,7 +1883,7 @@ class _SignupScreenState extends State<SignupScreen> {
               },
               onChanged: _onUsernameChanged,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -1980,7 +1984,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Profile photo',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                       color: primaryText,
                     ),
@@ -1989,7 +1993,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Optional. Upload one now and adjust it so your profile is ready after signup.',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.5.sp,
                       color: secondaryText,
                       height: 1.45,
                     ),
@@ -2048,6 +2052,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(999),
                                   ),
+                                  textStyle: TextStyle(
+                                    fontSize: 14.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 child: _isPickingAvatar
                                     ? const SizedBox(
@@ -2075,7 +2083,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   foregroundColor: const Color(0xFF6C7174),
                                 ),
-                                child: const Text('Remove photo'),
+                                child: Text('Remove photo', style: TextStyle(fontSize: 13.5.sp)),
                               ),
                             ],
                           ],
@@ -2087,7 +2095,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Or choose a default avatar:',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w600,
                       color: secondaryText,
                     ),
@@ -2141,7 +2149,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       });
                     },
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15.sp,
                       color: primaryText,
                     ),
                     decoration: _inputDecoration(
@@ -2169,7 +2177,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -2213,7 +2221,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -2248,7 +2256,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ? null
                     : _suggestStrongPassword,
                 icon: const Icon(Icons.key_rounded, size: 18),
-                label: const Text('Suggest strong password'),
+                label: Text('Suggest strong password', style: TextStyle(fontSize: 14.sp)),
                 style: TextButton.styleFrom(
                   foregroundColor: brandOrange,
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2268,7 +2276,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               _isPhoneSignup ? 'Verify your phone number' : 'Verify your email address',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w700,
                 color: primaryText,
               ),
@@ -2279,7 +2287,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ? 'We will send an SMS OTP verification code to secure your account.'
                   : 'We have sent a verification code to ${_emailController.text.trim()} to secure your account.',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.5.sp,
                 color: secondaryText,
                 height: 1.45,
               ),
@@ -2290,7 +2298,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 controller: _phoneController,
                 enabled: !_isLoading && !_didCompleteSignup && !_otpSent,
                 keyboardType: TextInputType.phone,
-                style: TextStyle(fontSize: 14, color: primaryText),
+                style: TextStyle(fontSize: 15.5.sp, color: primaryText),
                 decoration: _inputDecoration(
                   hintText: 'Enter phone number (e.g. +639187843417)',
                   icon: Icons.phone_android_rounded,
@@ -2313,8 +2321,8 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     elevation: 0,
-                    textStyle: const TextStyle(
-                      fontSize: 15,
+                    textStyle: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2336,7 +2344,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading && !_didCompleteSignup,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: TextStyle(fontSize: 14, color: primaryText),
+                style: TextStyle(fontSize: 16.sp, color: primaryText),
                 decoration: _inputDecoration(
                   hintText: 'Enter 6-digit verification code',
                   icon: Icons.lock_outline_rounded,
@@ -2351,7 +2359,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     style: TextButton.styleFrom(
                       foregroundColor: brandOrange,
                     ),
-                    child: const Text('Resend Code'),
+                    child: Text('Resend Code', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
                   ),
                   if (_isPhoneSignup)
                     TextButton(
@@ -2364,7 +2372,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       style: TextButton.styleFrom(
                         foregroundColor: secondaryText,
                       ),
-                      child: const Text('Change Number'),
+                      child: Text('Change Number', style: TextStyle(fontSize: 14.sp)),
                     ),
                 ],
               ),
@@ -2397,9 +2405,9 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFFDC2626),
+        style: TextStyle(
+          fontSize: 14.sp,
+          color: const Color(0xFFDC2626),
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -2419,7 +2427,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text.rich(
           TextSpan(
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.5.sp,
               color: secondaryText,
               height: 1.5,
             ),
@@ -2471,7 +2479,7 @@ class _SignupScreenState extends State<SignupScreen> {
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: 13,
+            fontSize: 13.sp,
             color: secondaryText,
           ),
         ),
@@ -2533,8 +2541,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 elevation: 0,
-                                textStyle: const TextStyle(
-                                  fontSize: 15,
+                                textStyle: TextStyle(
+                                  fontSize: 16.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -2556,8 +2564,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
                                 foregroundColor: brandOrange,
-                                textStyle: const TextStyle(
-                                  fontSize: 14,
+                                textStyle: TextStyle(
+                                  fontSize: 14.5.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -2577,22 +2585,22 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: <Widget>[
                       Text(
                         'About project',
-                        style: TextStyle(fontSize: 13, color: secondaryText),
+                        style: TextStyle(fontSize: 13.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 13, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 13.sp, color: secondaryText)),
                       Text(
                         'Help Center',
-                        style: TextStyle(fontSize: 13, color: secondaryText),
+                        style: TextStyle(fontSize: 13.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 13, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 13.sp, color: secondaryText)),
                       Text(
                         'Terms of Use',
-                        style: TextStyle(fontSize: 13, color: secondaryText),
+                        style: TextStyle(fontSize: 13.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 13, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 13.sp, color: secondaryText)),
                       Text(
                         'Privacy Policy',
-                        style: TextStyle(fontSize: 13, color: secondaryText),
+                        style: TextStyle(fontSize: 13.sp, color: secondaryText),
                       ),
                     ],
                   ),
@@ -2666,7 +2674,7 @@ class _DropdownField extends StatelessWidget {
         hint: Text(
           items.first,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14.5.sp,
             color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
           ),
         ),
@@ -2679,7 +2687,7 @@ class _DropdownField extends StatelessWidget {
                   item,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.5.sp,
                     color: isDark ? Colors.white : const Color(0xFF0F1419),
                   ),
                 ),
@@ -2751,6 +2759,7 @@ class _SearchSelectField extends StatelessWidget {
               enabled: enabled,
               textInputAction: TextInputAction.done,
               onChanged: onChanged,
+              style: TextStyle(fontSize: 15.5.sp),
               decoration: decoration.copyWith(
                 hintText: hintText,
                 errorText: errorText,
@@ -2801,7 +2810,7 @@ class _SearchSelectField extends StatelessWidget {
                           child: Text(
                             option,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 14.5.sp,
                               color: isDark ? Colors.white : const Color(0xFF0F1419),
                             ),
                           ),
@@ -2845,13 +2854,13 @@ class _AvatarSourceRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         child: Row(
           children: <Widget>[
-            Icon(icon, size: 22, color: primaryColor),
+            Icon(icon, size: 22.sp, color: primaryColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 15.5.sp,
                   fontWeight: FontWeight.w600,
                   color: primaryColor,
                 ),
@@ -2987,7 +2996,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
           'Adjust avatar',
           style: TextStyle(
             color: primaryText,
-            fontSize: 18,
+            fontSize: 19.sp,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -2995,10 +3004,10 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
         actions: <Widget>[
           TextButton(
             onPressed: _isSaving ? null : _resetTransform,
-            child: const Text(
+            child: Text(
               'Reset',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.5.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -3011,10 +3020,10 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
+                : Text(
                     'Use',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 15.5.sp,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -3030,7 +3039,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                 'Pinch to zoom and drag to position your profile photo.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5.sp,
                   color: secondaryText,
                 ),
               ),
@@ -3039,8 +3048,8 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                 'The photo inside the circle is what will be saved.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: secondaryText.withOpacity(0.8),
+                  fontSize: 12.5.sp,
+                  color: secondaryText.withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 24),
@@ -3131,6 +3140,10 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                         minimumSize: const Size.fromHeight(52),
+                        textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                       label: const Text('Reset'),
@@ -3148,6 +3161,10 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                          ),
+                          textStyle: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         child: _isSaving
@@ -3179,7 +3196,7 @@ class _CircleMaskPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.5);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.5);
     final outerPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final innerPath = Path()..addOval(Rect.fromCircle(
       center: Offset(size.width / 2, size.height / 2),
