@@ -1355,39 +1355,45 @@ class _SignupScreenState extends State<SignupScreen> {
     return InputDecoration(
       filled: true,
       fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
+      isDense: true,
       hintText: hintText,
       hintStyle: TextStyle(
-        fontSize: 13.5.sp,
+        fontSize: 12.5.sp,
         color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       prefixIcon: icon == null
           ? null
           : Icon(
               icon,
-              size: 19.sp,
+              size: 18.sp,
               color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
             ),
+      prefixStyle: TextStyle(
+        fontSize: 12.5.sp,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
+      ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.5),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.0),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
+      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
     );
   }
 
@@ -1400,7 +1406,7 @@ class _SignupScreenState extends State<SignupScreen> {
       children: <Widget>[
         SvgPicture.asset(
           isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
-          height: 64,
+          height: 60,
           fit: BoxFit.contain,
         ),
         const SizedBox(height: 10),
@@ -1408,40 +1414,40 @@ class _SignupScreenState extends State<SignupScreen> {
           'KatsKlub',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 21.sp,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w700,
             color: primaryText,
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         Text(
           _showOnboarding ? "You're almost there!" : "Sign up for KatsKlub",
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 21.sp,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
             color: primaryText,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           _showOnboarding
               ? "Your account is almost ready, all that's left is to tell us a little about yourself"
               : "Join us, it's easy and fast.",
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 13.5.sp,
+            fontSize: 12.5.sp,
             color: secondaryText,
           ),
         ),
         if (_showOnboarding) ...<Widget>[
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Signing up $_currentProgressStep/4',
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1474,7 +1480,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         TextFormField(
           controller: _emailController,
           enabled: !_isLoading,
@@ -1493,7 +1499,7 @@ class _SignupScreenState extends State<SignupScreen> {
             });
           },
           style: TextStyle(
-            fontSize: 13.5.sp,
+            fontSize: 12.5.sp,
             color: primaryText,
           ),
           decoration: _inputDecoration(
@@ -1518,13 +1524,13 @@ class _SignupScreenState extends State<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: <Widget>[
             Text(
               'Suggestions',
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0F1419),
               ),
@@ -1533,7 +1539,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Tap one to use it',
               style: TextStyle(
-                fontSize: 12.5.sp,
+                fontSize: 12.sp,
                 color: const Color(0xFF6C7174),
               ),
             ),
@@ -1552,7 +1558,7 @@ class _SignupScreenState extends State<SignupScreen> {
               borderRadius: BorderRadius.circular(999),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: isAvailable
                       ? const Color(0xFFF0FDF4)
@@ -1574,7 +1580,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Text(
                       '@$suggestion',
                       style: TextStyle(
-                        fontSize: 13.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         color: isUnavailable
                             ? const Color(0xFF6C7174)
@@ -1623,7 +1629,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Text(
               status.message,
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 color: status.color,
               ),
@@ -1640,7 +1646,7 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Text(
         message,
         style: TextStyle(
-          fontSize: 13.sp,
+          fontSize: 12.sp,
           color: isError ? const Color(0xFFDC2626) : const Color(0xFF6C7174),
         ),
       ),
@@ -1680,7 +1686,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -1708,7 +1714,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -1726,7 +1732,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Date of birth',
               style: TextStyle(
-                fontSize: 14.5.sp,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1779,7 +1785,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Text(
                 _birthdayErrorText!,
                 style: TextStyle(
-                  fontSize: 13.sp,
+                  fontSize: 12.sp,
                   color: const Color(0xFFDC2626),
                 ),
               ),
@@ -1788,16 +1794,16 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'Enter your date of birth, even if creating an account for an organization or pet.',
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 color: secondaryText,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               'Gender',
               style: TextStyle(
-                fontSize: 14.5.sp,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w600,
                 color: primaryText,
               ),
@@ -1832,16 +1838,16 @@ class _SignupScreenState extends State<SignupScreen> {
                   return isDark ? Colors.white : const Color(0xFF0F1419);
                 }),
                 textStyle: WidgetStateProperty.all(
-                  TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600),
+                  TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600),
                 ),
                 side: WidgetStateProperty.all(BorderSide.none),
                 shape: WidgetStateProperty.all(
                   RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 padding: WidgetStateProperty.all(
-                  const EdgeInsets.symmetric(vertical: 12),
+                  const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
@@ -1850,7 +1856,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Text(
                 _genderErrorText!,
                 style: TextStyle(
-                  fontSize: 13.sp,
+                  fontSize: 12.sp,
                   color: const Color(0xFFDC2626),
                 ),
               ),
@@ -1859,7 +1865,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               'This information will not be made publicly available.',
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 color: secondaryText,
                 height: 1.5,
               ),
@@ -1883,19 +1889,25 @@ class _SignupScreenState extends State<SignupScreen> {
               },
               onChanged: _onUsernameChanged,
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
                 hintText: 'Choose a username',
               ).copyWith(
                 prefixText: '@ ',
+                prefixStyle: TextStyle(
+                  fontSize: 12.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: primaryText,
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
                 suffixIcon: _isCheckingUsername
                     ? const Padding(
-                        padding: EdgeInsets.all(14),
+                        padding: EdgeInsets.all(12),
                         child: SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
@@ -1905,7 +1917,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             _buildUsernameStatus(),
             _buildUsernameSuggestions(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             _SearchSelectField(
               controller: _countryController,
               focusNode: _countryFocusNode,
@@ -1921,16 +1933,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 hintText: _isLoadingCountries
                     ? 'Loading countries...'
                     : 'Choose your country',
+              ).copyWith(
+                contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
               ),
               trailing: _isLoadingCountries
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: Color(0xFF6C7174),
+                      size: 20,
                     ),
             ),
             if (_countryLoadError != null && _countries.isEmpty)
@@ -1948,16 +1963,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 onSelected: _handleCitySelected,
                 decoration: _inputDecoration(
                   hintText: _isLoadingCities ? 'Loading cities...' : 'Choose your city',
+                ).copyWith(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
                 ),
                 trailing: _isLoadingCities
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(
                         Icons.keyboard_arrow_down_rounded,
                         color: Color(0xFF6C7174),
+                        size: 20,
                       ),
               ),
               if (_cityLoadError != null && _cities.isEmpty)
@@ -1972,10 +1990,10 @@ class _SignupScreenState extends State<SignupScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
               ),
               child: Column(
@@ -1984,7 +2002,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Profile photo',
                     style: TextStyle(
-                      fontSize: 14.5.sp,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w700,
                       color: primaryText,
                     ),
@@ -1993,17 +2011,17 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Optional. Upload one now and adjust it so your profile is ready after signup.',
                     style: TextStyle(
-                      fontSize: 13.sp,
+                      fontSize: 12.sp,
                       color: secondaryText,
                       height: 1.45,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Row(
                     children: <Widget>[
                       Container(
-                        width: 84,
-                        height: 84,
+                        width: 76,
+                        height: 76,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: Color(0xFFE5E7EB),
@@ -2024,13 +2042,13 @@ class _SignupScreenState extends State<SignupScreen> {
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => const Icon(
                                         Icons.person_outline_rounded,
-                                        size: 34,
+                                        size: 30,
                                         color: Color(0xFF6C7174),
                                       ),
                                     )
                                   : const Icon(
                                       Icons.person_outline_rounded,
-                                      size: 34,
+                                      size: 30,
                                       color: Color(0xFF6C7174),
                                     ),
                         ),
@@ -2041,7 +2059,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             SizedBox(
-                              height: 42,
+                              height: 40,
                               child: OutlinedButton(
                                 onPressed: (_isLoading || _didCompleteSignup || _isPickingAvatar)
                                     ? null
@@ -2053,14 +2071,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   textStyle: TextStyle(
-                                    fontSize: 13.5.sp,
+                                    fontSize: 12.5.sp,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 child: _isPickingAvatar
                                     ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
+                                        width: 14,
+                                        height: 14,
                                         child: CircularProgressIndicator(strokeWidth: 2),
                                       )
                                     : Text(_avatarPreviewBytes == null ? 'Upload avatar' : 'Adjust photo'),
@@ -2072,7 +2090,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     (widget.googleContext!.googleAvatarUrl
                                             ?.isNotEmpty ??
                                         false))) ...<Widget>[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               TextButton(
                                 onPressed: (_isLoading || _didCompleteSignup || _isPickingAvatar)
                                     ? null
@@ -2083,7 +2101,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   foregroundColor: const Color(0xFF6C7174),
                                 ),
-                                child: Text('Remove photo', style: TextStyle(fontSize: 13.sp)),
+                                child: Text('Remove photo', style: TextStyle(fontSize: 12.sp)),
                               ),
                             ],
                           ],
@@ -2095,14 +2113,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'Or choose a default avatar:',
                     style: TextStyle(
-                      fontSize: 13.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: secondaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: 52,
+                    height: 48,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: _defaultAvatars.length,
@@ -2112,14 +2130,14 @@ class _SignupScreenState extends State<SignupScreen> {
                         return GestureDetector(
                           onTap: () => _selectDefaultAvatar(path),
                           child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            width: 52,
-                            height: 52,
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected ? brandOrange : Colors.transparent,
-                                width: 3,
+                                width: 2.5,
                               ),
                             ),
                             child: Padding(
@@ -2136,7 +2154,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _bioController,
                     enabled: !_isLoading && !_didCompleteSignup,
@@ -2149,13 +2167,14 @@ class _SignupScreenState extends State<SignupScreen> {
                       });
                     },
                     style: TextStyle(
-                      fontSize: 13.5.sp,
+                      fontSize: 12.5.sp,
                       color: primaryText,
                     ),
                     decoration: _inputDecoration(
                       hintText: 'Tell people a little about yourself',
                     ).copyWith(
                       counterText: '${_bioController.text.length}/280',
+                      counterStyle: TextStyle(fontSize: 11.5.sp),
                       errorText: _didAttemptSecurityContinue ? _bioErrorText : null,
                     ),
                   ),
@@ -2163,7 +2182,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             if (!_isGoogleMode) ...<Widget>[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             TextFormField(
               controller: _passwordController,
               enabled: !_isLoading && !_didCompleteSignup,
@@ -2177,7 +2196,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -2198,6 +2217,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                     color: secondaryText,
+                    size: 18.sp,
                   ),
                 ),
               ),
@@ -2221,7 +2241,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 }
               },
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 color: primaryText,
               ),
               decoration: _inputDecoration(
@@ -2244,19 +2264,20 @@ class _SignupScreenState extends State<SignupScreen> {
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                     color: secondaryText,
+                    size: 18.sp,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 onPressed: _isLoading || _didCompleteSignup
                     ? null
                     : _suggestStrongPassword,
-                icon: const Icon(Icons.key_rounded, size: 18),
-                label: Text('Suggest strong password', style: TextStyle(fontSize: 13.5.sp)),
+                icon: const Icon(Icons.key_rounded, size: 16),
+                label: Text('Suggest strong password', style: TextStyle(fontSize: 12.5.sp)),
                 style: TextButton.styleFrom(
                   foregroundColor: brandOrange,
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2276,7 +2297,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Text(
               _isPhoneSignup ? 'Verify your phone number' : 'Verify your email address',
               style: TextStyle(
-                fontSize: 14.5.sp,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w700,
                 color: primaryText,
               ),
@@ -2287,7 +2308,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ? 'We will send an SMS OTP verification code to secure your account.'
                   : 'We have sent a verification code to ${_emailController.text.trim()} to secure your account.',
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 color: secondaryText,
                 height: 1.45,
               ),
@@ -2298,7 +2319,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 controller: _phoneController,
                 enabled: !_isLoading && !_didCompleteSignup && !_otpSent,
                 keyboardType: TextInputType.phone,
-                style: TextStyle(fontSize: 13.5.sp, color: primaryText),
+                style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: _inputDecoration(
                   hintText: 'Enter phone number (e.g. +639187843417)',
                   icon: Icons.phone_android_rounded,
@@ -2308,7 +2329,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ],
             if (!_otpSent) ...[
               SizedBox(
-                height: 50,
+                height: 48,
                 child: FilledButton(
                   onPressed: _isLoading ? null : _sendOtp,
                   style: FilledButton.styleFrom(
@@ -2317,12 +2338,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
                     disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     elevation: 0,
                     textStyle: TextStyle(
-                      fontSize: 14.5.sp,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2344,7 +2365,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading && !_didCompleteSignup,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: TextStyle(fontSize: 14.5.sp, color: primaryText),
+                style: TextStyle(fontSize: 13.5.sp, color: primaryText),
                 decoration: _inputDecoration(
                   hintText: 'Enter 6-digit verification code',
                   icon: Icons.lock_outline_rounded,
@@ -2359,7 +2380,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     style: TextButton.styleFrom(
                       foregroundColor: brandOrange,
                     ),
-                    child: Text('Resend Code', style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600)),
+                    child: Text('Resend Code', style: TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600)),
                   ),
                   if (_isPhoneSignup)
                     TextButton(
@@ -2372,7 +2393,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       style: TextButton.styleFrom(
                         foregroundColor: secondaryText,
                       ),
-                      child: Text('Change Number', style: TextStyle(fontSize: 13.5.sp)),
+                      child: Text('Change Number', style: TextStyle(fontSize: 12.5.sp)),
                     ),
                 ],
               ),
@@ -2401,12 +2422,12 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: 10),
       child: Text(
         message,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 14.sp,
+          fontSize: 12.5.sp,
           color: const Color(0xFFDC2626),
           fontWeight: FontWeight.w500,
         ),
@@ -2427,9 +2448,9 @@ class _SignupScreenState extends State<SignupScreen> {
         Text.rich(
           TextSpan(
             style: TextStyle(
-              fontSize: 13.5.sp,
+              fontSize: 12.sp,
               color: secondaryText,
-              height: 1.5,
+              height: 1.45,
             ),
             children: <InlineSpan>[
               const TextSpan(
@@ -2473,13 +2494,13 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Text(
           ApiConfig.apiBaseUrl,
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: 13.sp,
+            fontSize: 11.5.sp,
             color: secondaryText,
           ),
         ),
@@ -2526,7 +2547,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           _buildInlineError(),
                           const SizedBox(height: 12),
                           SizedBox(
-                            height: 50,
+                            height: 48,
                             child: FilledButton(
                               onPressed: (_isLoading || _didCompleteSignup)
                                   ? null
@@ -2537,12 +2558,12 @@ class _SignupScreenState extends State<SignupScreen> {
                                 disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
                                 disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 elevation: 0,
                                 textStyle: TextStyle(
-                                  fontSize: 14.5.sp,
+                                  fontSize: 13.5.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -2559,13 +2580,13 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                           if (!_showOnboarding) ...<Widget>[
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
                                 foregroundColor: brandOrange,
                                 textStyle: TextStyle(
-                                  fontSize: 13.5.sp,
+                                  fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -2577,7 +2598,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
@@ -2585,22 +2606,22 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: <Widget>[
                       Text(
                         'About project',
-                        style: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                        style: TextStyle(fontSize: 12.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 12.5.sp, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 12.sp, color: secondaryText)),
                       Text(
                         'Help Center',
-                        style: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                        style: TextStyle(fontSize: 12.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 12.5.sp, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 12.sp, color: secondaryText)),
                       Text(
                         'Terms of Use',
-                        style: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                        style: TextStyle(fontSize: 12.sp, color: secondaryText),
                       ),
-                      Text('|', style: TextStyle(fontSize: 12.5.sp, color: secondaryText)),
+                      Text('|', style: TextStyle(fontSize: 12.sp, color: secondaryText)),
                       Text(
                         'Privacy Policy',
-                        style: TextStyle(fontSize: 12.5.sp, color: secondaryText),
+                        style: TextStyle(fontSize: 12.sp, color: secondaryText),
                       ),
                     ],
                   ),
@@ -2649,7 +2670,7 @@ class _DropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
-      height: 48,
+      height: 44,
       child: DropdownButtonFormField<String>(
         initialValue: value,
         isExpanded: true,
@@ -2657,24 +2678,25 @@ class _DropdownField extends StatelessWidget {
         decoration: InputDecoration(
           filled: true,
           fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.2),
           ),
         ),
         hint: Text(
           items.first,
           style: TextStyle(
-            fontSize: 13.5.sp,
+            fontSize: 12.5.sp,
             color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
           ),
         ),
@@ -2687,7 +2709,7 @@ class _DropdownField extends StatelessWidget {
                   item,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.5.sp,
+                    fontSize: 12.5.sp,
                     color: isDark ? Colors.white : const Color(0xFF0F1419),
                   ),
                 ),
@@ -2759,14 +2781,14 @@ class _SearchSelectField extends StatelessWidget {
               enabled: enabled,
               textInputAction: TextInputAction.done,
               onChanged: onChanged,
-              style: TextStyle(fontSize: 13.5.sp),
+              style: TextStyle(fontSize: 12.5.sp),
               decoration: decoration.copyWith(
                 hintText: hintText,
                 errorText: errorText,
                 suffixIcon: trailing == null
                     ? null
                     : Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         child: trailing,
                       ),
               ),
@@ -2780,15 +2802,15 @@ class _SearchSelectField extends StatelessWidget {
               child: Material(
                 elevation: 8,
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minWidth: constraints.maxWidth,
                     maxWidth: constraints.maxWidth,
-                    maxHeight: 220,
+                    maxHeight: 200,
                   ),
                   child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     shrinkWrap: true,
                     itemCount: optionsList.length,
                     separatorBuilder: (_, __) => Divider(
@@ -2805,12 +2827,12 @@ class _SearchSelectField extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
-                            vertical: 12,
+                            vertical: 10,
                           ),
                           child: Text(
                             option,
                             style: TextStyle(
-                              fontSize: 13.5.sp,
+                              fontSize: 12.5.sp,
                               color: isDark ? Colors.white : const Color(0xFF0F1419),
                             ),
                           ),
@@ -2849,18 +2871,18 @@ class _AvatarSourceRow extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: <Widget>[
-            Icon(icon, size: 20.sp, color: primaryColor),
+            Icon(icon, size: 18.sp, color: primaryColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13.5.sp,
+                  fontSize: 12.5.sp,
                   fontWeight: FontWeight.w600,
                   color: primaryColor,
                 ),
@@ -2869,6 +2891,7 @@ class _AvatarSourceRow extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               color: chevronColor,
+              size: 20,
             ),
           ],
         ),
@@ -2996,7 +3019,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
           'Adjust avatar',
           style: TextStyle(
             color: primaryText,
-            fontSize: 18.sp,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -3007,7 +3030,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
             child: Text(
               'Reset',
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: 12.5.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -3023,7 +3046,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                 : Text(
                     'Use',
                     style: TextStyle(
-                      fontSize: 14.5.sp,
+                      fontSize: 13.5.sp,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -3039,7 +3062,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                 'Pinch to zoom and drag to position your profile photo.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 13.sp,
+                  fontSize: 12.5.sp,
                   color: secondaryText,
                 ),
               ),
@@ -3048,7 +3071,7 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                 'The photo inside the circle is what will be saved.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12.sp,
+                  fontSize: 11.5.sp,
                   color: secondaryText.withValues(alpha: 0.8),
                 ),
               ),
@@ -3137,11 +3160,11 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                         foregroundColor: primaryText,
                         side: BorderSide(color: outlineColor),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        minimumSize: const Size.fromHeight(50),
+                        minimumSize: const Size.fromHeight(48),
                         textStyle: TextStyle(
-                          fontSize: 13.5.sp,
+                          fontSize: 12.5.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -3153,17 +3176,17 @@ class _SignupAvatarEditorScreenState extends State<_SignupAvatarEditorScreen> {
                   Expanded(
                     flex: 2,
                     child: SizedBox(
-                      height: 50,
+                      height: 48,
                       child: FilledButton(
                         onPressed: _isSaving ? null : _saveAvatar,
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFFF7A59),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           textStyle: TextStyle(
-                            fontSize: 14.5.sp,
+                            fontSize: 13.5.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

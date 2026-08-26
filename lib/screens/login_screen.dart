@@ -341,38 +341,39 @@ class _LoginScreenState extends State<LoginScreen> {
     return InputDecoration(
       filled: true,
       fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
+      isDense: true,
       hintText: hintText,
       hintStyle: TextStyle(
-        fontSize: 13.5.sp,
+        fontSize: 12.5.sp,
         color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       prefixIcon: Icon(
         icon,
-        size: 19.sp,
+        size: 18.sp,
         color: isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174),
       ),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.5),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFFF7A59), width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.0),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
+      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
     );
   }
 
@@ -408,20 +409,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 20),
                             Center(
                               child: SvgPicture.asset(
                                 isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
-                                height: 64,
+                                height: 60,
                                 fit: BoxFit.contain,
                               ),
                             ),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 28),
                             Text(
                               'Welcome back',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 22.sp,
+                                fontSize: 20.sp,
                                 fontWeight: FontWeight.w700,
                                 color: primaryText,
                                 letterSpacing: -0.3,
@@ -432,11 +433,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Sign in to continue to your klub.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 13.5.sp,
+                                fontSize: 12.5.sp,
                                 color: secondaryText,
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 24),
                             if (_isPhoneLogin) ...[
                               TextFormField(
                                 controller: _identifierController,
@@ -449,7 +450,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   }
                                 },
                                 style: TextStyle(
-                                  fontSize: 13.5.sp,
+                                  fontSize: 12.5.sp,
                                   color: primaryText,
                                 ),
                                 decoration: _inputDecoration(
@@ -471,7 +472,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   keyboardType: TextInputType.number,
                                   maxLength: 6,
                                   style: TextStyle(
-                                    fontSize: 14.5.sp,
+                                    fontSize: 13.5.sp,
                                     color: primaryText,
                                   ),
                                   decoration: _inputDecoration(
@@ -496,7 +497,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       child: Text(
                                         'Resend Code',
-                                        style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600),
+                                        style: TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600),
                                       ),
                                     ),
                                     TextButton(
@@ -511,7 +512,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       child: Text(
                                         'Change Number',
-                                        style: TextStyle(fontSize: 13.5.sp),
+                                        style: TextStyle(fontSize: 12.5.sp),
                                       ),
                                     ),
                                   ],
@@ -531,7 +532,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   }
                                 },
                                 style: TextStyle(
-                                  fontSize: 13.5.sp,
+                                  fontSize: 12.5.sp,
                                   color: primaryText,
                                 ),
                                 decoration: _inputDecoration(
@@ -559,7 +560,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                   },
                                   style: TextStyle(
-                                    fontSize: 13.5.sp,
+                                    fontSize: 12.5.sp,
                                     color: primaryText,
                                   ),
                                   decoration: _inputDecoration(
@@ -620,14 +621,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     child: Text(
                                       'Forgot password?',
-                                      style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ),
                               ],
                             ],
                             if (!_isPhoneLogin || _phoneOtpSent) ...[
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 10),
                               Row(
                                 children: [
                                   Switch.adaptive(
@@ -646,7 +647,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Text(
                                     'Remember me',
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 13.5.sp,
+                                      fontSize: 12.5.sp,
                                       color: primaryText,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -660,15 +661,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _errorMessage!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 13.sp,
+                                  fontSize: 12.5.sp,
                                   color: const Color(0xFFDC2626),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
                              SizedBox(
-                              height: 50,
+                              height: 48,
                               child: FilledButton(
                                 onPressed: _isLoading ? null : _handleContinue,
                                 style: FilledButton.styleFrom(
@@ -677,12 +678,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   disabledBackgroundColor: brandOrange.withValues(alpha: 0.5),
                                   disabledForegroundColor: isDark ? Colors.black54 : Colors.white60,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   padding: const EdgeInsets.symmetric(horizontal: 20),
                                   elevation: 0,
                                   textStyle: TextStyle(
-                                    fontSize: 14.5.sp,
+                                    fontSize: 13.5.sp,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -700,7 +701,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         : (_showPasswordStep ? 'Sign in' : 'Continue')),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             if (!_isPhoneLogin && !_showPasswordStep) ...[
                               TextButton(
                                 onPressed: () {
@@ -720,7 +721,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextButton.styleFrom(
                                   foregroundColor: secondaryText,
                                   textStyle: TextStyle(
-                                    fontSize: 13.5.sp,
+                                    fontSize: 12.5.sp,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -743,7 +744,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextButton.styleFrom(
                                 foregroundColor: brandOrange,
                                 textStyle: TextStyle(
-                                  fontSize: 13.5.sp,
+                                  fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -751,7 +752,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? 'Log in with Email/Username'
                                   : 'Log in with Phone Number'),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             Row(
                               children: [
                                 Expanded(child: Divider(color: outlineColor, height: 1)),
@@ -760,7 +761,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'or',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
+                                      fontSize: 12.sp,
                                       color: secondaryText,
                                     ),
                                   ),
@@ -768,15 +769,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Expanded(child: Divider(color: outlineColor, height: 1)),
                               ],
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             SizedBox(
-                              height: 50,
+                              height: 48,
                               child: OutlinedButton.icon(
                                 onPressed: _isLoading ? null : _handleContinueWithGoogle,
                                 icon: SvgPicture.string(
                                    '''<svg width="800" height="800" viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid"><g><path d="M255.878 133.451C255.878 122.717 255.007 114.884 253.122 106.761H130.55v48.448h71.947C201.047 167.249 193.214 185.381 175.807 197.565L175.563 199.187l38.755 30.023L217.003 229.478c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4"/><path d="M130.55 261.1c35.248.0 64.839-11.605 86.453-31.622l-41.196-31.913C164.783 205.253 149.987 210.62 130.55 210.62c-34.523.0-63.824-22.773-74.269-54.25L54.75 156.5 14.452 187.687 13.925 189.152C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853"/><path d="M56.281 156.37C53.525 148.247 51.93 139.543 51.93 130.55 51.93 121.556 53.525 112.853 56.136 104.73L56.063 103 15.26 71.312 13.925 71.947C5.077 89.644.0 109.517.0 130.55c0 21.033 5.077 40.905 13.925 58.602L56.281 156.37" fill="#FBBC05"/><path d="M130.55 50.479c24.514.0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798.0 130.55.0 79.49.0 35.393 29.301 13.925 71.947L56.136 104.73c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335"/></g></svg>''',
-                                   width: 22,
-                                   height: 22,
+                                   width: 20,
+                                   height: 20,
                                  ),
                                 label: const Text('Continue with Google'),
                                 style: OutlinedButton.styleFrom(
@@ -784,17 +785,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   foregroundColor: primaryText,
                                   side: BorderSide(color: outlineColor),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   padding: const EdgeInsets.symmetric(horizontal: 20),
                                   textStyle: TextStyle(
-                                    fontSize: 13.5.sp,
+                                    fontSize: 12.5.sp,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
                             Row(
                               children: [
                                 Expanded(child: Divider(color: outlineColor, height: 1)),
@@ -803,7 +804,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'New to KatsKlub?',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
+                                      fontSize: 12.sp,
                                       color: secondaryText,
                                     ),
                                   ),
@@ -811,9 +812,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Expanded(child: Divider(color: outlineColor, height: 1)),
                               ],
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             SizedBox(
-                              height: 50,
+                              height: 48,
                               child: OutlinedButton(
                                 onPressed: _isLoading
                                     ? null
@@ -832,11 +833,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   foregroundColor: primaryText,
                                   side: BorderSide(color: outlineColor),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   padding: const EdgeInsets.symmetric(horizontal: 20),
                                   textStyle: TextStyle(
-                                    fontSize: 13.5.sp,
+                                    fontSize: 12.5.sp,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -853,7 +854,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'By continuing, you agree to our Terms & Privacy Policy.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 12.5.sp,
+                      fontSize: 12.sp,
                       color: secondaryText,
                       height: 1.4,
                     ),
@@ -1077,46 +1078,50 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
             if (!_otpSent) ...[
               Text(
                 'Enter the email address or phone number linked to your account to receive a verification code.',
-                style: TextStyle(fontSize: 13.5.sp, color: secondaryText, height: 1.4),
+                style: TextStyle(fontSize: 12.5.sp, color: secondaryText, height: 1.4),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _identifierController,
                 enabled: !_isLoading,
-                style: TextStyle(fontSize: 13.5.sp, color: primaryText),
+                style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                   labelText: 'Email or Phone Number',
-                  labelStyle: TextStyle(fontSize: 13.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
                   enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
                         color: secondaryText.withValues(alpha: 0.3)),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFFF7A59)),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               SizedBox(
-                height: 50,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF7A59),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : Text('Send Verification Code', style: TextStyle(fontSize: 14.5.sp, fontWeight: FontWeight.w600)),
+                      : Text('Send Verification Code', style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600)),
                 ),
               ),
             ] else ...[
               Text(
                 'A 6-digit verification code has been sent to your ${_method == 'phone' ? 'phone' : 'email'} at $_target.',
-                style: TextStyle(fontSize: 13.5.sp, color: secondaryText, height: 1.4),
+                style: TextStyle(fontSize: 12.5.sp, color: secondaryText, height: 1.4),
               ),
               if (_hasAlternative) ...[
                 const SizedBox(height: 8),
@@ -1133,7 +1138,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                     child: Text(
                       'Send to ${_alternativeMethod == 'phone' ? 'phone' : 'email'} instead ($_alternativeTarget)',
                       style: TextStyle(
-                          fontSize: 13.5.sp, fontWeight: FontWeight.w600),
+                          fontSize: 12.5.sp, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1144,17 +1149,21 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                 enabled: !_isLoading,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: TextStyle(fontSize: 14.5.sp, color: primaryText),
+                style: TextStyle(fontSize: 13.5.sp, color: primaryText),
                 decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                   labelText: 'Verification Code',
-                  labelStyle: TextStyle(fontSize: 13.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
                   counterText: '',
                   enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
                         color: secondaryText.withValues(alpha: 0.3)),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFFF7A59)),
                   ),
                 ),
               ),
@@ -1163,34 +1172,38 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
                 controller: _passwordController,
                 enabled: !_isLoading,
                 obscureText: true,
-                style: TextStyle(fontSize: 13.5.sp, color: primaryText),
+                style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                   labelText: 'New Password',
-                  labelStyle: TextStyle(fontSize: 13.5.sp, color: secondaryText),
+                  labelStyle: TextStyle(fontSize: 12.5.sp, color: secondaryText),
                   enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
                         color: secondaryText.withValues(alpha: 0.3)),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFFF7A59)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFFF7A59)),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               SizedBox(
-                height: 50,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF7A59),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : Text('Reset Password', style: TextStyle(fontSize: 14.5.sp, fontWeight: FontWeight.w600)),
+                      : Text('Reset Password', style: TextStyle(fontSize: 13.5.sp, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
