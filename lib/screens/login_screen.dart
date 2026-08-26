@@ -378,6 +378,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final harmonyTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: 'HarmonyOS Sans'),
+    );
     final isDark = theme.brightness == Brightness.dark;
     final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
     final secondaryText = isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
@@ -385,8 +388,10 @@ class _LoginScreenState extends State<LoginScreen> {
     const brandOrange = Color(0xFFFF7A59);
     final scaffoldBg = isDark ? const Color(0xFF18191A) : Colors.white;
 
-    return Scaffold(
-      backgroundColor: scaffoldBg,
+    return Theme(
+      data: harmonyTheme,
+      child: Scaffold(
+        backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -849,6 +854,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -1010,12 +1016,18 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final harmonyTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: 'HarmonyOS Sans'),
+    );
+    final isDark = theme.brightness == Brightness.dark;
     final primaryText = isDark ? Colors.white : const Color(0xFF0F1419);
     final secondaryText =
         isDark ? const Color(0xFF8E9598) : const Color(0xFF6C7174);
 
-    return Padding(
+    return Theme(
+      data: harmonyTheme,
+      child: Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 20,
@@ -1176,6 +1188,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
           ],
         ),
       ),
+    ),
     );
   }
 }
