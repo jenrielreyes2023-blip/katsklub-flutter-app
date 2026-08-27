@@ -249,12 +249,17 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
             ytm-single-column-watch-next-results-renderer, ytm-item-section-renderer,
             ytm-comments-entry-point-header-renderer, .watch-below-the-player,
             #related, ytm-engagement-panel-section-list-renderer, ytm-paid-content-overlay-renderer,
-            .yt-spec-bottom-sheet-layout__bottom-sheet-renderer-container,
             .slim-video-metadata-header, ytm-slim-video-metadata-section-renderer,
             .mobile-topbar-header, .ytp-cards-teaser, .ytp-watermark,
             .ytp-pause-overlay-container, ytm-autonav-toggle,
             #app-banner, ytm-promoted-sparkles-web-renderer {
               display: none !important;
+            }
+            /* Allow Settings & Quality dialog to appear on top */
+            .yt-spec-bottom-sheet-layout__bottom-sheet-renderer-container,
+            .ytp-settings-menu, .ytp-panel, .ytp-popup {
+              z-index: 10000000 !important;
+              display: block !important;
             }
             html, body {
               margin: 0 !important;
@@ -281,6 +286,14 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
           `;
           document.head.appendChild(style);
         }
+        try {
+          // Request High Quality (1080p/720p HD) in localStorage
+          localStorage.setItem('yt-player-quality', JSON.stringify({
+            data: 'hd1080',
+            expiration: Date.now() + 86400000000,
+            creation: Date.now()
+          }));
+        } catch(e) {}
         var video = document.querySelector('video');
         if (video && video.paused) {
           video.play().catch(function(){});
@@ -324,6 +337,36 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       '$title\nhttps://www.youtube.com/watch?v=${widget.videoId}',
       subject: title,
     );
+  }
+
+  void _openQualitySettings() {
+    if (_useWebviewFallback && _webViewController != null) {
+      const script = r"""
+        (function() {
+          var gear = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"], .icon-button[aria-label*="settings"]');
+          if (gear) {
+            gear.click();
+          } else {
+            var player = document.querySelector('#player-container-id, video');
+            if (player) {
+              player.click();
+              setTimeout(function() {
+                var g = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"]');
+                if (g) g.click();
+              }, 250);
+            }
+          }
+        })();
+      """;
+      _webViewController?.runJavaScript(script).catchError((_) {});
+    } else if (_chewieController != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Playing at best available direct stream quality.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -449,6 +492,12 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
+                        _buildActionButton(
+                          icon: Icons.high_quality_rounded,
+                          label: 'Quality (HD)',
+                          onTap: _openQualitySettings,
+                          isDark: isDark,
+                        ),
                         _buildActionButton(
                           icon: Icons.share_outlined,
                           label: 'Share',
