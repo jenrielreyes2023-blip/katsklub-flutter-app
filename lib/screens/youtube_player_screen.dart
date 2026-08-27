@@ -169,9 +169,40 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   }
 
   void _initWebviewFallback() {
-    final watchUrl = 'https://www.youtube.com/embed/${widget.videoId}?autoplay=1';
+    const userAgent =
+        'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.119 Mobile Safari/537.36';
+
+    final htmlContent = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000000; overflow: hidden; }
+    .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1"
+      title="YouTube Video Player"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen>
+    </iframe>
+  </div>
+</body>
+</html>
+''';
+
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(userAgent)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -187,7 +218,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(watchUrl));
+      ..loadHtmlString(htmlContent, baseUrl: 'https://www.youtube.com');
 
     if (mounted) {
       setState(() {
@@ -383,6 +414,36 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     SizedBox(height: 16.h),
                     const Divider(height: 1, color: Color(0x229CA3AF)),
                     SizedBox(height: 16.h),
+
+                    // Watch in YouTube App Button
+                    InkWell(
+                      onTap: _openInYouTube,
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF0000),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.play_circle_fill, color: Colors.white, size: 20),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Open in YouTube App',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
 
                     // Playback Status Indicator
                     Container(
