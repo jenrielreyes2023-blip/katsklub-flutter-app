@@ -13,7 +13,6 @@ import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
 import 'screens/youtube_search_screen.dart';
 import 'screens/youtube_player_screen.dart';
-import 'screens/youtube_mp3_screen.dart';
 import 'services/auth_service.dart';
 import 'services/conversation_theme.dart';
 import 'services/feed_service.dart';
@@ -386,17 +385,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                         author: args?['author'],
                         thumbnail: args?['thumbnail'],
                         streamUrl: args?['streamUrl'],
-                      ),
-                    );
-                  }
-                  if (settings.name == '/youtube/mp3') {
-                    final args = settings.arguments as Map<String, dynamic>?;
-                    return MaterialPageRoute(
-                      builder: (_) => YouTubeMP3Screen(
-                        videoId: args?['videoId'] ?? '',
-                        title: args?['title'],
-                        author: args?['author'],
-                        thumbnail: args?['thumbnail'],
                       ),
                     );
                   }

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../screens/playlist_screen.dart';
-import '../screens/youtube_mp3_screen.dart';
 import '../services/global_audio_player_service.dart';
 
 class GlobalAudioMiniPlayer extends StatefulWidget {
@@ -143,17 +142,7 @@ class _GlobalAudioMiniPlayerState extends State<GlobalAudioMiniPlayer>
 
   Future<void> _openTrackDetails(BuildContext context, GlobalAudioQueueItem track) async {
     _cancelAutoCollapse();
-    if (track.source == 'youtube') {
-      final videoId = track.id.replaceFirst('yt_', '');
-      await Navigator.of(context).push(
-        YouTubeMP3Screen.route(
-          videoId: videoId,
-          title: track.title,
-          author: track.artist,
-          thumbnail: track.artworkUrl,
-        ),
-      );
-    } else if (track.playlistId != null) {
+    if (track.playlistId != null) {
       await _openPlaylist(context, track.playlistId);
     }
     if (!mounted) {

@@ -11,7 +11,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../services/youtube_service.dart';
-import 'youtube_mp3_screen.dart';
 
 class _QualityOption {
   final String label;
@@ -873,23 +872,6 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           label: 'YouTube App',
                           onTap: _openInYouTube,
                           isDark: isDark,
-                        ),
-                        _buildActionButton(
-                          icon: Icons.music_note_rounded,
-                          label: 'MP3 Mode',
-                          onTap: () {
-                            _disposeControllers();
-                            Navigator.of(context).pushReplacement(
-                              YouTubeMP3Screen.route(
-                                videoId: widget.videoId,
-                                title: widget.title,
-                                author: widget.author,
-                                thumbnail: widget.thumbnail,
-                              ),
-                            );
-                          },
-                          isDark: isDark,
-                          accentColor: const Color(0xFFFF2A6D),
                         ),
                         _buildActionButton(
                           icon: _useWebviewFallback
