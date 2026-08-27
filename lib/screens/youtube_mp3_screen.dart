@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -127,13 +128,23 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       }
 
       _audioStreamUrl = url;
-      await _audioPlayer.setUrl(
-        url,
+      final source = AudioSource.uri(
+        Uri.parse(url),
         headers: {
           'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
+        tag: MediaItem(
+          id: widget.videoId,
+          album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
+          title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
+          artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
+          artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
+              ? Uri.tryParse(widget.thumbnail!)
+              : null,
+        ),
       );
+      await _audioPlayer.setAudioSource(source);
       await _audioPlayer.play();
 
       if (mounted) {
