@@ -10,8 +10,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/global_audio_player_service.dart';
-import '../services/local_audio_proxy_service.dart';
 import '../services/youtube_service.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import 'youtube_player_screen.dart';
 
 /// Full-featured YouTube MP3 Music & Audio Player screen.
@@ -103,7 +103,16 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     });
 
     try {
-      final streamUrl = await localAudioProxy.getAudioUrl(widget.videoId);
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
+      final mp4Streams = manifest.audioOnly
+          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+          .toList();
+      final streamInfo = mp4Streams.isNotEmpty
+          ? mp4Streams.first
+          : manifest.audioOnly.withHighestBitrate();
+      final streamUrl = streamInfo.url.toString();
+      yt.close();
 
       final track = GlobalAudioQueueItem(
         id: targetTrackId,

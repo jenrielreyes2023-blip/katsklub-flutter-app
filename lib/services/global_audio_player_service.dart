@@ -148,6 +148,12 @@ class GlobalAudioPlayerService extends ChangeNotifier {
           .map(
             (item) => AudioSource.uri(
               Uri.parse(item.src),
+              headers: item.source == 'youtube'
+                  ? const {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    }
+                  : null,
               tag: MediaItem(
                 id: item.id,
                 album: item.artist.isNotEmpty ? item.artist : 'KatsKlub',
