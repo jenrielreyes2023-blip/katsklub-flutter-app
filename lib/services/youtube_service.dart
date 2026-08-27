@@ -196,7 +196,7 @@ class YouTubeService {
     return null;
   }
 
-  /// Retrieves direct audio-only stream URL (M4A / AAC / MP3) for music listening.
+  /// Retrieves direct audio stream URL (M4A / AAC / MP4) for music listening.
   Future<String?> getAudioStreamUrl(String videoId) async {
     final trimmed = videoId.trim();
     if (trimmed.isEmpty) return null;
@@ -205,9 +205,27 @@ class YouTubeService {
     try {
       final yt = yte.YoutubeExplode();
       final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      final audio = manifest.audioOnly.withHighestBitrate();
+      
+      // Prefer standard MP4/AAC audio (itag 140) for flawless Android ExoPlayer playback
+      final mp4Audios = manifest.audioOnly
+          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+          .toList();
+      
+      final audio = mp4Audios.isNotEmpty
+          ? mp4Audios.withHighestBitrate()
+          : manifest.audioOnly.withHighestBitrate();
+      
       yt.close();
       return audio.url.toString();
+    } catch (_) {}
+
+    // 1.5 Fallback to muxed stream (standard MP4 container)
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      final muxed = manifest.muxed.withHighestBitrate();
+      yt.close();
+      return muxed.url.toString();
     } catch (_) {}
 
     // 2. Fallback to backend API

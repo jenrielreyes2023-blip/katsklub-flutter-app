@@ -10,6 +10,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
@@ -128,21 +129,19 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       }
 
       _audioStreamUrl = url;
+      final mediaItem = MediaItem(
+        id: widget.videoId,
+        album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
+        title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
+        artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
+        artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
+            ? Uri.tryParse(widget.thumbnail!)
+            : null,
+      );
+
       final source = AudioSource.uri(
         Uri.parse(url),
-        headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-        tag: MediaItem(
-          id: widget.videoId,
-          album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
-          title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
-          artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
-          artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
-              ? Uri.tryParse(widget.thumbnail!)
-              : null,
-        ),
+        tag: mediaItem,
       );
       await _audioPlayer.setAudioSource(source);
       await _audioPlayer.play();
@@ -151,10 +150,39 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
         setState(() => _isLoading = false);
       }
     } catch (e) {
+      // Fallback: If audio-only stream fails with Source Error, try direct muxed MP4 stream
+      try {
+        final yt = yte.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
+        final muxed = manifest.muxed.withHighestBitrate();
+        yt.close();
+
+        _audioStreamUrl = muxed.url.toString();
+        final fallbackSource = AudioSource.uri(
+          muxed.url,
+          tag: MediaItem(
+            id: widget.videoId,
+            album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
+            title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
+            artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
+            artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
+                ? Uri.tryParse(widget.thumbnail!)
+                : null,
+          ),
+        );
+        await _audioPlayer.setAudioSource(fallbackSource);
+        await _audioPlayer.play();
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+          return;
+        }
+      } catch (_) {}
+
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+          _errorMessage = 'Hindi ma-load ang audio stream: $e';
         });
       }
     }
