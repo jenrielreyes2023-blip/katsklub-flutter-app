@@ -143,11 +143,18 @@ class YouTubeMusicController extends ChangeNotifier {
             background: #000 !important;
           }
           video {
-            object-fit: contain !important;
+            object-fit: cover !important;
             width: 100% !important;
             height: 100% !important;
           }
         `;
+
+        try {
+          Object.defineProperty(document, 'hidden', { get: function() { return false; } });
+          Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; } });
+          window.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);
+          document.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);
+        } catch(e) {}
       })();
     """;
     _webViewController?.runJavaScript(css).catchError((_) {});
@@ -164,6 +171,7 @@ class YouTubeMusicController extends ChangeNotifier {
   void playWebVideo() {
     const script = """
       (function() {
+        window._userExplicitlyPaused = false;
         var v = document.querySelector('video');
         if (v) { v.play(); }
       })();
@@ -176,6 +184,7 @@ class YouTubeMusicController extends ChangeNotifier {
   void pauseWebVideo() {
     const script = """
       (function() {
+        window._userExplicitlyPaused = true;
         var v = document.querySelector('video');
         if (v) { v.pause(); }
       })();
