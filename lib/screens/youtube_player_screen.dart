@@ -111,6 +111,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   bool _useWebviewFallback = false;
   String? _errorMessage;
   String _selectedQuality = 'auto';
+  Map<String, String> _availableNativeStreams = {};
 
   WebViewController? _webViewController;
   bool _isWebviewLoading = false;
@@ -157,6 +158,15 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
     final yt = yte.YoutubeExplode();
     try {
       final manifest = await yt.videos.streamsClient.getManifest(videoId);
+      final streams = <String, String>{};
+      for (final s in manifest.muxed) {
+        streams[s.qualityLabel.toLowerCase()] = s.url.toString();
+      }
+      if (mounted) {
+        setState(() {
+          _availableNativeStreams = streams;
+        });
+      }
       final muxed = manifest.muxed.withHighestBitrate();
       return muxed.url.toString();
     } catch (_) {
@@ -508,6 +518,47 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       _selectedQuality = opt.ytQuality;
     });
 
+    // Case 1: Currently playing in Native Chewie Player
+    if (!_useWebviewFallback) {
+      // Check if this quality is available as a native muxed stream (e.g. 720p or 360p)
+      String? nativeStreamUrl;
+      if (opt.ytQuality == 'hd720' && _availableNativeStreams.containsKey('720p')) {
+        nativeStreamUrl = _availableNativeStreams['720p'];
+      } else if ((opt.ytQuality == 'medium' || opt.ytQuality == 'auto') &&
+          _availableNativeStreams.containsKey('360p')) {
+        nativeStreamUrl = _availableNativeStreams['360p'];
+      } else if (opt.ytQuality == 'large' &&
+          _availableNativeStreams.containsKey('480p')) {
+        nativeStreamUrl = _availableNativeStreams['480p'];
+      }
+
+      if (nativeStreamUrl != null && nativeStreamUrl.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Switched to ${opt.label} in Native Player.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        await _switchNativeStream(nativeStreamUrl);
+        return;
+      }
+
+      // If user selected 1080p Full HD (only available via YouTube HD engine)
+      if (opt.ytQuality == 'hd1080' || opt.ytQuality == 'hd720') {
+        _promptSwitchToWebFor1080p(opt);
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Playing at best available native resolution (${opt.label}).'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Case 2: Currently playing in Clean Web Player
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Setting video resolution to ${opt.label}...'),
@@ -515,17 +566,6 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       ),
     );
 
-    // If currently in native Chewie player (which is limited to 360p direct stream)
-    // and user selects HD (720p or 1080p), switch to Clean Web Player to stream true HD!
-    if (!_useWebviewFallback) {
-      final currentPos =
-          _videoPlayerController?.value.position ?? Duration.zero;
-      await _disposeControllers();
-      _initCleanMobileWebPlayer(startAt: currentPos);
-      return;
-    }
-
-    // If in Clean Web Player, apply the selected quality
     if (_webViewController != null) {
       final script = """
         (function() {
@@ -546,7 +586,6 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
               p.setPlaybackQuality(target);
             }
           }
-          // Trigger YouTube settings gear to ensure quality updates on screen
           var gear = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"]');
           if (gear) {
             gear.click();
@@ -554,6 +593,126 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         })();
       """;
       _webViewController?.runJavaScript(script).catchError((_) {});
+    }
+  }
+
+  void _promptSwitchToWebFor1080p(_QualityOption opt) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: Row(
+            children: [
+              const Icon(Icons.hd_rounded, color: Color(0xFFFF0000)),
+              SizedBox(width: 8.w),
+              Text(
+                '1080p Full HD',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16.sp,
+                  color: isDark ? Colors.white : const Color(0xFF1C1E21),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Ang 1080p Full HD ay nangangailangan ng YouTube HD Web Player dahil magkahiwalay ang video at audio streams ng YouTube sa 1080p.\n\nGusto mo bang lumipat sa HD Web Player o manatili sa Native Player?',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 13.sp,
+              color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                'Manatili sa Native',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                final currentPos =
+                    _videoPlayerController?.value.position ?? Duration.zero;
+                _disposeControllers();
+                _initCleanMobileWebPlayer(startAt: currentPos);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF0000),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+              ),
+              child: const Text('Lumipat sa HD Player'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _switchNativeStream(String newUrl) async {
+    final currentPos =
+        _videoPlayerController?.value.position ?? Duration.zero;
+    final wasPlaying = _videoPlayerController?.value.isPlaying ?? true;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _disposeControllers();
+
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(newUrl),
+        httpHeaders: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      );
+      await controller.initialize();
+      await controller.seekTo(currentPos);
+      if (wasPlaying) {
+        await controller.play();
+      }
+
+      final chewie = ChewieController(
+        videoPlayerController: controller,
+        autoPlay: wasPlaying,
+        looping: false,
+        aspectRatio: controller.value.aspectRatio > 0
+            ? controller.value.aspectRatio
+            : 16 / 9,
+        allowFullScreen: true,
+        allowMuting: true,
+        allowPlaybackSpeedChanging: true,
+        showControls: true,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: const Color(0xFFFF0000),
+          handleColor: const Color(0xFFFF0000),
+          backgroundColor: Colors.white24,
+          bufferedColor: Colors.white54,
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _videoPlayerController = controller;
+          _chewieController = chewie;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
