@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../services/youtube_music_service.dart';
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
 import 'youtube_mp3_screen.dart';
@@ -35,6 +37,7 @@ class YouTubeSearchScreen extends StatefulWidget {
 
 class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
   final YouTubeService _youtubeService = YouTubeService();
+  final YouTubeMusicService _musicService = YouTubeMusicService();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -43,6 +46,11 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
   bool _hasSearched = false;
   String? _errorMessage;
   String? _currentlyLoadingVideoId;
+
+  // Music vs Video mode
+  bool _musicMode = true;
+  YouTubeMusicChartsResult? _chartsResult;
+  bool _isLoadingCharts = false;
 
   // Curated quick search suggestions
   final List<String> _suggestions = const [
@@ -59,9 +67,21 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCharts();
     if (widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
       _searchController.text = widget.initialQuery!.trim();
       _performSearch(widget.initialQuery!.trim());
+    }
+  }
+
+  Future<void> _loadCharts() async {
+    setState(() => _isLoadingCharts = true);
+    final res = await _musicService.getCharts();
+    if (mounted) {
+      setState(() {
+        _chartsResult = res;
+        _isLoadingCharts = false;
+      });
     }
   }
 
@@ -85,17 +105,37 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
     });
 
     try {
-      final results = await _youtubeService.searchVideos(trimmed);
-      if (mounted) {
-        setState(() {
-          _videos = results;
-          _isLoading = false;
-        });
+      if (_musicMode) {
+        final songs = await _musicService.searchSongs(trimmed, type: 'song');
+        final results = songs
+            .map((s) => YouTubeVideoItem(
+                  id: s.id,
+                  title: s.title,
+                  author: s.artist,
+                  duration: s.duration,
+                  thumbnail: s.thumbnail,
+                  viewCount: s.album.isNotEmpty ? s.album : 'YouTube Music',
+                ))
+            .toList();
+        if (mounted) {
+          setState(() {
+            _videos = results;
+            _isLoading = false;
+          });
+        }
+      } else {
+        final results = await _youtubeService.searchVideos(trimmed);
+        if (mounted) {
+          setState(() {
+            _videos = results;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to search YouTube videos. Please try again.';
+          _errorMessage = 'Failed to search YouTube. Please try again.';
           _isLoading = false;
         });
       }
@@ -106,6 +146,18 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
     if (widget.onVideoSelected != null) {
       widget.onVideoSelected!(video);
       Navigator.of(context).pop(video);
+      return;
+    }
+
+    if (_musicMode) {
+      Navigator.of(context).push(
+        YouTubeMP3Screen.route(
+          videoId: video.id,
+          title: video.title,
+          author: video.author,
+          thumbnail: video.thumbnail,
+        ),
+      );
       return;
     }
 
@@ -265,6 +317,107 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
             ),
           ),
 
+          // Mode Selector: YouTube Music vs Video
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!_musicMode) {
+                        setState(() {
+                          _musicMode = true;
+                          _videos.clear();
+                          _hasSearched = false;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 7.h),
+                      decoration: BoxDecoration(
+                        color: _musicMode
+                            ? const Color(0xFFFF2A6D).withValues(alpha: 0.18)
+                            : (isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: _musicMode ? const Color(0xFFFF2A6D) : Colors.transparent,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.music_note_rounded,
+                            size: 15.sp,
+                            color: _musicMode ? const Color(0xFFFF2A6D) : Colors.white60,
+                          ),
+                          SizedBox(width: 5.w),
+                          Text(
+                            'YouTube Music',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: _musicMode ? const Color(0xFFFF2A6D) : Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_musicMode) {
+                        setState(() {
+                          _musicMode = false;
+                          _videos.clear();
+                          _hasSearched = false;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 7.h),
+                      decoration: BoxDecoration(
+                        color: !_musicMode
+                            ? const Color(0xFFFF0000).withValues(alpha: 0.18)
+                            : (isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: !_musicMode ? const Color(0xFFFF0000) : Colors.transparent,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.video_library_rounded,
+                            size: 15.sp,
+                            color: !_musicMode ? const Color(0xFFFF0000) : Colors.white60,
+                          ),
+                          SizedBox(width: 5.w),
+                          Text(
+                            'YouTube Videos',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: !_musicMode ? const Color(0xFFFF0000) : Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 6.h),
+
           // Suggestion Chips (Horizontal Carousel)
           SizedBox(
             height: 36.h,
@@ -385,6 +538,9 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
     }
 
     if (!_hasSearched) {
+      if (_musicMode) {
+        return _buildMusicChartsView(isDark);
+      }
       return Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -486,6 +642,227 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildMusicChartsView(bool isDark) {
+    if (_isLoadingCharts) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF2A6D)),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'Loading YouTube Music Charts...',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final charts = _chartsResult?.charts ?? [];
+    final newReleases = _chartsResult?.newReleases ?? [];
+
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      children: [
+        if (charts.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Row(
+              children: [
+                const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFF2A6D), size: 20),
+                SizedBox(width: 6.w),
+                Text(
+                  'Trending on YouTube Music',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10.h),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            itemCount: math.min(10, charts.length),
+            separatorBuilder: (_, __) => SizedBox(height: 10.h),
+            itemBuilder: (context, index) {
+              final item = charts[index];
+              return ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                tileColor: isDark ? const Color(0xFF1E1E24) : const Color(0xFFF3F4F6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.r),
+                  side: BorderSide(
+                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  ),
+                ),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10.r),
+                  child: CachedNetworkImage(
+                    imageUrl: item.thumbnail,
+                    width: 48.w,
+                    height: 48.w,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Container(
+                      width: 48.w,
+                      height: 48.w,
+                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
+                      child: const Icon(Icons.music_note, color: Colors.white70),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                subtitle: Text(
+                  item.artist.isNotEmpty ? item.artist : 'Trending Song',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 11.5.sp,
+                    color: const Color(0xFFFF2A6D),
+                  ),
+                ),
+                trailing: Container(
+                  width: 36.r,
+                  height: 36.r,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF2A6D),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
+                ),
+                onTap: () {
+                  Navigator.of(context).push(
+                    YouTubeMP3Screen.route(
+                      videoId: item.id,
+                      title: item.title,
+                      author: item.artist,
+                      thumbnail: item.thumbnail,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+        if (newReleases.isNotEmpty) ...[
+          SizedBox(height: 20.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Row(
+              children: [
+                const Icon(Icons.new_releases_rounded, color: Color(0xFF10B981), size: 20),
+                SizedBox(width: 6.w),
+                Text(
+                  'New Music Releases',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10.h),
+          SizedBox(
+            height: 160.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              itemCount: newReleases.length,
+              separatorBuilder: (_, __) => SizedBox(width: 12.w),
+              itemBuilder: (context, index) {
+                final item = newReleases[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      YouTubeMP3Screen.route(
+                        videoId: item.id,
+                        title: item.title,
+                        author: item.artist,
+                        thumbnail: item.thumbnail,
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 110.w,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: CachedNetworkImage(
+                            imageUrl: item.thumbnail,
+                            width: 110.w,
+                            height: 110.w,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              width: 110.w,
+                              height: 110.w,
+                              color: Colors.white12,
+                              child: const Icon(Icons.music_note, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 6.h),
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          item.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 10.sp,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

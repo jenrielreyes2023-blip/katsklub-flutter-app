@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/global_audio_player_service.dart';
+import '../services/youtube_music_service.dart';
 import '../services/youtube_service.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import 'youtube_player_screen.dart';
@@ -62,6 +63,7 @@ class YouTubeMP3Screen extends StatefulWidget {
 class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     with SingleTickerProviderStateMixin {
   final YouTubeService _youtubeService = YouTubeService();
+  final YouTubeMusicService _musicService = YouTubeMusicService();
   late final AnimationController _rotationController;
 
   bool _isLoading = false;
@@ -71,6 +73,36 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String? _downloadedFilePath;
+
+  // Lyrics state
+  bool _showLyrics = false;
+  bool _loadingLyrics = false;
+  String? _lyrics;
+
+  Future<void> _toggleLyrics() async {
+    if (_showLyrics) {
+      setState(() => _showLyrics = false);
+      return;
+    }
+
+    if (_lyrics != null) {
+      setState(() => _showLyrics = true);
+      return;
+    }
+
+    setState(() {
+      _loadingLyrics = true;
+      _showLyrics = true;
+    });
+
+    final text = await _musicService.getLyrics(widget.videoId);
+    if (mounted) {
+      setState(() {
+        _loadingLyrics = false;
+        _lyrics = text ?? 'Walang lyrics na available para sa kantang ito.';
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -327,6 +359,14 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
             ),
             actions: [
               IconButton(
+                icon: Icon(
+                  _showLyrics ? Icons.album_rounded : Icons.lyrics_rounded,
+                  color: _showLyrics ? const Color(0xFFFF2A6D) : Colors.white70,
+                ),
+                tooltip: _showLyrics ? 'Ipakita ang Vinyl' : 'Ipakita ang Lyrics',
+                onPressed: _toggleLyrics,
+              ),
+              IconButton(
                 icon: const Icon(Icons.video_collection_outlined, color: Colors.white70),
                 tooltip: 'Panoorin ang Video',
                 onPressed: _switchToVideo,
@@ -436,6 +476,81 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     );
   }
 
+  Widget _buildLyricsCard() {
+    return Container(
+      width: double.infinity,
+      height: 250.h,
+      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E24),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+          color: const Color(0xFFFF2A6D).withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF2A6D).withValues(alpha: 0.15),
+            blurRadius: 24,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.lyrics_rounded, color: Color(0xFFFF2A6D), size: 18),
+                  SizedBox(width: 6.w),
+                  Text(
+                    'YouTube Music Lyrics',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 18),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => setState(() => _showLyrics = false),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.white10, height: 16),
+          Expanded(
+            child: _loadingLyrics
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF2A6D)),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      _lyrics ?? 'Walang lyrics.',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                        height: 1.6,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPlayerBody(
     String titleText,
     String authorText,
@@ -450,64 +565,66 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
         children: [
           const Spacer(flex: 1),
 
-          // Animated Vinyl Disc Album Art
-          Center(
-            child: AnimatedBuilder(
-              animation: _rotationController,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _rotationController.value * 2 * math.pi,
-                  child: child,
-                );
-              },
-              child: Container(
-                width: 240.w,
-                height: 240.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF1E1E24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.35),
-                      blurRadius: 36,
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      blurRadius: 20,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(12.r),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF111115),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(18.r),
-                      child: ClipOval(
-                        child: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: widget.thumbnail!,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(color: Colors.black45),
-                                errorWidget: (_, __, ___) =>
-                                    const Icon(Icons.music_note, color: Colors.white38, size: 50),
-                              )
-                            : Container(
-                                color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
-                                child: const Icon(Icons.music_note, color: Colors.white, size: 50),
-                              ),
+          // Either Animated Vinyl Disc or Lyrics View
+          _showLyrics
+              ? _buildLyricsCard()
+              : Center(
+                  child: AnimatedBuilder(
+                    animation: _rotationController,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _rotationController.value * 2 * math.pi,
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      width: 240.w,
+                      height: 240.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF1E1E24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF2A6D).withValues(alpha: 0.35),
+                            blurRadius: 36,
+                            spreadRadius: 2,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.8),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(12.r),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF111115),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(18.r),
+                            child: ClipOval(
+                              child: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: widget.thumbnail!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Container(color: Colors.black45),
+                                      errorWidget: (_, __, ___) =>
+                                          const Icon(Icons.music_note, color: Colors.white38, size: 50),
+                                    )
+                                  : Container(
+                                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
+                                      child: const Icon(Icons.music_note, color: Colors.white, size: 50),
+                                    ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
 
           const Spacer(flex: 1),
 
@@ -539,30 +656,72 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
           ),
           SizedBox(height: 8.h),
 
-          // Background Floating Notice Chip
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: const Color(0x4410B981)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.album_rounded, color: Color(0xFF10B981), size: 14),
-                SizedBox(width: 4.w),
-                Text(
-                  'Continuous Background Audio Active',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Rounded',
-                    fontSize: 10.5.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF10B981),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Background Floating Notice Chip
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: const Color(0x4410B981)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.album_rounded, color: Color(0xFF10B981), size: 14),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'Background Audio Active',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF10B981),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8.w),
+              // View Lyrics Pill Button
+              GestureDetector(
+                onTap: _toggleLyrics,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: _showLyrics
+                        ? const Color(0xFFFF2A6D).withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: _showLyrics ? const Color(0xFFFF2A6D) : Colors.white24,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lyrics_rounded,
+                        color: _showLyrics ? const Color(0xFFFF2A6D) : Colors.white70,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        _showLyrics ? 'Vinyl' : 'Lyrics',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w700,
+                          color: _showLyrics ? const Color(0xFFFF2A6D) : Colors.white70,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
           SizedBox(height: 18.h),

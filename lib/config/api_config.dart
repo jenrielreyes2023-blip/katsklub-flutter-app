@@ -24,6 +24,15 @@ class ApiConfig {
   static String youtubeAudioPath(String videoId) =>
       '/api/youtube/audio/${Uri.encodeComponent(videoId)}';
 
+  static const String musicBasePath = '/api/music';
+  static String musicSearchPath(String query, {String type = 'song'}) =>
+      '/api/music/search?q=${Uri.encodeQueryComponent(query)}&type=${Uri.encodeQueryComponent(type)}';
+  static const String musicChartsPath = '/api/music/charts';
+  static String musicStreamPath(String id) =>
+      '/api/music/stream/${Uri.encodeComponent(id)}';
+  static String musicLyricsPath(String id) =>
+      '/api/music/lyrics/${Uri.encodeComponent(id)}';
+
   static String playlistPath(int playlistId) => '/api/playlists/$playlistId';
 
   static String playlistTrackUploadPath(int playlistId) =>
