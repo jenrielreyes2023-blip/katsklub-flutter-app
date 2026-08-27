@@ -11,7 +11,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../services/youtube_service.dart';
-import 'youtube_mp3_screen.dart';
+import '../services/youtube_music_controller.dart';
 
 class _QualityOption {
   final String label;
@@ -879,13 +879,13 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           label: 'MP3 Mode',
                           onTap: () {
                             _disposeControllers();
-                            Navigator.of(context).push(
-                              YouTubeMP3Screen.route(
-                                videoId: widget.videoId,
-                                title: widget.title,
-                                author: widget.author,
-                                thumbnail: widget.thumbnail,
-                              ),
+                            Navigator.of(context).pop();
+                            youTubeMusicController.play(
+                              videoId: widget.videoId,
+                              title: widget.title,
+                              author: widget.author,
+                              thumbnail: widget.thumbnail,
+                              startMinimized: false,
                             );
                           },
                           isDark: isDark,
