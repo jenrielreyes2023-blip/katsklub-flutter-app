@@ -62,6 +62,24 @@ class KatsTopBar extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: () {
+              Navigator.of(context).pushNamed('/youtube');
+            },
+            icon: Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF0000),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+            tooltip: 'YouTube Search',
+          ),
+          IconButton(
+            onPressed: () {
               themeProvider.toggleTheme(!isDark);
             },
             icon: Icon(
