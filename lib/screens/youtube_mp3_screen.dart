@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -107,7 +106,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     try {
       String? streamUrl = _resolvedAudioUrl;
       if (streamUrl == null || streamUrl.isEmpty) {
-        streamUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
+        streamUrl = await _youtubeService.getCachedOrDownloadAudio(widget.videoId);
       }
 
       if (streamUrl == null || streamUrl.isEmpty) {
@@ -169,11 +168,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
   }
 
   Future<void> _downloadMp3() async {
-    String? targetUrl = _resolvedAudioUrl;
-    if (targetUrl == null || targetUrl.isEmpty) {
-      targetUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
-    }
-    if (targetUrl == null || targetUrl.isEmpty || _isDownloading) return;
+    if (_isDownloading) return;
 
     setState(() {
       _isDownloading = true;
@@ -187,28 +182,43 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       final dir = await getApplicationDocumentsDirectory();
       final savePath = '${dir.path}/$safeTitle.mp3';
 
-      final client = http.Client();
-      final request = http.Request('GET', Uri.parse(targetUrl));
+      final tempDir = await getTemporaryDirectory();
+      final cacheFile = File('${tempDir.path}/yt_audio_${widget.videoId}.m4a');
 
-      final response = await client.send(request);
-      final totalBytes = response.contentLength ?? 0;
-      int receivedBytes = 0;
-
-      final file = File(savePath);
-      final sink = file.openWrite();
-
-      await response.stream.listen((chunk) {
-        sink.add(chunk);
-        receivedBytes += chunk.length;
-        if (totalBytes > 0 && mounted) {
+      if (cacheFile.existsSync() && cacheFile.lengthSync() > 50000) {
+        await cacheFile.copy(savePath);
+        if (mounted) {
           setState(() {
-            _downloadProgress = receivedBytes / totalBytes;
+            _isDownloading = false;
+            _downloadProgress = 1.0;
+            _downloadedFilePath = savePath;
           });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('MP3 saved: $safeTitle.mp3'),
+              backgroundColor: const Color(0xFF10B981),
+              action: SnackBarAction(
+                label: 'Share',
+                textColor: Colors.white,
+                onPressed: _shareDownloadedFile,
+              ),
+            ),
+          );
         }
-      }).asFuture<void>();
+        return;
+      }
 
-      await sink.close();
-      client.close();
+      // If not cached yet, download via getCachedOrDownloadAudio
+      await _youtubeService.getCachedOrDownloadAudio(
+        widget.videoId,
+        onProgress: (p) {
+          if (mounted) setState(() => _downloadProgress = p);
+        },
+      );
+
+      if (cacheFile.existsSync() && cacheFile.lengthSync() > 50000) {
+        await cacheFile.copy(savePath);
+      }
 
       if (mounted) {
         setState(() {
