@@ -162,8 +162,12 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
             .toList();
         final streamInfo = mp4Streams.isNotEmpty
             ? mp4Streams.first
-            : manifest.audioOnly.withHighestBitrate();
-        streamUrl = streamInfo.url.toString();
+            : (manifest.audioOnly.isNotEmpty
+                ? manifest.audioOnly.withHighestBitrate()
+                : (manifest.muxed.isNotEmpty ? manifest.muxed.first : null));
+        if (streamInfo != null) {
+          streamUrl = streamInfo.url.toString();
+        }
         yt.close();
       } catch (err) {
         debugPrint('Direct client explode failed for $cleanVideoId: $err');
@@ -183,10 +187,16 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                   final mp4s = m.audioOnly
                       .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
                       .toList();
-                  final s = mp4s.isNotEmpty ? mp4s.first : m.audioOnly.withHighestBitrate();
-                  streamUrl = s.url.toString();
-                  cleanVideoId = alt.id.value;
-                  break;
+                  final s = mp4s.isNotEmpty
+                      ? mp4s.first
+                      : (m.audioOnly.isNotEmpty
+                          ? m.audioOnly.withHighestBitrate()
+                          : (m.muxed.isNotEmpty ? m.muxed.first : null));
+                  if (s != null) {
+                    streamUrl = s.url.toString();
+                    cleanVideoId = alt.id.value;
+                    break;
+                  }
                 } catch (_) {}
               }
             }

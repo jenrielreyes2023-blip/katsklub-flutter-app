@@ -209,10 +209,16 @@ class YouTubeMusicService {
           .toList();
       final streamInfo = mp4Streams.isNotEmpty
           ? mp4Streams.first
-          : manifest.audioOnly.withHighestBitrate();
-      final url = streamInfo.url.toString();
-      yt.close();
-      if (url.isNotEmpty) return url;
+          : (manifest.audioOnly.isNotEmpty
+              ? manifest.audioOnly.withHighestBitrate()
+              : (manifest.muxed.isNotEmpty ? manifest.muxed.first : null));
+      if (streamInfo != null) {
+        final url = streamInfo.url.toString();
+        yt.close();
+        if (url.isNotEmpty) return url;
+      } else {
+        yt.close();
+      }
     } catch (e) {
       debugPrint('YouTubeMusicService.getStreamUrl client extraction error: $e');
     }
