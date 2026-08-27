@@ -21,6 +21,8 @@ class ApiConfig {
       '/api/youtube/info/${Uri.encodeComponent(videoId)}';
   static String youtubeStreamPath(String videoId) =>
       '/api/youtube/stream/${Uri.encodeComponent(videoId)}';
+  static String youtubeAudioPath(String videoId) =>
+      '/api/youtube/audio/${Uri.encodeComponent(videoId)}';
 
   static String playlistPath(int playlistId) => '/api/playlists/$playlistId';
 

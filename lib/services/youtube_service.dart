@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../config/api_config.dart';
 
@@ -191,6 +192,41 @@ class YouTubeService {
         stackTrace: stackTrace,
       );
     }
+
+    return null;
+  }
+
+  /// Retrieves direct audio-only stream URL (M4A / AAC / MP3) for music listening.
+  Future<String?> getAudioStreamUrl(String videoId) async {
+    final trimmed = videoId.trim();
+    if (trimmed.isEmpty) return null;
+
+    // 1. Try client-side extraction using youtube_explode_dart
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      final audio = manifest.audioOnly.withHighestBitrate();
+      yt.close();
+      return audio.url.toString();
+    } catch (_) {}
+
+    // 2. Fallback to backend API
+    final uri = Uri.parse('$baseUrl${ApiConfig.youtubeAudioPath(trimmed)}');
+    try {
+      final response = await _client.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          final url = decoded['audioUrl'] as String? ?? decoded['streamUrl'] as String?;
+          if (url != null && url.isNotEmpty) {
+            return url;
+          }
+        }
+      }
+    } catch (_) {}
 
     return null;
   }

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
+import 'youtube_mp3_screen.dart';
 
 /// Screen allowing users to search, browse, and play YouTube videos directly.
 class YouTubeSearchScreen extends StatefulWidget {
@@ -45,14 +46,14 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
 
   // Curated quick search suggestions
   final List<String> _suggestions = const [
-    'Flutter Tutorial',
+    'OPM Hits',
     'Lofi Beats',
-    'Live Music',
-    'Trending',
-    'Podcasts',
-    'Gaming',
     'Acoustic Covers',
-    'Tech News',
+    'Live Music',
+    'Podcasts',
+    'Trending',
+    'Flutter Tutorial',
+    'Gaming',
   ];
 
   @override
@@ -700,6 +701,45 @@ class _VideoCard extends StatelessWidget {
                           ],
                         ),
                       ],
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  // Quick MP3 Button
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        YouTubeMP3Screen.route(
+                          videoId: video.id,
+                          title: video.title,
+                          author: video.author,
+                          thumbnail: video.thumbnail,
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF2A6D).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(color: const Color(0x33FF2A6D)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.music_note_rounded, color: Color(0xFFFF2A6D), size: 14),
+                          SizedBox(width: 3.w),
+                          Text(
+                            'MP3',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFFFF2A6D),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
