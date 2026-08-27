@@ -173,6 +173,12 @@ class GlobalAudioPlayerService extends ChangeNotifier {
           .map(
             (item) => AudioSource.uri(
               Uri.parse(item.src),
+              headers: item.source == 'youtube'
+                  ? const {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    }
+                  : null,
               tag: MediaItem(
                 id: item.id,
                 album: item.artist.isNotEmpty ? item.artist : 'KatsKlub',
@@ -209,8 +215,11 @@ class GlobalAudioPlayerService extends ChangeNotifier {
         await _player.pause();
       }
     } catch (e) {
-      debugPrint('GlobalAudioPlayer setAudioSource failed: \$e');
-      // Keep queue but mark not playing so UI can show retry
+      debugPrint('GlobalAudioPlayer setAudioSource failed: $e');
+      _queue = const <GlobalAudioQueueItem>[];
+      _currentIndex = -1;
+      _currentTime = Duration.zero;
+      _duration = Duration.zero;
       _playing = false;
       _processingState = ProcessingState.idle;
       notifyListeners();

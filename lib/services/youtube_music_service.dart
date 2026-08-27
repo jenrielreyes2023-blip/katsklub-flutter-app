@@ -183,14 +183,43 @@ class YouTubeMusicService {
   }
 
   /// Extracts the best audio-only stream URL for background playback.
-  /// GET /api/music/stream/:id
+  /// `GET /api/music/stream/:id`
   Future<String?> getStreamUrl(String videoId) async {
-    final trimmed = videoId.trim();
-    if (trimmed.isEmpty) return null;
+    String cleanId = videoId.trim();
+    if (cleanId.isEmpty) return null;
 
-    // Attempt 1: Backend extraction
+    // Resolve MPREb album ID if passed
+    if (cleanId.startsWith('MPREb_') || cleanId.length != 11) {
+      try {
+        final songs = await searchSongs(cleanId);
+        if (songs.isNotEmpty) {
+          cleanId = songs.first.id;
+        }
+      } catch (_) {}
+    }
+
+    // Attempt 1: Direct client-side stream extraction on user's device IP
+    // (prefers AAC mp4 itag 140, avoids IP-locked 403 Source errors)
     try {
-      final uri = Uri.parse('$_baseUrl${ApiConfig.musicStreamPath(trimmed)}');
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(cleanId);
+
+      final mp4Streams = manifest.audioOnly
+          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+          .toList();
+      final streamInfo = mp4Streams.isNotEmpty
+          ? mp4Streams.first
+          : manifest.audioOnly.withHighestBitrate();
+      final url = streamInfo.url.toString();
+      yt.close();
+      if (url.isNotEmpty) return url;
+    } catch (e) {
+      debugPrint('YouTubeMusicService.getStreamUrl client extraction error: $e');
+    }
+
+    // Attempt 2: Backend extraction fallback
+    try {
+      final uri = Uri.parse('$_baseUrl${ApiConfig.musicStreamPath(cleanId)}');
       final res = await _client.get(uri).timeout(const Duration(seconds: 10));
 
       if (res.statusCode == 200) {
@@ -204,24 +233,7 @@ class YouTubeMusicService {
       debugPrint('YouTubeMusicService.getStreamUrl backend error: $e');
     }
 
-    // Attempt 2: Direct client-side stream extraction (bulletproof on mobile IPs)
-    try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-
-      final mp4Streams = manifest.audioOnly
-          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
-          .toList();
-      final streamInfo = mp4Streams.isNotEmpty
-          ? mp4Streams.first
-          : manifest.audioOnly.withHighestBitrate();
-      final url = streamInfo.url.toString();
-      yt.close();
-      return url;
-    } catch (e) {
-      debugPrint('YouTubeMusicService.getStreamUrl client extraction error: $e');
-      return null;
-    }
+    return null;
   }
 
   /// Retrieves song lyrics if available.

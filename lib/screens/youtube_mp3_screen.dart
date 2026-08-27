@@ -121,8 +121,9 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     final playerService = context.read<GlobalAudioPlayerService>();
     final targetTrackId = 'yt_${widget.videoId}';
 
-    // If this YouTube track is already active in GlobalAudioPlayerService, don't restart it
-    if (playerService.currentTrack?.id == targetTrackId) {
+    // If this YouTube track is already active and playing or has duration, don't restart it
+    if (playerService.currentTrack?.id == targetTrackId &&
+        (playerService.playing || playerService.duration > Duration.zero)) {
       if (playerService.playing && !_rotationController.isAnimating) {
         _rotationController.repeat();
       }
@@ -135,18 +136,73 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     });
 
     try {
-      // Prefer backend (youtubei.js decipher) to avoid (0) Source error on client explode
-      String? streamUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
-      // If backend returns null, fallback to direct explode
-      if (streamUrl == null || streamUrl.isEmpty) {
+      String cleanVideoId = widget.videoId;
+
+      // 1. Resolve MPREb album/playlist ID if passed
+      if (cleanVideoId.startsWith('MPREb_') || cleanVideoId.length != 11) {
+        try {
+          final query = widget.title?.isNotEmpty == true
+              ? '${widget.title} ${widget.author ?? ''}'.trim()
+              : cleanVideoId;
+          final searchSongs = await _musicService.searchSongs(query);
+          if (searchSongs.isNotEmpty) {
+            cleanVideoId = searchSongs.first.id;
+          }
+        } catch (_) {}
+      }
+
+      String? streamUrl;
+
+      // 2. Client-side extraction via youtube_explode_dart FIRST (prefers AAC itag 140)
+      try {
         final yt = yte.YoutubeExplode();
-        final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
-        // AAC/Opus both work with just_audio ExoPlayer - use highest bitrate directly
-        final streamInfo = manifest.audioOnly.withHighestBitrate();
+        final manifest = await yt.videos.streamsClient.getManifest(cleanVideoId);
+        final mp4Streams = manifest.audioOnly
+            .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+            .toList();
+        final streamInfo = mp4Streams.isNotEmpty
+            ? mp4Streams.first
+            : manifest.audioOnly.withHighestBitrate();
         streamUrl = streamInfo.url.toString();
         yt.close();
+      } catch (err) {
+        debugPrint('Direct client explode failed for $cleanVideoId: $err');
       }
-      if (streamUrl.isEmpty) throw Exception('No audio URL found');
+
+      // 3. Fallback: Search alternative audio track if original video is restricted (e.g. MV or unavailable)
+      if (streamUrl == null || streamUrl.isEmpty) {
+        try {
+          final searchTitle = '${widget.title ?? ''} ${widget.author ?? ''}'.trim();
+          if (searchTitle.isNotEmpty) {
+            final yt = yte.YoutubeExplode();
+            final results = await yt.search.search('$searchTitle audio');
+            for (final alt in results.take(4)) {
+              if (alt.id.value != cleanVideoId) {
+                try {
+                  final m = await yt.videos.streamsClient.getManifest(alt.id.value);
+                  final mp4s = m.audioOnly
+                      .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+                      .toList();
+                  final s = mp4s.isNotEmpty ? mp4s.first : m.audioOnly.withHighestBitrate();
+                  streamUrl = s.url.toString();
+                  cleanVideoId = alt.id.value;
+                  break;
+                } catch (_) {}
+              }
+            }
+            yt.close();
+          }
+        } catch (_) {}
+      }
+
+      // 4. Last fallback: backend decipher endpoint
+      if (streamUrl == null || streamUrl.isEmpty) {
+        streamUrl = await _youtubeService.getAudioStreamUrl(cleanVideoId);
+      }
+
+      if (streamUrl == null || streamUrl.isEmpty) {
+        throw Exception('Walang available na audio stream para sa kantang ito.');
+      }
 
       final track = GlobalAudioQueueItem(
         id: targetTrackId,
@@ -790,7 +846,14 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
 
               // Play / Pause Circle Button
               GestureDetector(
-                onTap: player.togglePlaying,
+                onTap: () async {
+                  final targetTrackId = 'yt_${widget.videoId}';
+                  if (player.currentTrack?.id != targetTrackId || player.duration == Duration.zero) {
+                    await _initOrSwitchPlayback();
+                  } else {
+                    await player.togglePlaying();
+                  }
+                },
                 child: Container(
                   width: 68.w,
                   height: 68.w,
