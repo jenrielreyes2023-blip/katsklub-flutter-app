@@ -12,7 +12,6 @@ import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../widgets/global_audio_mini_player.dart';
 import '../widgets/normal_video_overlay.dart';
-import '../widgets/youtube_music_overlay.dart';
 import '../widgets/smooth_bottom_sheet.dart';
 import 'create_post_screen.dart';
 import 'create_story_screen.dart';
@@ -457,7 +456,6 @@ class _AppShellState extends State<AppShell> {
               ),
               if (isCurrentRoute) const GlobalAudioMiniPlayer(),
               const NormalVideoOverlay(),
-              const YouTubeMusicOverlay(),
             ],
           ),
           bottomNavigationBar:

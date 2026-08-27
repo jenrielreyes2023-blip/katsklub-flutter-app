@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/global_audio_player_service.dart';
+import '../services/local_audio_proxy_service.dart';
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
 
@@ -65,7 +66,6 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
 
   bool _isLoading = false;
   String? _errorMessage;
-  String? _resolvedAudioUrl;
 
   // Download state
   bool _isDownloading = false;
@@ -79,7 +79,6 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       vsync: this,
       duration: const Duration(seconds: 18),
     );
-    _resolvedAudioUrl = widget.audioUrl;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initOrSwitchPlayback();
@@ -104,16 +103,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     });
 
     try {
-      String? streamUrl = _resolvedAudioUrl;
-      if (streamUrl == null || streamUrl.isEmpty) {
-        streamUrl = await _youtubeService.getCachedOrDownloadAudio(widget.videoId);
-      }
-
-      if (streamUrl == null || streamUrl.isEmpty) {
-        throw Exception('Hindi ma-extract ang audio stream para sa video na ito.');
-      }
-
-      _resolvedAudioUrl = streamUrl;
+      final streamUrl = await localAudioProxy.getAudioUrl(widget.videoId);
 
       final track = GlobalAudioQueueItem(
         id: targetTrackId,

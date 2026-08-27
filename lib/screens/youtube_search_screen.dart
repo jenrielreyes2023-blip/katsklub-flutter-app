@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
-import '../services/youtube_music_controller.dart';
+import 'youtube_mp3_screen.dart';
 
 /// Screen allowing users to search, browse, and play YouTube videos directly.
 class YouTubeSearchScreen extends StatefulWidget {
@@ -707,12 +707,13 @@ class _VideoCard extends StatelessWidget {
                   // Quick MP3 Button
                   InkWell(
                     onTap: () {
-                      youTubeMusicController.play(
-                        videoId: video.id,
-                        title: video.title,
-                        author: video.author,
-                        thumbnail: video.thumbnail,
-                        startMinimized: false,
+                      Navigator.of(context).push(
+                        YouTubeMP3Screen.route(
+                          videoId: video.id,
+                          title: video.title,
+                          author: video.author,
+                          thumbnail: video.thumbnail,
+                        ),
                       );
                     },
                     borderRadius: BorderRadius.circular(16.r),
