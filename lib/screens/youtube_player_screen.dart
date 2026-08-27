@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
@@ -7,11 +8,14 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../services/youtube_service.dart';
 
-/// Full-featured YouTube Player Screen supporting direct Google CDN stream playback
-/// via [video_player] and [chewie], with automatic fallback to Webview for restricted media.
+/// Full-featured YouTube Player Screen supporting:
+/// 1. Direct device-side stream extraction (via youtube_explode_dart) for native Chewie playback.
+/// 2. Backend deciphered CDN stream fallback.
+/// 3. Clean mobile web watch player (injects CSS to isolate player, eliminating Error 152/153).
 class YouTubePlayerScreen extends StatefulWidget {
   const YouTubePlayerScreen({
     required this.videoId,
@@ -62,6 +66,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
 
   WebViewController? _webViewController;
   bool _isWebviewLoading = false;
+  Timer? _cleanPlayerTimer;
 
   @override
   void initState() {
@@ -78,6 +83,13 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
 
     try {
       String? stream = widget.streamUrl;
+
+      // Strategy 1: Client-side direct stream extraction on user's device
+      if (stream == null || stream.isEmpty) {
+        stream = await _extractStreamClientSide(widget.videoId);
+      }
+
+      // Strategy 2: Backend direct stream extraction
       if (stream == null || stream.isEmpty) {
         stream = await _youtubeService.getStreamUrl(widget.videoId);
       }
@@ -85,11 +97,24 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       if (stream != null && stream.isNotEmpty) {
         await _initializeChewiePlayer(stream);
       } else {
-        // Fallback to webview player if direct stream is restricted
-        _initWebviewFallback();
+        // Strategy 3: Clean mobile web watch player (avoids Error 152/153)
+        _initCleanMobileWebPlayer();
       }
     } catch (e) {
-      _initWebviewFallback();
+      _initCleanMobileWebPlayer();
+    }
+  }
+
+  Future<String?> _extractStreamClientSide(String videoId) async {
+    final yt = yte.YoutubeExplode();
+    try {
+      final manifest = await yt.videos.streamsClient.getManifest(videoId);
+      final muxed = manifest.muxed.withHighestBitrate();
+      return muxed.url.toString();
+    } catch (_) {
+      return null;
+    } finally {
+      yt.close();
     }
   }
 
@@ -139,9 +164,9 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                 ),
                 SizedBox(height: 12.h),
                 ElevatedButton.icon(
-                  onPressed: _initWebviewFallback,
+                  onPressed: _initCleanMobileWebPlayer,
                   icon: const Icon(Icons.web, size: 18),
-                  label: const Text('Switch to Web Player'),
+                  label: const Text('Switch to Clean Web Player'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF0000),
                     foregroundColor: Colors.white,
@@ -163,46 +188,19 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _initWebviewFallback();
+        _initCleanMobileWebPlayer();
       }
     }
   }
 
-  void _initWebviewFallback() {
-    const userAgent =
-        'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.119 Mobile Safari/537.36';
+  void _initCleanMobileWebPlayer() {
+    _cleanPlayerTimer?.cancel();
 
-    final htmlContent = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; background: #000000; overflow: hidden; }
-    .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-<body>
-  <div class="video-container">
-    <iframe
-      src="https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1"
-      title="YouTube Video Player"
-      referrerpolicy="strict-origin-when-cross-origin"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen>
-    </iframe>
-  </div>
-</body>
-</html>
-''';
+    final watchUrl =
+        'https://m.youtube.com/watch?v=${widget.videoId}&autoplay=1';
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent(userAgent)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -215,10 +213,11 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
             if (mounted) {
               setState(() => _isWebviewLoading = false);
             }
+            _injectCleanPlayerStyles();
           },
         ),
       )
-      ..loadHtmlString(htmlContent, baseUrl: 'https://www.youtube.com');
+      ..loadRequest(Uri.parse(watchUrl));
 
     if (mounted) {
       setState(() {
@@ -227,6 +226,72 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         _isLoading = false;
       });
     }
+
+    // Periodically enforce clean UI as dynamic elements load
+    _cleanPlayerTimer =
+        Timer.periodic(const Duration(milliseconds: 350), (timer) {
+      if (timer.tick > 12) {
+        timer.cancel();
+      }
+      _injectCleanPlayerStyles();
+    });
+  }
+
+  void _injectCleanPlayerStyles() {
+    const script = r"""
+      (function() {
+        var style = document.getElementById('kk-clean-player-style');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'kk-clean-player-style';
+          style.innerHTML = `
+            ytm-header, header, ytm-mobile-topbar-renderer, ytm-pivot-bar-renderer,
+            ytm-single-column-watch-next-results-renderer, ytm-item-section-renderer,
+            ytm-comments-entry-point-header-renderer, .watch-below-the-player,
+            #related, ytm-engagement-panel-section-list-renderer, ytm-paid-content-overlay-renderer,
+            .yt-spec-bottom-sheet-layout__bottom-sheet-renderer-container,
+            .slim-video-metadata-header, ytm-slim-video-metadata-section-renderer,
+            .mobile-topbar-header, .ytp-cards-teaser, .ytp-watermark,
+            .ytp-pause-overlay-container, ytm-autonav-toggle,
+            #app-banner, ytm-promoted-sparkles-web-renderer {
+              display: none !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background-color: #000000 !important;
+              overflow: hidden !important;
+              width: 100vw !important;
+              height: 100vh !important;
+            }
+            #player-container-id, .player-container, #player {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              z-index: 999999 !important;
+              background-color: #000000 !important;
+            }
+            video {
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: contain !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+        var video = document.querySelector('video');
+        if (video && video.paused) {
+          video.play().catch(function(){});
+        }
+        var playBtn = document.querySelector('.ytp-large-play-button, .player-placeholder-wrapper');
+        if (playBtn) {
+          playBtn.click();
+        }
+      })();
+    """;
+    _webViewController?.runJavaScript(script).catchError((_) {});
   }
 
   Future<void> _disposeControllers() async {
@@ -238,6 +303,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
 
   @override
   void dispose() {
+    _cleanPlayerTimer?.cancel();
     _disposeControllers();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
@@ -404,7 +470,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                             if (_useWebviewFallback) {
                               _startPlayback();
                             } else {
-                              _initWebviewFallback();
+                              _initCleanMobileWebPlayer();
                             }
                           },
                           isDark: isDark,
@@ -456,7 +522,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                         children: [
                           Icon(
                             _useWebviewFallback
-                                ? Icons.language
+                                ? Icons.smart_display_rounded
                                 : Icons.bolt_rounded,
                             size: 18.sp,
                             color: _useWebviewFallback
@@ -467,8 +533,8 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           Expanded(
                             child: Text(
                               _useWebviewFallback
-                                  ? 'Streaming via YouTube Webview Player'
-                                  : 'Direct Google CDN Native Stream Active',
+                                  ? 'Clean Web Player Active (No Embed Errors)'
+                                  : 'Direct Native Stream Active',
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 11.5.sp,
@@ -512,7 +578,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
               ),
               SizedBox(height: 12.h),
               Text(
-                'Extracting stream URL...',
+                'Loading video stream...',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12.sp,
