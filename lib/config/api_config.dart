@@ -13,6 +13,14 @@ class ApiConfig {
       '/api/notifications/unread-count';
   static const String playlistsPath = '/api/playlists';
   static const String musicLibrarySearchPath = '/api/music-library/search';
+  static const String youtubeBasePath = '/api/youtube';
+
+  static String youtubeSearchPath(String query) =>
+      '/api/youtube/search?q=${Uri.encodeQueryComponent(query)}';
+  static String youtubeInfoPath(String videoId) =>
+      '/api/youtube/info/${Uri.encodeComponent(videoId)}';
+  static String youtubeStreamPath(String videoId) =>
+      '/api/youtube/stream/${Uri.encodeComponent(videoId)}';
 
   static String playlistPath(int playlistId) => '/api/playlists/$playlistId';
 

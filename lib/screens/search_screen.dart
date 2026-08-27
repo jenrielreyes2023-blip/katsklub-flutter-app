@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../config/api_config.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/avatar_with_border.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
+
+import 'youtube_search_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -35,7 +36,46 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      appBar: AppBar(
+        title: const Text('Search'),
+        actions: [
+          IconButton(
+            icon: Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF0000),
+                borderRadius: BorderRadius.circular(6.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.play_arrow, color: Colors.white, size: 14),
+                  SizedBox(width: 2.w),
+                  Text(
+                    'YouTube',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            tooltip: 'Search YouTube',
+            onPressed: () {
+              Navigator.of(context).push(
+                YouTubeSearchScreen.route(
+                  initialQuery: _controller.text.trim().isNotEmpty
+                      ? _controller.text.trim()
+                      : null,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

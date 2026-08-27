@@ -11,6 +11,8 @@ import 'http_overrides_stub.dart' if (dart.library.io) 'http_overrides.dart';
 import 'models/user.dart';
 import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
+import 'screens/youtube_search_screen.dart';
+import 'screens/youtube_player_screen.dart';
 import 'services/auth_service.dart';
 import 'services/conversation_theme.dart';
 import 'services/feed_service.dart';
@@ -368,6 +370,25 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                     ),
                     child: widget!,
                   );
+                },
+                routes: {
+                  '/youtube': (context) => const YouTubeSearchScreen(),
+                  '/youtube/search': (context) => const YouTubeSearchScreen(),
+                },
+                onGenerateRoute: (settings) {
+                  if (settings.name == '/youtube/player') {
+                    final args = settings.arguments as Map<String, dynamic>?;
+                    return MaterialPageRoute(
+                      builder: (_) => YouTubePlayerScreen(
+                        videoId: args?['videoId'] ?? '',
+                        title: args?['title'],
+                        author: args?['author'],
+                        thumbnail: args?['thumbnail'],
+                        streamUrl: args?['streamUrl'],
+                      ),
+                    );
+                  }
+                  return null;
                 },
                 home: child,
               );
