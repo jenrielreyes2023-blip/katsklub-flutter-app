@@ -203,34 +203,7 @@ class YouTubeService {
     final trimmed = videoId.trim();
     if (trimmed.isEmpty) return null;
 
-    // 1. Try client-side extraction using youtube_explode_dart
-    try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      
-      // Prefer standard MP4/AAC audio (itag 140) for flawless Android ExoPlayer playback
-      final mp4Audios = manifest.audioOnly
-          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
-          .toList();
-      
-      final audio = mp4Audios.isNotEmpty
-          ? mp4Audios.withHighestBitrate()
-          : manifest.audioOnly.withHighestBitrate();
-      
-      yt.close();
-      return audio.url.toString();
-    } catch (_) {}
-
-    // 1.5 Fallback to muxed stream (standard MP4 container)
-    try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      final muxed = manifest.muxed.withHighestBitrate();
-      yt.close();
-      return muxed.url.toString();
-    } catch (_) {}
-
-    // 2. Fallback to backend API
+    // 1. Try backend API FIRST (youtubei.js + decipher) - most reliable for (0) Source error
     final uri = Uri.parse('$baseUrl${ApiConfig.youtubeAudioPath(trimmed)}');
     try {
       final response = await _client.get(
@@ -240,12 +213,44 @@ class YouTubeService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic>) {
-          final url = decoded['audioUrl'] as String? ?? decoded['streamUrl'] as String?;
+          final url = decoded['audioUrl'] as String? ?? decoded['streamUrl'] as String? ?? decoded['url'] as String?;
           if (url != null && url.isNotEmpty) {
             return url;
           }
         }
       }
+    } catch (_) {}
+
+    // 1.5 Fallback to backend stream endpoint (video+audio muxed)
+    try {
+      final streamUri = Uri.parse('$baseUrl${ApiConfig.youtubeStreamPath(trimmed)}');
+      final response = await _client.get(streamUri, headers: {'Accept': 'application/json'});
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          final url = decoded['url'] as String? ?? decoded['streamUrl'] as String?;
+          if (url != null && url.isNotEmpty) return url;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback to client-side extraction using youtube_explode_dart
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      final mp4Audios = manifest.audioOnly.where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a')).toList();
+      final audio = mp4Audios.isNotEmpty ? mp4Audios.withHighestBitrate() : manifest.audioOnly.withHighestBitrate();
+      yt.close();
+      return audio.url.toString();
+    } catch (_) {}
+
+    // 3. Last fallback: muxed
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      final muxed = manifest.muxed.withHighestBitrate();
+      yt.close();
+      return muxed.url.toString();
     } catch (_) {}
 
     return null;

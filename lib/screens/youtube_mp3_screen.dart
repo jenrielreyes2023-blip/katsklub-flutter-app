@@ -103,16 +103,22 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     });
 
     try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
-      final mp4Streams = manifest.audioOnly
-          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
-          .toList();
-      final streamInfo = mp4Streams.isNotEmpty
-          ? mp4Streams.withHighestBitrate()
-          : manifest.audioOnly.withHighestBitrate();
-      final streamUrl = streamInfo.url.toString();
-      yt.close();
+      // Prefer backend (youtubei.js decipher) to avoid (0) Source error on client explode
+      String? streamUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
+      // If backend returns null, fallback to direct explode
+      if (streamUrl == null || streamUrl.isEmpty) {
+        final yt = yte.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
+        final mp4Streams = manifest.audioOnly
+            .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
+            .toList();
+        final streamInfo = mp4Streams.isNotEmpty
+            ? mp4Streams.withHighestBitrate()
+            : manifest.audioOnly.withHighestBitrate();
+        streamUrl = streamInfo.url.toString();
+        yt.close();
+      }
+      if (streamUrl.isEmpty) throw Exception('No audio URL found');
 
       final track = GlobalAudioQueueItem(
         id: targetTrackId,
