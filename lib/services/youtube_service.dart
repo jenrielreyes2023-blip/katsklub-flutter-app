@@ -203,25 +203,41 @@ class YouTubeService {
     final trimmed = videoId.trim();
     if (trimmed.isEmpty) return null;
 
-    // 1. Try backend API FIRST (youtubei.js + decipher) - most reliable for (0) Source error
+    // 1. Try client-side extraction using youtube_explode_dart FIRST - AAC/Opus for just_audio (most reliable, no PO token needed)
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      // just_audio (ExoPlayer) handles both AAC (m4a itag 140) and Opus (webm itag 251) flawlessly
+      final audio = manifest.audioOnly.withHighestBitrate();
+      yt.close();
+      // Validate URL is audio (AAC/Opus) not video
+      final urlStr = audio.url.toString();
+      if (urlStr.isNotEmpty) return urlStr;
+    } catch (_) {}
+
+    // 1.5 Fallback to muxed client (video+audio) - larger but playable
+    try {
+      final yt = yte.YoutubeExplode();
+      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
+      final muxed = manifest.muxed.withHighestBitrate();
+      yt.close();
+      return muxed.url.toString();
+    } catch (_) {}
+
+    // 2. Fallback to backend API (youtubei.js) - may need PO token, less reliable currently
     final uri = Uri.parse('$baseUrl${ApiConfig.youtubeAudioPath(trimmed)}');
     try {
-      final response = await _client.get(
-        uri,
-        headers: {'Accept': 'application/json'},
-      );
+      final response = await _client.get(uri, headers: {'Accept': 'application/json'});
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic>) {
           final url = decoded['audioUrl'] as String? ?? decoded['streamUrl'] as String? ?? decoded['url'] as String?;
-          if (url != null && url.isNotEmpty) {
-            return url;
-          }
+          if (url != null && url.isNotEmpty) return url;
         }
       }
     } catch (_) {}
 
-    // 1.5 Fallback to backend stream endpoint (video+audio muxed)
+    // 3. Last fallback: backend stream endpoint
     try {
       final streamUri = Uri.parse('$baseUrl${ApiConfig.youtubeStreamPath(trimmed)}');
       final response = await _client.get(streamUri, headers: {'Accept': 'application/json'});
@@ -232,26 +248,6 @@ class YouTubeService {
           if (url != null && url.isNotEmpty) return url;
         }
       }
-    } catch (_) {}
-
-    // 2. Fallback to client-side extraction using youtube_explode_dart - AAC/Opus for just_audio
-    try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      // just_audio (ExoPlayer) handles both AAC (mp4, itag 140) and Opus (webm, itag 251) flawlessly
-      // Prefer highest bitrate audioOnly regardless of container (AAC or Opus)
-      final audio = manifest.audioOnly.withHighestBitrate();
-      yt.close();
-      return audio.url.toString();
-    } catch (_) {}
-
-    // 3. Last fallback: muxed (video+audio) - also playable as audio in just_audio but larger
-    try {
-      final yt = yte.YoutubeExplode();
-      final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      final muxed = manifest.muxed.withHighestBitrate();
-      yt.close();
-      return muxed.url.toString();
     } catch (_) {}
 
     return null;
