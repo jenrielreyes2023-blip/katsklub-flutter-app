@@ -5,22 +5,21 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
-import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
+import '../services/global_audio_player_service.dart';
 import '../services/youtube_service.dart';
 import 'youtube_player_screen.dart';
 
 /// Full-featured YouTube MP3 Music & Audio Player screen.
-/// Features:
-/// - Background audio playback using [just_audio].
-/// - Beautiful animated rotating vinyl album art.
+/// Integrated directly with [GlobalAudioPlayerService]:
+/// - Continues playing seamlessly when navigating to any other screen.
+/// - Synced with the floating vinyl mini-player in AppShell.
+/// - Background audio playback on Android lock screen.
 /// - Data Saver (<5 MB audio vs >50 MB video).
-/// - Fast seek bar, speed toggle, loop toggle.
 /// - In-app MP3 download with progress and direct file sharing.
 class YouTubeMP3Screen extends StatefulWidget {
   const YouTubeMP3Screen({
@@ -28,6 +27,7 @@ class YouTubeMP3Screen extends StatefulWidget {
     this.title,
     this.author,
     this.thumbnail,
+    this.audioUrl,
     super.key,
   });
 
@@ -35,12 +35,14 @@ class YouTubeMP3Screen extends StatefulWidget {
   final String? title;
   final String? author;
   final String? thumbnail;
+  final String? audioUrl;
 
   static Route<void> route({
     required String videoId,
     String? title,
     String? author,
     String? thumbnail,
+    String? audioUrl,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => YouTubeMP3Screen(
@@ -48,6 +50,7 @@ class YouTubeMP3Screen extends StatefulWidget {
         title: title,
         author: author,
         thumbnail: thumbnail,
+        audioUrl: audioUrl,
       ),
     );
   }
@@ -59,170 +62,118 @@ class YouTubeMP3Screen extends StatefulWidget {
 class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     with SingleTickerProviderStateMixin {
   final YouTubeService _youtubeService = YouTubeService();
-  late final AudioPlayer _audioPlayer;
   late final AnimationController _rotationController;
 
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _errorMessage;
-  String? _audioStreamUrl;
-
-  Duration _position = Duration.zero;
-  Duration _duration = Duration.zero;
-  bool _isLooping = false;
-  double _playbackSpeed = 1.0;
+  String? _resolvedAudioUrl;
 
   // Download state
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String? _downloadedFilePath;
 
-  StreamSubscription<Duration>? _posSub;
-  StreamSubscription<Duration?>? _durSub;
-  StreamSubscription<PlayerState>? _stateSub;
-
   @override
   void initState() {
     super.initState();
-    _audioPlayer = AudioPlayer();
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
     );
+    _resolvedAudioUrl = widget.audioUrl;
 
-    _initPlayerListeners();
-    _loadAndPlayAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initOrSwitchPlayback();
+    });
   }
 
-  void _initPlayerListeners() {
-    _posSub = _audioPlayer.positionStream.listen((pos) {
-      if (mounted) setState(() => _position = pos);
-    });
+  Future<void> _initOrSwitchPlayback() async {
+    final playerService = context.read<GlobalAudioPlayerService>();
+    final targetTrackId = 'yt_${widget.videoId}';
 
-    _durSub = _audioPlayer.durationStream.listen((dur) {
-      if (mounted && dur != null) setState(() => _duration = dur);
-    });
-
-    _stateSub = _audioPlayer.playerStateStream.listen((state) {
-      if (!mounted) return;
-      if (state.playing) {
-        if (!_rotationController.isAnimating) {
-          _rotationController.repeat();
-        }
-      } else {
-        if (_rotationController.isAnimating) {
-          _rotationController.stop();
-        }
+    // If this YouTube track is already active in GlobalAudioPlayerService, don't restart it
+    if (playerService.currentTrack?.id == targetTrackId) {
+      if (playerService.playing && !_rotationController.isAnimating) {
+        _rotationController.repeat();
       }
-    });
-  }
+      return;
+    }
 
-  Future<void> _loadAndPlayAudio() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final url = await _youtubeService.getAudioStreamUrl(widget.videoId);
-      if (url == null || url.isEmpty) {
-        throw Exception('Unable to extract audio stream for this video.');
+      String? streamUrl = _resolvedAudioUrl;
+      if (streamUrl == null || streamUrl.isEmpty) {
+        streamUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
       }
 
-      _audioStreamUrl = url;
-      final mediaItem = MediaItem(
-        id: widget.videoId,
-        album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
+      if (streamUrl == null || streamUrl.isEmpty) {
+        throw Exception('Hindi ma-extract ang audio stream para sa video na ito.');
+      }
+
+      _resolvedAudioUrl = streamUrl;
+
+      final track = GlobalAudioQueueItem(
+        id: targetTrackId,
+        src: streamUrl,
         title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
         artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
-        artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
-            ? Uri.tryParse(widget.thumbnail!)
-            : null,
+        artworkUrl: widget.thumbnail ?? '',
+        source: 'youtube',
       );
 
-      final source = AudioSource.uri(
-        Uri.parse(url),
-        tag: mediaItem,
-      );
-      await _audioPlayer.setAudioSource(source);
-      await _audioPlayer.play();
+      await playerService.setPlaylist([track], autoPlay: true);
 
       if (mounted) {
         setState(() => _isLoading = false);
+        if (!_rotationController.isAnimating) {
+          _rotationController.repeat();
+        }
       }
     } catch (e) {
-      // Fallback: If audio-only stream fails with Source Error, try direct muxed MP4 stream
-      try {
-        final yt = yte.YoutubeExplode();
-        final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
-        final muxed = manifest.muxed.withHighestBitrate();
-        yt.close();
-
-        _audioStreamUrl = muxed.url.toString();
-        final fallbackSource = AudioSource.uri(
-          muxed.url,
-          tag: MediaItem(
-            id: widget.videoId,
-            album: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Music',
-            title: widget.title?.isNotEmpty == true ? widget.title! : 'YouTube Audio',
-            artist: widget.author?.isNotEmpty == true ? widget.author! : 'YouTube Creator',
-            artUri: widget.thumbnail != null && widget.thumbnail!.isNotEmpty
-                ? Uri.tryParse(widget.thumbnail!)
-                : null,
-          ),
-        );
-        await _audioPlayer.setAudioSource(fallbackSource);
-        await _audioPlayer.play();
-
-        if (mounted) {
-          setState(() => _isLoading = false);
-          return;
-        }
-      } catch (_) {}
-
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Hindi ma-load ang audio stream: $e';
+          _errorMessage = e.toString().replaceAll('Exception:', '').trim();
         });
       }
     }
   }
 
-  Future<void> _togglePlayPause() async {
-    if (_audioPlayer.playing) {
-      await _audioPlayer.pause();
+  void _syncRotation(bool isPlaying) {
+    if (isPlaying) {
+      if (!_rotationController.isAnimating) {
+        _rotationController.repeat();
+      }
     } else {
-      await _audioPlayer.play();
+      if (_rotationController.isAnimating) {
+        _rotationController.stop();
+      }
     }
   }
 
-  Future<void> _seekRelative(int seconds) async {
-    final target = _position + Duration(seconds: seconds);
+  Future<void> _seekRelative(Duration delta) async {
+    final playerService = context.read<GlobalAudioPlayerService>();
+    final newPosition = playerService.currentTime + delta;
+    final maxDuration = playerService.duration;
     final clamped = Duration(
       milliseconds: math.max(
         0,
-        math.min(target.inMilliseconds, _duration.inMilliseconds),
+        math.min(newPosition.inMilliseconds, maxDuration.inMilliseconds),
       ),
     );
-    await _audioPlayer.seek(clamped);
-  }
-
-  Future<void> _toggleLoop() async {
-    final next = !_isLooping;
-    await _audioPlayer.setLoopMode(next ? LoopMode.one : LoopMode.off);
-    setState(() => _isLooping = next);
-  }
-
-  void _cycleSpeed() {
-    final speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
-    final nextIndex = (speeds.indexOf(_playbackSpeed) + 1) % speeds.length;
-    final newSpeed = speeds[nextIndex];
-    _audioPlayer.setSpeed(newSpeed);
-    setState(() => _playbackSpeed = newSpeed);
+    await playerService.seek(clamped);
   }
 
   Future<void> _downloadMp3() async {
-    if (_audioStreamUrl == null || _isDownloading) return;
+    String? targetUrl = _resolvedAudioUrl;
+    if (targetUrl == null || targetUrl.isEmpty) {
+      targetUrl = await _youtubeService.getAudioStreamUrl(widget.videoId);
+    }
+    if (targetUrl == null || targetUrl.isEmpty || _isDownloading) return;
 
     setState(() {
       _isDownloading = true;
@@ -237,9 +188,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       final savePath = '${dir.path}/$safeTitle.mp3';
 
       final client = http.Client();
-      final request = http.Request('GET', Uri.parse(_audioStreamUrl!));
-      request.headers['User-Agent'] =
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      final request = http.Request('GET', Uri.parse(targetUrl));
 
       final response = await client.send(request);
       final totalBytes = response.contentLength ?? 0;
@@ -302,7 +251,9 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
   }
 
   void _switchToVideo() {
-    _audioPlayer.pause();
+    final playerService = context.read<GlobalAudioPlayerService>();
+    playerService.setPlaying(false);
+
     Navigator.of(context).pushReplacement(
       YouTubePlayerScreen.route(
         videoId: widget.videoId,
@@ -321,11 +272,9 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
 
   @override
   void dispose() {
-    _posSub?.cancel();
-    _durSub?.cancel();
-    _stateSub?.cancel();
+    // IMPORTANT: DO NOT STOP AUDIO IN GlobalAudioPlayerService!
+    // This allows audio to continue playing across all screens!
     _rotationController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -338,54 +287,60 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
         ? widget.author!.trim()
         : 'YouTube Creator';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F12),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.music_note_rounded, color: Color(0xFFFF2A6D), size: 20),
-            SizedBox(width: 6.w),
-            Text(
-              'YouTube MP3 Player',
-              style: TextStyle(
-                fontFamily: 'SF Pro Rounded',
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
+    return Consumer<GlobalAudioPlayerService>(
+      builder: (context, player, child) {
+        _syncRotation(player.playing);
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0F12),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: true,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.music_note_rounded, color: Color(0xFFFF2A6D), size: 20),
+                SizedBox(width: 6.w),
+                Text(
+                  'KatsKlub YouTube Music',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.video_collection_outlined, color: Colors.white70),
-            tooltip: 'Switch to Video Player',
-            onPressed: _switchToVideo,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.video_collection_outlined, color: Colors.white70),
+                tooltip: 'Panoorin ang Video',
+                onPressed: _switchToVideo,
+              ),
+              IconButton(
+                icon: const Icon(Icons.open_in_new, color: Colors.white70),
+                tooltip: 'Buksan sa YouTube App',
+                onPressed: () async {
+                  final uri = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.open_in_new, color: Colors.white70),
-            tooltip: 'Open in YouTube',
-            onPressed: () async {
-              final uri = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
+          body: SafeArea(
+            child: _isLoading
+                ? _buildLoadingState()
+                : _errorMessage != null
+                    ? _buildErrorState()
+                    : _buildPlayerBody(titleText, authorText, player),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? _buildLoadingState()
-            : _errorMessage != null
-                ? _buildErrorState()
-                : _buildPlayerBody(titleText, authorText),
-      ),
+        );
+      },
     );
   }
 
@@ -399,7 +354,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
           ),
           SizedBox(height: 16.h),
           Text(
-            'Extracting high-quality MP3 audio...',
+            'Inilalagay sa Music Player...',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 13.sp,
@@ -409,7 +364,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
           ),
           SizedBox(height: 6.h),
           Text(
-            'Ultra low data usage (~3 MB)',
+            'Hindi mamamatay ang audio kahit lumipat ng screens 🎵',
             style: TextStyle(
               fontFamily: 'SF Pro Rounded',
               fontSize: 11.sp,
@@ -431,7 +386,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
             const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
             SizedBox(height: 12.h),
             Text(
-              _errorMessage ?? 'Failed to load MP3 stream.',
+              _errorMessage ?? 'Hindi ma-load ang audio stream.',
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 13.sp,
@@ -444,9 +399,9 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _loadAndPlayAudio,
+                  onPressed: _initOrSwitchPlayback,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry'),
+                  label: const Text('Subukan Muli'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF2A6D),
                     foregroundColor: Colors.white,
@@ -456,7 +411,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                 OutlinedButton.icon(
                   onPressed: _switchToVideo,
                   icon: const Icon(Icons.video_library_rounded, size: 18),
-                  label: const Text('Watch Video'),
+                  label: const Text('Panoorin ang Video'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
@@ -470,7 +425,14 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
     );
   }
 
-  Widget _buildPlayerBody(String titleText, String authorText) {
+  Widget _buildPlayerBody(
+    String titleText,
+    String authorText,
+    GlobalAudioPlayerService player,
+  ) {
+    final position = player.currentTime;
+    final duration = player.duration;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
       child: Column(
@@ -566,7 +528,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
           ),
           SizedBox(height: 8.h),
 
-          // Data Saver & Quality Chip
+          // Background Floating Notice Chip
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
             decoration: BoxDecoration(
@@ -577,10 +539,10 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.bolt_rounded, color: Color(0xFF10B981), size: 14),
+                const Icon(Icons.album_rounded, color: Color(0xFF10B981), size: 14),
                 SizedBox(width: 4.w),
                 Text(
-                  '128 kbps MP3 • Low Data Mode (~3 MB)',
+                  'Continuous Background Audio Active',
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 10.5.sp,
@@ -607,12 +569,12 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                   overlayShape: RoundSliderOverlayShape(overlayRadius: 12.r),
                 ),
                 child: Slider(
-                  value: _position.inMilliseconds
-                      .clamp(0, math.max(1, _duration.inMilliseconds))
+                  value: position.inMilliseconds
+                      .clamp(0, math.max(1, duration.inMilliseconds))
                       .toDouble(),
-                  max: math.max(1, _duration.inMilliseconds).toDouble(),
+                  max: math.max(1, duration.inMilliseconds).toDouble(),
                   onChanged: (val) {
-                    _audioPlayer.seek(Duration(milliseconds: val.toInt()));
+                    player.seek(Duration(milliseconds: val.toInt()));
                   },
                 ),
               ),
@@ -622,7 +584,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _formatDuration(_position),
+                      _formatDuration(position),
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 11.sp,
@@ -630,7 +592,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                       ),
                     ),
                     Text(
-                      _formatDuration(_duration),
+                      _formatDuration(duration),
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
                         fontSize: 11.sp,
@@ -645,34 +607,23 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
 
           SizedBox(height: 12.h),
 
-          // Primary Controls: Rewind, Play/Pause, Fast Forward, Loop, Speed
+          // Primary Controls: Rewind 10s, Play/Pause, Fast Forward 10s
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Loop Toggle
-              IconButton(
-                icon: Icon(
-                  _isLooping ? Icons.repeat_one_rounded : Icons.repeat_rounded,
-                  color: _isLooping ? const Color(0xFFFF2A6D) : Colors.white60,
-                  size: 22.sp,
-                ),
-                tooltip: 'Loop Track',
-                onPressed: _toggleLoop,
-              ),
-
               // Skip -10s
               IconButton(
-                icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 28),
-                tooltip: 'Rewind 10s',
-                onPressed: () => _seekRelative(-10),
+                icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 30),
+                tooltip: 'I-rewind nang 10 segundo',
+                onPressed: () => _seekRelative(const Duration(seconds: -10)),
               ),
 
               // Play / Pause Circle Button
               GestureDetector(
-                onTap: _togglePlayPause,
+                onTap: player.togglePlaying,
                 child: Container(
-                  width: 64.w,
-                  height: 64.w,
+                  width: 68.w,
+                  height: 68.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
@@ -689,40 +640,18 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                     ],
                   ),
                   child: Icon(
-                    _audioPlayer.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                     color: Colors.white,
-                    size: 36.sp,
+                    size: 38.sp,
                   ),
                 ),
               ),
 
               // Skip +10s
               IconButton(
-                icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 28),
-                tooltip: 'Forward 10s',
-                onPressed: () => _seekRelative(10),
-              ),
-
-              // Speed Switcher
-              InkWell(
-                onTap: _cycleSpeed,
-                borderRadius: BorderRadius.circular(8.r),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    '${_playbackSpeed}x',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Rounded',
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
+                icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 30),
+                tooltip: 'I-forward nang 10 segundo',
+                onPressed: () => _seekRelative(const Duration(seconds: 10)),
               ),
             ],
           ),
@@ -782,7 +711,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: Text(
-                                    'Downloaded to device',
+                                    'Downloaded sa device',
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Rounded',
                                       fontSize: 12.sp,
