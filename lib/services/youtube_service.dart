@@ -234,17 +234,18 @@ class YouTubeService {
       }
     } catch (_) {}
 
-    // 2. Fallback to client-side extraction using youtube_explode_dart
+    // 2. Fallback to client-side extraction using youtube_explode_dart - AAC/Opus for just_audio
     try {
       final yt = yte.YoutubeExplode();
       final manifest = await yt.videos.streamsClient.getManifest(trimmed);
-      final mp4Audios = manifest.audioOnly.where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a')).toList();
-      final audio = mp4Audios.isNotEmpty ? mp4Audios.withHighestBitrate() : manifest.audioOnly.withHighestBitrate();
+      // just_audio (ExoPlayer) handles both AAC (mp4, itag 140) and Opus (webm, itag 251) flawlessly
+      // Prefer highest bitrate audioOnly regardless of container (AAC or Opus)
+      final audio = manifest.audioOnly.withHighestBitrate();
       yt.close();
       return audio.url.toString();
     } catch (_) {}
 
-    // 3. Last fallback: muxed
+    // 3. Last fallback: muxed (video+audio) - also playable as audio in just_audio but larger
     try {
       final yt = yte.YoutubeExplode();
       final manifest = await yt.videos.streamsClient.getManifest(trimmed);
@@ -278,13 +279,8 @@ class YouTubeService {
       final yt = yte.YoutubeExplode();
       final manifest = await yt.videos.streamsClient.getManifest(cleanId);
 
-      // Select standard AAC/MP4 stream (itag 140 or 139)
-      final mp4Streams = manifest.audioOnly
-          .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
-          .toList();
-      final streamInfo = mp4Streams.isNotEmpty
-          ? mp4Streams.first
-          : manifest.audioOnly.withHighestBitrate();
+      // AAC (m4a, itag 140) or Opus (webm, itag 251) - both work with just_audio/ExoPlayer
+      final streamInfo = manifest.audioOnly.withHighestBitrate();
 
       final totalBytes = streamInfo.size.totalBytes;
       final tempSink = cacheFile.openWrite();

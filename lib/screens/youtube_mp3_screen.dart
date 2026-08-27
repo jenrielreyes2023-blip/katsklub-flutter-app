@@ -109,12 +109,8 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
       if (streamUrl == null || streamUrl.isEmpty) {
         final yt = yte.YoutubeExplode();
         final manifest = await yt.videos.streamsClient.getManifest(widget.videoId);
-        final mp4Streams = manifest.audioOnly
-            .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
-            .toList();
-        final streamInfo = mp4Streams.isNotEmpty
-            ? mp4Streams.withHighestBitrate()
-            : manifest.audioOnly.withHighestBitrate();
+        // AAC/Opus both work with just_audio ExoPlayer - use highest bitrate directly
+        final streamInfo = manifest.audioOnly.withHighestBitrate();
         streamUrl = streamInfo.url.toString();
         yt.close();
       }
