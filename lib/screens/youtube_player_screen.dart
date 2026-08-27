@@ -12,9 +12,56 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
 import '../services/youtube_service.dart';
 
+class _QualityOption {
+  final String label;
+  final String sublabel;
+  final String ytQuality;
+  final IconData icon;
+
+  const _QualityOption({
+    required this.label,
+    required this.sublabel,
+    required this.ytQuality,
+    required this.icon,
+  });
+}
+
+const List<_QualityOption> _qualityOptions = [
+  _QualityOption(
+    label: '1080p Full HD',
+    sublabel: 'Crystal clear, best for Wi-Fi',
+    ytQuality: 'hd1080',
+    icon: Icons.hd_rounded,
+  ),
+  _QualityOption(
+    label: '720p HD',
+    sublabel: 'High definition & smooth playback',
+    ytQuality: 'hd720',
+    icon: Icons.high_quality_rounded,
+  ),
+  _QualityOption(
+    label: '480p Standard',
+    sublabel: 'Balanced quality and data usage',
+    ytQuality: 'large',
+    icon: Icons.video_settings_rounded,
+  ),
+  _QualityOption(
+    label: '360p Data Saver',
+    sublabel: 'Fast loading, saves data',
+    ytQuality: 'medium',
+    icon: Icons.data_saver_on_rounded,
+  ),
+  _QualityOption(
+    label: 'Auto (Dynamic)',
+    sublabel: 'Adjusts automatically to your network',
+    ytQuality: 'auto',
+    icon: Icons.auto_awesome_rounded,
+  ),
+];
+
 /// Full-featured YouTube Player Screen supporting:
 /// 1. Direct device-side stream extraction (via youtube_explode_dart) for native Chewie playback.
-/// 2. Backend deciphered CDN stream fallback.
+/// 2. Interactive Quality Selector (1080p, 720p, 480p, 360p, Auto).
 /// 3. Clean mobile web watch player (injects CSS to isolate player, eliminating Error 152/153).
 class YouTubePlayerScreen extends StatefulWidget {
   const YouTubePlayerScreen({
@@ -63,6 +110,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   bool _isLoading = true;
   bool _useWebviewFallback = false;
   String? _errorMessage;
+  String _selectedQuality = 'auto';
 
   WebViewController? _webViewController;
   bool _isWebviewLoading = false;
@@ -74,7 +122,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
     _startPlayback();
   }
 
-  Future<void> _startPlayback() async {
+  Future<void> _startPlayback({Duration? startAt}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -95,13 +143,13 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       }
 
       if (stream != null && stream.isNotEmpty) {
-        await _initializeChewiePlayer(stream);
+        await _initializeChewiePlayer(stream, startAt: startAt);
       } else {
-        // Strategy 3: Clean mobile web watch player (avoids Error 152/153)
-        _initCleanMobileWebPlayer();
+        // Strategy 3: Clean mobile web watch player (supports 1080p/720p HD and avoids Error 152/153)
+        _initCleanMobileWebPlayer(startAt: startAt);
       }
     } catch (e) {
-      _initCleanMobileWebPlayer();
+      _initCleanMobileWebPlayer(startAt: startAt);
     }
   }
 
@@ -118,7 +166,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
     }
   }
 
-  Future<void> _initializeChewiePlayer(String url) async {
+  Future<void> _initializeChewiePlayer(String url, {Duration? startAt}) async {
     try {
       await _disposeControllers();
 
@@ -131,6 +179,9 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       );
 
       await controller.initialize();
+      if (startAt != null && startAt > Duration.zero) {
+        await controller.seekTo(startAt);
+      }
 
       final chewie = ChewieController(
         videoPlayerController: controller,
@@ -164,7 +215,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                 ),
                 SizedBox(height: 12.h),
                 ElevatedButton.icon(
-                  onPressed: _initCleanMobileWebPlayer,
+                  onPressed: () => _initCleanMobileWebPlayer(),
                   icon: const Icon(Icons.web, size: 18),
                   label: const Text('Switch to Clean Web Player'),
                   style: ElevatedButton.styleFrom(
@@ -188,16 +239,18 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _initCleanMobileWebPlayer();
+        _initCleanMobileWebPlayer(startAt: startAt);
       }
     }
   }
 
-  void _initCleanMobileWebPlayer() {
+  void _initCleanMobileWebPlayer({Duration? startAt}) {
     _cleanPlayerTimer?.cancel();
 
-    final watchUrl =
-        'https://m.youtube.com/watch?v=${widget.videoId}&autoplay=1';
+    final startSeconds = startAt?.inSeconds ?? 0;
+    final watchUrl = startSeconds > 0
+        ? 'https://m.youtube.com/watch?v=${widget.videoId}&t=${startSeconds}s&autoplay=1'
+        : 'https://m.youtube.com/watch?v=${widget.videoId}&autoplay=1';
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -238,7 +291,8 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   }
 
   void _injectCleanPlayerStyles() {
-    const script = r"""
+    final qualityCode = _selectedQuality == 'auto' ? 'hd1080' : _selectedQuality;
+    final script = """
       (function() {
         var style = document.getElementById('kk-clean-player-style');
         if (!style) {
@@ -255,7 +309,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
             #app-banner, ytm-promoted-sparkles-web-renderer {
               display: none !important;
             }
-            /* Allow Settings & Quality dialog to appear on top */
+            /* Keep Quality/Settings popup visible on top */
             .yt-spec-bottom-sheet-layout__bottom-sheet-renderer-container,
             .ytp-settings-menu, .ytp-panel, .ytp-popup {
               z-index: 10000000 !important;
@@ -287,9 +341,8 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
           document.head.appendChild(style);
         }
         try {
-          // Request High Quality (1080p/720p HD) in localStorage
           localStorage.setItem('yt-player-quality', JSON.stringify({
-            data: 'hd1080',
+            data: '$qualityCode',
             expiration: Date.now() + 86400000000,
             creation: Date.now()
           }));
@@ -340,32 +393,182 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   }
 
   void _openQualitySettings() {
-    if (_useWebviewFallback && _webViewController != null) {
-      const script = r"""
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF242526) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(6.r),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF0000).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: const Icon(
+                        Icons.high_quality_rounded,
+                        color: Color(0xFFFF0000),
+                        size: 22,
+                      ),
+                    ),
+                    SizedBox(width: 10.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select Video Quality',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF1C1E21),
+                          ),
+                        ),
+                        Text(
+                          'Choose resolution for clearer, sharper playback',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 11.5.sp,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 14.h),
+                const Divider(height: 1, color: Color(0x229CA3AF)),
+                SizedBox(height: 8.h),
+                ..._qualityOptions.map((opt) {
+                  final isSelected = _selectedQuality == opt.ytQuality;
+                  return ListTile(
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                    leading: Icon(
+                      opt.icon,
+                      color: isSelected
+                          ? const Color(0xFFFF0000)
+                          : (isDark ? Colors.white70 : const Color(0xFF4B5563)),
+                      size: 22.sp,
+                    ),
+                    title: Text(
+                      opt.label,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.5.sp,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected
+                            ? const Color(0xFFFF0000)
+                            : (isDark ? Colors.white : const Color(0xFF1C1E21)),
+                      ),
+                    ),
+                    subtitle: Text(
+                      opt.sublabel,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 11.sp,
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFFFF0000),
+                            size: 22,
+                          )
+                        : null,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _applyQualitySelection(opt);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _applyQualitySelection(_QualityOption opt) async {
+    setState(() {
+      _selectedQuality = opt.ytQuality;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Setting video resolution to ${opt.label}...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // If currently in native Chewie player (which is limited to 360p direct stream)
+    // and user selects HD (720p or 1080p), switch to Clean Web Player to stream true HD!
+    if (!_useWebviewFallback) {
+      final currentPos =
+          _videoPlayerController?.value.position ?? Duration.zero;
+      await _disposeControllers();
+      _initCleanMobileWebPlayer(startAt: currentPos);
+      return;
+    }
+
+    // If in Clean Web Player, apply the selected quality
+    if (_webViewController != null) {
+      final script = """
         (function() {
-          var gear = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"], .icon-button[aria-label*="settings"]');
+          var target = '${opt.ytQuality}';
+          try {
+            localStorage.setItem('yt-player-quality', JSON.stringify({
+              data: target,
+              expiration: Date.now() + 86400000000,
+              creation: Date.now()
+            }));
+          } catch(e) {}
+          var p = document.getElementById('movie_player');
+          if (p) {
+            if (p.setPlaybackQualityRange) {
+              p.setPlaybackQualityRange(target, target);
+            }
+            if (p.setPlaybackQuality) {
+              p.setPlaybackQuality(target);
+            }
+          }
+          // Trigger YouTube settings gear to ensure quality updates on screen
+          var gear = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"]');
           if (gear) {
             gear.click();
-          } else {
-            var player = document.querySelector('#player-container-id, video');
-            if (player) {
-              player.click();
-              setTimeout(function() {
-                var g = document.querySelector('.ytp-settings-button, button[aria-label*="Settings"], button[aria-label*="settings"]');
-                if (g) g.click();
-              }, 250);
-            }
           }
         })();
       """;
       _webViewController?.runJavaScript(script).catchError((_) {});
-    } else if (_chewieController != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Playing at best available direct stream quality.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    }
+  }
+
+  String _getQualityButtonLabel() {
+    switch (_selectedQuality) {
+      case 'hd1080':
+        return '1080p HD';
+      case 'hd720':
+        return '720p HD';
+      case 'large':
+        return '480p';
+      case 'medium':
+        return '360p';
+      default:
+        return 'Quality (HD)';
     }
   }
 
@@ -488,15 +691,16 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     const Divider(height: 1, color: Color(0x229CA3AF)),
                     SizedBox(height: 16.h),
 
-                    // Quick Action Buttons
+                    // Quick Action Buttons (Quality, Share, App, Toggle)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildActionButton(
                           icon: Icons.high_quality_rounded,
-                          label: 'Quality (HD)',
+                          label: _getQualityButtonLabel(),
                           onTap: _openQualitySettings,
                           isDark: isDark,
+                          accentColor: const Color(0xFFFF0000),
                         ),
                         _buildActionButton(
                           icon: Icons.share_outlined,
@@ -582,8 +786,8 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           Expanded(
                             child: Text(
                               _useWebviewFallback
-                                  ? 'Clean Web Player Active (No Embed Errors)'
-                                  : 'Direct Native Stream Active',
+                                  ? 'Clean Web Player (HD Quality Available)'
+                                  : 'Direct Stream Active (360p)',
                               style: TextStyle(
                                 fontFamily: 'SF Pro Rounded',
                                 fontSize: 11.5.sp,
@@ -689,19 +893,20 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
     required String label,
     required VoidCallback onTap,
     required bool isDark,
+    Color? accentColor,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8.r),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               size: 22.sp,
-              color: isDark ? Colors.white : const Color(0xFF374151),
+              color: accentColor ?? (isDark ? Colors.white : const Color(0xFF374151)),
             ),
             SizedBox(height: 4.h),
             Text(
@@ -710,7 +915,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                 fontFamily: 'SF Pro Rounded',
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                color: accentColor ?? (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
               ),
             ),
           ],
