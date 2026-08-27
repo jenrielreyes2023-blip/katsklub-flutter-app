@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:video_player/video_player.dart';
 
 class GlobalAudioQueueItem {
   const GlobalAudioQueueItem({
@@ -85,6 +86,18 @@ class GlobalAudioPlayerService extends ChangeNotifier {
   late final StreamSubscription<Duration?> _durationSubscription;
   late final StreamSubscription<Duration> _positionSubscription;
   Timer? _autoHideTimer;
+  VideoPlayerController? _ytController;
+
+  void _onYtControllerUpdate() {
+    if (_ytController == null || !_ytController!.value.isInitialized) return;
+    _currentTime = _ytController!.value.position;
+    _duration = _ytController!.value.duration;
+    final nextPlaying = _ytController!.value.isPlaying;
+    if (_playing != nextPlaying) {
+      _playing = nextPlaying;
+    }
+    notifyListeners();
+  }
 
   List<GlobalAudioQueueItem> _queue = const <GlobalAudioQueueItem>[];
   int _currentIndex = -1;
@@ -141,6 +154,56 @@ class GlobalAudioPlayerService extends ChangeNotifier {
       return;
     }
 
+    if (nextQueue.isNotEmpty && nextQueue.first.source == 'youtube') {
+      final item = nextQueue.first;
+      _queue = List<GlobalAudioQueueItem>.unmodifiable(nextQueue);
+      _currentIndex = 0;
+      _currentTime = Duration.zero;
+      _duration = Duration.zero;
+      _hidden = false;
+      _playing = autoPlay;
+      notifyListeners();
+
+      await _player.pause();
+
+      if (_ytController != null) {
+        _ytController!.removeListener(_onYtControllerUpdate);
+        await _ytController!.pause();
+        await _ytController!.dispose();
+        _ytController = null;
+      }
+
+      final ctrl = VideoPlayerController.networkUrl(
+        Uri.parse(item.src),
+        httpHeaders: const {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      );
+
+      await ctrl.initialize();
+      ctrl.addListener(_onYtControllerUpdate);
+      _ytController = ctrl;
+      _duration = ctrl.value.duration;
+      _playing = ctrl.value.isPlaying;
+
+      if (autoPlay) {
+        await ctrl.play();
+      }
+
+      _syncAutoHideTimer();
+      notifyListeners();
+      return;
+    }
+
+    // Standard track via just_audio
+    if (_ytController != null) {
+      _ytController!.removeListener(_onYtControllerUpdate);
+      await _ytController!.pause();
+      await _ytController!.dispose();
+      _ytController = null;
+    }
+
     final boundedIndex = startIndex.clamp(0, nextQueue.length - 1);
     final source = ConcatenatingAudioSource(
       useLazyPreparation: true,
@@ -148,12 +211,6 @@ class GlobalAudioPlayerService extends ChangeNotifier {
           .map(
             (item) => AudioSource.uri(
               Uri.parse(item.src),
-              headers: item.source == 'youtube'
-                  ? const {
-                      'User-Agent':
-                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    }
-                  : null,
               tag: MediaItem(
                 id: item.id,
                 album: item.artist.isNotEmpty ? item.artist : 'KatsKlub',
@@ -221,6 +278,18 @@ class GlobalAudioPlayerService extends ChangeNotifier {
       return;
     }
 
+    if (currentTrack?.source == 'youtube' && _ytController != null) {
+      if (nextPlaying) {
+        await _ytController!.play();
+      } else {
+        await _ytController!.pause();
+      }
+      _playing = nextPlaying;
+      _syncAutoHideTimer();
+      notifyListeners();
+      return;
+    }
+
     if (nextPlaying) {
       _hidden = false;
       if (_player.processingState == ProcessingState.completed &&
@@ -243,11 +312,25 @@ class GlobalAudioPlayerService extends ChangeNotifier {
       return;
     }
     final safePosition = position < Duration.zero ? Duration.zero : position;
+
+    if (currentTrack?.source == 'youtube' && _ytController != null) {
+      await _ytController!.seekTo(safePosition);
+      _currentTime = safePosition;
+      notifyListeners();
+      return;
+    }
+
     await _player.seek(safePosition);
   }
 
   Future<void> clearPlayer() async {
     _cancelAutoHideTimer();
+    if (_ytController != null) {
+      _ytController!.removeListener(_onYtControllerUpdate);
+      await _ytController!.pause();
+      await _ytController!.dispose();
+      _ytController = null;
+    }
     _queue = const <GlobalAudioQueueItem>[];
     _currentIndex = -1;
     _currentTime = Duration.zero;
@@ -301,6 +384,8 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     _playerStateSubscription.cancel();
     _durationSubscription.cancel();
     _positionSubscription.cancel();
+    _ytController?.removeListener(_onYtControllerUpdate);
+    _ytController?.dispose();
     unawaited(_player.dispose());
     super.dispose();
   }
