@@ -109,7 +109,7 @@ class _YouTubeMP3ScreenState extends State<YouTubeMP3Screen>
           .where((a) => a.container.name == 'mp4' || a.audioCodec.contains('mp4a'))
           .toList();
       final streamInfo = mp4Streams.isNotEmpty
-          ? mp4Streams.first
+          ? mp4Streams.withHighestBitrate()
           : manifest.audioOnly.withHighestBitrate();
       final streamUrl = streamInfo.url.toString();
       yt.close();

@@ -154,55 +154,17 @@ class GlobalAudioPlayerService extends ChangeNotifier {
       return;
     }
 
-    if (nextQueue.isNotEmpty && nextQueue.first.source == 'youtube') {
-      final item = nextQueue.first;
-      _queue = List<GlobalAudioQueueItem>.unmodifiable(nextQueue);
-      _currentIndex = 0;
-      _currentTime = Duration.zero;
-      _duration = Duration.zero;
-      _hidden = false;
-      _playing = autoPlay;
-      notifyListeners();
-
-      await _player.pause();
-
-      if (_ytController != null) {
-        _ytController!.removeListener(_onYtControllerUpdate);
-        await _ytController!.pause();
-        await _ytController!.dispose();
-        _ytController = null;
-      }
-
-      final ctrl = VideoPlayerController.networkUrl(
-        Uri.parse(item.src),
-        httpHeaders: const {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-      );
-
-      await ctrl.initialize();
-      ctrl.addListener(_onYtControllerUpdate);
-      _ytController = ctrl;
-      _duration = ctrl.value.duration;
-      _playing = ctrl.value.isPlaying;
-
-      if (autoPlay) {
-        await ctrl.play();
-      }
-
-      _syncAutoHideTimer();
-      notifyListeners();
-      return;
-    }
-
-    // Standard track via just_audio
+    // Clean up any legacy VideoPlayerController (kept for backward compat)
     if (_ytController != null) {
       _ytController!.removeListener(_onYtControllerUpdate);
       await _ytController!.pause();
       await _ytController!.dispose();
       _ytController = null;
     }
+
+    // All tracks (including YouTube) now use just_audio to avoid
+    // PlatformException VideoError WO.I: Source error on ExoPlayer.
+    // YouTube audio-only URLs (googlevideo) are handled better by just_audio.
 
     final boundedIndex = startIndex.clamp(0, nextQueue.length - 1);
     final source = ConcatenatingAudioSource(
@@ -234,16 +196,25 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     _syncAutoHideTimer();
     notifyListeners();
 
-    await _player.setAudioSource(
-      source,
-      initialIndex: boundedIndex,
-      initialPosition: Duration.zero,
-    );
+    try {
+      await _player.setAudioSource(
+        source,
+        initialIndex: boundedIndex,
+        initialPosition: Duration.zero,
+      );
 
-    if (autoPlay) {
-      await _player.play();
-    } else {
-      await _player.pause();
+      if (autoPlay) {
+        await _player.play();
+      } else {
+        await _player.pause();
+      }
+    } catch (e) {
+      debugPrint('GlobalAudioPlayer setAudioSource failed: \$e');
+      // Keep queue but mark not playing so UI can show retry
+      _playing = false;
+      _processingState = ProcessingState.idle;
+      notifyListeners();
+      rethrow;
     }
     _syncAutoHideTimer();
   }
@@ -278,16 +249,13 @@ class GlobalAudioPlayerService extends ChangeNotifier {
       return;
     }
 
+    // Legacy youtube VideoPlayer path removed; all audio now via just_audio
     if (currentTrack?.source == 'youtube' && _ytController != null) {
-      if (nextPlaying) {
-        await _ytController!.play();
-      } else {
-        await _ytController!.pause();
-      }
-      _playing = nextPlaying;
-      _syncAutoHideTimer();
-      notifyListeners();
-      return;
+      // fallback: dispose legacy controller and continue with just_audio
+      _ytController!.removeListener(_onYtControllerUpdate);
+      await _ytController!.pause();
+      await _ytController!.dispose();
+      _ytController = null;
     }
 
     if (nextPlaying) {
@@ -314,10 +282,9 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     final safePosition = position < Duration.zero ? Duration.zero : position;
 
     if (currentTrack?.source == 'youtube' && _ytController != null) {
-      await _ytController!.seekTo(safePosition);
-      _currentTime = safePosition;
-      notifyListeners();
-      return;
+      _ytController!.removeListener(_onYtControllerUpdate);
+      await _ytController!.dispose();
+      _ytController = null;
     }
 
     await _player.seek(safePosition);
