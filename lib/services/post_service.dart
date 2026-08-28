@@ -629,13 +629,21 @@ class PostService {
       socket.on('post:new', (data) => finishWithPostEvent(data, 'post:new'));
       socket.on('new_post', (data) => finishWithPostEvent(data, 'new_post'));
 
+      int connectErrorCount = 0;
       socket.onConnectError((error) {
-        _socketLog('connect_error; error=$error');
-        if (!completer.isCompleted) {
+        connectErrorCount++;
+        _socketLog('connect_error; attempt=$connectErrorCount; error=$error');
+        if (connectErrorCount >= 3 && !completer.isCompleted) {
+          final errStr = error.toString();
+          final userFriendly = (errStr.contains('SocketException') ||
+                  errStr.contains('Failed host lookup') ||
+                  errStr.contains('errno = 7'))
+              ? 'Unable to connect. Please check your internet connection and try again.'
+              : 'Unable to connect to KatsKlub: $error';
           completer.complete(
             CreatePostResult(
               ok: false,
-              error: 'Unable to connect to KatsKlub: $error',
+              error: userFriendly,
             ),
           );
         }
@@ -644,10 +652,16 @@ class PostService {
       socket.onError((error) {
         _socketLog('socket error event; error=$error');
         if (!completer.isCompleted) {
+          final errStr = error?.toString() ?? '';
+          final userFriendly = (errStr.contains('SocketException') ||
+                  errStr.contains('Failed host lookup') ||
+                  errStr.contains('errno = 7'))
+              ? 'Unable to connect. Please check your internet connection and try again.'
+              : (errStr.isNotEmpty ? errStr : 'Failed to create post.');
           completer.complete(
             CreatePostResult(
               ok: false,
-              error: error?.toString() ?? 'Failed to create post.',
+              error: userFriendly,
             ),
           );
         }
