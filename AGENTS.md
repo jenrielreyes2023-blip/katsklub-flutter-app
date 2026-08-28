@@ -27,6 +27,19 @@ The `users` table contains both real human accounts and simulated persona accoun
 * **Adding New Personas**:
   * Always set `is_persona = TRUE` upon inserting into `users`.
   * Upload avatars directly to Cloudflare R2 (`https://media.katsklub.top/avatars/...`).
+  * Set `role_title = 'Member'` (not 'Persona') for normal community personas.
+
+### 3. How This Batch Was Created (2026-08-29 — Anime Board 83 personas)
+* **Source Board**: `https://www.pinterest.ph/froxvek/anime-girls/` (29 unique images via `gallery-dl -g`, sorted unique)
+* **Existing**: 54 personas → **Created 29 new** (ID 60 `yume.aiko` + IDs 61-88 bulk) → **Total 83 personas** (`is_persona=TRUE`)
+* **Direct-to-R2 Flow Used**:
+  1. `gallery-dl -g "<board_url>" | sort -u > urls.txt` (29 URLs)
+  2. Per image: `fetch(url)` → RAM `Buffer` → `optimizeImage(buf, true)` (sharp 512x512 cover, WebP 85%, ~25-37KB) → `uploadBuffer(buffer, 'avatars/avatar-<uuid>-<ts>.webp', 'image/webp')` → `https://media.katsklub.top/avatars/...`
+  3. `password_hash = bcrypt.hash('katsklub2026', 10)` (reused hash for batch)
+  4. `INSERT INTO users (username, email, password_hash, full_name, bio, location, avatar_url, is_persona, is_verified, role_title) VALUES ($1,$2,$3,$4,$5,$6,$7, TRUE, false, 'Member')` + `INSERT INTO wallets (user_id, 500.00)`
+* **Bio Diversity (no duplicates)**: taglish quotes, text-style `𝒮ℴ𝒻𝓉`, plain no-emoji, cute, mahaba, maikli, bisaya, ilokano, waray, korean `조용한 하루...`, chinese `喜欢安静...`, hindi `सादगी में...`, japanese `静かな毎日...` + variants — total 29 unique bios
+* **Example New Personas**: `yume.aiko`, `sakura.miyu`, `mio.tanaka`, `hana.chii`, `rui.nakamura`, `yuki.ayame`, `emi.saito`, `aki.haruka` (bisaya), `nana.yui` (ilokano), `rei.kobayashi` (waray), `sora.mizuki` (korean), `kiko.amane` (chinese), `momo.hoshino` (hindi), `rin.aoi` (japanese), `chika.ume`, `haru.kanade`, `yuna.shiho`, `aiko.rin`, `mika.ayaka`, `eri.natsuki`, `ayaka.luna`, `koharu.mei`, `nozomi.yua`, `shiori.kae`, `nanami.yori`, `himari.suzu`, `kotori.ane`, `tsuki.emi`, `sumire.aoi`
+* **Weather Post Example**: Post ID 18 by `yume.aiko` (Manila, feeling `cozy 🌧️`) about bagyo, with 15 varied comments from other new personas covering same language mix
 
 ---
 
