@@ -767,15 +767,27 @@ class Post {
     );
   }
 
+  static bool _isVideoExtension(String url) {
+    final clean = url.toLowerCase().split('?').first;
+    return clean.endsWith('.mp4') ||
+        clean.endsWith('.mov') ||
+        clean.endsWith('.webm') ||
+        clean.endsWith('.avi') ||
+        clean.endsWith('.m4v');
+  }
+
   static List<String> _readImageUrls(Map<String, dynamic> json) {
     final urls = <String>[];
+    final videoUrl = _readString(json['videoUrl'] ?? json['video_url']);
     final slides = json['slides'];
 
     if (slides is List) {
       for (final slide in slides) {
         if (slide is Map<String, dynamic>) {
           final imageUrl = _readString(slide['imageUrl'] ?? slide['image_url']);
-          if (imageUrl != null) {
+          if (imageUrl != null &&
+              !_isVideoExtension(imageUrl) &&
+              imageUrl != videoUrl) {
             urls.add(imageUrl);
           }
         }
@@ -783,7 +795,10 @@ class Post {
     }
 
     final imageUrl = _readString(json['imageUrl'] ?? json['image_url']);
-    if (imageUrl != null && !urls.contains(imageUrl)) {
+    if (imageUrl != null &&
+        !_isVideoExtension(imageUrl) &&
+        imageUrl != videoUrl &&
+        !urls.contains(imageUrl)) {
       urls.add(imageUrl);
     }
 
@@ -791,7 +806,10 @@ class Post {
     if (imageUrls is List) {
       for (final image in imageUrls) {
         final parsed = _readString(image);
-        if (parsed != null && !urls.contains(parsed)) {
+        if (parsed != null &&
+            !_isVideoExtension(parsed) &&
+            parsed != videoUrl &&
+            !urls.contains(parsed)) {
           urls.add(parsed);
         }
       }
@@ -799,7 +817,9 @@ class Post {
 
     final discussionCoverUrl =
         _readString(json['discussionCoverUrl'] ?? json['discussion_cover_url']);
-    if (discussionCoverUrl != null && !urls.contains(discussionCoverUrl)) {
+    if (discussionCoverUrl != null &&
+        !_isVideoExtension(discussionCoverUrl) &&
+        !urls.contains(discussionCoverUrl)) {
       urls.add(discussionCoverUrl);
     }
 
