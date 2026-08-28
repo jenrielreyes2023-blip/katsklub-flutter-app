@@ -914,6 +914,16 @@ class _ReelPageState extends State<_ReelPage> {
         fit: StackFit.expand,
         children: [
           const ColoredBox(color: Colors.black),
+          if (!_isPhotoReel && _reel.primaryVideoPosterUrl.isNotEmpty && (!_isInitialized || _controller == null))
+            Center(
+              child: CachedNetworkImage(
+                imageUrl: ApiConfig.assetUrl(_reel.primaryVideoPosterUrl),
+                fit: BoxFit.contain,
+                placeholder: (context, url) =>
+                    const ColoredBox(color: Colors.black),
+                errorWidget: (context, url, error) => const SizedBox.shrink(),
+              ),
+            ),
           if (_isPhotoReel)
             Hero(
               tag: 'video_${_reel.id}',
