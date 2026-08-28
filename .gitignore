@@ -57,3 +57,10 @@ app.*.map.json
 graphify-out/
 deploy_gifts/
 deploy_postcards/
+
+# Local handoff / AI notes (ignored, not committed)
+handoff.txt
+handoff_v2.txt
+handoff_v3.txt
+codebase-explanation.txt
+CLAUDE.md
