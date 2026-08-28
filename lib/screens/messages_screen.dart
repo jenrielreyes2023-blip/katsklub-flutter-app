@@ -213,11 +213,14 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _onDmRead(DirectMessageReadEvent event) {
     final t = _thread;
     if (t != null && t.id == event.threadId) {
-      if (mounted) {
-        setState(() {
-          _highestSeenOwnMessageIndex = _messages.length - 1;
-          _thread = t.copyWith(otherLastReadAt: event.readAt);
-        });
+      // Guard: only mark as seen if the reader is the OTHER user, not myself
+      if (event.readerUserId.isNotEmpty && event.readerUserId == t.otherUser.id) {
+        if (mounted) {
+          setState(() {
+            _highestSeenOwnMessageIndex = _messages.length - 1;
+            _thread = t.copyWith(otherLastReadAt: event.readAt);
+          });
+        }
       }
     }
     if (mounted && _threads.isNotEmpty) {
@@ -226,15 +229,17 @@ class _MessagesScreenState extends State<MessagesScreen>
         final idx = next.indexWhere((th) => th.id == event.threadId);
         if (idx >= 0) {
           final cur = next[idx];
-          final lastMsg = cur.lastMessage;
-          final updatedLastMsg = lastMsg != null && lastMsg.sentByMe
-              ? lastMsg.copyWith(seenByOther: true)
-              : lastMsg;
-          next[idx] = cur.copyWith(
-            otherLastReadAt: event.readAt,
-            lastMessage: updatedLastMsg,
-          );
-          _threads = next;
+          if (event.readerUserId.isNotEmpty && event.readerUserId == cur.otherUser.id) {
+            final lastMsg = cur.lastMessage;
+            final updatedLastMsg = lastMsg != null && lastMsg.sentByMe
+                ? lastMsg.copyWith(seenByOther: true)
+                : lastMsg;
+            next[idx] = cur.copyWith(
+              otherLastReadAt: event.readAt,
+              lastMessage: updatedLastMsg,
+            );
+            _threads = next;
+          }
         }
       });
     }
