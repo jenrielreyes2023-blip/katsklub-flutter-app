@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze code
+        run: flutter analyze
+
       - name: Build Android APK (ARM64 Release)
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
