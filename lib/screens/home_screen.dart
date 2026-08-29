@@ -633,13 +633,19 @@ class _HomeScreenState extends State<HomeScreen>
     return !_isInitialLoading && _suggestions.isNotEmpty && posts.isEmpty;
   }
 
+  bool _shouldShowCaughtUpFooter(List<Post> posts) {
+    return !_isInitialLoading && !_isLoadingMore && !_hasMore && posts.isNotEmpty;
+  }
+
   int _homeItemCount(List<Post> posts) {
     const fixedHeaderCount = 3;
     final contentCount = _isInitialLoading || posts.isEmpty ? 1 : posts.length;
     final inlineSuggestions = _hasInlineSuggestions(posts) ? 1 : 0;
+    final caughtUpFooter = _shouldShowCaughtUpFooter(posts) ? 1 : 0;
     return fixedHeaderCount +
         contentCount +
         inlineSuggestions +
+        caughtUpFooter +
         (_isLoadingMore ? 3 : 0) +
         1;
   }
@@ -708,6 +714,44 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (index == _homeItemCount(posts) - 1) {
       return SizedBox(height: 18.h);
+    }
+
+    if (_shouldShowCaughtUpFooter(posts) &&
+        index == _homeItemCount(posts) - 2 &&
+        !_isLoadingMore) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+        child: Column(
+          children: [
+            Container(
+              width: 48.w,
+              height: 48.w,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(24.r),
+              ),
+              child: Icon(Icons.check_circle_outline, size: 28.r, color: Color(0xFF4CAF50)),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'You\'re all caught up!',
+              style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 16.sp, fontWeight: FontWeight.w700, color: Color(0xFF1C1E21)),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              'Add more friends to see more posts.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 13.sp, color: Color(0xFF65676B)),
+            ),
+            SizedBox(height: 12.h),
+            FilledButton(
+              onPressed: _loadSuggestions,
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEE8F3F)),
+              child: Text('Find friends'),
+            ),
+          ],
+        ),
+      );
     }
 
     if (_isLoadingMore && index >= _homeItemCount(posts) - 4) {
@@ -822,17 +866,33 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     try {
-      final page = await _feedService.loadHomePosts(
-        offset: _nextOffset,
-        limit: 10,
-      );
+      var currentOffset = _nextOffset;
+      var hasMore = _hasMore;
+      final allNew = <Post>[];
+      var attempts = 0;
+      // Keep fetching until we get filtered content or server exhausted (avoid skeleton loop for friend-filtered feed)
+      while (attempts < 5) {
+        final page = await _feedService.loadHomePosts(
+          offset: currentOffset,
+          limit: 10,
+        );
+        if (!mounted) return;
+        final existingIds = _posts.map((p) => p.id).toSet()..addAll(allNew.map((p) => p.id));
+        final newUniquePosts = page.posts.where((p) => !existingIds.contains(p.id)).toList();
+        // Apply friend filter like _homePosts does to check if this page actually yields visible posts
+        final visible = newUniquePosts.where((post) => post.ownedByMe || post.isFollowingAuthor || post.authorIsAuthor || post.authorIsAdmin).toList();
+        allNew.addAll(newUniquePosts);
+        currentOffset = page.offset + page.posts.length;
+        hasMore = page.hasMore;
+        if (visible.isNotEmpty || !hasMore) break;
+        attempts++;
+        if (!hasMore) break;
+      }
       if (!mounted) return;
       setState(() {
-        final existingIds = _posts.map((p) => p.id).toSet();
-        final newUniquePosts = page.posts.where((p) => !existingIds.contains(p.id)).toList();
-        _posts = [..._posts, ...newUniquePosts];
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        _posts = [..._posts, ...allNew];
+        _nextOffset = currentOffset;
+        _hasMore = hasMore;
         _isLoadingMore = false;
       });
     } catch (_) {
