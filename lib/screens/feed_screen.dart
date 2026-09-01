@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:video_player/video_player.dart';
 import '../theme/app_text_styles.dart';
 
 import '../config/api_config.dart';
@@ -1506,8 +1507,8 @@ class _ReelsRailState extends State<_ReelsRail>
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.38).clamp(145.0, 165.0);
-    final cardHeight = cardWidth * 1.65;
+    final cardWidth = (screenWidth * 0.44).clamp(165.0, 195.0);
+    final cardHeight = cardWidth * 1.68;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1535,7 +1536,7 @@ class _ReelsRailState extends State<_ReelsRail>
             ],
           ),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         SizedBox(
           height: cardHeight,
           child: ListView.builder(
@@ -1554,6 +1555,7 @@ class _ReelsRailState extends State<_ReelsRail>
                   reel: reel,
                   width: cardWidth,
                   height: cardHeight,
+                  isFirstCard: index == 0,
                   onTap: () => widget.onReelTap(reel, index),
                 ),
               );
@@ -1565,40 +1567,133 @@ class _ReelsRailState extends State<_ReelsRail>
   }
 }
 
-class _ReelPreviewCard extends StatelessWidget {
+class _ReelPreviewCard extends StatefulWidget {
   const _ReelPreviewCard({
     super.key,
     required this.reel,
     required this.width,
     required this.height,
     required this.onTap,
+    this.isFirstCard = false,
   });
 
   final Post reel;
   final double width;
   final double height;
   final VoidCallback onTap;
+  final bool isFirstCard;
+
+  @override
+  State<_ReelPreviewCard> createState() => _ReelPreviewCardState();
+}
+
+class _ReelPreviewCardState extends State<_ReelPreviewCard> {
+  VideoPlayerController? _videoController;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isFirstCard && widget.reel.videoUrl.trim().isNotEmpty) {
+      _initPreviewLoop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReelPreviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isFirstCard != oldWidget.isFirstCard ||
+        widget.reel.videoUrl != oldWidget.reel.videoUrl) {
+      _disposeVideo();
+      if (widget.isFirstCard && widget.reel.videoUrl.trim().isNotEmpty) {
+        _initPreviewLoop();
+      }
+    }
+  }
+
+  void _initPreviewLoop() {
+    final videoUrl = ApiConfig.assetUrl(widget.reel.videoUrl.trim());
+    if (videoUrl.isEmpty) return;
+
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(videoUrl),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+
+    controller.initialize().then((_) {
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      controller.setVolume(0.0);
+      controller.setLooping(false);
+      controller.play();
+      controller.addListener(_loopListener);
+      setState(() {
+        _videoController = controller;
+        _isInitialized = true;
+      });
+    }).catchError((_) {});
+  }
+
+  void _loopListener() {
+    final c = _videoController;
+    if (c == null || !c.value.isInitialized) return;
+    if (c.value.position >= const Duration(seconds: 3)) {
+      c.seekTo(Duration.zero);
+      c.play();
+    }
+  }
+
+  void _disposeVideo() {
+    _videoController?.removeListener(_loopListener);
+    _videoController?.pause();
+    _videoController?.dispose();
+    _videoController = null;
+    _isInitialized = false;
+  }
+
+  @override
+  void dispose() {
+    _disposeVideo();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final posterUrl = _railPosterUrl(reel);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final posterUrl = _railPosterUrl(widget.reel);
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         margin: const EdgeInsets.symmetric(horizontal: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(16),
+          color: isDark ? const Color(0xFF242526) : Colors.grey[300],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (posterUrl.isNotEmpty)
+              if (_isInitialized && _videoController != null)
+                FittedBox(
+                  fit: BoxFit.cover,
+                  clipBehavior: Clip.hardEdge,
+                  child: SizedBox(
+                    width: _videoController!.value.size.width > 0
+                        ? _videoController!.value.size.width
+                        : widget.width,
+                    height: _videoController!.value.size.height > 0
+                        ? _videoController!.value.size.height
+                        : widget.height,
+                    child: VideoPlayer(_videoController!),
+                  ),
+                )
+              else if (posterUrl.isNotEmpty)
                 CachedNetworkImage(
                   imageUrl: ApiConfig.assetUrl(posterUrl),
                   memCacheWidth: 400,
@@ -1608,19 +1703,20 @@ class _ReelPreviewCard extends StatelessWidget {
                   fadeOutDuration: Duration.zero,
                   placeholderFadeInDuration: Duration.zero,
                   placeholder: (context, url) => Container(
-                    color: Colors.grey[800],
+                    color: isDark ? const Color(0xFF242526) : Colors.grey[800],
                     child: const Icon(Icons.video_library, color: Colors.white),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[800],
+                    color: isDark ? const Color(0xFF242526) : Colors.grey[800],
                     child: const Icon(Icons.video_library, color: Colors.white),
                   ),
                 )
               else
                 Container(
-                  color: Colors.grey[800],
+                  color: isDark ? const Color(0xFF242526) : Colors.grey[800],
                   child: const Icon(Icons.video_library, color: Colors.white),
                 ),
+              // Subtle gradient overlay for readability
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -1628,33 +1724,53 @@ class _ReelPreviewCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withValues(alpha: 0.75),
                     ],
+                    stops: const [0.55, 1.0],
                   ),
                 ),
               ),
+              // Author at bottom
               Positioned(
-                left: 8,
-                right: 8,
-                bottom: 8,
+                left: 10,
+                right: 10,
+                bottom: 10,
                 child: Text(
-                  reel.authorFullName,
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
+                  widget.reel.authorFullName,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
                     color: Colors.white,
-                    fontSize: 12.sp,
+                    fontSize: 12.5.sp,
                     fontWeight: FontWeight.w700,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black54,
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Center(
-                child: Icon(
-                  Icons.play_circle_outline,
-                  color: Colors.white,
-                  size: 40,
+              // If not playing video preview, show play icon
+              if (!_isInitialized)
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
