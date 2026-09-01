@@ -43,6 +43,13 @@ class CustomIcons {
     return _svgIcon(isFilled ? _bookmarkFilledSvg : _bookmarkSvg, color: color, size: size);
   }
 
+  static Widget reels({Color color = Colors.black, double size = 24}) {
+    return _svgIcon(_reelsSvg, color: color, size: size);
+  }
+
+  static const String _reelsSvg =
+      '<svg width="800" height="800" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M3 9h18" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M8.5 3 6.5 9" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M15.5 3 13.5 9" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 12.5l4.5 2.5-4.5 2.5v-5z" fill="#292D32"/></svg>';
+
   static const String _heartSvg =
       '<svg width="800" height="800" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.62 20.8101C12.28 20.9301 11.72 20.9301 11.38 20.8101 8.48 19.8201 2 15.6901 2 8.6901c0-3.09 2.49-5.59 5.56-5.59 1.82.0 3.43.88 4.44 2.24 1.01-1.36 2.63-2.24 4.44-2.24 3.07.0 5.56 2.5 5.56 5.59.0 7-6.48 11.13-9.38 12.12z" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 

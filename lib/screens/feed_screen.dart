@@ -12,6 +12,7 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/loading_skeletons.dart';
+import '../widgets/custom_icons.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
 import '../widgets/post_card.dart';
@@ -1512,14 +1513,26 @@ class _ReelsRailState extends State<_ReelsRail>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Reels',
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w800,
-              color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CustomIcons.reels(
+                color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Reels',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 12),
