@@ -28,7 +28,7 @@ class KatsText {
         fontSize: 13.sp,
         height: 1.33,
         letterSpacing: -0.2,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w500,
         color: _isDark(c) ? _darkBody : _lightBody,
       );
 

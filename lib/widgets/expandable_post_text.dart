@@ -35,10 +35,10 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
   // Centralized via KatsText — kept for _fits measurement (color irrelevant)
   static final TextStyle _textStyle = TextStyle(
     inherit: false,
-    fontSize: 13.5.sp,
+    fontSize: 13.sp,
     height: 1.33,
     letterSpacing: -0.2,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w500,
     color: const Color(0xFF050505),
   );
 

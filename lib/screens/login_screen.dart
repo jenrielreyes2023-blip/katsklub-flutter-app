@@ -94,13 +94,38 @@ class _LoginScreenState extends State<LoginScreen> {
     await _checkIdentifier();
   }
 
+  String _formatErrorMessage(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return 'Unable to continue. Please try again.';
+    }
+    final lower = raw.toLowerCase();
+    if (lower.contains('gumamit') || lower.contains('e.164') || lower.contains('format')) {
+      return 'Please enter a valid phone number (e.g. 09123456789 or +639123456789).';
+    }
+    if (lower.contains('walang account') || lower.contains('hindi nakarehistro') || lower.contains('not found') || lower.contains('user not found')) {
+      return 'No account found with this phone number.';
+    }
+    if (lower.contains('maling code') || lower.contains('invalid otp') || lower.contains('expired')) {
+      return 'Invalid or expired verification code.';
+    }
+    return raw;
+  }
+
   Future<void> _checkIdentifier() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final result = await widget.authService.checkIdentifier(_identifierController.text);
+    final raw = _identifierController.text.trim();
+    final String identifierToCheck;
+    if (_isValidPhone(raw)) {
+      identifierToCheck = _normalizePhone(raw);
+    } else {
+      identifierToCheck = _normalizeIdentifier(raw);
+    }
+
+    final result = await widget.authService.checkIdentifier(identifierToCheck);
 
     if (!mounted) return;
 
@@ -113,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.clear();
       } else if (result.ok && result.exists) {
         _showPasswordStep = true;
-        _checkedIdentifier = _normalizeIdentifier(_identifierController.text);
+        _checkedIdentifier = identifierToCheck;
         _errorMessage = null;
       } else if (result.ok && !result.exists) {
         _errorMessage = 'These credentials do not match our records.';
@@ -121,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _checkedIdentifier = null;
         _passwordController.clear();
       } else {
-        _errorMessage = result.error ?? 'Unable to continue. Please try again.';
+        _errorMessage = _formatErrorMessage(result.error);
         _showPasswordStep = false;
         _checkedIdentifier = null;
         _passwordController.clear();
@@ -220,8 +245,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    final raw = _identifierController.text.trim();
+    final String identifierToLogin;
+    if (_isValidPhone(raw)) {
+      identifierToLogin = _normalizePhone(raw);
+    } else {
+      identifierToLogin = raw;
+    }
+
     final result = await widget.authService.login(
-      identifier: _identifierController.text,
+      identifier: identifierToLogin,
       password: _passwordController.text,
       persistSession: _rememberMe,
     );
@@ -236,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = 'These credentials do not match our records.';
         _passwordController.clear();
       } else {
-        _errorMessage = result.error;
+        _errorMessage = _formatErrorMessage(result.error);
       }
     });
 
@@ -245,20 +278,50 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  String _normalizePhone(String raw) {
+    var cleaned = raw.replaceAll(RegExp(r'[\s\-()]'), '').trim();
+    if (cleaned.isEmpty) return '';
+    if (cleaned.startsWith('09') && cleaned.length == 11) {
+      return '+63${cleaned.substring(1)}';
+    }
+    if (cleaned.startsWith('9') && cleaned.length == 10) {
+      return '+63$cleaned';
+    }
+    if (cleaned.startsWith('63') && !cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    if (!cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    return cleaned;
+  }
+
+  bool _isValidPhone(String raw) {
+    var cleaned = raw.replaceAll(RegExp(r'[\s\-()]'), '').trim();
+    if (cleaned.isEmpty) return false;
+    // Check if it's a Philippine 09/9/63 number or standard +E.164
+    if (cleaned.startsWith('09') && cleaned.length == 11) return true;
+    if (cleaned.startsWith('9') && cleaned.length == 10) return true;
+    if (cleaned.startsWith('639') && cleaned.length == 12) return true;
+    final normalized = _normalizePhone(raw);
+    return RegExp(r'^\+[1-9]\d{6,14}$').hasMatch(normalized);
+  }
+
   Future<void> _sendLoginOtp() async {
-    final phone = _identifierController.text.trim();
-    if (phone.isEmpty) {
+    final rawPhone = _identifierController.text.trim();
+    if (rawPhone.isEmpty) {
       setState(() {
         _errorMessage = 'Please enter your phone number.';
       });
       return;
     }
-    if (!RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(phone)) {
+    if (!_isValidPhone(rawPhone)) {
       setState(() {
-        _errorMessage = 'Gumamit ng E.164 format (e.g. +639187843417).';
+        _errorMessage = 'Please enter a valid phone number (e.g. 09123456789 or +639123456789).';
       });
       return;
     }
+    final phone = _normalizePhone(rawPhone);
 
     setState(() {
       _isLoading = true;
@@ -275,26 +338,26 @@ class _LoginScreenState extends State<LoginScreen> {
           _phoneOtpSent = true;
           _errorMessage = null;
         } else {
-          _errorMessage = result.error ?? 'Failed to send OTP code.';
+          _errorMessage = _formatErrorMessage(result.error ?? 'Failed to send verification code.');
         }
       });
     } catch (_) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Unable to connect to KatsKlub. Check your connection.';
+          _errorMessage = 'Unable to connect to KatsKlub. Please check your connection.';
         });
       }
     }
   }
 
   Future<void> _submitPhoneLogin() async {
-    final phone = _identifierController.text.trim();
+    final phone = _normalizePhone(_identifierController.text.trim());
     final otpCode = _otpController.text.trim();
 
     if (otpCode.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter the OTP code.';
+        _errorMessage = 'Please enter the verification code.';
       });
       return;
     }
@@ -318,7 +381,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (result.ok && result.user != null) {
           widget.onLoginSuccess(result.user!);
         } else {
-          _errorMessage = result.error ?? 'Invalid verification code.';
+          _errorMessage = _formatErrorMessage(result.error ?? 'Invalid verification code.');
         }
       });
     } catch (_) {
@@ -485,7 +548,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: primaryText,
                                 ),
                                 decoration: _inputDecoration(
-                                  hintText: 'Phone number (e.g. +639187843417)',
+                                  hintText: 'Phone number (e.g. 09123456789)',
                                   icon: Icons.phone_android_rounded,
                                 ),
                                 validator: (value) {
@@ -946,14 +1009,53 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
     super.dispose();
   }
 
+  String _normalizePhone(String raw) {
+    var cleaned = raw.replaceAll(RegExp(r'[\s\-()]'), '').trim();
+    if (cleaned.isEmpty) return '';
+    if (cleaned.startsWith('09') && cleaned.length == 11) {
+      return '+63${cleaned.substring(1)}';
+    }
+    if (cleaned.startsWith('9') && cleaned.length == 10) {
+      return '+63$cleaned';
+    }
+    if (cleaned.startsWith('63') && !cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    if (!cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    return cleaned;
+  }
+
+  String _formatErrorMessage(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return 'Unable to continue. Please try again.';
+    }
+    final lower = raw.toLowerCase();
+    if (lower.contains('gumamit') || lower.contains('e.164') || lower.contains('format')) {
+      return 'Please enter a valid phone number (e.g. 09123456789 or +639123456789).';
+    }
+    if (lower.contains('walang account') || lower.contains('hindi nakarehistro') || lower.contains('not found')) {
+      return 'No account found with this email or phone number.';
+    }
+    if (lower.contains('maling code') || lower.contains('invalid otp') || lower.contains('expired')) {
+      return 'Invalid or expired verification code.';
+    }
+    return raw;
+  }
+
   Future<void> _sendOtp({bool useAlternative = false}) async {
-    final identifier = _identifierController.text.trim();
-    if (identifier.isEmpty) {
+    final raw = _identifierController.text.trim();
+    if (raw.isEmpty) {
       setState(() {
         _error = 'Please enter your email or phone number.';
       });
       return;
     }
+
+    final identifier = (raw.startsWith('09') || raw.startsWith('9') || raw.startsWith('+63'))
+        ? _normalizePhone(raw)
+        : raw;
 
     setState(() {
       _isLoading = true;
@@ -986,7 +1088,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
         );
       } else {
         setState(() {
-          _error = result.error ?? 'Failed to send verification code.';
+          _error = _formatErrorMessage(result.error ?? 'Failed to send verification code.');
         });
       }
     } catch (_) {
@@ -1003,7 +1105,10 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
   }
 
   Future<void> _resetPassword() async {
-    final identifier = _identifierController.text.trim();
+    final raw = _identifierController.text.trim();
+    final identifier = (raw.startsWith('09') || raw.startsWith('9') || raw.startsWith('+63'))
+        ? _normalizePhone(raw)
+        : raw;
     final code = _otpController.text.trim();
     final newPassword = _passwordController.text.trim();
 
@@ -1043,7 +1148,7 @@ class _ForgotPasswordBottomSheetState extends State<_ForgotPasswordBottomSheet> 
         Navigator.of(context).pop();
       } else {
         setState(() {
-          _error = result.error ?? 'Failed to reset password.';
+          _error = _formatErrorMessage(result.error ?? 'Failed to reset password.');
         });
       }
     } catch (_) {

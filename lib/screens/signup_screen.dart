@@ -52,6 +52,29 @@ class _SignupScreenState extends State<SignupScreen> {
   static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
   static final RegExp _usernamePattern = RegExp(r'^[a-z0-9_]{3,24}$');
 
+  static String _normalizePhone(String raw) {
+    var cleaned = raw.replaceAll(RegExp(r'[\s\-()]'), '').trim();
+    if (cleaned.isEmpty) return '';
+    if (cleaned.startsWith('09') && cleaned.length == 11) {
+      return '+63${cleaned.substring(1)}';
+    }
+    if (cleaned.startsWith('9') && cleaned.length == 10) {
+      return '+63$cleaned';
+    }
+    if (cleaned.startsWith('63') && !cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    if (!cleaned.startsWith('+')) {
+      return '+$cleaned';
+    }
+    return cleaned;
+  }
+
+  static bool _isValidPhone(String raw) {
+    final normalized = _normalizePhone(raw);
+    return RegExp(r'^\+[1-9]\d{6,14}$').hasMatch(normalized);
+  }
+
   final _emailController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -116,10 +139,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final val = _emailController.text.trim();
     if (val.isEmpty) return false;
     return !val.contains('@');
-  }
-
-  bool _isValidPhone(String value) {
-    return RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(value);
   }
 
   @override
@@ -405,19 +424,20 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _sendOtp() async {
     final String phone;
     if (_isPhoneSignup) {
-      phone = _phoneController.text.trim();
-      if (phone.isEmpty) {
+      final raw = _phoneController.text.trim();
+      if (raw.isEmpty) {
         setState(() {
           _inlineError = 'Please enter your phone number.';
         });
         return;
       }
-      if (!_isValidPhone(phone)) {
+      if (!_isValidPhone(raw)) {
         setState(() {
-          _inlineError = 'Gumamit ng tamang format (e.g. +639187843417).';
+          _inlineError = 'Please enter a valid phone number (e.g. 09123456789 or +639123456789).';
         });
         return;
       }
+      phone = _normalizePhone(raw);
     } else {
       phone = '';
     }
@@ -1165,7 +1185,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
     if (_isPhoneSignup) {
       if (!_isValidPhone(value)) {
-        return 'Enter a valid phone number (e.g. +639187843417).';
+        return 'Please enter a valid phone number (e.g. 09123456789 or +639123456789).';
       }
     } else {
       if (!_isValidEmail(value)) {
@@ -2349,7 +2369,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 keyboardType: TextInputType.phone,
                 style: TextStyle(fontSize: 12.5.sp, color: primaryText),
                 decoration: _inputDecoration(
-                  hintText: 'Enter phone number (e.g. +639187843417)',
+                  hintText: 'Enter phone number (e.g. 09123456789)',
                   icon: Icons.phone_android_rounded,
                 ),
               ),
