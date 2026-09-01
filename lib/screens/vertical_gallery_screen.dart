@@ -337,7 +337,7 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
     final likeCount = slide != null ? slide.likeCount : (post?.likeCount ?? widget.likeCount ?? 0);
     final commentCount = slide != null ? slide.commentCount : (post?.commentCount ?? widget.commentCount ?? 0);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactiveColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+    final inactiveColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
     const likedColor = Color(0xFFE11D48);
 
     return Column(

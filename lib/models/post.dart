@@ -700,6 +700,10 @@ class Post {
       'isGhost': isGhost,
       'location': location,
       'feeling': feeling,
+      'isPinned': isPinned,
+      'repostedByText': repostedByText,
+      'slides': slides.map((s) => s.toJson()).toList(),
+      'likePreview': likePreview.map((u) => u.toJson()).toList(),
       // Poll fields
       'pollQuestion': pollQuestion,
       'pollOptions': pollOptions,
@@ -1113,5 +1117,13 @@ class LikePreviewUser {
       fullName: (json['fullName'] ?? json['full_name'] ?? json['liker_full_name'] ?? json['likerFullName'] ?? '').toString().trim(),
       avatarUrl: (json['avatarUrl'] ?? json['avatar_url'] ?? json['liker_avatar_url'] ?? json['likerAvatarUrl'] ?? '').toString().trim(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'fullName': fullName,
+      'avatarUrl': avatarUrl,
+    };
   }
 }
