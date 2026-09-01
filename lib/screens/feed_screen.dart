@@ -1507,8 +1507,8 @@ class _ReelsRailState extends State<_ReelsRail>
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.44).clamp(165.0, 195.0);
-    final cardHeight = cardWidth * 1.68;
+    final cardWidth = (screenWidth * 0.50).clamp(185.0, 220.0);
+    final cardHeight = cardWidth * 1.70;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1754,23 +1754,6 @@ class _ReelPreviewCardState extends State<_ReelPreviewCard> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // If not playing video preview, show play icon
-              if (!_isInitialized)
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
