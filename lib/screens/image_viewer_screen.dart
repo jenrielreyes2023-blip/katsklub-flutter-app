@@ -218,22 +218,22 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     if (slideIndex < 0) return;
     final slide = post.slides[slideIndex];
 
-    await showModalBottomSheet(
+    final updatedCount = await showCommentsModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => SlideCommentsBottomSheet(
-        postId: post.id,
-        slideId: slide.id,
-        onCommentCountUpdated: (newCount) {
-          setState(() {
-            final updatedSlides = List<PostSlide>.from(post.slides);
-            updatedSlides[slideIndex] = slide.copyWith(commentCount: newCount);
-            _post = post.copyWith(slides: updatedSlides);
-          });
-        },
-      ),
+      post: post,
+      slideId: slide.id,
+      initialSlideCommentCount: slide.commentCount,
     );
+
+    if (!mounted || updatedCount == null) {
+      return;
+    }
+
+    setState(() {
+      final updatedSlides = List<PostSlide>.from(post.slides);
+      updatedSlides[slideIndex] = slide.copyWith(commentCount: updatedCount);
+      _post = post.copyWith(slides: updatedSlides);
+    });
   }
 
   Future<void> _repostPost() async {

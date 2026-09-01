@@ -1610,6 +1610,7 @@ class FeedService {
     String postId, {
     int limit = 15,
     int? beforeId,
+    int? slideId,
   }) async {
     final cleanPostId = postId.trim();
     if (cleanPostId.isEmpty) {
@@ -1626,8 +1627,11 @@ class FeedService {
         : limit > 50
             ? 50
             : limit;
+    final basePath = slideId != null
+        ? '/api/posts/$cleanPostId/slides/$slideId/comments'
+        : '/api/posts/$cleanPostId/comments';
     final query =
-        StringBuffer('/api/posts/$cleanPostId/comments?limit=$cleanLimit');
+        StringBuffer('$basePath?limit=$cleanLimit');
     if (beforeId != null && beforeId > 0) {
       query.write('&beforeId=$beforeId');
     }
@@ -1658,6 +1662,7 @@ class FeedService {
     String body, {
     int? parentCommentId,
     String? replyToUserId,
+    int? slideId,
   }) async {
     final cleanPostId = postId.trim();
     final cleanBody = body.trim();
@@ -1665,8 +1670,12 @@ class FeedService {
       throw StateError('Comment body is required.');
     }
 
+    final endpoint = slideId != null
+        ? '/api/posts/$cleanPostId/slides/$slideId/comments'
+        : '/api/posts/$cleanPostId/comments';
+
     final data = await _authenticatedPost(
-      '/api/posts/$cleanPostId/comments',
+      endpoint,
       body: {
         'body': cleanBody,
         if (parentCommentId != null) 'parentCommentId': parentCommentId,
@@ -1681,11 +1690,13 @@ class FeedService {
 
     final commentCount = _readInt(data['commentCount']);
 
-    await _updateCachedCommentCount(cleanPostId, commentCount);
-    notifyCommentCountChanged(
-      postId: cleanPostId,
-      commentCount: commentCount,
-    );
+    if (slideId == null) {
+      await _updateCachedCommentCount(cleanPostId, commentCount);
+      notifyCommentCountChanged(
+        postId: cleanPostId,
+        commentCount: commentCount,
+      );
+    }
 
     return CommentCreateResult(
       comment: PostComment.fromJson(comment),

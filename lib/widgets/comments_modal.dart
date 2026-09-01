@@ -44,11 +44,18 @@ Future<int?> showCommentsModal({
   required BuildContext context,
   required Post post,
   double? sheetHeight,
+  int? slideId,
+  int? initialSlideCommentCount,
 }) {
   HapticFeedback.lightImpact();
   return Navigator.of(context).push<int>(
     CommentsPageRoute(
-      builder: _CommentsSheet(post: post, sheetHeight: sheetHeight),
+      builder: _CommentsSheet(
+        post: post,
+        sheetHeight: sheetHeight,
+        slideId: slideId,
+        initialSlideCommentCount: initialSlideCommentCount,
+      ),
     ),
   );
 }
@@ -69,10 +76,17 @@ class _ReplyTarget {
 }
 
 class _CommentsSheet extends StatefulWidget {
-  const _CommentsSheet({required this.post, this.sheetHeight});
+  const _CommentsSheet({
+    required this.post,
+    this.sheetHeight,
+    this.slideId,
+    this.initialSlideCommentCount,
+  });
 
   final Post post;
   final double? sheetHeight;
+  final int? slideId;
+  final int? initialSlideCommentCount;
 
   @override
   State<_CommentsSheet> createState() => _CommentsSheetState();
@@ -83,12 +97,20 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   static final Map<String, int> _commentsTotalCountCache = {};
   static final Map<String, bool> _commentsHasMoreCache = {};
 
-  void _saveToCache() {
+  String get _cacheKey {
     final cleanPostId = widget.post.id.trim();
-    if (cleanPostId.isNotEmpty) {
-      _commentsCache[cleanPostId] = _comments;
-      _commentsTotalCountCache[cleanPostId] = _totalCount;
-      _commentsHasMoreCache[cleanPostId] = _hasMore;
+    if (widget.slideId != null) {
+      return '${cleanPostId}_slide_${widget.slideId}';
+    }
+    return cleanPostId;
+  }
+
+  void _saveToCache() {
+    final key = _cacheKey;
+    if (key.isNotEmpty) {
+      _commentsCache[key] = _comments;
+      _commentsTotalCountCache[key] = _totalCount;
+      _commentsHasMoreCache[key] = _hasMore;
     }
   }
 
@@ -118,15 +140,16 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   void initState() {
     super.initState();
-    final cleanPostId = widget.post.id.trim();
-    final cached = _commentsCache[cleanPostId];
+    final key = _cacheKey;
+    final cached = _commentsCache[key];
     if (cached != null) {
       _comments = List<PostComment>.from(cached);
-      _totalCount = _commentsTotalCountCache[cleanPostId] ?? widget.post.commentCount;
-      _hasMore = _commentsHasMoreCache[cleanPostId] ?? false;
+      _totalCount = _commentsTotalCountCache[key] ??
+          (widget.initialSlideCommentCount ?? widget.post.commentCount);
+      _hasMore = _commentsHasMoreCache[key] ?? false;
       _isLoading = false;
     } else {
-      _totalCount = widget.post.commentCount;
+      _totalCount = widget.initialSlideCommentCount ?? widget.post.commentCount;
       _isLoading = true;
     }
     _scrollController.addListener(_handleScroll);
@@ -189,8 +212,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _loadInitialComments() async {
-    final cleanPostId = widget.post.id.trim();
-    final cached = _commentsCache[cleanPostId];
+    final key = _cacheKey;
+    final cached = _commentsCache[key];
 
     if (cached == null) {
       setState(() {
@@ -200,7 +223,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     }
 
     try {
-      final page = await _feedService.loadComments(widget.post.id);
+      final page = await _feedService.loadComments(
+        widget.post.id,
+        slideId: widget.slideId,
+      );
       if (!mounted) return;
       setState(() {
         _comments = page.comments;
@@ -235,6 +261,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       final page = await _feedService.loadComments(
         widget.post.id,
         beforeId: beforeId,
+        slideId: widget.slideId,
       );
       if (!mounted) return;
       final existingIds = _comments.map((comment) => comment.id).toSet();
@@ -274,10 +301,12 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       _totalCount = optimisticCount;
     });
     _textController.clear();
-    FeedService.notifyCommentCountChanged(
-      postId: widget.post.id,
-      commentCount: optimisticCount,
-    );
+    if (widget.slideId == null) {
+      FeedService.notifyCommentCountChanged(
+        postId: widget.post.id,
+        commentCount: optimisticCount,
+      );
+    }
 
     try {
       final result = await _feedService.createComment(
@@ -285,6 +314,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         body,
         parentCommentId: activeReplyTarget?.parentCommentId,
         replyToUserId: activeReplyTarget?.replyToUserId,
+        slideId: widget.slideId,
       );
       if (!mounted) return;
       _focusNode.unfocus();
