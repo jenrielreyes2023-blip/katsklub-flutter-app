@@ -818,7 +818,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         final isLoadingReplies = _loadingReplyThreads.contains(comment.id);
 
         return _CommentTile(
-          key: ValueKey('comment-${_comments[index].id}'),
+          key: ValueKey('comment-${comment.id}'),
           comment: comment,
           replies: replies,
           isRepliesExpanded: isRepliesExpanded,

@@ -70,8 +70,8 @@ class PostComment {
     return PostComment(
       id: _readInt(json['id']),
       postId: _readString(json['postId'] ?? json['post_id']) ?? '',
-      body: _readString(json['body']) ?? '',
-      createdAt: DateTime.tryParse(_readString(json['createdAt']) ?? ''),
+      body: _readString(json['body'] ?? json['content']) ?? '',
+      createdAt: DateTime.tryParse(_readString(json['createdAt'] ?? json['created_at']) ?? ''),
       parentCommentId: _readNullableInt(
           json['parentCommentId'] ?? json['parent_comment_id']),
       replyToUserId:
