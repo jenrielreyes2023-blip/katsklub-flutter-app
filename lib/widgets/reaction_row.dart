@@ -26,7 +26,7 @@ class ReactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactiveColor = isDark ? Colors.white : const Color(0xFF111827);
+    final inactiveColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
     const likedColor = Color(0xFFE11D48);
     
     final showCounts = !(post.isGhost && !post.ownedByMe);
@@ -47,6 +47,7 @@ class ReactionRow extends StatelessWidget {
           _ActionIcon(
             icon: CustomIcons.dm(color: inactiveColor, size: 23),
             count: showCounts ? post.commentCount : 0,
+            color: inactiveColor,
             onTap: onComment,
           ),
           const SizedBox(width: 24),
@@ -91,6 +92,7 @@ class ReactionRow extends StatelessWidget {
         _ActionIcon(
           icon: CustomIcons.comment(color: inactiveColor, size: 23),
           count: showCounts ? post.commentCount : 0,
+          color: inactiveColor,
           onTap: () {
             HapticFeedback.selectionClick();
             onComment();
@@ -100,6 +102,7 @@ class ReactionRow extends StatelessWidget {
         _ActionIcon(
           icon: CustomIcons.repost(color: inactiveColor, size: 23),
           count: showCounts ? post.repostCount : 0,
+          color: inactiveColor,
           onTap: () {
             HapticFeedback.selectionClick();
             onRepost();
@@ -152,14 +155,14 @@ class _ActionIcon extends StatefulWidget {
   const _ActionIcon({
     required this.icon,
     required this.count,
-    this.color = const Color(0xFF65676B),
+    this.color,
     this.onTap,
     super.key,
   });
 
   final Widget icon;
   final int count;
-  final Color color;
+  final Color? color;
   final VoidCallback? onTap;
 
   @override
@@ -219,6 +222,10 @@ class _ActionIconState extends State<_ActionIcon>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final effectiveColor = widget.color ?? defaultColor;
+
     return InkWell(
       borderRadius: BorderRadius.circular(999.r),
       onTap: widget.onTap,
@@ -245,7 +252,7 @@ class _ActionIconState extends State<_ActionIcon>
                     fontFamily: 'SF Pro Rounded',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w400,
-                    color: widget.color,
+                    color: effectiveColor,
                   ),
                 ),
               ),

@@ -36,6 +36,7 @@ void _disableDebugPaintOverlays() {
   debugRepaintRainbowEnabled = false;
 }
 
+@pragma('vm:entry-point')
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _disableDebugPaintOverlays();
@@ -53,12 +54,8 @@ Future<void> main() async {
   }
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarDividerColor: Colors.white,
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
     ),
   );
   _configureImageCache();
@@ -136,7 +133,6 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -153,6 +149,11 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
             designSize: const Size(360, 690),
             minTextAdapt: true,
             splitScreenMode: true,
+            fontSizeResolver: (fontSize, instance) {
+              final scale = instance.scaleWidth <= 0 ? 1.0 : instance.scaleWidth;
+              final scaled = fontSize * scale;
+              return scaled <= 0 ? fontSize.toDouble() : scaled.toDouble();
+            },
             builder: (context, child) {
               return MaterialApp(
                 navigatorKey: UpdateChecker.navigatorKey,
@@ -177,17 +178,17 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                     brightness: Brightness.light,
                   ),
                   scaffoldBackgroundColor: Colors.white,
-                  dialogTheme: DialogThemeData(
+                  dialogTheme: const DialogThemeData(
                     backgroundColor: Colors.white,
                     surfaceTintColor: Colors.transparent,
                     titleTextStyle: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 21.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 21,
                       fontWeight: FontWeight.w800,
                     ),
                     contentTextStyle: TextStyle(
-                      color: const Color(0xFF4B5563),
-                      fontSize: 16.sp,
+                      color: Color(0xFF4B5563),
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -199,40 +200,40 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                     backgroundColor: Colors.white,
                     surfaceTintColor: Colors.transparent,
                   ),
-                  textTheme: TextTheme(
+                  textTheme: const TextTheme(
                     bodyLarge: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 17.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     bodyMedium: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 15.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     bodySmall: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 13.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     titleLarge: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 23.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 23,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
                     ),
                     titleMedium: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 17.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                     ),
                     labelLarge: TextStyle(
-                      color: const Color(0xFF1C1E21),
-                      fontSize: 15.sp,
+                      color: Color(0xFF1C1E21),
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
                     ),
@@ -250,12 +251,12 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                       systemNavigationBarIconBrightness: Brightness.dark,
                     ),
                   ),
-                  snackBarTheme: SnackBarThemeData(
+                  snackBarTheme: const SnackBarThemeData(
                     behavior: SnackBarBehavior.fixed,
-                    backgroundColor: const Color(0xFF111827),
+                    backgroundColor: Color(0xFF111827),
                     contentTextStyle: TextStyle(
                       color: Colors.white,
-                      fontSize: 14.sp,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -278,17 +279,17 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                     brightness: Brightness.dark,
                   ),
                   scaffoldBackgroundColor: const Color(0xFF18191A),
-                  dialogTheme: DialogThemeData(
-                    backgroundColor: const Color(0xFF242526),
+                  dialogTheme: const DialogThemeData(
+                    backgroundColor: Color(0xFF242526),
                     surfaceTintColor: Colors.transparent,
                     titleTextStyle: TextStyle(
                       color: Colors.white,
-                      fontSize: 21.sp,
+                      fontSize: 21,
                       fontWeight: FontWeight.w800,
                     ),
                     contentTextStyle: TextStyle(
-                      color: const Color(0xFFB0B3B8),
-                      fontSize: 16.sp,
+                      color: Color(0xFFB0B3B8),
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -300,40 +301,40 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                     backgroundColor: Color(0xFF242526),
                     surfaceTintColor: Colors.transparent,
                   ),
-                  textTheme: TextTheme(
+                  textTheme: const TextTheme(
                     bodyLarge: TextStyle(
                       color: Colors.white,
-                      fontSize: 17.sp,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     bodyMedium: TextStyle(
                       color: Colors.white,
-                      fontSize: 15.sp,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     bodySmall: TextStyle(
                       color: Colors.white,
-                      fontSize: 13.sp,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
                     titleLarge: TextStyle(
                       color: Colors.white,
-                      fontSize: 23.sp,
+                      fontSize: 23,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
                     ),
                     titleMedium: TextStyle(
                       color: Colors.white,
-                      fontSize: 17.sp,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                     ),
                     labelLarge: TextStyle(
                       color: Colors.white,
-                      fontSize: 15.sp,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
                     ),
@@ -351,12 +352,12 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                       systemNavigationBarIconBrightness: Brightness.light,
                     ),
                   ),
-                  snackBarTheme: SnackBarThemeData(
+                  snackBarTheme: const SnackBarThemeData(
                     behavior: SnackBarBehavior.fixed,
-                    backgroundColor: const Color(0xFF1F2937),
+                    backgroundColor: Color(0xFF1F2937),
                     contentTextStyle: TextStyle(
                       color: Colors.white,
-                      fontSize: 14.sp,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

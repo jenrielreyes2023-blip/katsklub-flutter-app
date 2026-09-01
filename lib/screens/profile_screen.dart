@@ -1982,9 +1982,10 @@ class _ProfileInlineCounters extends StatelessWidget {
             onTap: onTapFollowing,
             child: Text.rich(
               TextSpan(
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 12.5.sp,
-                  color: Color(0xFF65676B),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
+                  color: const Color(0xFF65676B),
                   height: 1.3,
                 ),
                 children: [
@@ -1996,18 +1997,20 @@ class _ProfileInlineCounters extends StatelessWidget {
           ),
           Text(
             '  ·  ',
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 12.5.sp,
-              color: Color(0xFF65676B),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.sp,
+              color: const Color(0xFF65676B),
             ),
           ),
           GestureDetector(
             onTap: onTapFollowers,
             child: Text.rich(
               TextSpan(
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 12.5.sp,
-                  color: Color(0xFF65676B),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
+                  color: const Color(0xFF65676B),
                   height: 1.3,
                 ),
                 children: [
@@ -2019,16 +2022,18 @@ class _ProfileInlineCounters extends StatelessWidget {
           ),
           Text(
             '  ·  ',
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 12.5.sp,
-              color: Color(0xFF65676B),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.sp,
+              color: const Color(0xFF65676B),
             ),
           ),
           Text.rich(
             TextSpan(
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
-                fontSize: 12.5.sp,
-                color: Color(0xFF65676B),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.sp,
+                color: const Color(0xFF65676B),
                 height: 1.3,
               ),
               children: [
@@ -2089,7 +2094,7 @@ class _ProfileBio extends StatelessWidget {
               ? const Color(0xFFE4E6EB)
               : const Color(0xFF000000),
           fontSize: 12.5,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w500,
           height: 1.33,
         ),
       if (isOwnProfile &&
@@ -4203,16 +4208,17 @@ class _ProfileMetadataSvgItem extends StatelessWidget {
       children: [
         SvgPicture.string(
           svg,
-          width: 16,
-          height: 16,
+          width: 15,
+          height: 15,
           colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
         ),
         const SizedBox(width: 5),
         Expanded(
           child: Text(
             label,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 13.sp,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 12.sp,
               color: textColor,
               fontWeight: FontWeight.w400,
             ),

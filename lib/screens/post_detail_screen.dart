@@ -3604,7 +3604,8 @@ class _PostDetailReactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const inactiveColor = Color(0xFF65676B);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
     const likedColor = Color(0xFFE11D48);
 
     return Row(
@@ -3702,7 +3703,12 @@ class _PostDetailActionIcon extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 _formatCount(count),
-                style: KatsText.countLabel(context, color),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w400,
+                  color: color,
+                ),
               ),
             ],
           ],

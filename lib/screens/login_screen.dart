@@ -440,11 +440,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             Center(
                               child: SvgPicture.asset(
                                 isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
-                                height: 56,
+                                height: 84,
                                 fit: BoxFit.contain,
                               ),
                             ),

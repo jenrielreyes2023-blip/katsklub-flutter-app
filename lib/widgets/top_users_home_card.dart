@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -20,8 +19,10 @@ class TopUsersHomeCard extends StatefulWidget {
 class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final FeedService _feedService = FeedService();
-  List<User> _users = [];
-  bool _isLoading = true;
+  static List<User> _cachedUsers = [];
+
+  List<User> _users = _cachedUsers;
+  bool _isLoading = _cachedUsers.isEmpty;
   bool _isExpanded = false;
   late final AnimationController _expandController;
   late final Animation<double> _expandAnimation;
@@ -35,7 +36,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     super.initState();
     _expandController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
     );
     _expandAnimation = CurvedAnimation(
       parent: _expandController,
@@ -53,16 +54,17 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     super.dispose();
   }
 
-  Future<void> _loadTopUsers() async {
+  Future<void> _loadTopUsers({bool force = false}) async {
     final now = DateTime.now();
-    if (_lastFetchTime != null && now.difference(_lastFetchTime!) < const Duration(seconds: 5)) {
+    if (!force && _lastFetchTime != null && now.difference(_lastFetchTime!) < const Duration(minutes: 5)) {
       return;
     }
     _lastFetchTime = now;
 
     try {
-      final list = await _feedService.loadLeaderboard();
+      final list = await _feedService.loadLeaderboard(forceRefresh: force);
       if (list.length >= 3 && mounted) {
+        _cachedUsers = list;
         setState(() {
           _users = list;
           _isLoading = false;
@@ -109,8 +111,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         return const Color(0xFF9CA3AF); // Gray
     }
   }
-
-
 
   Widget _buildCharmLevelBadge(int level) {
     return Row(
@@ -199,12 +199,13 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     required bool showCrown,
   }) {
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final bannerBg = isDark ? const Color(0xFF242526).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85);
+    final bannerBg = isDark
+        ? const Color(0xFF242526).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.85);
     final charmColor = isDark ? const Color(0xFFFF9F7C) : const Color(0xFFFF5E3A);
     final rankColor = _getRankColor(rank);
 
-    // Optimize image cache decoding size (prevents jank on rendering large assets)
-    final int cacheSize = (height * MediaQuery.of(context).devicePixelRatio).round().clamp(120, 360);
+    final int cacheSize = 200;
 
     Widget imageWidget;
     if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
@@ -214,12 +215,32 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         width: double.infinity,
         height: double.infinity,
         memCacheWidth: cacheSize,
+        memCacheHeight: cacheSize,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        placeholderFadeInDuration: Duration.zero,
+        placeholder: (context, url) => ColoredBox(
+          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+        ),
+        errorWidget: (context, url, error) => ColoredBox(
+          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+          child: Center(
+            child: Text(
+              user.initials,
+              style: TextStyle(
+                color: titleColor,
+                fontWeight: FontWeight.w900,
+                fontSize: height > 120 ? 32 : 20,
+              ),
+            ),
+          ),
+        ),
       );
     } else {
       imageWidget = Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark 
+            colors: isDark
                 ? [const Color(0xFF3E4042), const Color(0xFF2D2E30)]
                 : [const Color(0xFFE5E7EB), const Color(0xFFD1D5DB)],
             begin: Alignment.topLeft,
@@ -244,7 +265,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       crownWidget = Positioned(
         top: -10,
         left: -10,
-        child: AnimatedRankBadge(rank: rank, size: 36),
+        child: RankBadge(rank: rank, size: 36),
       );
     }
 
@@ -258,7 +279,9 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: rank <= 3 ? rankColor : (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB)),
+                color: rank <= 3
+                    ? rankColor
+                    : (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB)),
                 width: rank <= 3 ? 2.0 : 1.0,
               ),
             ),
@@ -479,8 +502,6 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
     final cardColor = isDark ? const Color(0xFF1E1F20) : Colors.white;
     final titleColor = isDark ? Colors.white : const Color(0xFF111827);
 
-
-
     final List<User> activeUsers = [];
     if (_users.length >= 9) {
       activeUsers.addAll(_users);
@@ -541,20 +562,7 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
       activeUsers.add(mockUserList[activeUsers.length]);
     }
 
-    return VisibilityDetector(
-      key: const Key('top-outstanding-users-visibility-key'),
-      onVisibilityChanged: (visibilityInfo) {
-        if (visibilityInfo.visibleFraction == 0.0 && _isExpanded) {
-          if (mounted) {
-            setState(() {
-              _isExpanded = false;
-              _expandController.reverse();
-            });
-          }
-        } else if (visibilityInfo.visibleFraction > 0.0) {
-          _loadTopUsers();
-        }
-      },
+    return RepaintBoundary(
       child: Container(
         margin: EdgeInsets.zero,
         decoration: BoxDecoration(
@@ -671,172 +679,137 @@ class _TopUsersHomeCardState extends State<TopUsersHomeCard>
         ),
       ),
     );
-}
+  }
 }
 
-class AnimatedRankBadge extends StatefulWidget {
+class RankBadge extends StatelessWidget {
   final int rank;
   final double size;
 
-  const AnimatedRankBadge({
+  const RankBadge({
     super.key,
     required this.rank,
     this.size = 36.0,
   });
 
   @override
-  State<AnimatedRankBadge> createState() => _AnimatedRankBadgeState();
-}
-
-class _AnimatedRankBadgeState extends State<AnimatedRankBadge> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final List<Color> metallicGradient;
     final Color jewelColor;
     final IconData iconData;
-    
-    if (widget.rank == 1) {
-      metallicGradient = [
-        const Color(0xFFFFD700),
-        const Color(0xFFFFA500),
-        const Color(0xFFFFE066),
-        const Color(0xFFFFD700),
+
+    if (rank == 1) {
+      metallicGradient = const [
+        Color(0xFFFFD700),
+        Color(0xFFFFA500),
+        Color(0xFFFFE066),
+        Color(0xFFFFD700),
       ];
       jewelColor = const Color(0xFFD4AF37);
       iconData = Icons.workspace_premium_rounded;
-    } else if (widget.rank == 2) {
-      metallicGradient = [
-        const Color(0xFFE0E0E0),
-        const Color(0xFFB0B0B0),
-        const Color(0xFFF5F5F5),
-        const Color(0xFFB0B0B0),
+    } else if (rank == 2) {
+      metallicGradient = const [
+        Color(0xFFE0E0E0),
+        Color(0xFFB0B0B0),
+        Color(0xFFF5F5F5),
+        Color(0xFFB0B0B0),
       ];
       jewelColor = const Color(0xFF9E9E9E);
       iconData = Icons.workspace_premium_rounded;
     } else {
-      metallicGradient = [
-        const Color(0xFFCD7F32),
-        const Color(0xFF8B5A2B),
-        const Color(0xFFFFB07C),
-        const Color(0xFFCD7F32),
+      metallicGradient = const [
+        Color(0xFFCD7F32),
+        Color(0xFF8B5A2B),
+        Color(0xFFFFB07C),
+        Color(0xFFCD7F32),
       ];
       jewelColor = const Color(0xFF8B5A2B);
       iconData = Icons.workspace_premium_rounded;
     }
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final double value = _controller.value;
-        final double pulse = 1.0 + (0.04 * (value < 0.5 ? value * 2 : (1.0 - value) * 2));
-        
-        return Transform.scale(
-          scale: pulse,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: widget.size + 4,
-                height: widget.size + 4,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: SweepGradient(
-                    colors: metallicGradient,
-                    transform: GradientRotation(value * 2 * 3.14159),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: jewelColor.withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF1E1F22),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: ShaderMask(
-                    shaderCallback: (bounds) {
-                      return LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: metallicGradient,
-                        stops: const [0.0, 0.3, 0.7, 1.0],
-                        transform: GradientRotation(value * 2 * 3.14159),
-                      ).createShader(bounds);
-                    },
-                    child: Icon(
-                      iconData,
-                      size: widget.size * 0.55,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -4,
-                child: Transform.scale(
-                  scale: 0.85,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: metallicGradient,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'TOP ${widget.rank}',
-                      style: const TextStyle(
-                        color: Color(0xFF111827),
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: size + 4,
+          height: size + 4,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: metallicGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: jewelColor.withValues(alpha: 0.4),
+                blurRadius: 8,
+                spreadRadius: 1,
               ),
             ],
           ),
-        );
-      },
+        ),
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF1E1F22),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: ShaderMask(
+              shaderCallback: (bounds) {
+                return LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: metallicGradient,
+                ).createShader(bounds);
+              },
+              child: Icon(
+                iconData,
+                size: size * 0.55,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -4,
+          child: Transform.scale(
+            scale: 0.85,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: metallicGradient,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Text(
+                'TOP $rank',
+                style: const TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
-

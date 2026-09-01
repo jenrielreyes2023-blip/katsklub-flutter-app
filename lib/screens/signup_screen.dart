@@ -1437,7 +1437,7 @@ class _SignupScreenState extends State<SignupScreen> {
       children: <Widget>[
         SvgPicture.asset(
           isDark ? 'assets/images/kb.svg' : 'assets/images/kb_light.svg',
-          height: 56,
+          height: 84,
           fit: BoxFit.contain,
         ),
         const SizedBox(height: 22),

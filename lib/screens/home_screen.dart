@@ -716,6 +716,8 @@ class _HomeScreenState extends State<HomeScreen>
       return SizedBox(height: 18.h);
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_shouldShowCaughtUpFooter(posts) &&
         index == _homeItemCount(posts) - 2 &&
         !_isLoadingMore) {
@@ -727,27 +729,60 @@ class _HomeScreenState extends State<HomeScreen>
               width: 48.w,
               height: 48.w,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: isDark ? const Color(0xFF14301B) : const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF2E7D32).withValues(alpha: 0.4)
+                      : const Color(0xFFC8E6C9),
+                  width: 1,
+                ),
               ),
-              child: Icon(Icons.check_circle_outline, size: 28.r, color: Color(0xFF4CAF50)),
+              child: Icon(
+                Icons.check_circle_outline,
+                size: 28.r,
+                color: isDark ? const Color(0xFF66BB6A) : const Color(0xFF4CAF50),
+              ),
             ),
             SizedBox(height: 12.h),
             Text(
               'You\'re all caught up!',
-              style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 16.sp, fontWeight: FontWeight.w700, color: Color(0xFF1C1E21)),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF1C1E21),
+              ),
             ),
             SizedBox(height: 6.h),
             Text(
               'Add more friends to see more posts.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 13.sp, color: Color(0xFF65676B)),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF65676B),
+              ),
             ),
             SizedBox(height: 12.h),
             FilledButton(
               onPressed: _loadSuggestions,
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEE8F3F)),
-              child: Text('Find friends'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF7A45),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+              ),
+              child: Text(
+                'Find friends',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ),
@@ -784,47 +819,61 @@ class _HomeScreenState extends State<HomeScreen>
               width: 64.w,
               height: 64.w,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF1E3),
+                color: isDark ? const Color(0xFF332014) : const Color(0xFFFFF1E3),
                 borderRadius: BorderRadius.circular(32.r),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFFFF7A45).withValues(alpha: 0.3)
+                      : const Color(0xFFFFD8B2),
+                  width: 1,
+                ),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.dynamic_feed_outlined,
-                size: 30.r,
-                color: Color(0xFFEE8F3F),
+                size: 30,
+                color: Color(0xFFFF7A45),
               ),
             ),
             SizedBox(height: 14.h),
             Text(
               'Nothing here yet',
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: Color(0xFF1C1E21),
+                color: isDark ? Colors.white : const Color(0xFF1C1E21),
               ),
             ),
             SizedBox(height: 6.h),
             Text(
               'Follow people from the Feed tab and their posts will land here.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 fontSize: 13.5.sp,
-                color: Color(0xFF65676B),
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF65676B),
               ),
             ),
             SizedBox(height: 14.h),
             FilledButton.icon(
               onPressed: _refresh,
               icon: Icon(Icons.refresh, size: 18.r),
-              label: Text('Refresh'),
+              label: Text(
+                'Refresh',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEE8F3F),
+                backgroundColor: const Color(0xFFFF7A45),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999.r),
                 ),
-                padding:
-                    EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
               ),
             ),
           ],

@@ -663,8 +663,11 @@ class _ProfileNavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final avatarUrl = user.avatarUrl?.trim() ?? '';
-    final borderColor = isSelected ? Colors.black : const Color(0xFFD1D5DB);
+    final borderColor = isSelected
+        ? const Color(0xFFFF7A45)
+        : (isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB));
 
     return Container(
       width: 32,

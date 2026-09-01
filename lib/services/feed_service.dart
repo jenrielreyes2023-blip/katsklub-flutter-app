@@ -208,8 +208,10 @@ class MessageThread {
       name: json['name']?.toString() ?? '',
       createdBy: json['createdBy']?.toString() ?? '',
       members: members,
-      state: json['state']?.toString() ?? 'active',
-      wallpaperPath: json['wallpaperPath']?.toString(),
+      wallpaperPath: (json['wallpaperPath']?.toString() == 'none' ||
+              json['wallpaperPath']?.toString().isEmpty == true)
+          ? null
+          : json['wallpaperPath']?.toString(),
       wallpaperDim: json['wallpaperDim'] is num
           ? (json['wallpaperDim'] as num).toDouble()
           : (double.tryParse(json['wallpaperDim']?.toString() ?? '') ?? 0.35),
@@ -1724,17 +1726,37 @@ class FeedService {
     return null;
   }
 
-  Future<List<User>> loadLeaderboard({String period = 'all-time'}) async {
+  static List<User>? _cachedLeaderboardAllTime;
+  static DateTime? _cachedLeaderboardTime;
+
+  Future<List<User>> loadLeaderboard({
+    String period = 'all-time',
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh &&
+        period == 'all-time' &&
+        _cachedLeaderboardAllTime != null &&
+        _cachedLeaderboardTime != null) {
+      if (DateTime.now().difference(_cachedLeaderboardTime!) <
+          const Duration(minutes: 5)) {
+        return _cachedLeaderboardAllTime!;
+      }
+    }
     try {
       final data = await _authenticatedGet('/api/users/leaderboard?limit=50&period=$period');
       final list = data['leaderboard'];
       if (list is List) {
-        return list
+        final users = list
             .map((item) => User.fromJson(item as Map<String, dynamic>))
             .toList();
+        if (period == 'all-time' && users.isNotEmpty) {
+          _cachedLeaderboardAllTime = users;
+          _cachedLeaderboardTime = DateTime.now();
+        }
+        return users;
       }
     } catch (_) {}
-    return const [];
+    return _cachedLeaderboardAllTime ?? const [];
   }
 
   Future<List<User>> loadProfileVisitors() async {

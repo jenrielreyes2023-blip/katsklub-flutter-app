@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -42,7 +43,7 @@ class UserAvatarWithFrame extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w800,
             color: const Color(0xFF111827),
-            fontSize: (radius * 0.7).sp,
+            fontSize: math.max(1.0, (radius * 0.7).sp),
           ),
         ),
       );
@@ -69,7 +70,7 @@ class UserAvatarWithFrame extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
-              fontSize: (radius * 0.7).sp,
+              fontSize: math.max(1.0, (radius * 0.7).sp),
             ),
           ),
         );
@@ -96,7 +97,7 @@ class UserAvatarWithFrame extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
-              fontSize: (radius * 0.7).sp,
+              fontSize: math.max(1.0, (radius * 0.7).sp),
             ),
           ),
         ),

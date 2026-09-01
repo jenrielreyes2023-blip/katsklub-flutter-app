@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/api_config.dart';
@@ -154,7 +155,7 @@ class AvatarWithBorder extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF111827),
-                              fontSize: avatarSize * 0.4,
+                              fontSize: math.max(1.0, avatarSize * 0.4),
                             ),
                           ),
                         )
@@ -174,7 +175,7 @@ class AvatarWithBorder extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF111827),
-                                fontSize: avatarSize * 0.4,
+                                fontSize: math.max(1.0, avatarSize * 0.4),
                               ),
                             ),
                           ),

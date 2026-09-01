@@ -39,6 +39,7 @@ import '../widgets/special_name_text.dart';
 import '../widgets/inapp_camera_sheet.dart';
 import '../services/presence_service.dart';
 import '../services/webrtc_call_service.dart';
+import '../widgets/smooth_bottom_sheet.dart';
 import 'package:syncfusion_flutter_chat/chat.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -651,19 +652,21 @@ class _MessagesScreenState extends State<MessagesScreen>
                               : 'Group chat',
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 13.5.sp,
+                            fontWeight: FontWeight.w700,
                           ),
                         )
                       : SpecialNameText(
                           username: _thread?.otherUser.username ?? '',
                           displayName: _thread?.otherUser.displayName ?? 'Messages',
-                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: isDark ? Colors.white : const Color(0xFF111827),
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 13.5.sp,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                   if (_thread?.isGroup == true)
@@ -756,7 +759,21 @@ class _MessagesScreenState extends State<MessagesScreen>
                       child: _statePicker(),
                     ),
                     const SizedBox(height: 14),
-                    _body(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey(_state),
+                        child: _body(),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -770,30 +787,150 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   Widget _statePicker() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tabs = [
+      ('Chats', _MessagesPageState.general, _tabBadgeFor(_MessagesPageState.general)),
+      ('Groups', _MessagesPageState.groups, _tabBadgeFor(_MessagesPageState.groups)),
+      ('Requests', _MessagesPageState.requests, _tabBadgeFor(_MessagesPageState.requests)),
+      ('Archived', _MessagesPageState.archived, _tabBadgeFor(_MessagesPageState.archived)),
+    ];
+
+    final selectedIndex = _state == _MessagesPageState.general
+        ? 0
+        : (_state == _MessagesPageState.groups
+            ? 1
+            : (_state == _MessagesPageState.requests ? 2 : 3));
+
     return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
+      height: 42,
+      padding: const EdgeInsets.all(3.5),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1E1E2E)
-            : const Color(0xFFEEF2F6),
-        borderRadius: BorderRadius.circular(24),
+            ? const Color(0xFF1E1F21)
+            : const Color(0xFFF0F2F5),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D3F) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF2C2D30) : const Color(0xFFE4E6EB),
           width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          _stateButton('Chats', _MessagesPageState.general,
-              badge: _tabBadgeFor(_MessagesPageState.general)),
-          _stateButton('Groups', _MessagesPageState.groups,
-              badge: _tabBadgeFor(_MessagesPageState.groups)),
-          _stateButton('Requests', _MessagesPageState.requests,
-              badge: _tabBadgeFor(_MessagesPageState.requests)),
-          _stateButton('Archived', _MessagesPageState.archived,
-              badge: _tabBadgeFor(_MessagesPageState.archived)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final tabWidth = constraints.maxWidth / tabs.length;
+
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                left: selectedIndex * tabWidth,
+                top: 0,
+                bottom: 0,
+                width: tabWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(tabs.length, (index) {
+                  final tab = tabs[index];
+                  final isSelected = selectedIndex == index;
+                  final label = tab.$1;
+                  final state = tab.$2;
+                  final badge = tab.$3;
+
+                  return Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: () {
+                          if (_state != state) {
+                            HapticFeedback.selectionClick();
+                            setState(() => _state = state);
+                          }
+                        },
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 180),
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                            ? const Color(0xFF9CA3AF)
+                                            : const Color(0xFF6B7280)),
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    fontSize: 12.sp,
+                                  ),
+                                  child: Text(
+                                    label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              if (badge > 0) ...[
+                                const SizedBox(width: 4),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  constraints: const BoxConstraints(minWidth: 16),
+                                  height: 16,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.5),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    badge > 99 ? '99+' : '$badge',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: isSelected
+                                          ? const Color(0xFFFF7A45)
+                                          : Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 9.5.sp,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -815,85 +952,6 @@ class _MessagesScreenState extends State<MessagesScreen>
             .where((t) => t.isArchived && t.unreadCount > 0)
             .length;
     }
-  }
-
-  Widget _stateButton(String label, _MessagesPageState state, {int badge = 0}) {
-    final selected = _state == state;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => setState(() => _state = state),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: selected
-                ? const LinearGradient(
-                    colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: selected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFFF7A45).withOpacity(0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: selected
-                        ? Colors.white
-                        : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    fontSize: 12.5.sp,
-                  ),
-                ),
-              ),
-              if (badge > 0) ...[
-                SizedBox(width: 4),
-                Container(
-                  constraints: const BoxConstraints(minWidth: 16),
-                  height: 16,
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  decoration: BoxDecoration(
-                    color: selected ? Colors.white : const Color(0xFFEF4444),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    badge > 99 ? '99+' : '$badge',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: selected ? const Color(0xFFFF7A45) : Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10.sp,
-                      height: 1.0,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _body() {
@@ -1038,9 +1096,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                 height: 180,
                 child: Center(
                   child: Text(
-                    'No chats history',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFF9CA3AF),
+                    'No chats yet',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: const Color(0xFF9CA3AF),
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2700,7 +2759,9 @@ class _MessagesScreenState extends State<MessagesScreen>
       ),
     );
 
-    if (_chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty) {
+    if (_chatWallpaperPath != null &&
+        _chatWallpaperPath!.isNotEmpty &&
+        _chatWallpaperPath != 'none') {
       return Stack(
         children: [
           Positioned.fill(
@@ -3046,183 +3107,103 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _openMoreMenu() {
     final t = _thread;
     if (t == null) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sheetBg = isDark ? const Color(0xFF242526) : Colors.white;
-    final sheetTextIconColor = isDark ? Colors.white : const Color(0xFF111827);
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: sheetBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              if (t.isGroup)
-                ListTile(
-                  leading: Icon(Icons.group_add_outlined,
-                      color: sheetTextIconColor),
-                  title: Text(
-                    'Add members',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: sheetTextIconColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _openAddMembersSheet(t);
-                  },
-                ),
-              if (t.isGroup)
-                ListTile(
-                  leading: Icon(Icons.people_outline_rounded,
-                      color: sheetTextIconColor),
-                  title: Text(
-                    'Members (${t.members.length})',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: sheetTextIconColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _openMembersList(t);
-                  },
-                ),
-              ListTile(
-                leading: Icon(Icons.palette_outlined,
-                    color: sheetTextIconColor),
-                title: Text(
-                  'Change theme',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: sheetTextIconColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openThemePicker();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.wallpaper_rounded,
-                    color: sheetTextIconColor),
-                title: Text(
-                  'Chat Wallpaper',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: sheetTextIconColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: Text(
-                  _chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty
-                      ? 'Custom background active'
-                      : 'Default background',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    fontSize: 12.sp,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showWallpaperPickerSheet();
-                },
-              ),
-              if (t.isActive)
-                ListTile(
-                  leading: Icon(Icons.archive_outlined,
-                      color: sheetTextIconColor),
-                  title: Text(
-                    'Archive chat',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: sheetTextIconColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _archiveCurrentThread();
-                  },
-                ),
-              if (t.isArchived)
-                ListTile(
-                  leading: Icon(Icons.unarchive_outlined,
-                      color: sheetTextIconColor),
-                  title: Text(
-                    'Unarchive chat',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: sheetTextIconColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _unarchiveCurrentThread();
-                  },
-                ),
-              if (!t.isGroup) ...[
-                ListTile(
-                  leading: Icon(
-                    (_otherUserProfile?.isMuted == true)
-                        ? Icons.volume_up_outlined
-                        : Icons.volume_off_outlined,
-                    color: const Color(0xFFDC2626),
-                  ),
-                  title: Text(
-                    (_otherUserProfile?.isMuted == true)
-                        ? 'Unmute @${t.otherUser.username}'
-                        : 'Mute @${t.otherUser.username}',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFFDC2626),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _toggleMuteUserFromChat(t.otherUser);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    (_otherUserProfile?.isBlocked == true)
-                        ? Icons.lock_open_rounded
-                        : Icons.block,
-                    color: const Color(0xFFDC2626),
-                  ),
-                  title: Text(
-                    (_otherUserProfile?.isBlocked == true)
-                        ? 'Unblock @${t.otherUser.username}'
-                        : 'Block @${t.otherUser.username}',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFFDC2626),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _toggleBlockUserFromChat(t.otherUser);
-                  },
-                ),
-              ],
-              const SizedBox(height: 4),
-            ],
+    KatsBottomSheet.showMenu(
+      context,
+      iconOnRight: false,
+      items: [
+        if (t.isGroup)
+          KatsSheetItem(
+            title: 'Add members',
+            icon: Icons.group_add_outlined,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _openAddMembersSheet(t);
+            },
           ),
-        );
-      },
+        if (t.isGroup)
+          KatsSheetItem(
+            title: 'Members (${t.members.length})',
+            icon: Icons.people_outline_rounded,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _openMembersList(t);
+            },
+          ),
+        KatsSheetItem(
+          title: 'Change theme',
+          icon: Icons.palette_outlined,
+          showIconOnRight: false,
+          onTap: () {
+            Navigator.of(context).pop();
+            _openThemePicker();
+          },
+        ),
+        KatsSheetItem(
+          title: 'Chat Wallpaper',
+          subtitle: _chatWallpaperPath != null && _chatWallpaperPath!.isNotEmpty
+              ? 'Custom background active'
+              : 'Default background',
+          icon: Icons.wallpaper_rounded,
+          showIconOnRight: false,
+          onTap: () {
+            Navigator.of(context).pop();
+            _showWallpaperPickerSheet();
+          },
+        ),
+        if (t.isActive)
+          KatsSheetItem(
+            title: 'Archive chat',
+            icon: Icons.archive_outlined,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _archiveCurrentThread();
+            },
+          ),
+        if (t.isArchived)
+          KatsSheetItem(
+            title: 'Unarchive chat',
+            icon: Icons.unarchive_outlined,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _unarchiveCurrentThread();
+            },
+          ),
+        if (!t.isGroup) ...[
+          KatsSheetItem(
+            title: (_otherUserProfile?.isMuted == true)
+                ? 'Unmute @${t.otherUser.username}'
+                : 'Mute @${t.otherUser.username}',
+            icon: (_otherUserProfile?.isMuted == true)
+                ? Icons.volume_up_outlined
+                : Icons.volume_off_outlined,
+            isDestructive: true,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _toggleMuteUserFromChat(t.otherUser);
+            },
+          ),
+          KatsSheetItem(
+            title: (_otherUserProfile?.isBlocked == true)
+                ? 'Unblock @${t.otherUser.username}'
+                : 'Block @${t.otherUser.username}',
+            icon: (_otherUserProfile?.isBlocked == true)
+                ? Icons.lock_open_rounded
+                : Icons.block,
+            isDestructive: true,
+            showIconOnRight: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              _toggleBlockUserFromChat(t.otherUser);
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -3240,6 +3221,9 @@ class _MessagesScreenState extends State<MessagesScreen>
 
     try {
       String? path = _thread?.wallpaperPath;
+      if (path == 'none' || path?.isEmpty == true) {
+        path = null;
+      }
       double dim = _thread?.wallpaperDim ?? 0.35;
       final themeId = _thread?.themeId;
 
@@ -3248,7 +3232,10 @@ class _MessagesScreenState extends State<MessagesScreen>
         final keyPath = 'chat_wallpaper_path_$tId';
         final keyDim = 'chat_wallpaper_dim_$tId';
 
-        path = prefs.getString(keyPath);
+        final savedPath = prefs.getString(keyPath);
+        path = (savedPath == null || savedPath == 'none' || savedPath.isEmpty)
+            ? null
+            : savedPath;
         dim = prefs.getDouble(keyDim) ?? 0.35;
 
         for (final m in _messages.reversed) {
@@ -3256,7 +3243,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             if (att.url.startsWith('wallpaper|')) {
               final parts = att.url.split('|');
               if (parts.length >= 3) {
-                path = parts[1] == 'none' ? null : parts[1];
+                path = (parts[1] == 'none' || parts[1].isEmpty) ? null : parts[1];
                 dim = double.tryParse(parts[2]) ?? 0.35;
                 break;
               }
@@ -3271,7 +3258,7 @@ class _MessagesScreenState extends State<MessagesScreen>
 
       if (!mounted) return;
       setState(() {
-        _chatWallpaperPath = path;
+        _chatWallpaperPath = (path == 'none' || path?.isEmpty == true) ? null : path;
         _chatWallpaperDim = dim;
       });
     } catch (e) {
@@ -3289,13 +3276,15 @@ class _MessagesScreenState extends State<MessagesScreen>
     final tId = _thread?.id;
     if (tId == null || tId <= 0) return;
 
+    final sanitizedPath = (path == null || path.isEmpty || path == 'none') ? null : path;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final keyPath = 'chat_wallpaper_path_$tId';
       final keyDim = 'chat_wallpaper_dim_$tId';
 
-      if (path != null && path.isNotEmpty) {
-        await prefs.setString(keyPath, path);
+      if (sanitizedPath != null) {
+        await prefs.setString(keyPath, sanitizedPath);
       } else {
         await prefs.remove(keyPath);
       }
@@ -3303,22 +3292,23 @@ class _MessagesScreenState extends State<MessagesScreen>
 
       if (!mounted) return;
       setState(() {
-        _chatWallpaperPath = path;
+        _chatWallpaperPath = sanitizedPath;
         _chatWallpaperDim = dim;
       });
 
       if (broadcast) {
         final updated = await _feedService.updateThreadWallpaper(
           tId,
-          wallpaperPath: path,
+          wallpaperPath: sanitizedPath,
           wallpaperDim: dim,
           dataUrl: dataUrl,
           mime: mime,
         );
         if (updated != null && mounted) {
+          final sPath = updated.wallpaperPath;
           setState(() {
             _thread = updated;
-            _chatWallpaperPath = updated.wallpaperPath;
+            _chatWallpaperPath = (sPath == null || sPath == 'none' || sPath.isEmpty) ? null : sPath;
             _chatWallpaperDim = updated.wallpaperDim;
           });
         }
@@ -3329,6 +3319,10 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _buildWallpaperWidget(String path) {
+    if (path.isEmpty || path == 'none') {
+      return const SizedBox.shrink();
+    }
+
     if (path.startsWith('preset:')) {
       final presetKey = path.replaceFirst('preset:', '');
       switch (presetKey) {
@@ -3374,11 +3368,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           );
         case 'minimal_doodle':
         default:
-          return Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF111827),
-            ),
-          );
+          return const SizedBox.shrink();
       }
     }
 
@@ -3389,10 +3379,10 @@ class _MessagesScreenState extends State<MessagesScreen>
         return Image.memory(
           bytes,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       } catch (_) {
-        return Container(color: const Color(0xFF111827));
+        return const SizedBox.shrink();
       }
     }
 
@@ -3401,7 +3391,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       return CachedNetworkImage(
         imageUrl: fullUrl,
         fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => Container(color: const Color(0xFF111827)),
+        errorWidget: (_, __, ___) => const SizedBox.shrink(),
       );
     }
 
@@ -3412,21 +3402,23 @@ class _MessagesScreenState extends State<MessagesScreen>
           return Image.file(
             file,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: const Color(0xFF111827)),
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
           );
         }
       } catch (_) {}
     }
 
-    return Container(color: const Color(0xFF111827));
+    return const SizedBox.shrink();
   }
 
   void _showWallpaperPickerSheet() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sheetBg = isDark ? const Color(0xFF1E1F21) : Colors.white;
     final sheetText = isDark ? Colors.white : const Color(0xFF111827);
+    final theme = _getTheme();
 
-    String? tempPath = _chatWallpaperPath;
+    String? tempPath = (_chatWallpaperPath == 'none' || _chatWallpaperPath?.isEmpty == true)
+        ? null
+        : _chatWallpaperPath;
     double tempDim = _chatWallpaperDim;
     String? tempDataUrl;
     String? tempMime;
@@ -3438,260 +3430,357 @@ class _MessagesScreenState extends State<MessagesScreen>
       {'key': 'preset:emerald_night', 'name': 'Emerald Night', 'color1': 0xFF064E3B, 'color2': 0xFF022C22},
     ];
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: sheetBg,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    KatsBottomSheet.showCustom<void>(
+      context,
+      maxHeightFraction: 0.90,
+      child: StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final hasActiveWallpaper = tempPath != null && tempPath!.isNotEmpty && tempPath != 'none';
+
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Center(
-                      child: Container(
-                        width: 38,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.black12,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+                    Icon(Icons.wallpaper_rounded, color: theme.accent, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Chat Wallpaper',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: sheetText,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                       children: [
-                        const Icon(Icons.wallpaper_rounded, color: Color(0xFF3B82F6), size: 24),
-                        SizedBox(width: 10),
-                        Text(
-                          'Chat Background Wallpaper',
-                          style: TextStyle(fontFamily: 'SF Pro Rounded',
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: sheetText,
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // 1. Real-Time Live Preview Card
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    height: 105,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F0F10) : theme.background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                      ),
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Wallpaper background + dimming only when wallpaper is active
+                        if (hasActiveWallpaper) ...[
+                          Positioned.fill(
+                            child: _buildWallpaperWidget(tempPath!),
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withValues(alpha: tempDim),
+                            ),
+                          ),
+                        ] else
+                          Positioned.fill(
+                            child: Container(
+                              color: isDark ? const Color(0xFF0F0F10) : theme.background,
+                            ),
+                          ),
+                        // Sample Chat Bubbles
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: theme.otherBubble,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Hey there! 👋',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.otherBubbleText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: theme.ownBubbleGradient != null ? null : theme.ownBubble,
+                                    gradient: theme.ownBubbleGradient != null
+                                        ? LinearGradient(
+                                            colors: theme.ownBubbleGradient!,
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          )
+                                        : null,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Live preview looks great! ✨',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.ownBubbleText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () async {
-                        final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-                        if (picked != null) {
-                          try {
-                            final bytes = await picked.readAsBytes();
-                            final ext = picked.path.split('.').last.toLowerCase();
-                            final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
-                            final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
-                            setSheetState(() {
-                              tempPath = dataUrl;
-                              tempDataUrl = dataUrl;
-                              tempMime = mime;
-                            });
-                          } catch (_) {
-                            setSheetState(() => tempPath = picked.path);
-                          }
-                        }
-                      },
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 2. Custom Photo Option
+                InkWell(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (picked != null) {
+                      try {
+                        final bytes = await picked.readAsBytes();
+                        final ext = picked.path.split('.').last.toLowerCase();
+                        final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+                        final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+                        setSheetState(() {
+                          tempPath = dataUrl;
+                          tempDataUrl = dataUrl;
+                          tempMime = mime;
+                        });
+                      } catch (_) {
+                        setSheetState(() => tempPath = picked.path);
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isDark ? Colors.white12 : Colors.black12,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 20),
-                            ),
-                            SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Choose from Phone Gallery',
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: sheetText,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Upload your own photo as chat background',
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                      fontSize: 12.sp,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-                          ],
-                        ),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
                       ),
                     ),
-                    SizedBox(height: 20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: theme.accent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Choose from Phone Gallery',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 12.5.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: sheetText,
+                                ),
+                              ),
+                              Text(
+                                'Upload your own custom background photo',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 11.sp,
+                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 3. Preset Wallpapers
+                Text(
+                  'Preset Wallpapers',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: sheetText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 72,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: presets.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (context, idx) {
+                      final item = presets[idx];
+                      final key = item['key'] as String;
+                      final isSelected = tempPath == key;
+
+                      return GestureDetector(
+                        onTap: () => setSheetState(() {
+                          tempPath = key;
+                          tempDataUrl = null;
+                          tempMime = null;
+                        }),
+                        child: Container(
+                          width: 76,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(item['color1'] as int),
+                                Color(item['color2'] as int),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: isSelected ? theme.accent : Colors.transparent,
+                              width: isSelected ? 2.5 : 1,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              item['name'] as String,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white,
+                                fontSize: 10.5.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 4. Background Dimming Slider
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      'Preset Wallpapers',
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        fontSize: 13.sp,
+                      'Background Dimming',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
                         fontWeight: FontWeight.w700,
                         color: sheetText,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 80,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: presets.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, idx) {
-                          final item = presets[idx];
-                          final key = item['key'] as String;
-                          final isSelected = tempPath == key;
-
-                          return GestureDetector(
-                            onTap: () => setSheetState(() {
-                              tempPath = key;
-                              tempDataUrl = null;
-                              tempMime = null;
-                            }),
-                            child: Container(
-                              width: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(item['color1'] as int),
-                                    Color(item['color2'] as int),
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
-                                  width: isSelected ? 3 : 1,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  item['name'] as String,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    color: Colors.white,
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                    Text(
+                      '${(tempDim * 100).toInt()}%',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.bold,
+                        color: theme.accent,
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Background Dimming',
-                          style: TextStyle(fontFamily: 'SF Pro Rounded',
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                            color: sheetText,
-                          ),
-                        ),
-                        Text(
-                          '${(tempDim * 100).toInt()}%',
-                          style: TextStyle(fontFamily: 'SF Pro Rounded',
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF3B82F6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: tempDim,
-                      min: 0.0,
-                      max: 0.8,
-                      divisions: 16,
-                      activeColor: const Color(0xFF3B82F6),
-                      onChanged: (val) => setSheetState(() => tempDim = val),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        if (tempPath != null) ...[
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                setSheetState(() {
-                                  tempPath = null;
-                                  tempDim = 0.35;
-                                  tempDataUrl = null;
-                                  tempMime = null;
-                                });
-                                _saveWallpaperSettings(null, 0.35);
-                                Navigator.of(sheetContext).pop();
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.redAccent),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Text('Reset', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _saveWallpaperSettings(
-                                tempPath,
-                                tempDim,
-                                dataUrl: tempDataUrl,
-                                mime: tempMime,
-                              );
-                              Navigator.of(sheetContext).pop();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text('Apply Wallpaper', style: TextStyle(fontFamily: 'SF Pro Rounded',color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                  ),
+                  child: Slider(
+                    value: tempDim,
+                    min: 0.0,
+                    max: 0.8,
+                    divisions: 16,
+                    activeColor: theme.accent,
+                    inactiveColor: isDark ? Colors.white12 : Colors.black12,
+                    onChanged: (val) => setSheetState(() => tempDim = val),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 5. Actions
+                Row(
+                  children: [
+                    if (tempPath != null) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setSheetState(() {
+                              tempPath = null;
+                              tempDim = 0.35;
+                              tempDataUrl = null;
+                              tempMime = null;
+                            });
+                            _saveWallpaperSettings(null, 0.35);
+                            Navigator.of(sheetContext).pop();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                          ),
+                          child: const Text('Reset', style: TextStyle(fontFamily: 'SF Pro Rounded', color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _saveWallpaperSettings(
+                            tempPath,
+                            tempDim,
+                            dataUrl: tempDataUrl,
+                            mime: tempMime,
+                          );
+                          Navigator.of(sheetContext).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.accent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                        ),
+                        child: const Text('Apply Wallpaper', style: TextStyle(fontFamily: 'SF Pro Rounded', color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -3854,75 +3943,65 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   void _openMembersList(MessageThread thread) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Text(
-                  'Members (${thread.members.length})',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: Color(0xFF111827),
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 360),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: thread.members.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final m = thread.members[i];
-                      final avatarUrl = m.avatarUrl?.trim() ?? '';
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFFE5E7EB),
-                          backgroundImage: avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.assetUrl(avatarUrl))
-                              : null,
-                          child: avatarUrl.isEmpty
-                              ? Text(m.initials,
-                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                      fontWeight: FontWeight.w800))
-                              : null,
-                        ),
-                        title: Text(m.displayName,
-                            style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                fontWeight: FontWeight.w700)),
-                        subtitle: m.handle != null ? Text(m.handle!) : null,
-                      );
-                    },
-                  ),
-                ),
-              ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+
+    KatsBottomSheet.showCustom<void>(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'Members (${thread.members.length})',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: textColor,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-        );
-      },
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 360),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: thread.members.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB),
+              ),
+              itemBuilder: (_, i) {
+                final m = thread.members[i];
+                final avatarUrl = m.avatarUrl?.trim() ?? '';
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFFE5E7EB),
+                    backgroundImage: avatarUrl.isNotEmpty
+                        ? NetworkImage(ApiConfig.assetUrl(avatarUrl))
+                        : null,
+                    child: avatarUrl.isEmpty
+                        ? Text(m.initials,
+                            style: const TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontWeight: FontWeight.w800))
+                        : null,
+                  ),
+                  title: Text(m.displayName,
+                      style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: textColor,
+                          fontWeight: FontWeight.w700)),
+                  subtitle: m.handle != null ? Text(m.handle!) : null,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -3931,86 +4010,63 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (t == null) return;
     final current = ConversationThemeStore.themeFor(t.id);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sheetBgColor = isDark ? const Color(0xFF1C1E21) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final dragHandleColor = isDark ? const Color(0xFF4E4F51) : const Color(0xFFE5E7EB);
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: sheetBgColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: dragHandleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    'Conversation theme',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: textColor,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 116,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: ConversationTheme.presets.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) {
-                      final preset = ConversationTheme.presets[index];
-                      return SizedBox(
-                        width: 96,
-                        child: _ThemePreviewCard(
-                          theme: preset,
-                          selected: preset.id == current.id,
-                          onTap: () async {
-                            await ConversationThemeStore.setTheme(
-                              t.id,
-                              preset.id,
-                            );
-                            if (mounted) setState(() {});
-                            try {
-                              await _feedService.updateThreadTheme(
-                                t.id,
-                                preset.id,
-                              );
-                            } catch (_) {}
-                            if (sheetContext.mounted) {
-                              Navigator.of(sheetContext).pop();
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+    KatsBottomSheet.showCustom<void>(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'Conversation theme',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: textColor,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 116,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: ConversationTheme.presets.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (sheetContext, index) {
+                final preset = ConversationTheme.presets[index];
+                return SizedBox(
+                  width: 96,
+                  child: _ThemePreviewCard(
+                    theme: preset,
+                    selected: preset.id == current.id,
+                    onTap: () async {
+                      await ConversationThemeStore.setTheme(
+                        t.id,
+                        preset.id,
+                      );
+                      if (mounted) setState(() {});
+                      try {
+                        await _feedService.updateThreadTheme(
+                          t.id,
+                          preset.id,
+                        );
+                      } catch (_) {}
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4067,6 +4123,25 @@ class _MessagesScreenState extends State<MessagesScreen>
     final isDarkComposer = Theme.of(context).brightness == Brightness.dark;
     final hasText = _controller.text.trim().isNotEmpty;
 
+    final inputBg = isDarkComposer
+        ? const Color(0xFF242526)
+        : const Color(0xFFF0F2F5);
+    final inputBorder = isDarkComposer
+        ? const Color(0xFF383A40)
+        : const Color(0xFFE4E6EB);
+
+    final sendGradient = theme.ownBubbleGradient != null
+        ? LinearGradient(
+            colors: theme.ownBubbleGradient!,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : LinearGradient(
+            colors: [theme.accent, theme.accent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -4116,14 +4191,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                     curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isDarkComposer
-                          ? const Color(0xFF242535)
-                          : const Color(0xFFF1F5F9),
+                      color: inputBg,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: isDarkComposer
-                            ? const Color(0xFF32344A)
-                            : const Color(0xFFE2E8F0),
+                        color: inputBorder,
                         width: 1,
                       ),
                     ),
@@ -4132,11 +4203,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                       children: [
                         _ComposerActionButton(
                           icon: Icons.add_circle_outline_rounded,
-                          tooltip: 'Add file',
-                          color: isDarkComposer
-                              ? const Color(0xFFFF7A45)
-                              : const Color(0xFF475569),
-                          onPressed: _isSending ? null : _pickFiles,
+                          tooltip: 'Attach media or files',
+                          color: theme.accent,
+                          onPressed: _isSending ? null : _showAttachmentPickerModal,
                         ),
                         if (!hasText) ...[
                           _ComposerActionButton(
@@ -4229,15 +4298,19 @@ class _MessagesScreenState extends State<MessagesScreen>
                                   setState(() {});
                                 },
                                 inputFormatters: [EmojiPresentationFormatter()],
-                                style: TextStyle(fontFamily: 'SF Pro Rounded',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 13.5.sp,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w500,
                                   height: 1.33,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a message...',
-                                  hintStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    fontSize: 13.5.sp,
+                                  hintStyle: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w500,
                                     color: isDarkComposer
                                         ? const Color(0xFF9CA3AF)
                                         : const Color(0xFF94A3B8),
@@ -4262,15 +4335,11 @@ class _MessagesScreenState extends State<MessagesScreen>
                 const SizedBox(width: 8),
                 Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    gradient: sendGradient,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF7A45).withOpacity(0.35),
+                        color: theme.accent.withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -4281,7 +4350,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
-                      disabledForegroundColor: Colors.white.withOpacity(0.6),
+                      disabledForegroundColor: Colors.white.withValues(alpha: 0.6),
                       fixedSize: const Size(44, 44),
                       minimumSize: const Size(44, 44),
                       padding: EdgeInsets.zero,
@@ -4303,6 +4372,73 @@ class _MessagesScreenState extends State<MessagesScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAttachmentPickerModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final theme = _getTheme();
+
+    KatsBottomSheet.showCustom<void>(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Share Content',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _AttachmentOptionTile(
+                icon: Icons.image_rounded,
+                label: 'Photos',
+                color: const Color(0xFF3B82F6),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickGalleryImages();
+                },
+              ),
+              _AttachmentOptionTile(
+                icon: Icons.camera_alt_rounded,
+                label: 'Camera',
+                color: const Color(0xFF10B981),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickCameraImage();
+                },
+              ),
+              _AttachmentOptionTile(
+                icon: Icons.mic_rounded,
+                label: 'Voice',
+                color: const Color(0xFFEF4444),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _toggleRecording();
+                },
+              ),
+              _AttachmentOptionTile(
+                icon: Icons.folder_rounded,
+                label: 'Files',
+                color: theme.accent,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickFiles();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
@@ -4703,6 +4839,62 @@ class _ComposerActionButton extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       icon: Icon(icon, size: 23),
+    );
+  }
+}
+
+class _AttachmentOptionTile extends StatelessWidget {
+  const _AttachmentOptionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: isDark ? 0.18 : 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: color.withValues(alpha: 0.25),
+                  width: 1,
+                ),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -5400,6 +5592,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final sentByMe = message.sentByMe;
     final continuesPrev = _continuesPrev;
     final continuesNext = _continuesToNext;
@@ -5444,7 +5637,8 @@ class _MessageBubble extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            sentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (message.replyTo != null)
             Padding(
@@ -5473,15 +5667,17 @@ class _MessageBubble extends StatelessWidget {
             else
               LinkifiedText(
                 text: body,
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
-                  fontSize: 13.5.sp,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
                   height: 1.33,
                 ),
               ),
           ],
           if (_createdAt != null) ...[
-            SizedBox(height: 3),
+            const SizedBox(height: 3),
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -5489,23 +5685,23 @@ class _MessageBubble extends StatelessWidget {
 
                 return Row(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w500,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 8.5.sp,
+                        fontWeight: FontWeight.w400,
                         color: sentByMe
-                            ? Colors.white70
-                            : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)),
                       ),
                     ),
                     if (sentByMe) ...[
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Icon(
                         seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
-                        size: 14,
+                        size: 11,
                         color: checkColor,
                       ),
                     ],
@@ -5571,14 +5767,15 @@ class _MessageBubble extends StatelessWidget {
       if (t != null) {
         children.add(
           Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            padding: const EdgeInsets.only(top: 4, bottom: 6),
             child: Center(
               child: Text(
                 _formatTimeLabel(t),
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  color: Color(0xFF9CA3AF),
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -6613,52 +6810,62 @@ class _MessagesInfoState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).colorScheme.surface;
+    final borderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+    final titleColor = isDark ? Colors.white : const Color(0xFF111827);
+    final descColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final iconBg = isDark ? const Color(0xFF28292C) : const Color(0xFFF3F4F6);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0xFFF3F4F6),
+                  color: iconBg,
                 ),
                 child: Icon(
                   icon,
-                  color: const Color(0xFF111827),
-                  size: 24,
+                  color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
+                  size: 20,
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        color: Color(0xFF111827),
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: titleColor,
+                        fontSize: 13.5.sp,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       description,
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        color: Color(0xFF6B7280),
-                        fontSize: 13.sp,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: descColor,
+                        fontSize: 12.sp,
                         height: 1.35,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -6668,12 +6875,13 @@ class _MessagesInfoState extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 150,
+          height: 120,
           child: Center(
             child: Text(
               emptyText,
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
-                color: Color(0xFF9CA3AF),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: const Color(0xFF9CA3AF),
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -7009,24 +7217,50 @@ class _ReplyingToBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final senderFull = target.sender.fullName ?? '';
     final senderUsername = target.sender.username ?? '';
     final senderName = target.sentByMe
         ? 'yourself'
         : (senderFull.isNotEmpty ? senderFull : senderUsername);
-    final preview = target.body.trim().isEmpty
-        ? (target.attachments.isNotEmpty ? '[attachment]' : '')
-        : target.body.trim();
+
+    final hasImage = target.attachments.any((a) => a.isImage);
+    final hasAudio = target.attachments.any((a) => a.isAudio);
+    final firstImage = hasImage ? target.attachments.firstWhere((a) => a.isImage) : null;
+
+    final preview = target.body.trim().isNotEmpty
+        ? target.body.trim()
+        : (hasAudio ? '🎙️ Voice note' : (hasImage ? '📷 Photo' : (target.attachments.isNotEmpty ? '📁 Attachment' : '')));
+
+    final containerBg = isDark
+        ? const Color(0xFF1E1F21)
+        : const Color(0xFFF3F4F6);
+    final borderColor = isDark
+        ? const Color(0xFF383A40)
+        : const Color(0xFFE4E6EB);
+    final subtextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: accent, width: 3)),
+        color: containerBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
+          Container(
+            width: 3.5,
+            height: 32,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          Icon(Icons.reply_rounded, size: 18, color: accent),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -7034,33 +7268,64 @@ class _ReplyingToBar extends StatelessWidget {
               children: [
                 Text(
                   'Replying to $senderName',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
                     color: accent,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (preview.isNotEmpty) ...[
-                  SizedBox(height: 2),
-                  Text(
-                    preview,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFF6B7280),
-                      fontSize: 13.sp,
-                    ),
+                const SizedBox(height: 1),
+                Text(
+                  preview,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: subtextColor,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
+                ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Cancel reply',
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: const Color(0xFF6B7280),
-            visualDensity: VisualDensity.compact,
-            onPressed: onClose,
+          if (firstImage != null && firstImage.url.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                width: 34,
+                height: 34,
+                child: CachedNetworkImage(
+                  imageUrl: ApiConfig.assetUrl(firstImage.url),
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
+                    color: Colors.grey[800],
+                    child: const Icon(Icons.image_outlined, size: 16, color: Colors.white70),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onClose,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.close_rounded,
+                size: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
           ),
         ],
       ),
@@ -7081,64 +7346,83 @@ class _GhostPostReplyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authorName = post.authorFullName.isNotEmpty 
         ? post.authorFullName 
         : post.authorUsername;
     final preview = post.text.trim();
+    final containerBg = isDark ? const Color(0xFF1E1625) : const Color(0xFFF9F7FC);
+    final borderColor = isDark ? const Color(0xFF382A40) : const Color(0xFFEDE4F5);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E1625)
-            : const Color(0xFFF9F7FC),
-        borderRadius: BorderRadius.circular(10),
-        border: const Border(left: BorderSide(color: Color(0xFFFF7A59), width: 3)),
+        color: containerBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
+          Container(
+            width: 3.5,
+            height: 32,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF7A59),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const Text('👻 ', style: TextStyle(fontSize: 14)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      '👻 ',
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 12.sp),
-                    ),
-                    Text(
-                      "Replying to $authorName's ghost post",
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        color: Color(0xFFFF7A59),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                Text(
+                  "Replying to $authorName's ghost post",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: const Color(0xFFFF7A59),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (preview.isNotEmpty) ...[
-                  SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      fontSize: 11.sp,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Cancel reply',
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: const Color(0xFF6B7280),
-            visualDensity: VisualDensity.compact,
-            onPressed: onClose,
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onClose,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.close_rounded,
+                size: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
           ),
         ],
       ),
@@ -7160,48 +7444,83 @@ class _QuotedReplyChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onOwn = sentByMe;
-    final bg =
-        onOwn ? Colors.white.withValues(alpha: 0.18) : const Color(0xFFF3F4F6);
-    final nameColor =
-        onOwn ? Colors.white.withValues(alpha: 0.88) : theme.accent;
-    final previewColor =
-        onOwn ? Colors.white.withValues(alpha: 0.78) : const Color(0xFF4B5563);
-    final accentBar =
-        onOwn ? Colors.white.withValues(alpha: 0.7) : theme.accent;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bg = onOwn
+        ? Colors.black.withValues(alpha: 0.16)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.09)
+            : Colors.black.withValues(alpha: 0.05));
+
+    final accentBar = onOwn
+        ? Colors.white.withValues(alpha: 0.90)
+        : theme.accent;
+
+    final nameColor = onOwn
+        ? Colors.white.withValues(alpha: 0.95)
+        : theme.accent;
+
+    final previewColor = onOwn
+        ? Colors.white.withValues(alpha: 0.82)
+        : (isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563));
+
     final senderLabel = reply.sentByMe
         ? 'You'
         : (reply.senderDisplayName.isNotEmpty
             ? reply.senderDisplayName
             : 'User');
+
     final previewText =
         reply.body.trim().isEmpty ? '🎙️ Voice message' : reply.body.trim();
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
+      padding: const EdgeInsets.fromLTRB(9, 6, 9, 6),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border(left: BorderSide(color: accentBar, width: 3)),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(color: accentBar, width: 3),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            senderLabel,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              color: nameColor,
-              fontSize: 11.5.sp,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.reply_rounded,
+                size: 13,
+                color: nameColor,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  senderLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: nameColor,
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 1),
+          const SizedBox(height: 2),
           Text(
             previewText,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
               color: previewColor,
-              fontSize: 13.sp,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+              height: 1.25,
             ),
           ),
         ],
@@ -7217,33 +7536,71 @@ class _CreateGroupButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).colorScheme.surface;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final borderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+
     return Material(
-      color: Colors.white,
+      color: cardBg,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1),
+          ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Color(0xFF111827),
-                child: Icon(Icons.add_rounded, color: Colors.white),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Create new group',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: Color(0xFF111827),
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w800,
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFF7A45), Color(0xFFF97316)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
               ),
-              Icon(Icons.chevron_right_rounded, color: Color(0xFF111827)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Create new group',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: textColor,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'Start a group chat with friends',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: const Color(0xFF9CA3AF),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -7810,31 +8167,19 @@ class _MessagesRequestList extends StatelessWidget {
                                           : 'Group chat',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                      style: KatsText.threadName(context),
                                     )
                                   : SpecialNameText(
                                       username: thread.otherUser.username ?? '',
                                       displayName: thread.otherUser.displayName,
-                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                      style: KatsText.threadName(context),
                                     ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
                                 _previewFor(thread.lastMessage),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                  color: Color(0xFF6B7280),
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: KatsText.threadPreview(context),
                               ),
                             ],
                           ),
@@ -7847,29 +8192,42 @@ class _MessagesRequestList extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF111827),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
+                              foregroundColor: isDark ? Colors.white : const Color(0xFF111827),
+                              side: BorderSide(
+                                color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onPressed: () => onDecline(thread),
-                            child: Text('Decline',
-                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w700)),
+                            child: const Text(
+                              'Decline',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF111827),
+                              backgroundColor: const Color(0xFFFF7A45),
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onPressed: () => onAccept(thread),
-                            child: Text('Accept',
-                                style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800)),
+                            child: const Text(
+                              'Accept',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -8020,43 +8378,43 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
     final spaceBelow = screenSize.height - (widget.bubbleOffset.dy + widget.bubbleSize.height) - padding.bottom;
 
     // Reactions Pill Dimensions
-    const reactionBarHeight = 52.0;
-    const reactionBarWidth = 280.0;
+    const reactionBarHeight = 44.0;
+    const reactionBarWidth = 240.0;
 
     // Action Sheet Dimensions
-    const actionSheetWidth = 230.0;
+    const actionSheetWidth = 185.0;
     int itemCount = 3; // Reply, Forward, Translate
     if (widget.onCopy != null) itemCount++;
     if (widget.onUnsend != null) itemCount++;
-    final actionSheetHeight = (itemCount * 46.0) + 16.0;
+    final actionSheetHeight = (itemCount * 38.0) + 12.0;
 
     // Positioning Logic
-    bool placeReactionsAbove = spaceAbove >= (reactionBarHeight + 12.0);
-    if (!placeReactionsAbove && spaceBelow < (actionSheetHeight + reactionBarHeight + 20.0)) {
+    bool placeReactionsAbove = spaceAbove >= (reactionBarHeight + 10.0);
+    if (!placeReactionsAbove && spaceBelow < (actionSheetHeight + reactionBarHeight + 16.0)) {
       placeReactionsAbove = true;
     }
 
     // Reaction Bar Y
     double reactionBarY;
     if (placeReactionsAbove) {
-      reactionBarY = widget.bubbleOffset.dy - reactionBarHeight - 10.0;
+      reactionBarY = widget.bubbleOffset.dy - reactionBarHeight - 8.0;
     } else {
-      reactionBarY = widget.bubbleOffset.dy + widget.bubbleSize.height + 10.0;
+      reactionBarY = widget.bubbleOffset.dy + widget.bubbleSize.height + 8.0;
     }
-    reactionBarY = reactionBarY.clamp(padding.top + 8.0, screenSize.height - padding.bottom - reactionBarHeight - 8.0);
+    reactionBarY = reactionBarY.clamp(padding.top + 6.0, screenSize.height - padding.bottom - reactionBarHeight - 6.0);
 
     // Action Sheet Y
     double actionSheetY;
     if (placeReactionsAbove) {
-      if (spaceBelow >= (actionSheetHeight + 12.0)) {
-        actionSheetY = widget.bubbleOffset.dy + widget.bubbleSize.height + 10.0;
+      if (spaceBelow >= (actionSheetHeight + 10.0)) {
+        actionSheetY = widget.bubbleOffset.dy + widget.bubbleSize.height + 8.0;
       } else {
-        actionSheetY = reactionBarY - actionSheetHeight - 8.0;
+        actionSheetY = reactionBarY - actionSheetHeight - 6.0;
       }
     } else {
-      actionSheetY = reactionBarY + reactionBarHeight + 8.0;
+      actionSheetY = reactionBarY + reactionBarHeight + 6.0;
     }
-    actionSheetY = actionSheetY.clamp(padding.top + 8.0, screenSize.height - padding.bottom - actionSheetHeight - 8.0);
+    actionSheetY = actionSheetY.clamp(padding.top + 6.0, screenSize.height - padding.bottom - actionSheetHeight - 6.0);
 
     // X Alignment based on sentByMe
     double reactionBarX;
@@ -8147,7 +8505,7 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
                 child: Container(
                   decoration: BoxDecoration(
                     color: cardBg,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(22),
                     border: overlayBorder,
                     boxShadow: overlayShadow,
                   ),
@@ -8193,12 +8551,12 @@ class _MessengerOverlayContentState extends State<_MessengerOverlayContent>
                 child: Container(
                   decoration: BoxDecoration(
                     color: cardBg,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(16),
                     border: overlayBorder,
                     boxShadow: overlayShadow,
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(16),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -8294,11 +8652,11 @@ class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
       onTapCancel: () => setState(() => _isPressed = false),
       onTap: widget.onTap,
       child: AnimatedScale(
-        scale: _isPressed ? 1.35 : (widget.isSelected ? 1.2 : 1.0),
+        scale: _isPressed ? 1.3 : (widget.isSelected ? 1.15 : 1.0),
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOutCubic,
         child: Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? (Theme.of(context).brightness == Brightness.dark
@@ -8309,7 +8667,7 @@ class _EmojiReactionButtonState extends State<_EmojiReactionButton> {
           ),
           child: Text(
             widget.emoji,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',fontSize: 24.sp),
+            style: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 19.sp),
           ),
         ),
       ),
@@ -8337,15 +8695,16 @@ class _OverlayActionTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: iconColor),
-            SizedBox(width: 14),
+            Icon(icon, size: 17, color: iconColor),
+            SizedBox(width: 10),
             Text(
               title,
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
-                fontSize: 15.sp,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -8419,18 +8778,18 @@ class _MessageReactionBadges extends StatelessWidget {
     final overflowCount = items.length - maxVisible;
 
     return Transform.translate(
-      offset: const Offset(0, -9),
+      offset: const Offset(0, -7),
       child: Padding(
         padding: EdgeInsets.only(
-          left: sentByMe ? 0 : 10,
-          right: sentByMe ? 10 : 0,
+          left: sentByMe ? 0 : 8,
+          right: sentByMe ? 8 : 0,
         ),
         child: AnimatedSize(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           child: Wrap(
-            spacing: -4, // Overlap chips slightly horizontally by -4dp like Messenger
-            runSpacing: 4,
+            spacing: -3,
+            runSpacing: 3,
             clipBehavior: Clip.none,
             alignment: sentByMe ? WrapAlignment.end : WrapAlignment.start,
             children: [
@@ -8532,19 +8891,22 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         child: Container(
-          height: 27,
-          padding: const EdgeInsets.symmetric(horizontal: 9),
+          height: 20,
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.count > 1 ? 5.5 : 4.5,
+            vertical: 1,
+          ),
           decoration: BoxDecoration(
             color: chipBgColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: chipBorderColor,
-              width: widget.isMyReaction ? 1.2 : 1.0,
+              width: widget.isMyReaction ? 1.0 : 0.8,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: widget.isDark ? 0.2 : 0.12),
-                blurRadius: 4,
+                color: Colors.black.withValues(alpha: widget.isDark ? 0.25 : 0.1),
+                blurRadius: 3,
                 spreadRadius: 0,
                 offset: const Offset(0, 1),
               ),
@@ -8556,21 +8918,23 @@ class _MessengerReactionChipState extends State<_MessengerReactionChip> {
             children: [
               Text(
                 widget.emoji,
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 15.sp,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 11.5.sp,
                   height: 1.1,
                 ),
               ),
-              if (widget.count > 0) ...[
-                SizedBox(width: 4),
+              if (widget.count > 1) ...[
+                const SizedBox(width: 2.5),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
                   child: Text(
                     '${widget.count}',
                     key: ValueKey('${widget.emoji}_${widget.count}'),
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      fontSize: 12.sp,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 9.5.sp,
                       fontWeight: FontWeight.w600,
                       color: widget.textColor,
                       height: 1.1,
@@ -8904,18 +9268,31 @@ class _EditingMessageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerBg = isDark ? const Color(0xFF1E1F21) : const Color(0xFFF3F4F6);
+    final borderColor = isDark ? const Color(0xFF383A40) : const Color(0xFFE4E6EB);
+    final subtextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: accent, width: 3)),
+        color: containerBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
-          Icon(Icons.edit_rounded, size: 16, color: accent),
-          SizedBox(width: 8),
+          Container(
+            width: 3.5,
+            height: 32,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          Icon(Icons.edit_rounded, size: 17, color: accent),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -8923,30 +9300,44 @@ class _EditingMessageBar extends StatelessWidget {
               children: [
                 Text(
                   'Editing Message',
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
                     color: accent,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   target.body,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    color: isDark ? Colors.white70 : Colors.black87,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: subtextColor,
                     fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Cancel edit',
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: const Color(0xFF6B7280),
-            visualDensity: VisualDensity.compact,
-            onPressed: onClose,
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onClose,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.close_rounded,
+                size: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
           ),
         ],
       ),

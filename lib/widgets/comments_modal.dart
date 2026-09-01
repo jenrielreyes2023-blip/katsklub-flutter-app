@@ -53,6 +53,9 @@ Future<int?> showCommentsModal({
   );
 }
 
+const String _authorPenSvg =
+    '<svg width="800" height="800" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 21h4.75L19.81 8.94003c.43-.43.43-1.12.0-1.55l-3.2-3.2c-.43-.43-1.12-.43-1.55.0L3 16.25V21z" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M13.5 5.5l5 5" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 class _ReplyTarget {
   const _ReplyTarget({
     required this.parentCommentId,
@@ -687,6 +690,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                           ),
                           _CommentsHeader(
                             totalCount: _totalCount,
+                            post: widget.post,
                             onClose: () => Navigator.of(context).pop(_totalCount),
                           ),
                         ],
@@ -805,31 +809,54 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 class _CommentsHeader extends StatelessWidget {
   const _CommentsHeader({
     required this.totalCount,
+    required this.post,
     required this.onClose,
   });
 
   final int totalCount;
+  final Post post;
   final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
+    final authorUsername = post.authorUsername.trim();
+
     return SizedBox(
-      height: 50,
+      height: 52,
       child: Row(
         children: [
-          SizedBox(width: 48),
+          const SizedBox(width: 48),
           Expanded(
-            child: Center(
-              child: Text(
-                totalCount == 1 ? '1 comment' : '$totalCount comments',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  totalCount == 1 ? '1 comment' : '$totalCount comments',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+                if (authorUsername.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    'by @$authorUsername',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF6B7280),
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           SizedBox(
@@ -935,6 +962,48 @@ class _CommentTile extends StatelessWidget {
                                     Icons.verified,
                                     size: 14,
                                     color: Color(0xFF1D9BF0),
+                                  ),
+                                ],
+                                if (comment.authorIsAuthor) ...[
+                                  const SizedBox(width: 5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF1E3A8A)
+                                          : const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SvgPicture.string(
+                                          _authorPenSvg,
+                                          width: 10,
+                                          height: 10,
+                                          colorFilter: ColorFilter.mode(
+                                            isDark
+                                                ? const Color(0xFF93C5FD)
+                                                : const Color(0xFF2563EB),
+                                            BlendMode.srcIn,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          'Author',
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? const Color(0xFF93C5FD)
+                                                : const Color(0xFF2563EB),
+                                            fontSize: 10.sp,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                                 if (comment.timeAgo.isNotEmpty) ...[
@@ -1122,6 +1191,48 @@ class _ReplyTile extends StatelessWidget {
                                 Icons.verified,
                                 size: 14,
                                 color: Color(0xFF1D9BF0),
+                              ),
+                            ],
+                            if (reply.authorIsAuthor) ...[
+                              const SizedBox(width: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E3A8A)
+                                      : const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SvgPicture.string(
+                                      _authorPenSvg,
+                                      width: 10,
+                                      height: 10,
+                                      colorFilter: ColorFilter.mode(
+                                        isDark
+                                            ? const Color(0xFF93C5FD)
+                                            : const Color(0xFF2563EB),
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      'Author',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? const Color(0xFF93C5FD)
+                                            : const Color(0xFF2563EB),
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                             if (reply.timeAgo.isNotEmpty) ...[
