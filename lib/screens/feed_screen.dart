@@ -1511,7 +1511,7 @@ class _ReelsRailState extends State<_ReelsRail>
           child: Text(
             'Reels',
             style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 18.sp,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w800,
               color: Color(0xFF111827),
             ),
@@ -2053,7 +2053,7 @@ class _FeedTabButton extends StatelessWidget {
             style: TextStyle(fontFamily: 'SF Pro Rounded',
               color: isActive ? activeColor : inactiveColor,
               fontWeight: FontWeight.w800,
-              fontSize: 15.sp,
+              fontSize: 14.sp,
             ),
           ),
         ),
