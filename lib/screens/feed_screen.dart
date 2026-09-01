@@ -563,7 +563,9 @@ class _FeedScreenState extends State<FeedScreen>
               style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFFE4E6EB)
+                    : const Color(0xFF111827),
               ),
             ),
             SizedBox(height: 6),
@@ -572,7 +574,9 @@ class _FeedScreenState extends State<FeedScreen>
               textAlign: TextAlign.center,
               style: TextStyle(fontFamily: 'SF Pro Rounded',
                 fontSize: 13.5.sp,
-                color: Color(0xFF6B7280),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFFB0B3B8)
+                    : const Color(0xFF6B7280),
               ),
             ),
             SizedBox(height: 14),
@@ -1499,6 +1503,7 @@ class _ReelsRailState extends State<_ReelsRail>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final cardWidth = (screenWidth * 0.38).clamp(145.0, 165.0);
     final cardHeight = cardWidth * 1.65;
@@ -1513,7 +1518,7 @@ class _ReelsRailState extends State<_ReelsRail>
             style: TextStyle(fontFamily: 'SF Pro Rounded',
               fontSize: 14.sp,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
+              color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
             ),
           ),
         ),
@@ -1955,6 +1960,8 @@ class _HashtagListRow extends StatelessWidget {
     final countLabel =
         hashtag.postCount == 1 ? '1 post' : '${hashtag.postCount} posts';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1964,15 +1971,15 @@ class _HashtagListRow extends StatelessWidget {
             Container(
               width: 46,
               height: 46,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF3F4F6),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
                 '#',
                 style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  color: Color(0xFF111827),
+                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
                   fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1988,7 +1995,7 @@ class _HashtagListRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFF111111),
+                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111111),
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1997,7 +2004,7 @@ class _HashtagListRow extends StatelessWidget {
                   Text(
                     countLabel,
                     style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFF6B7280),
+                      color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
