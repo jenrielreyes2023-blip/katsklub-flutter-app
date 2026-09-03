@@ -43,7 +43,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'edit_profile_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
-import 'visitors_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -76,6 +75,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final FeedService _feedService = FeedService();
+  bool get isOwnProfile => widget.onLogout != null;
   late TabController _tabController;
   List<Post> _profilePosts = [];
   List<Story> _stories = [];
@@ -819,13 +819,31 @@ class _ProfileScreenState extends State<ProfileScreen>
     try {
       final user = await _feedService.loadUserProfile(username);
       if (user != null && mounted) {
+        User resolvedUser = user;
+        if (isOwnProfile) {
+          try {
+            final visitors = await _feedService.loadProfileVisitors();
+            final visitorInfos = visitors
+                .where((v) => (v.username ?? '').isNotEmpty)
+                .map((v) => ProfileVisitorInfo(
+                      username: v.username!,
+                      avatarUrl: v.avatarUrl ?? '',
+                    ))
+                .toList();
+            resolvedUser = user.copyWith(
+              recentVisitors: visitorInfos,
+              newVisitorsCount: visitorInfos.length,
+            );
+          } catch (_) {}
+        }
         final currentSaved = await AuthService().getSavedUser();
         if (currentSaved != null &&
-            currentSaved.username?.trim().toLowerCase() == user.username?.trim().toLowerCase()) {
-          await AuthService().saveCurrentUser(user);
+            currentSaved.username?.trim().toLowerCase() ==
+                resolvedUser.username?.trim().toLowerCase()) {
+          await AuthService().saveCurrentUser(resolvedUser);
         }
         setState(() {
-          _profileUser = user;
+          _profileUser = resolvedUser;
         });
       }
     } catch (_) {}

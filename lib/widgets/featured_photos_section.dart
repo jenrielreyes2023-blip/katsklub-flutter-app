@@ -95,6 +95,32 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
   final AuthService _authService = AuthService();
   bool _isMutating = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isOwnProfile && widget.user.recentVisitors.isEmpty) {
+      _loadVisitorsIfEmpty();
+    }
+  }
+
+  Future<void> _loadVisitorsIfEmpty() async {
+    try {
+      final visitors = await FeedService().loadProfileVisitors();
+      if (!mounted || visitors.isEmpty) return;
+      final visitorInfos = visitors
+          .where((v) => (v.username ?? '').isNotEmpty)
+          .map((v) => ProfileVisitorInfo(
+                username: v.username!,
+                avatarUrl: v.avatarUrl ?? '',
+              ))
+          .toList();
+      widget.onUpdated?.call(widget.user.copyWith(
+        recentVisitors: visitorInfos,
+        newVisitorsCount: visitorInfos.length,
+      ));
+    } catch (_) {}
+  }
+
   List<FeaturedPhoto> get _photos => widget.user.featuredPhotos;
 
   Future<void> _addPhoto({
@@ -210,7 +236,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               Text(
                 'Add Featured Photos',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : const Color(0xFF1C1E21),
                 ),
@@ -219,7 +246,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               Text(
                 'Showcase up to 5 of your best moments',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
                   color: textColor,
                 ),
               ),
@@ -236,6 +264,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
       return const SizedBox.shrink();
     }
 
+    final displayVisitors = visitors.take(3).toList();
+
     return GestureDetector(
       onTap: () async {
         await Navigator.push(
@@ -248,7 +278,22 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
         if (username != null && username.isNotEmpty) {
           final updatedUser = await FeedService().loadUserProfile(username);
           if (updatedUser != null && mounted) {
-            widget.onUpdated?.call(updatedUser);
+            try {
+              final refreshedVisitors = await FeedService().loadProfileVisitors();
+              final visitorInfos = refreshedVisitors
+                  .where((v) => (v.username ?? '').isNotEmpty)
+                  .map((v) => ProfileVisitorInfo(
+                        username: v.username!,
+                        avatarUrl: v.avatarUrl ?? '',
+                      ))
+                  .toList();
+              widget.onUpdated?.call(updatedUser.copyWith(
+                recentVisitors: visitorInfos,
+                newVisitorsCount: 0,
+              ));
+            } catch (_) {
+              widget.onUpdated?.call(updatedUser);
+            }
           }
         }
       },
@@ -258,12 +303,12 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: 14.0 * (visitors.length - 1) + 24.0,
+            width: 14.0 * (displayVisitors.length - 1) + 24.0,
             height: 24,
             child: Stack(
               clipBehavior: Clip.none,
-              children: List.generate(visitors.length, (index) {
-                final visitor = visitors[index];
+              children: List.generate(displayVisitors.length, (index) {
+                final visitor = displayVisitors[index];
                 return Positioned(
                   left: index * 14.0,
                   top: 0,
@@ -331,9 +376,10 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                     ),
                     child: Text(
                       '+${widget.user.newVisitorsCount}',
-                      style: const TextStyle(
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.white,
-                        fontSize: 8,
+                        fontSize: 8.5.sp,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -428,7 +474,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                             Text(
                               'Add',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w700,
                                 color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
                               ),
@@ -510,7 +557,8 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
               Text(
                 'Add New',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                 ),
@@ -581,8 +629,9 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 9,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 9.5.sp,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),

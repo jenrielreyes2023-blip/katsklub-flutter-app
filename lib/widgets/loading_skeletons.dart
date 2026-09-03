@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SkeletonPulse extends StatefulWidget {
   const SkeletonPulse({
@@ -283,34 +284,59 @@ class StorySkeletonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
-      height: 102,
+      height: 102.h,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
         scrollDirection: Axis.horizontal,
         itemCount: count,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, index) {
-          const avatarSize = 72.0;
+        separatorBuilder: (_, __) => SizedBox(width: 4.w),
+        itemBuilder: (context, index) {
+          final avatarSize = 72.w;
           final labelWidth = switch (index % 4) {
-            0 => 62.0,
-            1 => 50.0,
-            2 => 56.0,
-            _ => 44.0,
+            0 => 62.w,
+            1 => 50.w,
+            2 => 56.w,
+            _ => 44.w,
           };
 
           return SkeletonPulse(
             child: SizedBox(
-              width: 82,
+              width: 82.w,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SkeletonBox(
+                  Container(
                     width: avatarSize,
                     height: avatarSize,
-                    radius: avatarSize / 2,
+                    padding: EdgeInsets.all(2.5.r),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF3E4042)
+                            : const Color(0xFFE5E7EB),
+                        width: 2.w,
+                      ),
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.all(2.r),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                      child: ClipOval(
+                        child: SkeletonBox(
+                          width: avatarSize,
+                          height: avatarSize,
+                          radius: avatarSize / 2,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 5),
-                  SkeletonBox(width: labelWidth, height: 10, radius: 5),
+                  SizedBox(height: 5.h),
+                  SkeletonBox(width: labelWidth, height: 10.h, radius: 5.r),
                 ],
               ),
             ),

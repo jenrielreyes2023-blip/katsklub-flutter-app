@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/avatar_with_border.dart';
@@ -207,7 +206,7 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                             const SizedBox(width: 4),
                             const Icon(
                               Icons.verified,
-                              color: Color(0xFFFF5E3A),
+                              color: Color(0xFF1D9BF0),
                               size: 15,
                             ),
                           ],

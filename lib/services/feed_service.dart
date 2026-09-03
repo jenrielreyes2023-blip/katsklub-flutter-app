@@ -2478,34 +2478,48 @@ class FeedService {
 
   Future<SearchResults> search(String query) async {
     final cleanQuery = query.trim();
-    if (cleanQuery.length < 2) {
+    final normalizedQuery = cleanQuery.replaceFirst(RegExp(r'^@'), '');
+    if (normalizedQuery.length < 2) {
       return const SearchResults(people: [], hashtags: [], posts: []);
     }
 
-    final encodedQuery = Uri.encodeQueryComponent(cleanQuery);
-    final data = await _authenticatedGet('/api/search?q=$encodedQuery');
-    final people = data['people'];
-    final hashtags = data['hashtags'];
-    final posts = data['posts'];
+    List<User> peopleResults = [];
+    try {
+      peopleResults = await searchUsers(normalizedQuery);
+    } catch (_) {}
+
+    List<HashtagResult> hashtagResults = [];
+    if (cleanQuery.contains('#')) {
+      final tag = cleanQuery.replaceAll('#', '').trim();
+      if (tag.isNotEmpty) {
+        try {
+          final data = await _authenticatedGet(
+              '/api/hashtags/search?q=${Uri.encodeQueryComponent(tag)}');
+          if (data['posts'] is List) {
+            final posts = (data['posts'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map(Post.fromJson)
+                .toList();
+            hashtagResults = [
+              HashtagResult(
+                name: tag,
+                postCount: posts.length,
+              )
+            ];
+          }
+        } catch (_) {}
+      }
+    }
 
     return SearchResults(
-      people: people is List
-          ? people.whereType<Map<String, dynamic>>().map(User.fromJson).toList()
-          : [],
-      hashtags: hashtags is List
-          ? hashtags
-              .whereType<Map<String, dynamic>>()
-              .map(HashtagResult.fromJson)
-              .toList()
-          : [],
-      posts: posts is List
-          ? posts.whereType<Map<String, dynamic>>().map(Post.fromJson).toList()
-          : [],
+      people: peopleResults,
+      hashtags: hashtagResults,
+      posts: const [],
     );
   }
 
   Future<List<User>> searchUsers(String query) async {
-    final cleanQuery = query.trim();
+    final cleanQuery = query.trim().replaceFirst(RegExp(r'^@'), '');
     if (cleanQuery.isEmpty) {
       return const <User>[];
     }

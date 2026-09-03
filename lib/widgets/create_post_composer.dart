@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -847,12 +846,13 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     final showAudience = _mode == _CreateMode.post ||
         _mode == _CreateMode.album ||
         _mode == _CreateMode.poll;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DefaultTextStyle.merge(
       style: const TextStyle(decoration: TextDecoration.none),
-      child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Column(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Column(
           children: [
             ValueListenableBuilder<bool>(
               valueListenable: _canPostNotifier,
@@ -866,409 +866,482 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                 );
               },
             ),
+            _ModeSelector(
+              value: _mode,
+              onChanged: _isPosting || _isPickingImages || _isPickingVideo
+                  ? null
+                  : _setMode,
+            ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 16.h),
                 children: [
-                  _UserRow(
-                    user: widget.user,
-                    showAudience: showAudience,
-                    audienceValue: _visibility,
-                    audienceOptions: _audienceOptions,
-                    onAudienceChanged: (value) {
-                      setState(() {
-                        _visibility = value;
-                        _errorMessage = null;
-                      });
-                    },
-                    feeling: _feeling,
-                  ),
-                  if (_withUsers.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: _withUsers.map((u) {
-                        return InputChip(
-                          avatar: u.avatarUrl != null && u.avatarUrl!.isNotEmpty
-                              ? CircleAvatar(
-                                  backgroundImage: CachedNetworkImageProvider(
-                                    ApiConfig.assetUrl(u.avatarUrl!),
-                                  ),
-                                )
-                              : null,
-                          label: Text(
-                            u.displayName,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF374151),
-                            ),
-                          ),
-                          onDeleted: () {
-                            setState(() {
-                              _withUsers.remove(u);
-                            });
-                          },
-                          deleteIcon: const Icon(Icons.close_rounded, size: 14),
-                          backgroundColor: const Color(0xFFE5E7EB),
-                          side: BorderSide.none,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                  if (_location.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _handleLocationTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFBFDBFE)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
                           children: [
-                            const Icon(Icons.location_on, color: Colors.blue, size: 16),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                _location,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1D4ED8),
-                                  decoration: TextDecoration.none,
+                            UserAvatarWithFrame(
+                              avatarUrl: widget.user.avatarUrl ?? '',
+                              initials: widget.user.initials,
+                              radius: 20.r,
+                              isAdmin: widget.user.isAdmin,
+                            ),
+                            SizedBox(height: 6.h),
+                            Expanded(
+                              child: Container(
+                                width: 2.w,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF2D2E30)
+                                      : const Color(0xFFE5E7EB),
+                                  borderRadius: BorderRadius.circular(1.r),
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            const Icon(Icons.edit, color: Colors.blue, size: 12),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  _ModeSelector(
-                    value: _mode,
-                    onChanged: _isPosting || _isPickingImages || _isPickingVideo
-                        ? null
-                        : _setMode,
-                  ),
-                  const SizedBox(height: 14),
-                  if (_mode == _CreateMode.discussion)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF1E1F20)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2D2E30)
-                              : const Color(0xFFE5E7EB),
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _titleController,
-                        enabled: !_isPosting,
-                        maxLength: _mode == _CreateMode.discussion ? 200 : 120,
-                        cursorColor: const Color(0xFFFF7A45),
-                        inputFormatters: [EmojiPresentationFormatter()],
-                        style: TextStyle(
-                          decoration: TextDecoration.none,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: 'Title',
-                          hintStyle: TextStyle(
-                            decoration: TextDecoration.none,
-                            color: Color(0xFF9CA3AF),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          counterText: '',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (_mode != _CreateMode.poll) ...[
-                    Builder(
-                      builder: (context) {
-                        final isDark = Theme.of(context).brightness == Brightness.dark;
-                        final bodyTextField = TextField(
-                          controller: _controller,
-                          enabled: !_isPosting,
-                          inputFormatters: [EmojiPresentationFormatter()],
-                          maxLines: _mode == _CreateMode.reel ||
-                                  _mode == _CreateMode.poll
-                              ? 5
-                              : 8,
-                          minLines: _mode == _CreateMode.reel ||
-                                  _mode == _CreateMode.poll
-                              ? 3
-                              : 5,
-                          maxLength: 10000,
-                          cursorColor: const Color(0xFFFF7A45),
-                          textInputAction: TextInputAction.newline,
-                          style: TextStyle(
-                            decoration: TextDecoration.none,
-                            fontSize: 16,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: _bodyPlaceholder,
-                            hintStyle: const TextStyle(
-                              decoration: TextDecoration.none,
-                              color: Color(0xFF9CA3AF),
-                              fontSize: 16,
-                            ),
-                            counterText: '',
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
-                        );
-
-                        if (_isGhost) {
-                          final bubbleFill = isDark ? const Color(0xFF2B211E) : const Color(0xFFFFF3F0);
-                          final bubbleBorder = const Color(0xFFFF7A59);
-                          return CustomPaint(
-                            painter: _GhostInputBubblePainter(
-                              color: bubbleFill,
-                              borderColor: bubbleBorder,
-                              borderRadius: 22,
-                              strokeWidth: 1.5,
-                            ),
-                            child: Container(
-                              decoration: const BoxDecoration(color: Colors.transparent),
-                              child: bodyTextField,
-                            ),
-                          );
-                        } else {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E1F20) : Colors.white,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 6.w,
+                                runSpacing: 4.h,
+                                children: [
+                                  SpecialNameText(
+                                    username: widget.user.username ?? '',
+                                    displayName: widget.user.displayName,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: isDark ? Colors.white : const Color(0xFF111827),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14.5.sp,
+                                    ),
+                                  ),
+                                  if (_withUsers.isNotEmpty) ...[
+                                    Text(
+                                      'with',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final selected = await showPostWithUsersPicker(
+                                          context: context,
+                                          initialSelected: _withUsers,
+                                          currentUserId: widget.user.id,
+                                        );
+                                        if (selected != null) {
+                                          setState(() => _withUsers = selected);
+                                        }
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _withUsers.length == 1
+                                                ? _withUsers.first.displayName
+                                                : '${_withUsers.first.displayName} and ${_withUsers.length - 1} other${_withUsers.length > 2 ? "s" : ""}',
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
+                                              fontSize: 13.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark ? Colors.white : const Color(0xFF111827),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _withUsers.clear()),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              size: 13.r,
+                                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  if (_feeling.isNotEmpty) ...[
+                                    Text(
+                                      'is feeling',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: _selectFeeling,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _feeling,
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
+                                              fontSize: 13.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark ? Colors.white : const Color(0xFF111827),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _feeling = ''),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              size: 13.r,
+                                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  if (_location.isNotEmpty) ...[
+                                    Text(
+                                      'at',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: _handleLocationTap,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _location,
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
+                                              fontSize: 13.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark ? Colors.white : const Color(0xFF111827),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _location = ''),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              size: 13.r,
+                                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  if (showAudience)
+                                    _AudienceDropdown(
+                                      value: _visibility,
+                                      options: _audienceOptions,
+                                      onChanged: (val) => setState(() => _visibility = val),
+                                    ),
+                                  if (_isGhost && _mode == _CreateMode.post)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.5.h),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.circular(10.r),
+                                        border: Border.all(
+                                          color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+                                          width: 0.7,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '👻 Ghost post',
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
+                                              fontSize: 11.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                          SizedBox(width: 3.w),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _isGhost = false),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              size: 12.r,
+                                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            child: bodyTextField,
-                          );
-                        }
-                      },
-                    ),
-                    _buildAiSuggestionButton(),
-                  ],
-                  if (_mode == _CreateMode.poll) ...[
-                    const SizedBox(height: 8),
-                    _PollFields(
-                      questionController: _controller,
-                      options: _pollOptions,
-                      durationHours: _pollDurationHours,
-                      enabled: !_isPosting,
-                      onOptionChanged: _setPollOption,
-                      onAddOption:
-                          _pollOptions.length >= 6 ? null : _addPollOption,
-                      onRemoveOption:
-                          _pollOptions.length <= 2 ? null : _removePollOption,
-                      onDurationChanged: (value) {
-                        setState(() {
-                          _pollDurationHours = value;
-                        });
-                      },
-                    ),
-                  ],
-                  if (_mode == _CreateMode.discussion &&
-                      _discussionCover != null) ...[
-                    const SizedBox(height: 8),
-                    _SingleImageCard(
-                      image: _discussionCover!,
-                      onRemove: _isPosting
-                          ? null
-                          : () {
-                              setState(() {
-                                _discussionCover = null;
-                              });
-                              _syncCanPostState();
-                            },
-                    ),
-                  ],
-                  if (_mode == _CreateMode.post && _images.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _SelectedImageGrid(
-                      images: _images,
-                      onRemove: _isPosting ? null : _removeImage,
-                    ),
-                  ],
-                  if (_mode == _CreateMode.album &&
-                      (_images.isNotEmpty || _selectedMusic != null)) ...[
-                    const SizedBox(height: 8),
-                    _ComposerCarouselPreview(
-                      images: _images,
-                      music: _selectedMusic,
-                      onRemoveImage: _isPosting ? null : _removeImage,
-                      onRemoveMusic: _isPosting
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedMusic = null;
-                              });
-                              _syncCanPostState();
-                            },
-                    ),
-                  ],
-                  if (_mode == _CreateMode.reel &&
-                      (_reelImages.isNotEmpty ||
-                          _selectedReelMusic != null)) ...[
-                    const SizedBox(height: 8),
-                    _ReelsImagesPreview(
-                      images: _reelImages,
-                      music: _selectedReelMusic,
-                      onRemoveImage: _isPosting ? null : _removeReelImage,
-                      onRemoveMusic: _isPosting
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedReelMusic = null;
-                              });
-                              _syncCanPostState();
-                            },
-                    ),
-                  ],
-                  if ((_mode == _CreateMode.post ||
-                          _mode == _CreateMode.album ||
-                          _mode == _CreateMode.reel) &&
-                      _selectedVideo != null) ...[
-                    const SizedBox(height: 8),
-                    _VideoCard(
-                      video: _selectedVideo!,
-                      onRemove: _isPosting
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedVideo = null;
-                              });
-                              _syncCanPostState();
-                            },
-                    ),
-                  ],
-                  if (_progressMessage != null) ...[
-                    const SizedBox(height: 12),
-                    _ComposerProgress(
-                      message: _progressMessage!,
-                      value: _progressValue,
-                    ),
-                  ],
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      _errorMessage!,
-                      style: const TextStyle(
-                        decoration: TextDecoration.none,
-                        color: Color(0xFFDC2626),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                    if (_errorMessage!.contains('AI Suggestion failed')) ...[
-                      const SizedBox(height: 4),
-                      TextButton.icon(
-                        onPressed: _showGeminiKeyDialog,
-                        icon: const Icon(Icons.vpn_key_outlined, size: 14),
-                        label: const Text(
-                          'Update / Reset API Key',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                              SizedBox(height: 8.h),
+                              if (_mode == _CreateMode.discussion) ...[
+                                TextField(
+                                  controller: _titleController,
+                                  enabled: !_isPosting,
+                                  maxLength: 200,
+                                  cursorColor: const Color(0xFFFF7A45),
+                                  inputFormatters: [EmojiPresentationFormatter()],
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Discussion Title...',
+                                    hintStyle: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF9CA3AF),
+                                      fontSize: 17.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    counterText: '',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                                  ),
+                                ),
+                                SizedBox(height: 4.h),
+                              ],
+                              if (_mode != _CreateMode.poll)
+                                (_isGhost && _mode == _CreateMode.post)
+                                    ? CustomPaint(
+                                        painter: _GhostInputBubblePainter(
+                                          color: isDark ? const Color(0xFF2B211E) : const Color(0xFFFFF3F0),
+                                          borderColor: const Color(0xFFFF7A59),
+                                          borderRadius: 16.r,
+                                          strokeWidth: 1.5,
+                                        ),
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                          child: TextField(
+                                            controller: _controller,
+                                            enabled: !_isPosting,
+                                            inputFormatters: [EmojiPresentationFormatter()],
+                                            maxLines: null,
+                                            minLines: 3,
+                                            maxLength: 10000,
+                                            cursorColor: const Color(0xFFFF7A45),
+                                            textInputAction: TextInputAction.newline,
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Rounded',
+                                              fontSize: 15.sp,
+                                              height: 1.35,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText: _bodyPlaceholder,
+                                              hintStyle: TextStyle(
+                                                fontFamily: 'SF Pro Rounded',
+                                                color: const Color(0xFF9CA3AF),
+                                                fontSize: 15.sp,
+                                              ),
+                                              counterText: '',
+                                              border: InputBorder.none,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : TextField(
+                                        controller: _controller,
+                                        enabled: !_isPosting,
+                                        inputFormatters: [EmojiPresentationFormatter()],
+                                        maxLines: null,
+                                        minLines: 3,
+                                        maxLength: 10000,
+                                        cursorColor: const Color(0xFFFF7A45),
+                                        textInputAction: TextInputAction.newline,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 15.sp,
+                                          height: 1.35,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: _bodyPlaceholder,
+                                          hintStyle: TextStyle(
+                                            fontFamily: 'SF Pro Rounded',
+                                            color: const Color(0xFF9CA3AF),
+                                            fontSize: 15.sp,
+                                          ),
+                                          counterText: '',
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                                        ),
+                                      ),
+                              _buildAiSuggestionButton(),
+                              if (_mode == _CreateMode.poll) ...[
+                                _PollFields(
+                                  questionController: _controller,
+                                  options: _pollOptions,
+                                  durationHours: _pollDurationHours,
+                                  enabled: !_isPosting,
+                                  onOptionChanged: _setPollOption,
+                                  onAddOption: _pollOptions.length >= 6 ? null : _addPollOption,
+                                  onRemoveOption: _pollOptions.length <= 2 ? null : _removePollOption,
+                                  onDurationChanged: (val) => setState(() => _pollDurationHours = val),
+                                ),
+                              ],
+                              if (_mode == _CreateMode.discussion && _discussionCover != null) ...[
+                                SizedBox(height: 8.h),
+                                _SingleImageCard(
+                                  image: _discussionCover!,
+                                  onRemove: _isPosting ? null : () {
+                                    setState(() => _discussionCover = null);
+                                    _syncCanPostState();
+                                  },
+                                ),
+                              ],
+                              if (_mode == _CreateMode.post && _images.isNotEmpty) ...[
+                                SizedBox(height: 8.h),
+                                _SelectedImageGrid(
+                                  images: _images,
+                                  onRemove: _isPosting ? null : _removeImage,
+                                ),
+                              ],
+                              if (_mode == _CreateMode.album && (_images.isNotEmpty || _selectedMusic != null)) ...[
+                                SizedBox(height: 8.h),
+                                _ComposerCarouselPreview(
+                                  images: _images,
+                                  music: _selectedMusic,
+                                  onRemoveImage: _isPosting ? null : _removeImage,
+                                  onRemoveMusic: _isPosting ? null : () {
+                                    setState(() => _selectedMusic = null);
+                                    _syncCanPostState();
+                                  },
+                                ),
+                              ],
+                              if (_mode == _CreateMode.reel && (_reelImages.isNotEmpty || _selectedReelMusic != null)) ...[
+                                SizedBox(height: 8.h),
+                                _ReelsImagesPreview(
+                                  images: _reelImages,
+                                  music: _selectedReelMusic,
+                                  onRemoveImage: _isPosting ? null : _removeReelImage,
+                                  onRemoveMusic: _isPosting ? null : () {
+                                    setState(() => _selectedReelMusic = null);
+                                    _syncCanPostState();
+                                  },
+                                ),
+                              ],
+                              if ((_mode == _CreateMode.post || _mode == _CreateMode.album || _mode == _CreateMode.reel) && _selectedVideo != null) ...[
+                                SizedBox(height: 8.h),
+                                _VideoCard(
+                                  video: _selectedVideo!,
+                                  onRemove: _isPosting ? null : () {
+                                    setState(() => _selectedVideo = null);
+                                    _syncCanPostState();
+                                  },
+                                ),
+                              ],
+                              if (_progressMessage != null) ...[
+                                SizedBox(height: 12.h),
+                                _ComposerProgress(
+                                  message: _progressMessage!,
+                                  value: _progressValue,
+                                ),
+                              ],
+                              if (_errorMessage != null) ...[
+                                SizedBox(height: 8.h),
+                                Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: const Color(0xFFDC2626),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.sp,
+                                  ),
+                                ),
+                                if (_errorMessage!.contains('AI Suggestion failed')) ...[
+                                  SizedBox(height: 4.h),
+                                  TextButton.icon(
+                                    onPressed: _showGeminiKeyDialog,
+                                    icon: const Icon(Icons.vpn_key_outlined, size: 14),
+                                    label: const Text(
+                                      'Update / Reset API Key',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: const Color(0xFFFF7A59),
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ],
                           ),
                         ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFFF7A59), // Elegant Light Orange
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      ),
-                    ],
-                  ],
-                  const SizedBox(height: 14),
-                  if (_mode != _CreateMode.poll)
-                    _AttachmentBar(
-                      isPickingImages: _isPickingImages,
-                      isPosting: _isPosting || _isPickingVideo,
-                      mode: _mode,
-                      onPickImages: (_mode == _CreateMode.post ||
-                              _mode == _CreateMode.album)
-                          ? _pickImages
-                          : _mode == _CreateMode.discussion
-                              ? _pickDiscussionCover
-                              : _pickReelImages,
-                      onPickVideo: (_mode == _CreateMode.post ||
-                              _mode == _CreateMode.reel)
-                          ? _pickVideo
-                          : null,
-                      onPickMusic: _mode == _CreateMode.album
-                          ? _openMusicPicker
-                          : _mode == _CreateMode.reel
-                              ? _openReelMusicPicker
-                              : null,
-                      hasMusic: _mode == _CreateMode.reel
-                          ? _selectedReelMusic != null
-                          : _selectedMusic != null,
-                      onTagFriends: () async {
-                        final selected = await showPostWithUsersPicker(
-                          context: context,
-                          initialSelected: _withUsers,
-                          currentUserId: widget.user.id,
-                        );
-                        if (selected != null) {
-                          setState(() {
-                            _withUsers = selected;
-                          });
-                        }
-                      },
-                      onPickLocation: _handleLocationTap,
-                      onPickFeeling: _selectFeeling,
-                      isDetectingLocation: _isDetectingLocation,
+                      ],
                     ),
-                  if (_mode == _CreateMode.post) ...[
-                    const SizedBox(height: 14),
-                    _GhostPostToggle(
-                      isGhost: _isGhost,
-                      onChanged: (value) {
-                        setState(() {
-                          _isGhost = value;
-                        });
-                      },
-                    ),
-                  ],
-                  if (showAudience) ...[
-                    const SizedBox(height: 14),
-                    _AudienceHint(audienceValue: _visibility),
-                  ],
+                  ),
                 ],
               ),
+            ),
+            _BottomAttachmentToolbar(
+              mode: _mode,
+              isPosting: _isPosting || _isPickingVideo,
+              isPickingImages: _isPickingImages,
+              isDetectingLocation: _isDetectingLocation,
+              isGhost: _isGhost,
+              hasLocation: _location.isNotEmpty,
+              hasFeeling: _feeling.isNotEmpty,
+              hasTaggedUsers: _withUsers.isNotEmpty,
+              hasMusic: _mode == _CreateMode.reel ? _selectedReelMusic != null : _selectedMusic != null,
+              hasImages: _images.isNotEmpty || _discussionCover != null || _reelImages.isNotEmpty,
+              hasVideo: _selectedVideo != null,
+              onPickImages: (_mode == _CreateMode.post || _mode == _CreateMode.album)
+                  ? _pickImages
+                  : _mode == _CreateMode.discussion
+                      ? _pickDiscussionCover
+                      : _pickReelImages,
+              onPickVideo: (_mode == _CreateMode.post || _mode == _CreateMode.reel) ? _pickVideo : null,
+              onPickMusic: _mode == _CreateMode.album
+                  ? _openMusicPicker
+                  : _mode == _CreateMode.reel
+                      ? _openReelMusicPicker
+                      : null,
+              onTagFriends: () async {
+                final selected = await showPostWithUsersPicker(
+                  context: context,
+                  initialSelected: _withUsers,
+                  currentUserId: widget.user.id,
+                );
+                if (selected != null) {
+                  setState(() => _withUsers = selected);
+                }
+              },
+              onPickLocation: _handleLocationTap,
+              onPickFeeling: _selectFeeling,
+              onToggleGhost: _mode == _CreateMode.post
+                  ? () => setState(() => _isGhost = !_isGhost)
+                  : null,
+              onAiSuggest: _onAiSuggestPressed,
+              isGeneratingCaption: _isGeneratingCaption,
             ),
           ],
         ),
@@ -1721,109 +1794,91 @@ class _ComposerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final topPadding = MediaQuery.paddingOf(context).top + 8;
+    final topPadding = MediaQuery.paddingOf(context).top + 6;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, topPadding, 12, 10),
+      padding: EdgeInsets.fromLTRB(16.w, topPadding, 16.w, 10.h),
       decoration: BoxDecoration(
         color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFF3F4F6),
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
-          _HeaderIconButton(
-            icon: Icons.close_rounded,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    decoration: TextDecoration.none,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+          GestureDetector(
+            onTap: () => Navigator.of(context).maybePop(),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 2.w),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'KatsKlub',
-                  style: TextStyle(
-                    decoration: TextDecoration.none,
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          FilledButton(
-            onPressed: isPosting || !canPost ? null : onPost,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFFF7A45),
-              disabledBackgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFD1D5DB),
-              disabledForegroundColor: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-              minimumSize: const Size(64, 40),
             ),
-            child: isPosting
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: Colors.white,
+          ),
+          const Spacer(),
+          Text(
+            'New $title',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              color: isDark ? Colors.white : const Color(0xFF111827),
+              fontSize: 15.5.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: isPosting || !canPost ? null : onPost,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 7.h),
+              decoration: BoxDecoration(
+                color: canPost
+                    ? const Color(0xFFFF7A45)
+                    : (isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: canPost
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ]
+                    : null,
+              ),
+              child: isPosting
+                  ? SizedBox(
+                      height: 14.r,
+                      width: 14.r,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      submitLabel,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: canPost
+                            ? Colors.white
+                            : (isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+                      ),
                     ),
-                  )
-                : Text(
-                    submitLabel,
-                    style: const TextStyle(
-                      decoration: TextDecoration.none,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(
-            icon,
-            color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
-            size: 22,
-          ),
-        ),
       ),
     );
   }
@@ -1840,29 +1895,63 @@ class _ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 8.0;
-        final width = constraints.maxWidth;
-        final columns = width >= 460 ? 5 : 3;
-        final itemWidth = (width - (spacing * (columns - 1))) / columns;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: _CreateMode.values.map((mode) {
-            return SizedBox(
-              width: itemWidth,
-              child: _ModeChip(
-                label: _labelForMode(mode),
-                icon: _iconForMode(mode),
-                selected: value == mode,
-                onTap: onChanged == null ? null : () => onChanged!(mode),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: 29.h,
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: _CreateMode.values.map((mode) {
+          final isSelected = mode == value;
+          return Padding(
+            padding: EdgeInsets.only(right: 5.w),
+            child: InkWell(
+              onTap: onChanged == null ? null : () => onChanged!(mode),
+              borderRadius: BorderRadius.circular(999),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFFFF7A45)
+                      : (isDark ? const Color(0xFF222325) : const Color(0xFFF3F4F6)),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFFFF7A45)
+                        : (isDark ? const Color(0xFF2E3032) : const Color(0xFFE5E7EB)),
+                    width: 0.7,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _iconForMode(mode),
+                      size: 12.r,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      _labelForMode(mode),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 11.5.sp,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? const Color(0xFFE4E6EB) : const Color(0xFF4B5563)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          }).toList(),
-        );
-      },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -1887,185 +1976,7 @@ class _ModeSelector extends StatelessWidget {
   }
 }
 
-class _ModeChip extends StatelessWidget {
-  const _ModeChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
 
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final activeBg = const Color(0xFFFF7A45); // Premium Orange
-    final inactiveBg = isDark ? const Color(0xFF242526) : Colors.white;
-    
-    final activeBorder = const Color(0xFFFF7A45);
-    final inactiveBorder = isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB);
-    
-    final activeFg = Colors.white;
-    final inactiveFg = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151);
-
-    final foreground = selected ? activeFg : inactiveFg;
-
-    return Material(
-      color: selected ? activeBg : inactiveBg,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? activeBorder : inactiveBorder,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: foreground),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    decoration: TextDecoration.none,
-                    color: foreground,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _UserRow extends StatelessWidget {
-  const _UserRow({
-    required this.user,
-    required this.showAudience,
-    required this.audienceValue,
-    required this.audienceOptions,
-    required this.onAudienceChanged,
-    required this.feeling,
-  });
-
-  final User user;
-  final bool showAudience;
-  final String audienceValue;
-  final List<_AudienceOption> audienceOptions;
-  final ValueChanged<String> onAudienceChanged;
-  final String feeling;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rowBg = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
-    final rowBorder = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
-    final textStyleColor = Theme.of(context).colorScheme.onSurface;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: rowBg,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: rowBorder),
-      ),
-      child: Row(
-        children: [
-          _AuthorAvatar(user: user),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: SpecialNameText(
-                        username: user.username ?? '',
-                        displayName: user.displayName,
-                        style: TextStyle(
-                          decoration: TextDecoration.none,
-                          color: textStyleColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                if (feeling.isNotEmpty) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    'is feeling',
-                    style: TextStyle(
-                      decoration: TextDecoration.none,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      feeling,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        decoration: TextDecoration.none,
-                        color: textStyleColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-                if (user.handle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    user.handle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      decoration: TextDecoration.none,
-                      color: Color(0xFF6B7280),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (showAudience) ...[
-            const SizedBox(width: 8),
-            _AudienceDropdown(
-              value: audienceValue,
-              options: audienceOptions,
-              onChanged: onAudienceChanged,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 class _AudienceDropdown extends StatelessWidget {
   const _AudienceDropdown({
@@ -2080,14 +1991,15 @@ class _AudienceDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentOption = options.firstWhere(
       (o) => o.value == value,
       orElse: () => options.first,
     );
 
     return PopupMenuButton<String>(
-      offset: const Offset(0, 44),
-      color: Colors.white,
+      offset: const Offset(0, 36),
+      color: isDark ? const Color(0xFF242526) : Colors.white,
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       onSelected: onChanged,
@@ -2101,30 +2013,31 @@ class _AudienceDropdown extends StatelessWidget {
               children: [
                 Icon(
                   option.icon,
-                  size: 18,
+                  size: 16.r,
                   color: isSelected
-                      ? const Color(0xFF111827)
-                      : const Color(0xFF6B7280),
+                      ? const Color(0xFFFF7A45)
+                      : (isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280)),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 8.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       option.label,
                       style: TextStyle(
-                        decoration: TextDecoration.none,
-                        color: Color(0xFF111827),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark ? Colors.white : const Color(0xFF111827),
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 13.sp,
                       ),
                     ),
                     Text(
                       option.description,
-                      style: const TextStyle(
-                        decoration: TextDecoration.none,
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 11,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                        fontSize: 10.5.sp,
                       ),
                     ),
                   ],
@@ -2135,35 +2048,37 @@ class _AudienceDropdown extends StatelessWidget {
         }).toList();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          borderRadius: BorderRadius.circular(999),
+          color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
+            width: 0.8,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               currentOption.icon,
-              size: 15,
-              color: const Color(0xFF111827),
+              size: 11.r,
+              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 4.w),
             Text(
               currentOption.label,
-              style: const TextStyle(
-                decoration: TextDecoration.none,
-                color: Color(0xFF111827),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: Color(0xFF111827),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 14.r,
+              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
             ),
           ],
         ),
@@ -2172,21 +2087,7 @@ class _AudienceDropdown extends StatelessWidget {
   }
 }
 
-class _AuthorAvatar extends StatelessWidget {
-  const _AuthorAvatar({required this.user});
 
-  final User user;
-
-  @override
-  Widget build(BuildContext context) {
-    return UserAvatarWithFrame(
-      avatarUrl: user.avatarUrl ?? '',
-      initials: user.initials,
-      radius: 24.0,
-      isAdmin: user.isAdmin,
-    );
-  }
-}
 
 class _ComposerCarouselPreview extends StatefulWidget {
   const _ComposerCarouselPreview({
@@ -4028,184 +3929,201 @@ class _PollOptionInput extends StatelessWidget {
   }
 }
 
-class _AttachmentBar extends StatelessWidget {
-  const _AttachmentBar({
-    required this.isPickingImages,
-    required this.isPosting,
+
+
+class _BottomAttachmentToolbar extends StatelessWidget {
+  const _BottomAttachmentToolbar({
     required this.mode,
+    required this.isPosting,
+    required this.isPickingImages,
+    required this.isDetectingLocation,
+    required this.isGhost,
+    required this.hasLocation,
+    required this.hasFeeling,
+    required this.hasTaggedUsers,
+    required this.hasMusic,
+    required this.hasImages,
+    required this.hasVideo,
     required this.onPickImages,
     required this.onPickVideo,
     required this.onPickMusic,
-    required this.hasMusic,
     required this.onTagFriends,
     required this.onPickLocation,
     required this.onPickFeeling,
-    required this.isDetectingLocation,
+    required this.onToggleGhost,
+    required this.onAiSuggest,
+    required this.isGeneratingCaption,
   });
 
-  final bool isPickingImages;
-  final bool isPosting;
   final _CreateMode mode;
+  final bool isPosting;
+  final bool isPickingImages;
+  final bool isDetectingLocation;
+  final bool isGhost;
+  final bool hasLocation;
+  final bool hasFeeling;
+  final bool hasTaggedUsers;
+  final bool hasMusic;
+  final bool hasImages;
+  final bool hasVideo;
   final VoidCallback onPickImages;
   final VoidCallback? onPickVideo;
   final VoidCallback? onPickMusic;
-  final bool hasMusic;
   final VoidCallback onTagFriends;
   final VoidCallback onPickLocation;
   final VoidCallback onPickFeeling;
-  final bool isDetectingLocation;
+  final VoidCallback? onToggleGhost;
+  final VoidCallback onAiSuggest;
+  final bool isGeneratingCaption;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final barBg = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
-    final barBorder = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: barBg,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: barBorder),
+      padding: EdgeInsets.fromLTRB(
+        12.w,
+        8.h,
+        12.w,
+        8.h + (bottomInset > 0 ? bottomInset : bottomPadding),
       ),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          _AttachmentAction(
-            enabled: !(isPickingImages || isPosting),
-            onPressed: onPickImages,
-            icon: Icons.image_outlined,
-            busy: isPickingImages,
-            label: _imageLabel,
-            iconColor: const Color(0xFF4CAF50),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+            width: 1,
           ),
-          if (onPickVideo != null)
-            _AttachmentAction(
-              enabled: !(isPickingImages || isPosting),
-              onPressed: onPickVideo!,
-              icon: Icons.videocam_outlined,
-              label: 'Video',
-              iconColor: const Color(0xFF2196F3),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _ToolbarIconButton(
+              icon: Icons.image_outlined,
+              tooltip: 'Add photos',
+              active: hasImages,
+              busy: isPickingImages,
+              onTap: (isPosting || isPickingImages) ? null : onPickImages,
             ),
-          if (onPickMusic != null)
-            _AttachmentAction(
-              enabled: !isPosting,
-              onPressed: onPickMusic!,
-              icon: hasMusic ? Icons.music_note : Icons.queue_music_outlined,
-              label: hasMusic ? 'Change music' : 'Music',
-              iconColor: const Color(0xFF9C27B0),
+            if (onPickVideo != null) ...[
+              SizedBox(width: 4.w),
+              _ToolbarIconButton(
+                icon: Icons.videocam_outlined,
+                tooltip: 'Add video',
+                active: hasVideo,
+                onTap: isPosting ? null : onPickVideo,
+              ),
+            ],
+            if (onPickMusic != null) ...[
+              SizedBox(width: 4.w),
+              _ToolbarIconButton(
+                icon: Icons.music_note_rounded,
+                tooltip: 'Add music',
+                active: hasMusic,
+                onTap: isPosting ? null : onPickMusic,
+              ),
+            ],
+            SizedBox(width: 4.w),
+            _ToolbarIconButton(
+              icon: Icons.alternate_email_rounded,
+              tooltip: 'Tag friends',
+              active: hasTaggedUsers,
+              onTap: isPosting ? null : onTagFriends,
             ),
-          _AttachmentAction(
-            enabled: !isPosting,
-            onPressed: onTagFriends,
-            icon: Icons.person_add_alt_1_outlined,
-            label: 'With',
-            iconColor: const Color(0xFFE91E63),
-          ),
-          _AttachmentAction(
-            enabled: !isPosting,
-            onPressed: onPickLocation,
-            icon: Icons.location_on_outlined,
-            busy: isDetectingLocation,
-            label: 'Location',
-            iconColor: const Color(0xFFFF5722),
-          ),
-          _AttachmentAction(
-            enabled: !isPosting,
-            onPressed: onPickFeeling,
-            icon: Icons.sentiment_satisfied_alt_outlined,
-            label: 'Feeling',
-            iconColor: const Color(0xFFFFC107),
-          ),
-        ],
+            SizedBox(width: 4.w),
+            _ToolbarIconButton(
+              icon: Icons.location_on_outlined,
+              tooltip: 'Add location',
+              active: hasLocation,
+              busy: isDetectingLocation,
+              onTap: isPosting ? null : onPickLocation,
+            ),
+            SizedBox(width: 4.w),
+            _ToolbarIconButton(
+              icon: Icons.sentiment_satisfied_alt_outlined,
+              tooltip: 'Add feeling',
+              active: hasFeeling,
+              onTap: isPosting ? null : onPickFeeling,
+            ),
+            SizedBox(width: 4.w),
+            _ToolbarIconButton(
+              icon: Icons.auto_awesome_rounded,
+              tooltip: 'AI Caption',
+              accentColor: Colors.deepPurpleAccent,
+              busy: isGeneratingCaption,
+              onTap: isPosting ? null : onAiSuggest,
+            ),
+            if (onToggleGhost != null) ...[
+              SizedBox(width: 4.w),
+              _ToolbarIconButton(
+                icon: Icons.visibility_off_outlined,
+                tooltip: 'Ghost Mode',
+                active: isGhost,
+                accentColor: const Color(0xFFFF5722),
+                onTap: isPosting ? null : onToggleGhost,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
-
-  String get _imageLabel {
-    if (isPickingImages) {
-      return 'Preparing...';
-    }
-    return switch (mode) {
-      _CreateMode.post => 'Image',
-      _CreateMode.discussion => 'Cover',
-      _CreateMode.album => 'Add photos',
-      _CreateMode.poll => 'Image',
-      _CreateMode.reel => 'Photos',
-    };
-  }
 }
 
-class _AttachmentAction extends StatelessWidget {
-  const _AttachmentAction({
-    required this.enabled,
-    required this.onPressed,
+class _ToolbarIconButton extends StatelessWidget {
+  const _ToolbarIconButton({
     required this.icon,
-    required this.label,
-    this.iconColor,
+    required this.onTap,
+    this.active = false,
     this.busy = false,
+    this.tooltip = '',
+    this.accentColor,
   });
 
-  final bool enabled;
-  final VoidCallback onPressed;
   final IconData icon;
-  final String label;
-  final Color? iconColor;
+  final VoidCallback? onTap;
+  final bool active;
   final bool busy;
+  final String tooltip;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final enabledBg = isDark ? const Color(0xFF242526) : const Color(0xFFF9FAFB);
-    final disabledBg = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F6);
-    final actionBorder = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
-    
-    final enabledFg = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
-    final disabledFg = isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+    final defaultColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final activeColor = accentColor ?? const Color(0xFFFF7A45);
 
-    final bg = enabled ? enabledBg : disabledBg;
-    final fg = enabled ? (iconColor ?? enabledFg) : disabledFg;
-
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(16),
+    return Tooltip(
+      message: tooltip,
       child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18.r),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: actionBorder),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (busy)
-                const SizedBox(
-                  width: 17,
-                  height: 17,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          padding: EdgeInsets.all(7.r),
+          decoration: active
+              ? BoxDecoration(
+                  color: activeColor.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
                 )
-              else
-                Icon(
+              : null,
+          child: busy
+              ? SizedBox(
+                  width: 18.r,
+                  height: 18.r,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                  ),
+                )
+              : Icon(
                   icon,
-                  size: 18,
-                  color: fg,
+                  size: 21.r,
+                  color: active ? activeColor : defaultColor,
                 ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  decoration: TextDecoration.none,
-                  color: fg,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -4226,209 +4144,7 @@ class _AudienceOption {
   final IconData icon;
 }
 
-class _AudienceHint extends StatelessWidget {
-  const _AudienceHint({required this.audienceValue});
 
-  final String audienceValue;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, text) = switch (audienceValue) {
-      'public' => (
-          Icons.public_rounded,
-          'Your post is set to Public. Anyone on or off KatsKlub can see your post, images, and other media.',
-        ),
-      'friends' => (
-          Icons.group_rounded,
-          'Your post is set to Friends. Only your followers can see this post and media.',
-        ),
-      _ => (
-          Icons.lock_rounded,
-          'Your post is set to Only Me. Only you can see and access this post.',
-        ),
-    };
-
-    const bgColor = Color(0xFFF3F4F6);
-    const borderColor = Color(0xFFE5E7EB);
-    const textColor = Color(0xFF6B7280);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: textColor),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GhostPostToggle extends StatelessWidget {
-  const _GhostPostToggle({
-    required this.isGhost,
-    required this.onChanged,
-  });
-
-  final bool isGhost;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final activeBg = isDark ? const Color(0xFF1E1B4B) : const Color(0xFFF5F3FF);
-    const activeBorderColor = Color(0xFFFF7A59);
-    final inactiveBg = isDark ? const Color(0xFF18191A) : Colors.white;
-    final inactiveBorderColor = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
-    
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final subtitleColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-
-    final cardContent = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isGhost
-                  ? (isDark ? const Color(0xFF312E81) : const Color(0xFFDDD6FE))
-                  : (isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6)),
-              shape: BoxShape.circle,
-            ),
-            child: const Text(
-              '👻',
-              style: TextStyle(fontSize: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Ghost Post',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Disappears in 24h. Replies go to DMs.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: subtitleColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: isGhost,
-            onChanged: onChanged,
-            activeThumbColor: const Color(0xFFFF7A59),
-            activeTrackColor: const Color(0xFFFF7A59).withValues(alpha: 0.3),
-          ),
-        ],
-      ),
-    );
-
-    return isGhost
-        ? CustomPaint(
-            painter: _DashedBorderPainter(
-              color: activeBorderColor,
-              borderRadius: 16,
-              strokeWidth: 1.5,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: activeBg,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: cardContent,
-            ),
-          )
-        : Container(
-            decoration: BoxDecoration(
-              color: inactiveBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: inactiveBorderColor),
-            ),
-            child: cardContent,
-          );
-  }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({
-    required this.color,
-    this.strokeWidth = 1.0,
-    this.borderRadius = 12.0,
-  });
-
-  final Color color;
-  final double strokeWidth;
-  final double borderRadius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        Radius.circular(borderRadius),
-      ));
-
-    final dashWidth = 5.0;
-    final dashSpace = 3.0;
-    
-    final pms = path.computeMetrics();
-    for (final pm in pms) {
-      double distance = 0.0;
-      while (distance < pm.length) {
-        final len = dashWidth;
-        canvas.drawPath(
-          pm.extractPath(distance, distance + len),
-          paint,
-        );
-        distance += len + dashSpace;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
-    return oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth ||
-        oldDelegate.borderRadius != borderRadius;
-  }
-}
 
 class _GhostInputBubblePainter extends CustomPainter {
   _GhostInputBubblePainter({
