@@ -169,8 +169,8 @@ class KatsText {
   /// Reels creator name (@username / full name)
   static TextStyle reelAuthor(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
-        fontSize: 15.5.sp,
-        height: 1.3,
+        fontSize: 13.5.sp,
+        height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w700,
         color: Colors.white,
@@ -179,16 +179,16 @@ class KatsText {
         ],
       );
 
-  /// Reels caption text / body
+  /// Reels caption text / body — Sumusunod nang eksakto sa Home (13.sp)
   static TextStyle reelBody(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
-        fontSize: 14.5.sp,
-        height: 1.35,
+        fontSize: 13.sp,
+        height: 1.33,
         letterSpacing: -0.2,
         fontWeight: FontWeight.w500,
         color: Colors.white,
         shadows: const [
-          Shadow(color: Colors.black87, blurRadius: 6, offset: Offset(0, 1)),
+          Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
         ],
       );
 
@@ -209,7 +209,7 @@ class KatsText {
       TextStyle(
         fontFamily: 'SF Pro Rounded',
         color: isFollowing ? Colors.white70 : Colors.white,
-        fontSize: 13.5.sp,
+        fontSize: 13.sp,
         fontWeight: FontWeight.w700,
         height: 1.0,
         shadows: const [
@@ -221,7 +221,7 @@ class KatsText {
   static TextStyle reelTopTitle(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
         color: Colors.white,
-        fontSize: 20.sp,
+        fontSize: 18.sp,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.3,
         shadows: const [
@@ -233,7 +233,7 @@ class KatsText {
   static TextStyle reelCommentInput(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
         color: Colors.white,
-        fontSize: 14.5.sp,
+        fontSize: 13.5.sp,
         fontWeight: FontWeight.w500,
       );
 
@@ -241,7 +241,7 @@ class KatsText {
   static TextStyle reelCommentHint(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
         color: Colors.white70,
-        fontSize: 14.5.sp,
+        fontSize: 13.5.sp,
         fontWeight: FontWeight.w500,
       );
 }
