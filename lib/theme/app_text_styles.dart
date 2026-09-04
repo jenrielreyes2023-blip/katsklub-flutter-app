@@ -196,7 +196,7 @@ class KatsText {
   static TextStyle reelCount(BuildContext c) => TextStyle(
         fontFamily: 'SF Pro Rounded',
         color: Colors.white,
-        fontSize: 13.sp,
+        fontSize: 12.sp,
         fontWeight: FontWeight.w700,
         height: 1.2,
         shadows: const [

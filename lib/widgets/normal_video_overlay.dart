@@ -465,30 +465,30 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
             _ActionButton(
               icon: (_localLikedByMe ?? post.likedByMe)
                   ? CustomIcons.heartFilled(
-                      color: const Color(0xFFEF4444), size: 30)
-                  : CustomIcons.heart(color: Colors.white, size: 30),
+                      color: const Color(0xFFEF4444), size: 21.5.r)
+                  : CustomIcons.heart(color: Colors.white, size: 21.5.r),
               label: _formatCount(_localLikeCount ?? post.likeCount),
               onTap: () => _toggleLike(post),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 14.h),
             _ActionButton(
-              icon: CustomIcons.comment(color: Colors.white, size: 30),
+              icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
               label: _formatCount(_localCommentCount ?? post.commentCount),
               onTap: () => _openCommentsSheet(post),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 14.h),
             _ActionButton(
-              icon: CustomIcons.share(color: Colors.white, size: 30),
+              icon: CustomIcons.share(color: Colors.white, size: 21.5.r),
               onTap: () => SharePostSheet.show(context, post: post),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 14.h),
             _ActionButton(
-              icon: CustomIcons.bookmark(color: Colors.white, size: 30),
+              icon: CustomIcons.bookmark(color: Colors.white, size: 21.5.r),
               onTap: () => _showPlaceholder('Save'),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 14.h),
             _ActionButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white, size: 30),
+              icon: Icon(Icons.more_vert, color: Colors.white, size: 21.5.r),
               onTap: () => _showPlaceholder('More'),
             ),
           ],
@@ -936,8 +936,8 @@ class _ActionButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 38.w,
+            height: 38.h,
             decoration: const BoxDecoration(
               color: Colors.transparent,
               shape: BoxShape.circle,

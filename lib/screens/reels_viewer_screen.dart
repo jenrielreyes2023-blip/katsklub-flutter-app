@@ -1505,36 +1505,36 @@ class _ReelActionRail extends StatelessWidget {
       children: [
         _ActionButton(
           icon: reel.likedByMe
-              ? CustomIcons.heartFilled(color: activeLikeColor, size: 30)
-              : CustomIcons.heart(color: Colors.white, size: 30),
+              ? CustomIcons.heartFilled(color: activeLikeColor, size: 21.5.r)
+              : CustomIcons.heart(color: Colors.white, size: 21.5.r),
           count: _formatCount(reel.likeCount),
           onTap: onLike,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 14.h),
         _ActionButton(
-          icon: CustomIcons.comment(color: Colors.white, size: 30),
+          icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
           count: _formatCount(reel.commentCount),
           onTap: onComment,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 14.h),
         _ActionButton(
-          icon: CustomIcons.repost(color: Colors.white, size: 30),
+          icon: CustomIcons.repost(color: Colors.white, size: 21.5.r),
           count: _formatCount(reel.repostCount),
           onTap: onRepost,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 14.h),
         _ActionButton(
-          icon: CustomIcons.share(color: Colors.white, size: 30),
+          icon: CustomIcons.share(color: Colors.white, size: 21.5.r),
           count: '',
           onTap: onShare,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 14.h),
         _ActionButton(
           icon: CustomIcons.bookmark(
             color: reel.bookmarkedByMe
                 ? Theme.of(context).colorScheme.primary
                 : Colors.white,
-            size: 30,
+            size: 21.5.r,
             isFilled: reel.bookmarkedByMe,
           ),
           count: '',
