@@ -753,59 +753,60 @@ class _ReelPageState extends State<_ReelPage> {
                   fit: StackFit.expand,
                   children: [
                     _buildVideoPlayer(),
+                    if (!_showComments) _buildGradients(),
                     if (!_showComments)
-                      _buildFadingOverlay(
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            _buildGradients(),
-                            Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              child: SafeArea(
-                                child: _ReelTopBar(
-                                  reel: _reel,
-                                  onMoreOptions: _openOptions,
-                                ),
-                              ),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(
+                          child: _buildFadingOverlay(
+                            child: _ReelTopBar(
+                              reel: _reel,
+                              onMoreOptions: _openOptions,
                             ),
-                            Positioned(
-                              right: 14,
-                              bottom: 150,
-                              child: SafeArea(
-                                child: _ReelActionRail(
-                                  reel: _reel,
-                                  onLike: _toggleLike,
-                                  onComment: _openComments,
-                                  onRepost: _repost,
-                                  onShare: _share,
-                                  onBookmark: _toggleBookmark,
-                                ),
-                              ),
+                          ),
+                        ),
+                      ),
+                    if (!_showComments)
+                      Positioned(
+                        right: 14,
+                        bottom: 150,
+                        child: SafeArea(
+                          child: _buildFadingOverlay(
+                            child: _ReelActionRail(
+                              reel: _reel,
+                              onLike: _toggleLike,
+                              onComment: _openComments,
+                              onRepost: _repost,
+                              onShare: _share,
+                              onBookmark: _toggleBookmark,
                             ),
-                            Positioned(
-                              left: 16,
-                              right: 90,
-                              bottom: 95,
-                              child: SafeArea(
-                                child: _ReelCreatorInfo(
-                                  reel: _reel,
-                                  isCaptionExpanded: _isCaptionExpanded,
-                                  isFollowingAuthor: _isFollowingAuthor,
-                                  isFollowPending: _isFollowPending,
-                                  onToggleFollow: _toggleFollowAuthor,
-                                  onOpenAuthor: _openAuthorProfile,
-                                  onCaptionTap: () {
-                                    setState(() {
-                                      _isCaptionExpanded = !_isCaptionExpanded;
-                                    });
-                                  },
-                                  friendActivities: _getReelFriendActivities(_reel),
-                                ),
-                              ),
+                          ),
+                        ),
+                      ),
+                    if (!_showComments)
+                      Positioned(
+                        left: 16,
+                        right: 90,
+                        bottom: 95,
+                        child: SafeArea(
+                          child: _buildFadingOverlay(
+                            child: _ReelCreatorInfo(
+                              reel: _reel,
+                              isCaptionExpanded: _isCaptionExpanded,
+                              isFollowingAuthor: _isFollowingAuthor,
+                              isFollowPending: _isFollowPending,
+                              onToggleFollow: _toggleFollowAuthor,
+                              onOpenAuthor: _openAuthorProfile,
+                              onCaptionTap: () {
+                                setState(() {
+                                  _isCaptionExpanded = !_isCaptionExpanded;
+                                });
+                              },
+                              friendActivities: _getReelFriendActivities(_reel),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     if (!_isInitialized && !_hasError)
@@ -836,10 +837,7 @@ class _ReelPageState extends State<_ReelPage> {
             ),
           ],
         ),
-        if (!_showComments)
-          _buildFadingOverlay(
-            child: _buildCommentPill(),
-          ),
+        if (!_showComments) _buildCommentPill(),
       ],
     );
   }
@@ -1039,73 +1037,75 @@ class _ReelPageState extends State<_ReelPage> {
       left: 16,
       right: 16,
       bottom: bottom,
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                controller: _commentController,
-                focusNode: _commentFocus,
-                inputFormatters: [EmojiPresentationFormatter()],
-                style: KatsText.reelCommentInput(context),
-                decoration: InputDecoration(
-                  hintText: 'Add a comment...',
-                  hintStyle: KatsText.reelCommentHint(context),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _submitComment(),
-              ),
+      child: _buildFadingOverlay(
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
             ),
-            if (_isSendingComment)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white70,
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  focusNode: _commentFocus,
+                  inputFormatters: [EmojiPresentationFormatter()],
+                  style: KatsText.reelCommentInput(context),
+                  decoration: InputDecoration(
+                    hintText: 'Add a comment...',
+                    hintStyle: KatsText.reelCommentHint(context),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
                   ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _submitComment(),
                 ),
-              )
-            else
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _commentController,
-                builder: (_, value, __) {
-                  if (value.text.trim().isEmpty) {
-                    return const SizedBox(width: 12);
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.send_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      onPressed: _submitComment,
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  );
-                },
               ),
-          ],
+              if (_isSendingComment)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white70,
+                    ),
+                  ),
+                )
+              else
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _commentController,
+                  builder: (_, value, __) {
+                    if (value.text.trim().isEmpty) {
+                      return const SizedBox(width: 12);
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: _submitComment,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
