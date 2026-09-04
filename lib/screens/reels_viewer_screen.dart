@@ -17,6 +17,7 @@ import '../widgets/floating_friend_reaction_overlay.dart';
 import '../widgets/sensitive_content_wrapper.dart';
 import '../widgets/special_name_text.dart';
 import '../widgets/share_post_sheet.dart';
+import '../theme/app_text_styles.dart';
 import 'user_profile_screen.dart';
 import 'repost_post_screen.dart';
 
@@ -1007,10 +1008,10 @@ class _ReelPageState extends State<_ReelPage> {
                 controller: _commentController,
                 focusNode: _commentFocus,
                 inputFormatters: [EmojiPresentationFormatter()],
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: const InputDecoration(
+                style: KatsText.reelCommentInput(context),
+                decoration: InputDecoration(
                   hintText: 'Add a comment...',
-                  hintStyle: TextStyle(color: Colors.white70, fontSize: 14),
+                  hintStyle: KatsText.reelCommentHint(context),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
@@ -1081,13 +1082,9 @@ class _ReelTopBar extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
             onPressed: () => Navigator.pop(context),
           ),
-          const Text(
+          Text(
             'Reels',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+            style: KatsText.reelTopTitle(context),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
@@ -1105,9 +1102,10 @@ class _ReelTopBar extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               reel.privacyLabel,
-              style: const TextStyle(
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 color: Colors.white70,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1575,11 +1573,7 @@ class _ActionButton extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 count,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: KatsText.reelCount(context),
               ),
             ],
           ],
@@ -1620,7 +1614,7 @@ class _ReelCreatorInfo extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: reel.authorUsername.trim().isEmpty ? null : onOpenAuthor,
               child: CircleAvatar(
-                radius: 18,
+                radius: 18.r,
                 backgroundImage: reel.authorAvatarUrl.isNotEmpty
                     ? CachedNetworkImageProvider(
                         ApiConfig.assetUrl(reel.authorAvatarUrl),
@@ -1630,10 +1624,11 @@ class _ReelCreatorInfo extends StatelessWidget {
                 child: reel.authorAvatarUrl.isEmpty
                     ? Text(
                         reel.authorInitials,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
                           color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
                         ),
                       )
                     : null,
@@ -1651,11 +1646,7 @@ class _ReelCreatorInfo extends StatelessWidget {
                       child: SpecialNameText(
                         username: reel.authorUsername,
                         displayName: reel.authorFullName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: KatsText.reelAuthor(context),
                       ),
                     ),
                     if (reel.authorIsVerified) ...[
@@ -1672,11 +1663,12 @@ class _ReelCreatorInfo extends StatelessWidget {
             ),
             if (!reel.ownedByMe && reel.authorUsername.trim().isNotEmpty) ...[
               const SizedBox(width: 6),
-              const Text(
-                '.',
+              Text(
+                '·',
                 style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: Colors.white70,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1685,27 +1677,20 @@ class _ReelCreatorInfo extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: isFollowPending ? null : onToggleFollow,
                 child: SizedBox(
-                  height: 18,
+                  height: 20.h,
                   child: Center(
                     child: isFollowPending
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
+                        ? SizedBox(
+                            width: 14.r,
+                            height: 14.r,
+                            child: const CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),
                           )
                         : Text(
                             isFollowingAuthor ? 'Following' : 'Follow',
-                            style: TextStyle(
-                              color: isFollowingAuthor
-                                  ? Colors.white70
-                                  : Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              height: 1,
-                            ),
+                            style: KatsText.reelFollow(context, isFollowing: isFollowingAuthor),
                           ),
                   ),
                 ),
@@ -1720,11 +1705,7 @@ class _ReelCreatorInfo extends StatelessWidget {
             onTap: onCaptionTap,
             child: Text(
               reel.text.trim(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.3,
-              ),
+              style: KatsText.reelBody(context),
               maxLines: isCaptionExpanded ? null : 2,
               overflow: isCaptionExpanded
                   ? TextOverflow.visible

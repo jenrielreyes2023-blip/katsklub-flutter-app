@@ -159,4 +159,90 @@ class KatsText {
         fontWeight: FontWeight.w500,
         height: 1.33,
       );
+
+  // ==========================================
+  // REELS OVERLAY TYPOGRAPHY
+  // Sumusunod sa Home design system pero tuned para
+  // sa full-screen video overlay (may drop shadows para litaw).
+  // ==========================================
+
+  /// Reels creator name (@username / full name)
+  static TextStyle reelAuthor(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        fontSize: 15.5.sp,
+        height: 1.3,
+        letterSpacing: -0.2,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+        shadows: const [
+          Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      );
+
+  /// Reels caption text / body
+  static TextStyle reelBody(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        fontSize: 14.5.sp,
+        height: 1.35,
+        letterSpacing: -0.2,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+        shadows: const [
+          Shadow(color: Colors.black87, blurRadius: 6, offset: Offset(0, 1)),
+        ],
+      );
+
+  /// Reels side action counts (likes, comments, reposts)
+  static TextStyle reelCount(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: Colors.white,
+        fontSize: 13.sp,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        shadows: const [
+          Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      );
+
+  /// Reels follow button text ('Follow' / 'Following')
+  static TextStyle reelFollow(BuildContext c, {bool isFollowing = false}) =>
+      TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: isFollowing ? Colors.white70 : Colors.white,
+        fontSize: 13.5.sp,
+        fontWeight: FontWeight.w700,
+        height: 1.0,
+        shadows: const [
+          Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      );
+
+  /// Reels top bar header ('Reels')
+  static TextStyle reelTopTitle(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: Colors.white,
+        fontSize: 20.sp,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.3,
+        shadows: const [
+          Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 1)),
+        ],
+      );
+
+  /// Reels comment pill text field input
+  static TextStyle reelCommentInput(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: Colors.white,
+        fontSize: 14.5.sp,
+        fontWeight: FontWeight.w500,
+      );
+
+  /// Reels comment pill placeholder hint
+  static TextStyle reelCommentHint(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: Colors.white70,
+        fontSize: 14.5.sp,
+        fontWeight: FontWeight.w500,
+      );
 }
+
