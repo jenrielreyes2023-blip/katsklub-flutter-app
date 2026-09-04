@@ -1181,102 +1181,129 @@ class _ReelPageState extends State<_ReelPage> {
   }
 
   Widget _buildInactivityPrompt() {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
     return Positioned.fill(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _resumeFromInactivity,
         child: Container(
-          color: Colors.black.withValues(alpha: 0.72),
-          alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(horizontal: 28.w),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20.r),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 26.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E2024).withValues(alpha: 0.90),
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    width: 1,
+          color: Colors.black.withValues(alpha: 0.65),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {}, // Prevent taps on the sheet from bubbling to backdrop
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF181818),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                    border: const Border(
+                      top: BorderSide(color: Color(0xFF2C2C2E), width: 1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 24,
+                        offset: const Offset(0, -6),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 58.r,
-                      height: 58.r,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                          width: 1.5,
+                  padding: EdgeInsets.fromLTRB(
+                    20.w,
+                    12.h,
+                    20.w,
+                    math.max(bottomPadding, 16.h) + 12.h,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Threads-style drag handle
+                      Container(
+                        width: 36.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF48484A),
+                          borderRadius: BorderRadius.circular(2.r),
                         ),
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.pause_circle_filled_rounded,
-                          color: const Color(0xFFFF7A45),
-                          size: 34.r,
+                      SizedBox(height: 20.h),
+                      Text(
+                        'Still watching?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      'Are you still watching?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Playback has been paused because this video has replayed multiple times. Tap below to keep watching.',
-                      style: TextStyle(
-                        color: const Color(0xFFD1D5DB),
-                        fontSize: 13.sp,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 22.h),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF7A45),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                        onPressed: _resumeFromInactivity,
+                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Text(
-                          'Continue Watching',
+                          "We've paused this video since it has been playing for a while.",
                           style: TextStyle(
+                            color: const Color(0xFF8E8E93),
                             fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      SizedBox(height: 24.h),
+                      // Primary Threads-style solid white pill button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46.h,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(23.r),
+                            ),
+                          ),
+                          onPressed: _resumeFromInactivity,
+                          child: Text(
+                            'Keep watching',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 10.h),
+                      // Secondary Threads-style dark pill button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46.h,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF262628),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(23.r),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).maybePop(),
+                          child: Text(
+                            'Back to feed',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFE5E5E7),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
