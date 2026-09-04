@@ -8,6 +8,7 @@ import '../models/post.dart';
 import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_overlay_controller.dart';
+import '../screens/reels_viewer_screen.dart';
 import 'normal_video_overlay_host.dart';
 import 'media_post_load_registry.dart';
 import 'loading_skeletons.dart'; // For SkeletonPulse
@@ -45,7 +46,25 @@ class VideoPreviewCardState extends State<VideoPreviewCard> {
     }
   }
 
-  void _openFullscreenVideo(Post post, Duration initialPosition) {
+  void _openFullscreenVideo(Post post, Duration initialPosition) async {
+    if (post.isReel) {
+      if (normalVideoPlaybackSession.isActivePost(post.id)) {
+        normalVideoPlaybackSession.pause();
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReelsViewerScreen(
+            initialReel: post,
+            initialReelId: post.id,
+          ),
+        ),
+      );
+      if (mounted && normalVideoPlaybackSession.isActivePost(post.id)) {
+        normalVideoPlaybackSession.play(muted: normalVideoMuted());
+      }
+      return;
+    }
+
     normalVideoOverlayController.open(
       post,
       initialPosition: initialPosition,
