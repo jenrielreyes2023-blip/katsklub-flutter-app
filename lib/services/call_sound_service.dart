@@ -12,7 +12,7 @@ class CallSoundService {
       await _player!.setReleaseMode(ReleaseMode.loop);
       await _player!.setVolume(1.0);
       await _player!.play(
-        UrlSource('https://actions.google.com/sounds/v1/communication/phone_ring.ogg'),
+        AssetSource('sounds/phone_ring.wav'),
       );
     } catch (e) {
       debugPrint('[CallSound] Error playing ringtone: $e');
@@ -26,7 +26,7 @@ class CallSoundService {
       await _player!.setReleaseMode(ReleaseMode.loop);
       await _player!.setVolume(1.0);
       await _player!.play(
-        UrlSource('https://actions.google.com/sounds/v1/communication/phone_dialing.ogg'),
+        AssetSource('sounds/phone_dialing.wav'),
       );
     } catch (e) {
       debugPrint('[CallSound] Error playing ringback: $e');

@@ -157,6 +157,7 @@ class TRTCCallService {
   TRTCCloud? _trtcCloud;
   TXDeviceManager? _deviceManager;
   Timer? _durationTimer;
+  Timer? _callTimeoutTimer;
   bool _isEngineReady = false;
   TRTCCloudListener? _cloudListener;
 
@@ -185,7 +186,9 @@ class TRTCCallService {
           debugPrint('[TRTC] onEnterRoom: $result');
           if (result > 0) {
             final cur = sessionNotifier.value;
-            if (cur != null) {
+            // If the local user is answering an incoming call, entering room completes connection.
+            // For outgoing calls, keep status as outgoing so ringback plays and UI displays "Calling...".
+            if (cur != null && cur.status == CallStatus.incoming) {
               sessionNotifier.value = cur.copyWith(status: CallStatus.connected);
               _startDurationTimer();
             }
@@ -200,17 +203,16 @@ class TRTCCallService {
         onRemoteUserEnterRoom: (userId) {
           debugPrint('[TRTC] onRemoteUserEnterRoom: $userId');
           final cur = sessionNotifier.value;
-          if (cur != null) {
+          if (cur != null && cur.status != CallStatus.connected) {
             sessionNotifier.value = cur.copyWith(status: CallStatus.connected);
             _startDurationTimer();
-            // If remote view was already attached before user entered
-            if (_remoteViewId != null) {
-              _trtcCloud?.startRemoteView(
-                userId,
-                TRTCVideoStreamType.big,
-                _remoteViewId,
-              );
-            }
+          }
+          if (_remoteViewId != null) {
+            _trtcCloud?.startRemoteView(
+              userId,
+              TRTCVideoStreamType.big,
+              _remoteViewId,
+            );
           }
         },
         onRemoteUserLeaveRoom: (userId, reason) {
@@ -395,6 +397,14 @@ class TRTCCallService {
       'isVideo': isVideo,
     });
 
+    _callTimeoutTimer?.cancel();
+    _callTimeoutTimer = Timer(const Duration(seconds: 45), () {
+      final cur = sessionNotifier.value;
+      if (cur != null && cur.status == CallStatus.outgoing) {
+        endCall(reason: 'no_answer');
+      }
+    });
+
     // 3. Enter TRTC Room as anchor
     await _enterTRTCRoom(callId, isVideo);
 
@@ -472,6 +482,7 @@ class TRTCCallService {
     }
 
     _stopDurationTimer();
+    _callTimeoutTimer?.cancel();
     CallSoundService.stop();
 
     try {
@@ -578,6 +589,7 @@ class TRTCCallService {
   }
 
   void _startDurationTimer() {
+    _callTimeoutTimer?.cancel();
     _durationTimer?.cancel();
     var seconds = 0;
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {

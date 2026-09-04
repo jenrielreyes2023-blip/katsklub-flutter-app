@@ -92,6 +92,8 @@ flutter:
     - assets/sounds/message_in.mp3
     - assets/sounds/message_out.mp3
     - assets/sounds/notification_in.mp3
+    - assets/sounds/phone_dialing.wav
+    - assets/sounds/phone_ring.wav
     - assets/frames/aframe.png
     - assets/frames/bframe.png
     - assets/frames/cframe.png
