@@ -64,3 +64,14 @@ handoff_v2.txt
 handoff_v3.txt
 codebase-explanation.txt
 CLAUDE.md
+
+# VPS Credentials & Scripts (Sensitive)
+.vps_credentials.json
+.vps_credentials*
+.askpass.bat
+vps_credentials*
+
+# KatsKlub Backend
+katsklub-backend/
+katsklub-backend
+
