@@ -160,8 +160,6 @@ class TRTCCallService {
   bool _isEngineReady = false;
   TRTCCloudListener? _cloudListener;
 
-  // Cached view IDs for reconnect / late binding
-  int? _localViewId;
   int? _remoteViewId;
 
   void _onSessionStatusChanged() {
@@ -244,8 +242,8 @@ class TRTCCallService {
                 cur.copyWith(isRemoteAudioAvailable: available);
           }
         },
-        onError: (errCode, errMsg, extraInfo) {
-          debugPrint('[TRTC] Error $errCode: $errMsg ($extraInfo)');
+        onError: (errCode, errMsg) {
+          debugPrint('[TRTC] Error $errCode: $errMsg');
         },
       );
 
@@ -381,7 +379,7 @@ class TRTCCallService {
 
     // Open Screen
     final navContext = UpdateChecker.navigatorKey.currentContext;
-    if (navContext != null) {
+    if (navContext != null && navContext.mounted) {
       if (isVideo) {
         VideoCallScreen.open(navContext);
       } else {
@@ -490,7 +488,6 @@ class TRTCCallService {
       debugPrint('[TRTC] Error stopping TRTC: $e');
     }
 
-    _localViewId = null;
     _remoteViewId = null;
 
     if (sessionNotifier.value != null) {
@@ -531,7 +528,6 @@ class TRTCCallService {
 
   /// Binds local camera preview viewId when widget is mounted.
   void bindLocalView(int viewId) {
-    _localViewId = viewId;
     final cur = sessionNotifier.value;
     final isFront = cur?.isFrontCamera ?? true;
     _trtcCloud?.startLocalPreview(isFront, viewId);
