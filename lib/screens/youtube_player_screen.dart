@@ -10,7 +10,9 @@ import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
+import '../services/auth_service.dart';
 import '../services/youtube_service.dart';
+import 'create_post_screen.dart';
 
 class _QualityOption {
   final String label;
@@ -397,8 +399,38 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         ? widget.title!.trim()
         : 'YouTube Video';
     Share.share(
-      '$title\nhttps://www.youtube.com/watch?v=${widget.videoId}',
+        '$title\nhttps://www.youtube.com/watch?v=${widget.videoId}',
       subject: title,
+    );
+  }
+
+  Future<void> _postToFeed() async {
+    final authService = AuthService();
+    final user = await authService.getSavedUser();
+    if (!mounted) return;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to post to feed.')),
+      );
+      return;
+    }
+
+    final item = YouTubeVideoItem(
+      id: widget.videoId,
+      title: widget.title ?? 'YouTube Video',
+      duration: '',
+      author: widget.author ?? 'YouTube',
+      thumbnail: widget.thumbnail ??
+          'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatePostScreen(
+          user: user,
+          initialYouTubeVideo: item,
+        ),
+      ),
     );
   }
 
@@ -850,7 +882,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     const Divider(height: 1, color: Color(0x229CA3AF)),
                     SizedBox(height: 16.h),
 
-                    // Quick Action Buttons (Quality, Share, App, Toggle)
+                    // Quick Action Buttons (Quality, Post to Feed, Share, Web/CDN Player)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -862,15 +894,16 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           accentColor: const Color(0xFFFF0000),
                         ),
                         _buildActionButton(
+                          icon: Icons.post_add_rounded,
+                          label: 'Post to Feed',
+                          onTap: _postToFeed,
+                          isDark: isDark,
+                          accentColor: const Color(0xFFFF7A45),
+                        ),
+                        _buildActionButton(
                           icon: Icons.share_outlined,
                           label: 'Share',
                           onTap: _shareVideo,
-                          isDark: isDark,
-                        ),
-                        _buildActionButton(
-                          icon: Icons.launch_rounded,
-                          label: 'YouTube App',
-                          onTap: _openInYouTube,
                           isDark: isDark,
                         ),
                         _buildActionButton(

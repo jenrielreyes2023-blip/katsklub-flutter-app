@@ -2,7 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../services/auth_service.dart';
 import '../services/youtube_service.dart';
+import 'create_post_screen.dart';
 import 'youtube_player_screen.dart';
 
 /// Screen allowing users to search, browse, and play YouTube videos directly.
@@ -147,6 +149,27 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
         );
       }
     }
+  }
+
+  Future<void> _postVideoToFeed(YouTubeVideoItem video) async {
+    final authService = AuthService();
+    final user = await authService.getSavedUser();
+    if (!mounted) return;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to post to feed.')),
+      );
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatePostScreen(
+          user: user,
+          initialYouTubeVideo: video,
+        ),
+      ),
+    );
   }
 
   @override
@@ -467,6 +490,9 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
           isLoading: isItemLoading,
           isDark: isDark,
           onTap: () => _playVideo(video),
+          onPostToFeed: widget.onVideoSelected == null
+              ? () => _postVideoToFeed(video)
+              : null,
         );
       },
     );
@@ -480,12 +506,14 @@ class _VideoCard extends StatelessWidget {
     required this.isLoading,
     required this.isDark,
     required this.onTap,
+    this.onPostToFeed,
   });
 
   final YouTubeVideoItem video;
   final bool isLoading;
   final bool isDark;
   final VoidCallback onTap;
+  final VoidCallback? onPostToFeed;
 
   @override
   Widget build(BuildContext context) {
@@ -678,6 +706,42 @@ class _VideoCard extends StatelessWidget {
                                   fontFamily: 'SF Pro Rounded',
                                   fontSize: 11.sp,
                                   color: const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ],
+                            if (onPostToFeed != null) ...[
+                              const Spacer(),
+                              InkWell(
+                                onTap: onPostToFeed,
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF7A45)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.post_add_rounded,
+                                        color: const Color(0xFFFF7A45),
+                                        size: 14.sp,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'Post',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFFFF7A45),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,6 +16,8 @@ import '../services/feed_service.dart';
 import '../services/post_service.dart';
 import '../services/gemini_service.dart';
 import '../services/auth_service.dart';
+import '../services/youtube_service.dart';
+import '../screens/youtube_search_screen.dart';
 import '../utils/emoji_presentation.dart';
 import 'post_with_users_picker.dart';
 import 'special_name_text.dart';
@@ -32,11 +35,13 @@ class CreatePostComposer extends StatefulWidget {
   const CreatePostComposer({
     required this.user,
     required this.onPostCreated,
+    this.initialYouTubeVideo,
     super.key,
   });
 
   final User user;
   final VoidCallback onPostCreated;
+  final YouTubeVideoItem? initialYouTubeVideo;
 
   @override
   State<CreatePostComposer> createState() => _CreatePostComposerState();
@@ -62,6 +67,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   SelectedPostImage? _discussionCover;
   List<SelectedPostImage> _reelImages = [];
   PreparedVideo? _selectedVideo;
+  YouTubeVideoItem? _attachedYouTubeVideo;
   _SelectedComposerMusic? _selectedMusic;
   _SelectedComposerMusic? _selectedReelMusic;
   bool _isPickingImages = false;
@@ -97,8 +103,14 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   @override
   void initState() {
     super.initState();
+    _attachedYouTubeVideo = widget.initialYouTubeVideo;
     _controller.addListener(_syncCanPostState);
     _titleController.addListener(_syncCanPostState);
+    if (_attachedYouTubeVideo != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _syncCanPostState();
+      });
+    }
   }
 
   @override
@@ -118,7 +130,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     final canPost = switch (_mode) {
       _CreateMode.post => (body.isNotEmpty ||
               _images.any((image) => image.isReady) ||
-              _selectedVideo != null) &&
+              _selectedVideo != null ||
+              _attachedYouTubeVideo != null) &&
           imagesReady,
       _CreateMode.discussion => title.isNotEmpty &&
           body.isNotEmpty &&
@@ -190,6 +203,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       _discussionCover = null;
       _reelImages = [];
       _selectedVideo = null;
+      _attachedYouTubeVideo = null;
       _selectedMusic = null;
       _selectedReelMusic = null;
       _isSensitive = false;
@@ -451,7 +465,16 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
   }
 
   Future<void> _submit() async {
-    final text = _controller.text.trim();
+    var text = _controller.text.trim();
+    if (_attachedYouTubeVideo != null) {
+      final ytUrl =
+          'https://www.youtube.com/watch?v=${_attachedYouTubeVideo!.id}';
+      if (text.isEmpty) {
+        text = '▶ ${_attachedYouTubeVideo!.title}\n$ytUrl';
+      } else if (!text.contains(_attachedYouTubeVideo!.id)) {
+        text = '$text\n\n▶ ${_attachedYouTubeVideo!.title}\n$ytUrl';
+      }
+    }
     final title = _titleController.text.trim();
 
     if (_mode == _CreateMode.poll &&
@@ -514,7 +537,9 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         reelImages: _mode == _CreateMode.reel ? _reelImages : const [],
         videoDataUrl:
             _mode == _CreateMode.album ? null : _selectedVideo?.dataUrl,
-        videoTitle: _mode == _CreateMode.album ? null : _selectedVideo?.name,
+        videoTitle: _mode == _CreateMode.album
+            ? null
+            : (_selectedVideo?.name ?? _attachedYouTubeVideo?.title),
         musicTitle: _mode == _CreateMode.album
             ? _selectedMusic?.title
             : _mode == _CreateMode.reel
@@ -631,6 +656,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         _discussionCover = null;
         _reelImages = [];
         _selectedVideo = null;
+        _attachedYouTubeVideo = null;
         _selectedMusic = null;
         _selectedReelMusic = null;
         _visibility = 'public';
@@ -1254,6 +1280,18 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                                   },
                                 ),
                               ],
+                              if (_mode == _CreateMode.post && _attachedYouTubeVideo != null) ...[
+                                SizedBox(height: 8.h),
+                                _AttachedYouTubePreviewCard(
+                                  video: _attachedYouTubeVideo!,
+                                  onRemove: _isPosting
+                                      ? null
+                                      : () {
+                                          setState(() => _attachedYouTubeVideo = null);
+                                          _syncCanPostState();
+                                        },
+                                ),
+                              ],
                               if (_progressMessage != null) ...[
                                 SizedBox(height: 12.h),
                                 _ComposerProgress(
@@ -1314,12 +1352,14 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
               hasMusic: _mode == _CreateMode.reel ? _selectedReelMusic != null : _selectedMusic != null,
               hasImages: _images.isNotEmpty || _discussionCover != null || _reelImages.isNotEmpty,
               hasVideo: _selectedVideo != null,
+              hasYouTube: _attachedYouTubeVideo != null,
               onPickImages: (_mode == _CreateMode.post || _mode == _CreateMode.album)
                   ? _pickImages
                   : _mode == _CreateMode.discussion
                       ? _pickDiscussionCover
                       : _pickReelImages,
               onPickVideo: (_mode == _CreateMode.post || _mode == _CreateMode.reel) ? _pickVideo : null,
+              onPickYouTube: _mode == _CreateMode.post ? _pickYouTubeVideo : null,
               onPickMusic: _mode == _CreateMode.album
                   ? _openMusicPicker
                   : _mode == _CreateMode.reel
@@ -1347,6 +1387,20 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickYouTubeVideo() async {
+    final video = await Navigator.of(context).push<YouTubeVideoItem?>(
+      YouTubeSearchScreen.route(
+        onVideoSelected: (selected) {},
+      ),
+    );
+    if (!mounted || video == null) return;
+    setState(() {
+      _attachedYouTubeVideo = video;
+      _errorMessage = null;
+    });
+    _syncCanPostState();
   }
 
   // AI SUGGESTION CAPTION HELPER METHODS
@@ -3947,6 +4001,8 @@ class _BottomAttachmentToolbar extends StatelessWidget {
     required this.onPickImages,
     required this.onPickVideo,
     required this.onPickMusic,
+    this.onPickYouTube,
+    this.hasYouTube = false,
     required this.onTagFriends,
     required this.onPickLocation,
     required this.onPickFeeling,
@@ -3969,6 +4025,8 @@ class _BottomAttachmentToolbar extends StatelessWidget {
   final VoidCallback onPickImages;
   final VoidCallback? onPickVideo;
   final VoidCallback? onPickMusic;
+  final VoidCallback? onPickYouTube;
+  final bool hasYouTube;
   final VoidCallback onTagFriends;
   final VoidCallback onPickLocation;
   final VoidCallback onPickFeeling;
@@ -4025,6 +4083,16 @@ class _BottomAttachmentToolbar extends StatelessWidget {
                 tooltip: 'Add music',
                 active: hasMusic,
                 onTap: isPosting ? null : onPickMusic,
+              ),
+            ],
+            if (onPickYouTube != null) ...[
+              SizedBox(width: 4.w),
+              _ToolbarIconButton(
+                icon: Icons.smart_display_rounded,
+                tooltip: 'Attach YouTube',
+                active: hasYouTube,
+                accentColor: const Color(0xFFFF0000),
+                onTap: isPosting ? null : onPickYouTube,
               ),
             ],
             SizedBox(width: 4.w),
@@ -4224,5 +4292,196 @@ class _GhostInputBubblePainter extends CustomPainter {
         oldDelegate.borderColor != borderColor ||
         oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+class _AttachedYouTubePreviewCard extends StatelessWidget {
+  const _AttachedYouTubePreviewCard({
+    required this.video,
+    required this.onRemove,
+  });
+
+  final YouTubeVideoItem video;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF242526) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thumbnail preview
+              ClipRRect(
+                borderRadius:
+                    BorderRadius.horizontal(left: Radius.circular(15.r)),
+                child: SizedBox(
+                  width: 120.w,
+                  height: 75.h,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (video.thumbnail.isNotEmpty)
+                        CachedNetworkImage(
+                          imageUrl: video.thumbnail,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(
+                            color: Colors.black12,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFFFF0000)),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => Container(
+                            color: Colors.black12,
+                            child: const Icon(Icons.broken_image,
+                                color: Colors.grey),
+                          ),
+                        )
+                      else
+                        Container(
+                          color: Colors.black12,
+                          child: const Icon(Icons.video_library,
+                              color: Colors.grey),
+                        ),
+                      Container(color: Colors.black26),
+                      const Center(
+                        child: Icon(
+                          Icons.play_circle_fill_rounded,
+                          color: Color(0xFFFF0000),
+                          size: 32,
+                        ),
+                      ),
+                      if (video.duration.isNotEmpty)
+                        Positioned(
+                          bottom: 4.h,
+                          right: 4.w,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 4.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              video.duration,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white,
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(10.w, 10.h, 32.w, 10.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF0000),
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              'YouTube',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white,
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (video.author.isNotEmpty) ...[
+                            SizedBox(width: 6.w),
+                            Expanded(
+                              child: Text(
+                                video.author,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: isDark
+                                      ? const Color(0xFF9CA3AF)
+                                      : const Color(0xFF6B7280),
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 5.h),
+                      Text(
+                        video.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 12.5.sp,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1C1E21),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (onRemove != null)
+            Positioned(
+              top: 6.h,
+              right: 6.w,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onRemove,
+                  child: Padding(
+                    padding: EdgeInsets.all(4.r),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 16.r,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

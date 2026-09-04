@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../models/user.dart';
+import '../services/youtube_service.dart';
 import '../widgets/create_post_composer.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({
     required this.user,
-    required this.onPostCreated,
+    this.onPostCreated,
+    this.initialYouTubeVideo,
     super.key,
   });
 
   final User user;
-  final VoidCallback onPostCreated;
+  final VoidCallback? onPostCreated;
+  final YouTubeVideoItem? initialYouTubeVideo;
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -25,7 +28,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _composerKey++;
     });
 
-    widget.onPostCreated();
+    widget.onPostCreated?.call();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Created.')),
     );
@@ -40,6 +43,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       key: ValueKey(_composerKey),
       user: widget.user,
       onPostCreated: _handlePostCreated,
+      initialYouTubeVideo: widget.initialYouTubeVideo,
     );
   }
 }

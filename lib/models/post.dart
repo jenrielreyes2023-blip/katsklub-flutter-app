@@ -385,10 +385,10 @@ class Post {
       videoUrl: _readString(json['videoUrl'] ?? json['video_url']) ?? '',
       videoPosterUrl:
           _readString(json['videoPosterUrl'] ?? json['video_poster_url']) ?? '',
-      videoTitle: _readString(json['videoTitle'] ?? json['video_title']) ?? '',
+      videoTitle: _readString(json['videoTitle'] ?? json['video_title']) ??
+          _extractYouTubeVideoTitle(json),
       videoVolume: _readVideoVolume(json),
-      youtubeVideoId:
-          _readString(json['youtubeVideoId'] ?? json['youtube_video_id']) ?? '',
+      youtubeVideoId: _extractYouTubeVideoId(json),
       musicTitle: _readString(json['musicTitle'] ?? json['music_title']) ?? '',
       musicArtist:
           _readString(json['musicArtist'] ?? json['music_artist']) ?? '',
@@ -624,9 +624,10 @@ class Post {
     }
 
     final videoId = youtubeVideoId.trim();
+    final customTitle = videoTitle.trim().isNotEmpty ? videoTitle.trim() : 'YouTube video';
     return LinkPreview(
       url: 'https://www.youtube.com/watch?v=$videoId',
-      title: 'YouTube video',
+      title: customTitle,
       description: '',
       imageUrl: 'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
       domain: 'YouTube',
@@ -1087,6 +1088,36 @@ class Post {
     }
     final muted = json['videoMuted'] == true || json['video_muted'] == true;
     return muted ? 0.0 : 1.0;
+  }
+
+  static String _extractYouTubeVideoId(Map<String, dynamic> json) {
+    final direct =
+        _readString(json['youtubeVideoId'] ?? json['youtube_video_id'])?.trim() ?? '';
+    if (direct.isNotEmpty) return direct;
+    final text = _readString(json['text'] ?? json['content']) ?? '';
+    if (text.isNotEmpty) {
+      final match = RegExp(
+        r'(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})',
+      ).firstMatch(text);
+      if (match != null) return match.group(1) ?? '';
+    }
+    return '';
+  }
+
+  static String _extractYouTubeVideoTitle(Map<String, dynamic> json) {
+    final direct = _readString(json['videoTitle'] ?? json['video_title'])?.trim() ?? '';
+    if (direct.isNotEmpty) return direct;
+    final text = _readString(json['text'] ?? json['content']) ?? '';
+    if (text.isNotEmpty) {
+      final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      for (final line in lines) {
+        if (line.startsWith('▶')) {
+          final cleaned = line.replaceFirst(RegExp(r'^▶\s*'), '').trim();
+          if (cleaned.isNotEmpty) return cleaned;
+        }
+      }
+    }
+    return '';
   }
 
   static List<LikePreviewUser> _readLikePreview(Object? value) {
