@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -299,6 +300,10 @@ class _ReelPageState extends State<_ReelPage> {
   late Post _reel;
   bool _isInitialized = false;
   bool _hasError = false;
+  int _loopCount = 0;
+  Duration? _lastPosition;
+  bool _isPromptingInactivity = false;
+  static const int _maxConsecutiveLoops = 5;
 
   bool get _isPhotoReel =>
       _reel.videoUrl.trim().isEmpty && _reel.imageUrls.isNotEmpty;
@@ -333,11 +338,15 @@ class _ReelPageState extends State<_ReelPage> {
       _isCaptionExpanded = false;
       _isFollowingAuthor = widget.reel.isFollowingAuthor;
       _isFollowPending = false;
+      _loopCount = 0;
+      _lastPosition = null;
+      _isPromptingInactivity = false;
       _commentController.clear();
       _commentFocus.unfocus();
     }
 
     if (oldWidget.reel.videoUrl != widget.reel.videoUrl) {
+      _controller?.removeListener(_handleVideoProgress);
       _controller?.dispose();
       _controller = null;
       _isInitialized = false;
@@ -347,12 +356,18 @@ class _ReelPageState extends State<_ReelPage> {
     }
 
     if (oldWidget.isActive != widget.isActive) {
+      if (!widget.isActive) {
+        _isPromptingInactivity = false;
+        _loopCount = 0;
+        _lastPosition = null;
+      }
       _syncPlayback();
     }
   }
 
   @override
   void dispose() {
+    _controller?.removeListener(_handleVideoProgress);
     _controller?.dispose();
     _commentController.dispose();
     _commentFocus.dispose();
@@ -370,7 +385,11 @@ class _ReelPageState extends State<_ReelPage> {
       Uri.parse(ApiConfig.assetUrl(_reel.videoUrl)),
     );
     _controller = controller;
+    _loopCount = 0;
+    _lastPosition = null;
+    _isPromptingInactivity = false;
     controller.setLooping(true);
+    controller.addListener(_handleVideoProgress);
     controller.initialize().then((_) {
       if (!mounted) return;
       setState(() {
@@ -385,11 +404,54 @@ class _ReelPageState extends State<_ReelPage> {
     });
   }
 
+  void _handleVideoProgress() {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (_isPromptingInactivity || !widget.isActive) return;
+
+    final duration = controller.value.duration;
+    final position = controller.value.position;
+
+    if (duration > const Duration(seconds: 1)) {
+      if (_lastPosition != null) {
+        // Loop detected: position wrapped around from near end (>= 80%) to start (<= 25%)
+        if (_lastPosition! >= (duration * 0.8) && position <= (duration * 0.25)) {
+          _loopCount++;
+          if (_loopCount >= _maxConsecutiveLoops) {
+            controller.pause();
+            if (mounted) {
+              setState(() {
+                _isPromptingInactivity = true;
+              });
+            }
+          }
+        }
+      }
+      _lastPosition = position;
+    }
+  }
+
+  void _resetLoopCount() {
+    _loopCount = 0;
+    _lastPosition = null;
+    if (_isPromptingInactivity) {
+      _isPromptingInactivity = false;
+    }
+  }
+
+  void _resumeFromInactivity() {
+    if (!mounted) return;
+    setState(() {
+      _resetLoopCount();
+    });
+    _controller?.play();
+  }
+
   void _syncPlayback() {
     if (!_isInitialized) return;
     final controller = _controller;
     if (controller == null) return;
-    if (widget.isActive) {
+    if (widget.isActive && !_isPromptingInactivity) {
       controller.play();
     } else {
       controller.pause();
@@ -397,6 +459,10 @@ class _ReelPageState extends State<_ReelPage> {
   }
 
   void _togglePlayback() {
+    if (_isPromptingInactivity) {
+      _resumeFromInactivity();
+      return;
+    }
     if (_commentFocus.hasFocus) {
       _commentFocus.unfocus();
       return;
@@ -404,6 +470,7 @@ class _ReelPageState extends State<_ReelPage> {
     if (!_isInitialized) return;
     final controller = _controller;
     if (controller == null) return;
+    _resetLoopCount();
     setState(() {
       if (controller.value.isPlaying) {
         controller.pause();
@@ -823,7 +890,8 @@ class _ReelPageState extends State<_ReelPage> {
                       ),
                     if (_isInitialized &&
                         _controller != null &&
-                        !_controller!.value.isPlaying)
+                        !_controller!.value.isPlaying &&
+                        !_isPromptingInactivity)
                       const Center(
                         child: Icon(
                           Icons.play_circle_fill_rounded,
@@ -838,6 +906,7 @@ class _ReelPageState extends State<_ReelPage> {
           ],
         ),
         if (!_showComments) _buildCommentPill(),
+        if (_isPromptingInactivity) _buildInactivityPrompt(),
       ],
     );
   }
@@ -1105,6 +1174,112 @@ class _ReelPageState extends State<_ReelPage> {
                   },
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInactivityPrompt() {
+    return Positioned.fill(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _resumeFromInactivity,
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.72),
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(horizontal: 28.w),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20.r),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 26.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E2024).withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 58.r,
+                      height: 58.r,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.pause_circle_filled_rounded,
+                          color: const Color(0xFFFF7A45),
+                          size: 34.r,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    Text(
+                      'Are you still watching?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Playback has been paused because this video has replayed multiple times. Tap below to keep watching.',
+                      style: TextStyle(
+                        color: const Color(0xFFD1D5DB),
+                        fontSize: 13.sp,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 22.h),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44.h,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF7A45),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        onPressed: _resumeFromInactivity,
+                        child: Text(
+                          'Continue Watching',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
