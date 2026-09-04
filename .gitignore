@@ -75,3 +75,6 @@ vps_credentials*
 katsklub-backend/
 katsklub-backend
 
+# Local developer attach scripts
+attach.*
+
