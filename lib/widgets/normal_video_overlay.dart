@@ -339,7 +339,8 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                               ),
                             ),
                           if (!_showComments) _buildGradients(),
-                          Positioned(
+                          if (!_showComments)
+                            Positioned(
                             top: 0,
                             left: 0,
                             right: 0,

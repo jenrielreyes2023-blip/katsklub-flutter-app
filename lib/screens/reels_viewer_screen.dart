@@ -747,17 +747,18 @@ class _ReelPageState extends State<_ReelPage> {
                   children: [
                     _buildVideoPlayer(),
                     if (!_showComments) _buildGradients(),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: SafeArea(
-                        child: _ReelTopBar(
-                          reel: _reel,
-                          onMoreOptions: _openOptions,
+                    if (!_showComments)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(
+                          child: _ReelTopBar(
+                            reel: _reel,
+                            onMoreOptions: _openOptions,
+                          ),
                         ),
                       ),
-                    ),
                     if (!_showComments)
                       Positioned(
                         right: 14,

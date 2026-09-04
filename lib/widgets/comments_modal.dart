@@ -31,9 +31,11 @@ class CommentsPageRoute<T> extends PageRouteBuilder<T> {
     super.settings,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => builder,
-          opaque: true,
-          transitionDuration: const Duration(milliseconds: 200),
-          reverseTransitionDuration: const Duration(milliseconds: 80),
+          opaque: false,
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+          transitionDuration: const Duration(milliseconds: 240),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return child;
           },
@@ -646,7 +648,6 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scaffoldBg = isDark ? const Color(0xFF0F0F10) : const Color(0xFF707276);
     final sheetBg = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
 
     final route = ModalRoute.of(context);
@@ -671,6 +672,16 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     );
 
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final isKeyboardOpen = viewInsets.bottom > 0;
+
+    final defaultSheetHeight = screenHeight * 0.72;
+    final targetSheetHeight = widget.sheetHeight ?? defaultSheetHeight;
+    final topSpaceHeight = isKeyboardOpen
+        ? 0.0
+        : (screenHeight - targetSheetHeight).clamp(0.0, screenHeight);
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
@@ -681,67 +692,89 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: systemUiStyle,
         child: Scaffold(
-          backgroundColor: scaffoldBg,
+          backgroundColor: Colors.transparent,
           resizeToAvoidBottomInset: true,
-          body: SafeArea(
-            bottom: false,
-            child: SlideTransition(
-              position: slideAnimation,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: sheetBg,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          body: Column(
+            children: [
+              if (topSpaceHeight > 0)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).pop(_totalCount),
+                  child: Container(
+                    height: topSpaceHeight,
+                    width: double.infinity,
+                    color: widget.sheetHeight != null
+                        ? Colors.transparent
+                        : Colors.black.withValues(alpha: 0.45),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragEnd: (details) {
-                        if (details.primaryVelocity! > 300) {
-                          Navigator.of(context).pop(_totalCount);
-                        }
-                      },
-                      onVerticalDragUpdate: (details) {
-                        if (details.primaryDelta! > 10) {
-                          Navigator.of(context).pop(_totalCount);
-                        }
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(height: 8),
-                          Container(
-                            width: 38,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                          ),
-                          _CommentsHeader(
-                            totalCount: _totalCount,
-                            post: widget.post,
-                            onClose: () => Navigator.of(context).pop(_totalCount),
-                          ),
-                        ],
-                      ),
+              Expanded(
+                child: SlideTransition(
+                  position: slideAnimation,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: sheetBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, -3),
+                        ),
+                      ],
                     ),
-                    Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-                  _buildSortModeBar(context, isDark),
-                  Expanded(child: _buildBody()),
-                    Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-                    _CommentComposer(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      isSending: _isSending,
-                      replyTarget: _activeReplyTarget,
-                      onClearReplyTarget: _clearReplyTarget,
-                      onSend: _sendComment,
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onVerticalDragEnd: (details) {
+                            if (details.primaryVelocity! > 300) {
+                              Navigator.of(context).pop(_totalCount);
+                            }
+                          },
+                          onVerticalDragUpdate: (details) {
+                            if (details.primaryDelta! > 10) {
+                              Navigator.of(context).pop(_totalCount);
+                            }
+                          },
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 8),
+                              Container(
+                                width: 38,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                              ),
+                              _CommentsHeader(
+                                totalCount: _totalCount,
+                                post: widget.post,
+                                onClose: () => Navigator.of(context).pop(_totalCount),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+                        _buildSortModeBar(context, isDark),
+                        Expanded(child: _buildBody()),
+                        Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+                        _CommentComposer(
+                          controller: _textController,
+                          focusNode: _focusNode,
+                          isSending: _isSending,
+                          replyTarget: _activeReplyTarget,
+                          onClearReplyTarget: _clearReplyTarget,
+                          onSend: _sendComment,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
