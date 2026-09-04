@@ -462,18 +462,26 @@ class _PostCardState extends State<PostCard> {
     _showMessage('Link copied.');
   }
 
-  Future<void> _openLinkPreview() async {
+  Future<void> _openLinkPreview({String? streamUrl}) async {
     final preview = _post.resolvedLinkPreview;
     if (preview == null) {
       return;
     }
 
-    if (_post.youtubeVideoId.trim().isNotEmpty) {
+    final ytId = _post.youtubeVideoId.trim().isNotEmpty
+        ? _post.youtubeVideoId.trim()
+        : RegExp(
+            r'(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})',
+            caseSensitive: false,
+          ).firstMatch(preview.url)?.group(1);
+
+    if (ytId != null && ytId.isNotEmpty) {
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => YouTubePlayerScreen(
-            videoId: _post.youtubeVideoId.trim(),
+            videoId: ytId,
             title: preview.title,
+            streamUrl: streamUrl,
           ),
         ),
       );
@@ -522,8 +530,8 @@ class _PostCardState extends State<PostCard> {
     
     try {
       final thread = await FeedService().startMessageThread(authorUsername);
-      Navigator.of(context).pop(); // Close loading dialog
       if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
       if (thread != null) {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -2167,7 +2175,9 @@ class _PostCardState extends State<PostCard> {
                       if (_post.youtubeVideoId.trim().isNotEmpty)
                         YouTubePreviewCard(
                           preview: _post.resolvedLinkPreview!,
-                          onTap: _openLinkPreview,
+                          videoId: _post.youtubeVideoId.trim(),
+                          onTap: ({streamUrl}) =>
+                              _openLinkPreview(streamUrl: streamUrl),
                           onTapDown: _markInteractiveSurfaceTap,
                         )
                       else
