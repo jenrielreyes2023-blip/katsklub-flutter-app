@@ -38,6 +38,12 @@ class MainActivity : AudioServiceActivity() {
                         pendingNotificationTapData = null
                         result.success(data)
                     }
+                    "clearAllNotifications" -> {
+                        val notificationManager =
+                            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        notificationManager.cancelAll()
+                        result.success(true)
+                    }
                     else -> result.notImplemented()
                 }
             }

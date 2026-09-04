@@ -11,6 +11,16 @@ class KatsPushReceiver : BroadcastReceiver() {
             return
         }
 
+        // Ignore incoming push notifications if the user is currently logged out
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val authToken = prefs.getString("flutter.katsklub_auth_token", null)?.trim()
+        val sessionCookie = prefs.getString("flutter.katsklub_session_cookie", null)?.trim()
+        val userJson = prefs.getString("flutter.katsklub_user", null)?.trim()
+        if (authToken.isNullOrEmpty() && sessionCookie.isNullOrEmpty() && userJson.isNullOrEmpty()) {
+            abortKatsPushBroadcastIfOrdered()
+            return
+        }
+
         val data = intent.extras?.keySet()?.mapNotNull { key ->
             val value = intent.extras?.get(key)?.toString()
             if (value.isNullOrBlank()) null else key to value

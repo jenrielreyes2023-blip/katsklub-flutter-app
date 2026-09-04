@@ -212,6 +212,24 @@ class PushNotificationService {
     );
   }
 
+  Future<void> clearAllNotifications() async {
+    if (kIsWeb) return;
+    try {
+      await _nativeTapChannel.invokeMethod('clearAllNotifications');
+    } catch (_) {}
+  }
+
+  Future<void> unregisterCurrentToken() async {
+    final fcm = _fcm;
+    if (fcm == null) return;
+    try {
+      final token = await fcm.getToken();
+      if (token != null && token.isNotEmpty) {
+        await _authService.unregisterPushToken(token);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _registerCurrentToken() async {
     final fcm = _fcm;
     if (fcm == null) return;

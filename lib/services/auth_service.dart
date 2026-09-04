@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
+import 'push_notification_service.dart';
 
 class AuthResult {
   const AuthResult({
@@ -903,6 +904,17 @@ class AuthService {
     final savedCookie = _memoryCookie ?? prefs.getString(sessionCookieKey);
     final savedToken = _memoryToken ?? prefs.getString(_authTokenKey);
 
+    // 1. Clear any active notifications from the status bar on logout
+    try {
+      await PushNotificationService().clearAllNotifications();
+    } catch (_) {}
+
+    // 2. Unregister push token from backend so device stops receiving pushes
+    try {
+      await PushNotificationService().unregisterCurrentToken();
+    } catch (_) {}
+
+    // 3. Notify backend of session logout
     if ((savedCookie != null && savedCookie.isNotEmpty) ||
         (savedToken != null && savedToken.isNotEmpty)) {
       try {
@@ -1110,6 +1122,27 @@ class AuthService {
         body: jsonEncode({
           'token': pushToken,
           'platform': platform,
+        }),
+      );
+
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> unregisterPushToken(String pushToken) async {
+    try {
+      final authToken = await getToken();
+      final response = await _client.post(
+        ApiConfig.uri('/api/push/unregister'),
+        headers: _buildAuthHeaders(
+          token: authToken,
+          includeJsonContentType: true,
+        ),
+        body: jsonEncode({
+          'token': pushToken,
+          'pushToken': pushToken,
         }),
       );
 
