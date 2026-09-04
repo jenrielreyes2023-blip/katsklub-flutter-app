@@ -312,6 +312,9 @@ class _ReelPageState extends State<_ReelPage> {
     super.initState();
     _reel = widget.reel;
     _isFollowingAuthor = widget.reel.isFollowingAuthor;
+    _feedService.loadFollowingCache().then((_) {
+      if (mounted) setState(() {});
+    });
     _initializeController();
   }
 
@@ -843,12 +846,19 @@ class _ReelPageState extends State<_ReelPage> {
       return false;
     }
 
-    // 1. Real Likers from backend likePreview (excluding post author & current user)
+    bool isFriend(String name) {
+      final clean = name.trim().toLowerCase();
+      if (clean.isEmpty) return false;
+      return FeedService.isUserFollowed(clean);
+    }
+
+    // 1. Real Likers from backend likePreview (ONLY followed friends!)
     if (reel.likePreview.isNotEmpty) {
       for (final liker in reel.likePreview) {
         if (activities.length >= 3) break;
         final name = (liker.username.isNotEmpty ? liker.username : liker.fullName).trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -860,12 +870,13 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 2. Tagged / Mentioned Friends (excluding post author & current user)
+    // 2. Tagged / Mentioned Friends (ONLY followed friends!)
     if (activities.length < 3 && reel.withUsers.isNotEmpty) {
       for (final user in reel.withUsers) {
         if (activities.length >= 3) break;
         final name = (user.username ?? user.fullName ?? '').trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -877,12 +888,13 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 3. Poll Voters (excluding post author & current user)
+    // 3. Poll Voters (ONLY followed friends!)
     if (activities.length < 3 && reel.pollVoters.isNotEmpty) {
       for (final voter in reel.pollVoters) {
         if (activities.length >= 3) break;
         final name = voter.username.trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -894,10 +906,10 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
 
-    // 4. Repost Author (excluding post author & current user)
+    // 4. Repost Author (ONLY followed friends!)
     if (activities.length < 3 && isRepost && reel.repostedByText != null) {
       final reposter = reel.repostedByText!.trim();
-      if (!isSelf(reposter)) {
+      if (!isSelf(reposter) && isFriend(reposter)) {
         activities.add(
           FriendPostActivity(
             username: reposter,

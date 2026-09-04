@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
@@ -23,10 +22,8 @@ import 'post_image_grid.dart';
 import 'custom_icons.dart';
 import 'repost_source_preview.dart';
 import 'sensitive_content_wrapper.dart';
-import 'share_post_sheet.dart';
 import 'smooth_bottom_sheet.dart';
 import 'user_avatar_with_frame.dart';
-import 'special_name_text.dart';
 import 'post_poll.dart';
 import 'music_photo_carousel.dart';
 import 'video_preview_card.dart';
@@ -2306,12 +2303,19 @@ class _PostCardState extends State<PostCard> {
       return false;
     }
 
-    // 1. Real Likers from backend likePreview (excluding post author & current user)
+    bool isFriend(String name) {
+      final clean = name.trim().toLowerCase();
+      if (clean.isEmpty) return false;
+      return FeedService.isUserFollowed(clean);
+    }
+
+    // 1. Real Likers from backend likePreview (ONLY followed friends!)
     if (post.likePreview.isNotEmpty) {
       for (final liker in post.likePreview) {
         if (activities.length >= 3) break;
         final name = (liker.username.isNotEmpty ? liker.username : liker.fullName).trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2323,12 +2327,13 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 2. Tagged / Mentioned Friends (excluding post author & current user)
+    // 2. Tagged / Mentioned Friends (ONLY followed friends!)
     if (activities.length < 3 && post.withUsers.isNotEmpty) {
       for (final user in post.withUsers) {
         if (activities.length >= 3) break;
         final name = (user.username ?? user.fullName ?? '').trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2340,12 +2345,13 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 3. Poll Voters (excluding post author & current user)
+    // 3. Poll Voters (ONLY followed friends!)
     if (activities.length < 3 && post.pollVoters.isNotEmpty) {
       for (final voter in post.pollVoters) {
         if (activities.length >= 3) break;
         final name = voter.username.trim();
         if (isSelf(name)) continue;
+        if (!isFriend(name)) continue;
         activities.add(
           FriendPostActivity(
             username: name,
@@ -2357,10 +2363,10 @@ class _PostCardState extends State<PostCard> {
       }
     }
 
-    // 4. Repost Author (excluding post author & current user)
+    // 4. Repost Author (ONLY followed friends!)
     if (activities.length < 3 && isRepost && post.repostedByText != null) {
       final reposter = post.repostedByText!.trim();
-      if (!isSelf(reposter)) {
+      if (!isSelf(reposter) && isFriend(reposter)) {
         activities.add(
           FriendPostActivity(
             username: reposter,

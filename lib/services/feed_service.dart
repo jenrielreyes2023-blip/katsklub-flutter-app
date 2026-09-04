@@ -1845,6 +1845,7 @@ class FeedService {
     final user = data['user'];
     if (data['ok'] == true && user is Map<String, dynamic>) {
       final updatedUser = User.fromJson(user);
+      _followingCache.add(cleanUsername.toLowerCase());
       await _applyFollowStateUpdate(updatedUser);
       return updatedUser;
     }
@@ -1862,6 +1863,7 @@ class FeedService {
     final user = data['user'];
     if (data['ok'] == true && user is Map<String, dynamic>) {
       final updatedUser = User.fromJson(user);
+      _followingCache.remove(cleanUsername.toLowerCase());
       await _applyFollowStateUpdate(updatedUser);
       return updatedUser;
     }
@@ -3321,6 +3323,36 @@ class FeedService {
     } catch (_) {
       return [];
     }
+  }
+
+  static final Set<String> _followingCache = <String>{};
+  static bool _followingLoaded = false;
+
+  static Set<String> get followingCache => _followingCache;
+
+  static bool isUserFollowed(String username) {
+    final clean = username.trim().toLowerCase().replaceFirst(RegExp(r'^@'), '');
+    if (clean.isEmpty) return false;
+    return _followingCache.contains(clean);
+  }
+
+  Future<Set<String>> loadFollowingCache({bool forceRefresh = false}) async {
+    if (_followingLoaded && !forceRefresh) return _followingCache;
+    final currentUser = _authService.currentUser ?? await _authService.getSavedUser();
+    final username = currentUser?.username?.trim().toLowerCase() ?? '';
+    if (username.isEmpty) return _followingCache;
+    try {
+      final list = await getUserFollowing(username);
+      _followingCache.clear();
+      for (final u in list) {
+        final uName = u.username?.trim().toLowerCase().replaceFirst(RegExp(r'^@'), '') ?? '';
+        if (uName.isNotEmpty) {
+          _followingCache.add(uName);
+        }
+      }
+      _followingLoaded = true;
+    } catch (_) {}
+    return _followingCache;
   }
 }
 
