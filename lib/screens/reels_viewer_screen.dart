@@ -256,6 +256,8 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
                     key: ValueKey('reel-${reel.id}'),
                     reel: reel,
                     isActive: index == _currentIndex,
+                    pageController: _pageController,
+                    pageIndex: index,
                     onReelUpdated: _handleReelUpdated,
                     onReelDeleted: _handleReelDeleted,
                   );
@@ -272,6 +274,8 @@ class _ReelPage extends StatefulWidget {
     required this.isActive,
     required this.onReelUpdated,
     required this.onReelDeleted,
+    this.pageController,
+    this.pageIndex = 0,
     super.key,
   });
 
@@ -279,6 +283,8 @@ class _ReelPage extends StatefulWidget {
   final bool isActive;
   final void Function(Post reel) onReelUpdated;
   final void Function(String reelId) onReelDeleted;
+  final PageController? pageController;
+  final int pageIndex;
 
   @override
   State<_ReelPage> createState() => _ReelPageState();
@@ -746,54 +752,59 @@ class _ReelPageState extends State<_ReelPage> {
                   fit: StackFit.expand,
                   children: [
                     _buildVideoPlayer(),
-                    if (!_showComments) _buildGradients(),
                     if (!_showComments)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: SafeArea(
-                          child: _ReelTopBar(
-                            reel: _reel,
-                            onMoreOptions: _openOptions,
-                          ),
-                        ),
-                      ),
-                    if (!_showComments)
-                      Positioned(
-                        right: 14,
-                        bottom: 150,
-                        child: SafeArea(
-                          child: _ReelActionRail(
-                            reel: _reel,
-                            onLike: _toggleLike,
-                            onComment: _openComments,
-                            onRepost: _repost,
-                            onShare: _share,
-                            onBookmark: _toggleBookmark,
-                          ),
-                        ),
-                      ),
-                    if (!_showComments)
-                      Positioned(
-                        left: 16,
-                        right: 90,
-                        bottom: 95,
-                        child: SafeArea(
-                          child: _ReelCreatorInfo(
-                            reel: _reel,
-                            isCaptionExpanded: _isCaptionExpanded,
-                            isFollowingAuthor: _isFollowingAuthor,
-                            isFollowPending: _isFollowPending,
-                            onToggleFollow: _toggleFollowAuthor,
-                            onOpenAuthor: _openAuthorProfile,
-                            onCaptionTap: () {
-                              setState(() {
-                                _isCaptionExpanded = !_isCaptionExpanded;
-                              });
-                            },
-                            friendActivities: _getReelFriendActivities(_reel),
-                          ),
+                      _buildFadingOverlay(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _buildGradients(),
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              child: SafeArea(
+                                child: _ReelTopBar(
+                                  reel: _reel,
+                                  onMoreOptions: _openOptions,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 14,
+                              bottom: 150,
+                              child: SafeArea(
+                                child: _ReelActionRail(
+                                  reel: _reel,
+                                  onLike: _toggleLike,
+                                  onComment: _openComments,
+                                  onRepost: _repost,
+                                  onShare: _share,
+                                  onBookmark: _toggleBookmark,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 16,
+                              right: 90,
+                              bottom: 95,
+                              child: SafeArea(
+                                child: _ReelCreatorInfo(
+                                  reel: _reel,
+                                  isCaptionExpanded: _isCaptionExpanded,
+                                  isFollowingAuthor: _isFollowingAuthor,
+                                  isFollowPending: _isFollowPending,
+                                  onToggleFollow: _toggleFollowAuthor,
+                                  onOpenAuthor: _openAuthorProfile,
+                                  onCaptionTap: () {
+                                    setState(() {
+                                      _isCaptionExpanded = !_isCaptionExpanded;
+                                    });
+                                  },
+                                  friendActivities: _getReelFriendActivities(_reel),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     if (!_isInitialized && !_hasError)
@@ -824,8 +835,35 @@ class _ReelPageState extends State<_ReelPage> {
             ),
           ],
         ),
-        if (!_showComments) _buildCommentPill(),
+        if (!_showComments)
+          _buildFadingOverlay(
+            child: _buildCommentPill(),
+          ),
       ],
+    );
+  }
+
+  Widget _buildFadingOverlay({required Widget child}) {
+    final controller = widget.pageController;
+    if (controller == null) return child;
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        if (!controller.hasClients) return child;
+        final page = controller.page ?? widget.pageIndex.toDouble();
+        final diff = (page - widget.pageIndex).abs();
+        final opacity = (1.0 - (diff * 2.2)).clamp(0.0, 1.0);
+        if (opacity >= 1.0) return child;
+        if (opacity <= 0.0) return const SizedBox.shrink();
+        return Opacity(
+          opacity: opacity,
+          child: IgnorePointer(
+            ignoring: opacity < 0.7,
+            child: child,
+          ),
+        );
+      },
     );
   }
 
