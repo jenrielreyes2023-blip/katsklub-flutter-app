@@ -1513,7 +1513,12 @@ class _ReelActionRail extends StatelessWidget {
         SizedBox(height: 14.h),
         _ActionButton(
           icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
-          count: _formatCount(reel.commentCount),
+          count: reel.commentCount > 0
+              ? _formatCount(reel.commentCount)
+              : 'Add comment',
+          customStyle: reel.commentCount > 0
+              ? null
+              : KatsText.reelAddComment(context),
           onTap: onComment,
         ),
         SizedBox(height: 14.h),
@@ -1561,11 +1566,13 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.count,
     required this.onTap,
+    this.customStyle,
   });
 
   final Widget icon;
   final String count;
   final VoidCallback onTap;
+  final TextStyle? customStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -1582,7 +1589,8 @@ class _ActionButton extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 count,
-                style: KatsText.reelCount(context),
+                textAlign: TextAlign.center,
+                style: customStyle ?? KatsText.reelCount(context),
               ),
             ],
           ],

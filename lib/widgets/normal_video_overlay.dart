@@ -473,7 +473,12 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
             SizedBox(height: 14.h),
             _ActionButton(
               icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
-              label: _formatCount(_localCommentCount ?? post.commentCount),
+              label: ((_localCommentCount ?? post.commentCount) > 0)
+                  ? _formatCount(_localCommentCount ?? post.commentCount)
+                  : 'Add comment',
+              customStyle: ((_localCommentCount ?? post.commentCount) > 0)
+                  ? null
+                  : KatsText.reelAddComment(context),
               onTap: () => _openCommentsSheet(post),
             ),
             SizedBox(height: 14.h),
@@ -921,11 +926,13 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.icon,
     this.label,
+    this.customStyle,
     this.onTap,
   });
 
   final Widget icon;
   final String? label;
+  final TextStyle? customStyle;
   final VoidCallback? onTap;
 
   @override
@@ -948,7 +955,8 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label!,
-              style: KatsText.reelCount(context),
+              textAlign: TextAlign.center,
+              style: customStyle ?? KatsText.reelCount(context),
             ),
           ],
         ],

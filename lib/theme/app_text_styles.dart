@@ -204,6 +204,18 @@ class KatsText {
         ],
       );
 
+  /// Reels 'Add comment' prompt when commentCount == 0
+  static TextStyle reelAddComment(BuildContext c) => TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        color: Colors.white,
+        fontSize: 10.sp,
+        fontWeight: FontWeight.w600,
+        height: 1.1,
+        shadows: const [
+          Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      );
+
   /// Reels follow button text ('Follow' / 'Following')
   static TextStyle reelFollow(BuildContext c, {bool isFollowing = false}) =>
       TextStyle(
