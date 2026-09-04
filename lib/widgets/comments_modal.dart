@@ -28,10 +28,10 @@ enum CommentSortMode {
 class CommentsPageRoute<T> extends PageRouteBuilder<T> {
   CommentsPageRoute({
     required Widget builder,
+    super.opaque = true,
     super.settings,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => builder,
-          opaque: false,
           barrierDismissible: false,
           barrierColor: Colors.transparent,
           transitionDuration: const Duration(milliseconds: 240),
@@ -46,15 +46,19 @@ Future<int?> showCommentsModal({
   required BuildContext context,
   required Post post,
   double? sheetHeight,
+  bool? isHalfSheet,
   int? slideId,
   int? initialSlideCommentCount,
 }) {
+  final effectiveHalfSheet = isHalfSheet ?? (sheetHeight != null);
   HapticFeedback.lightImpact();
   return Navigator.of(context).push<int>(
     CommentsPageRoute(
+      opaque: !effectiveHalfSheet,
       builder: _CommentsSheet(
         post: post,
         sheetHeight: sheetHeight,
+        isHalfSheet: effectiveHalfSheet,
         slideId: slideId,
         initialSlideCommentCount: initialSlideCommentCount,
       ),
@@ -81,12 +85,14 @@ class _CommentsSheet extends StatefulWidget {
   const _CommentsSheet({
     required this.post,
     this.sheetHeight,
+    this.isHalfSheet = false,
     this.slideId,
     this.initialSlideCommentCount,
   });
 
   final Post post;
   final double? sheetHeight;
+  final bool isHalfSheet;
   final int? slideId;
   final int? initialSlideCommentCount;
 
@@ -648,6 +654,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? const Color(0xFF0F0F10) : const Color(0xFF707276);
     final sheetBg = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
 
     final route = ModalRoute.of(context);
@@ -676,11 +683,74 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     final viewInsets = MediaQuery.viewInsetsOf(context);
     final isKeyboardOpen = viewInsets.bottom > 0;
 
-    final defaultSheetHeight = screenHeight * 0.72;
-    final targetSheetHeight = widget.sheetHeight ?? defaultSheetHeight;
+    final targetSheetHeight = widget.sheetHeight ?? (screenHeight * 0.62);
     final topSpaceHeight = isKeyboardOpen
         ? 0.0
         : (screenHeight - targetSheetHeight).clamp(0.0, screenHeight);
+
+    final Widget sheetContent = Container(
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        boxShadow: widget.isHalfSheet
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, -3),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragEnd: (details) {
+              if (details.primaryVelocity! > 300) {
+                Navigator.of(context).pop(_totalCount);
+              }
+            },
+            onVerticalDragUpdate: (details) {
+              if (details.primaryDelta! > 10) {
+                Navigator.of(context).pop(_totalCount);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                _CommentsHeader(
+                  totalCount: _totalCount,
+                  post: widget.post,
+                  onClose: () => Navigator.of(context).pop(_totalCount),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+          _buildSortModeBar(context, isDark),
+          Expanded(child: _buildBody()),
+          Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+          _CommentComposer(
+            controller: _textController,
+            focusNode: _focusNode,
+            isSending: _isSending,
+            replyTarget: _activeReplyTarget,
+            onClearReplyTarget: _clearReplyTarget,
+            onSend: _sendComment,
+          ),
+        ],
+      ),
+    );
 
     return PopScope(
       canPop: true,
@@ -692,90 +762,36 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: systemUiStyle,
         child: Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: widget.isHalfSheet ? Colors.transparent : scaffoldBg,
           resizeToAvoidBottomInset: true,
-          body: Column(
-            children: [
-              if (topSpaceHeight > 0)
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Navigator.of(context).pop(_totalCount),
-                  child: Container(
-                    height: topSpaceHeight,
-                    width: double.infinity,
-                    color: widget.sheetHeight != null
-                        ? Colors.transparent
-                        : Colors.black.withValues(alpha: 0.45),
+          body: widget.isHalfSheet
+              ? Column(
+                  children: [
+                    if (topSpaceHeight > 0)
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.of(context).pop(_totalCount),
+                        child: Container(
+                          height: topSpaceHeight,
+                          width: double.infinity,
+                          color: Colors.transparent,
+                        ),
+                      ),
+                    Expanded(
+                      child: SlideTransition(
+                        position: slideAnimation,
+                        child: sheetContent,
+                      ),
+                    ),
+                  ],
+                )
+              : SafeArea(
+                  bottom: false,
+                  child: SlideTransition(
+                    position: slideAnimation,
+                    child: sheetContent,
                   ),
                 ),
-              Expanded(
-                child: SlideTransition(
-                  position: slideAnimation,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: sheetBg,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, -3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onVerticalDragEnd: (details) {
-                            if (details.primaryVelocity! > 300) {
-                              Navigator.of(context).pop(_totalCount);
-                            }
-                          },
-                          onVerticalDragUpdate: (details) {
-                            if (details.primaryDelta! > 10) {
-                              Navigator.of(context).pop(_totalCount);
-                            }
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(height: 8),
-                              Container(
-                                width: 38,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                              ),
-                              _CommentsHeader(
-                                totalCount: _totalCount,
-                                post: widget.post,
-                                onClose: () => Navigator.of(context).pop(_totalCount),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-                        _buildSortModeBar(context, isDark),
-                        Expanded(child: _buildBody()),
-                        Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
-                        _CommentComposer(
-                          controller: _textController,
-                          focusNode: _focusNode,
-                          isSending: _isSending,
-                          replyTarget: _activeReplyTarget,
-                          onClearReplyTarget: _clearReplyTarget,
-                          onSend: _sendComment,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

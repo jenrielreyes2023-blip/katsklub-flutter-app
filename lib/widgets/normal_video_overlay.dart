@@ -219,6 +219,7 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
       context: context,
       post: video,
       sheetHeight: screenHeight * 0.62,
+      isHalfSheet: true,
     );
     if (mounted) {
       setState(() {

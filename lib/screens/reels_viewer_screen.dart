@@ -487,6 +487,7 @@ class _ReelPageState extends State<_ReelPage> {
       context: context,
       post: _reel,
       sheetHeight: screenHeight * 0.62,
+      isHalfSheet: true,
     );
     if (!mounted) return;
 
