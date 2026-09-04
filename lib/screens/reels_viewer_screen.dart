@@ -770,10 +770,6 @@ class _ReelPageState extends State<_ReelPage> {
                           ),
                         ),
                       ),
-                    if (!_showComments && _getReelFriendActivities(_reel).isNotEmpty)
-                      FloatingFriendReactionOverlay(
-                        activities: _getReelFriendActivities(_reel),
-                      ),
                     if (!_showComments)
                       Positioned(
                         left: 16,
@@ -792,6 +788,7 @@ class _ReelPageState extends State<_ReelPage> {
                                 _isCaptionExpanded = !_isCaptionExpanded;
                               });
                             },
+                            friendActivities: _getReelFriendActivities(_reel),
                           ),
                         ),
                       ),
@@ -1592,6 +1589,7 @@ class _ReelCreatorInfo extends StatelessWidget {
     required this.onToggleFollow,
     required this.onOpenAuthor,
     required this.onCaptionTap,
+    this.friendActivities = const [],
   });
 
   final Post reel;
@@ -1601,6 +1599,7 @@ class _ReelCreatorInfo extends StatelessWidget {
   final VoidCallback onToggleFollow;
   final VoidCallback onOpenAuthor;
   final VoidCallback onCaptionTap;
+  final List<FriendPostActivity> friendActivities;
 
   @override
   Widget build(BuildContext context) {
@@ -1608,6 +1607,15 @@ class _ReelCreatorInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (friendActivities.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 6),
+            child: FloatingFriendReactionOverlay(
+              activities: friendActivities,
+              isPositioned: false,
+            ),
+          ),
+        ],
         Row(
           children: [
             GestureDetector(

@@ -43,11 +43,13 @@ class FloatingFriendReactionOverlay extends StatefulWidget {
   const FloatingFriendReactionOverlay({
     required this.activities,
     this.onTap,
+    this.isPositioned = true,
     super.key,
   });
 
   final List<FriendPostActivity> activities;
   final VoidCallback? onTap;
+  final bool isPositioned;
 
   @override
   State<FloatingFriendReactionOverlay> createState() =>
@@ -193,6 +195,9 @@ class _FloatingFriendReactionOverlayState
         widget.activities.where((a) => a.hasActivity).take(3).toList();
 
     if (activeItems.isEmpty) {
+      if (!widget.isPositioned) {
+        return const SizedBox.shrink();
+      }
       return const Positioned(
         left: 0,
         top: 0,
@@ -230,6 +235,10 @@ class _FloatingFriendReactionOverlayState
         ),
       ),
     );
+
+    if (!widget.isPositioned) {
+      return clusterChild;
+    }
 
     return ValueListenableBuilder<Offset?>(
       valueListenable: _customOffsetNotifier,
