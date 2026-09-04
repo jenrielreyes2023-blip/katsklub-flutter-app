@@ -35,6 +35,14 @@ class AppShell extends StatefulWidget {
   final User user;
   final Future<void> Function() onLogout;
 
+  static final ValueNotifier<int> activeTabNotifier = ValueNotifier<int>(0);
+  static final ValueNotifier<int> refreshFeedNotifier = ValueNotifier<int>(0);
+
+  static void navigateToHomeFeed() {
+    activeTabNotifier.value = 0;
+    refreshFeedNotifier.value++;
+  }
+
   @override
   State<AppShell> createState() => _AppShellState();
 }
@@ -55,6 +63,8 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _currentUser = widget.user;
     normalVideoOverlayController.addListener(_syncNormalVideoOverlayHistory);
+    AppShell.activeTabNotifier.addListener(_handleActiveTabChanged);
+    AppShell.refreshFeedNotifier.addListener(_handleRefreshFeedChanged);
     FeedService.ensureRealtimeSync();
 
     PushNotificationService().initialize();
@@ -78,10 +88,31 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     normalVideoOverlayController.removeListener(_syncNormalVideoOverlayHistory);
+    AppShell.activeTabNotifier.removeListener(_handleActiveTabChanged);
+    AppShell.refreshFeedNotifier.removeListener(_handleRefreshFeedChanged);
     _normalVideoOverlayHistoryEntry?.remove();
     _normalVideoOverlayHistoryEntry = null;
     _notificationClickSubscription?.cancel();
     super.dispose();
+  }
+
+  void _handleActiveTabChanged() {
+    if (!mounted) return;
+    final target = AppShell.activeTabNotifier.value;
+    if (_selectedIndex != target) {
+      _pauseNormalVideoForTabChange();
+      setState(() {
+        _previousIndex = _selectedIndex;
+        _selectedIndex = target;
+      });
+    }
+  }
+
+  void _handleRefreshFeedChanged() {
+    if (!mounted) return;
+    setState(() {
+      _feedRefreshToken++;
+    });
   }
 
   void _handleNotificationClick(Map<String, dynamic> data) async {

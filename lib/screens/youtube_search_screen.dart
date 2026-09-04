@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/youtube_service.dart';
 import 'create_post_screen.dart';
 import 'youtube_player_screen.dart';
+import 'app_shell.dart';
 
 /// Screen allowing users to search, browse, and play YouTube videos directly.
 class YouTubeSearchScreen extends StatefulWidget {
@@ -162,7 +163,7 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
       return;
     }
 
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CreatePostScreen(
           user: user,
@@ -170,6 +171,11 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
         ),
       ),
     );
+    if (!mounted) return;
+    if (result == true) {
+      AppShell.navigateToHomeFeed();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override

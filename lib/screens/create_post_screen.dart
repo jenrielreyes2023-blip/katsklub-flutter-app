@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/youtube_service.dart';
 import '../widgets/create_post_composer.dart';
+import 'app_shell.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({
@@ -32,8 +33,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Created.')),
     );
+
+    if (widget.initialYouTubeVideo != null) {
+      AppShell.navigateToHomeFeed();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+
     if (Navigator.of(context).canPop()) {
-      Navigator.of(context).maybePop();
+      Navigator.of(context).maybePop(true);
     }
   }
 

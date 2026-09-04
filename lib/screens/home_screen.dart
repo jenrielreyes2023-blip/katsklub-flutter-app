@@ -363,6 +363,19 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {
         _posts = [createdPost, ..._posts];
       });
+      if (createdPost.ownedByMe &&
+          _scrollController.hasClients &&
+          _scrollController.position.pixels > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0.0,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        });
+      }
       return;
     }
 

@@ -13,6 +13,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import '../services/auth_service.dart';
 import '../services/youtube_service.dart';
 import 'create_post_screen.dart';
+import 'app_shell.dart';
 
 class _QualityOption {
   final String label;
@@ -424,7 +425,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
           'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
     );
 
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CreatePostScreen(
           user: user,
@@ -432,6 +433,11 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         ),
       ),
     );
+    if (!mounted) return;
+    if (result == true) {
+      AppShell.navigateToHomeFeed();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   void _openQualitySettings() {
