@@ -475,7 +475,7 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
               icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
               label: ((_localCommentCount ?? post.commentCount) > 0)
                   ? _formatCount(_localCommentCount ?? post.commentCount)
-                  : 'Add comment',
+                  : 'Comment',
               customStyle: ((_localCommentCount ?? post.commentCount) > 0)
                   ? null
                   : KatsText.reelAddComment(context),
@@ -937,29 +937,35 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 38.w,
-            height: 38.h,
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
+    return SizedBox(
+      width: 48.w,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 38.w,
+              height: 38.h,
+              decoration: const BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Center(child: icon),
             ),
-            child: Center(child: icon),
-          ),
-          if (label != null && label!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              label!,
-              textAlign: TextAlign.center,
-              style: customStyle ?? KatsText.reelCount(context),
-            ),
+            if (label != null && label!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                label!,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: customStyle ?? KatsText.reelCount(context),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -1515,7 +1515,7 @@ class _ReelActionRail extends StatelessWidget {
           icon: CustomIcons.comment(color: Colors.white, size: 21.5.r),
           count: reel.commentCount > 0
               ? _formatCount(reel.commentCount)
-              : 'Add comment',
+              : 'Comment',
           customStyle: reel.commentCount > 0
               ? null
               : KatsText.reelAddComment(context),
@@ -1576,24 +1576,30 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            if (count.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                count,
-                textAlign: TextAlign.center,
-                style: customStyle ?? KatsText.reelCount(context),
-              ),
+    return SizedBox(
+      width: 48.w,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              icon,
+              if (count.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  count,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: customStyle ?? KatsText.reelCount(context),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
