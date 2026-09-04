@@ -50,10 +50,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Force enable Impeller rendering engine for smoother graphics/animations -->
-        <meta-data
-            android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="true" />
         <!-- Default notification icon for FCM messages (white silhouette, system tints it). -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

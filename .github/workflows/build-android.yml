@@ -38,14 +38,14 @@ jobs:
       - name: Analyze code
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
-      - name: Build Android APK (Release Universal)
-        run: flutter build apk --release --target-platform android-arm,android-arm64 --no-tree-shake-icons
+      - name: Build Android APK (ARM64 Release)
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
       - name: Upload APK Artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: katsklub-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: katsklub-arm64-release-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
       - name: Deploy APK to https://katsklub.top/katsklub-latest.apk
         continue-on-error: true
@@ -53,5 +53,5 @@ jobs:
           echo "Deploying APK to server..."
           curl -s -X POST https://katsklub.top/api/admin/deploy-apk \
             -H "x-deploy-token: katsklub_apk_secret_2026" \
-            -F "apk=@build/app/outputs/flutter-apk/app-release.apk"
+            -F "apk=@build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           echo "Deployment step completed."
