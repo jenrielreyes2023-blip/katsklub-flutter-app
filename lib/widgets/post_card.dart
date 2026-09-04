@@ -2109,7 +2109,7 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                     ],
-                    if (showPostText && _post.text.isNotEmpty) ...[
+                    if (showPostText && _post.cleanText.isNotEmpty) ...[
                       SizedBox(height: 12.h),
                       isGhost
                           ? Padding(
@@ -2122,7 +2122,7 @@ class _PostCardState extends State<PostCard> {
                                 child: Padding(
                                   padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
                                   child: ExpandablePostText(
-                                    text: _post.text,
+                                    text: _post.cleanText,
                                     expanded: _isTextExpanded,
                                     onToggle: () {
                                       setState(() {
@@ -2137,7 +2137,7 @@ class _PostCardState extends State<PostCard> {
                           : Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
                               child: ExpandablePostText(
-                                text: _post.text,
+                                text: _post.cleanText,
                                 expanded: _isTextExpanded,
                                 onToggle: () {
                                   setState(() {

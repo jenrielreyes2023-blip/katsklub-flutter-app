@@ -15,7 +15,6 @@ import '../models/post_comment.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../services/normal_video_inline_controls.dart';
-import '../services/normal_video_overlay_controller.dart';
 import '../services/normal_video_playback_session.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/custom_icons.dart';
@@ -1190,7 +1189,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       return;
     }
 
-    final ok = await _feedService.reportComment(commentId, selectedReason!);
+    await _feedService.reportComment(commentId, selectedReason!);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2332,16 +2331,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ),
                                   ),
                                 ],
-                                if (post.text.trim().isNotEmpty &&
+                                if (post.cleanText.isNotEmpty &&
                                     !(post.isPoll &&
-                                        post.text.trim() ==
+                                        post.cleanText ==
                                             post.pollQuestion.trim())) ...[
                                   const SizedBox(height: 12),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16),
                                     child: ExpandablePostText(
-                                      text: post.text.trim(),
+                                      text: post.cleanText,
                                       expanded: _isTextExpanded,
                                       onToggle: () {
                                         setState(() {

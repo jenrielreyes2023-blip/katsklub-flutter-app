@@ -260,8 +260,6 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
     final title = widget.preview.title.trim().isNotEmpty
         ? widget.preview.title.trim()
         : 'YouTube video';
-    final description = widget.preview.description.trim();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final controller = _controller;
     final showInlinePlayer =
@@ -408,22 +406,6 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
                 ),
               ),
             ),
-            if (description.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                child: Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark
-                        ? const Color(0xFFB0B3B8)
-                        : const Color(0xFF65676B),
-                    fontSize: 13.sp,
-                    height: 1.35,
-                  ),
-                ),
-              ),
           ],
         ),
       ),

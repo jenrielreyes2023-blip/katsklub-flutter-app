@@ -470,9 +470,9 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       final ytUrl =
           'https://www.youtube.com/watch?v=${_attachedYouTubeVideo!.id}';
       if (text.isEmpty) {
-        text = '▶ ${_attachedYouTubeVideo!.title}\n$ytUrl';
+        text = ytUrl;
       } else if (!text.contains(_attachedYouTubeVideo!.id)) {
-        text = '$text\n\n▶ ${_attachedYouTubeVideo!.title}\n$ytUrl';
+        text = '$text\n\n$ytUrl';
       }
     }
     final title = _titleController.text.trim();

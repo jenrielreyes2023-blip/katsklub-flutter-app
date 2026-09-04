@@ -609,6 +609,26 @@ class Post {
   bool get isRepost =>
       repostOriginalPostId.trim().isNotEmpty || originalPost != null;
 
+  String get cleanText {
+    final raw = text.trim();
+    if (raw.isEmpty) return '';
+
+    if (youtubeVideoId.trim().isNotEmpty || resolvedLinkPreview != null) {
+      var cleaned = raw;
+      cleaned = cleaned.replaceAll(RegExp(r'▶[^\n]*\n?'), '');
+      cleaned = cleaned.replaceAll(
+        RegExp(
+          r'https?:\/\/(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))[\w-]{11}[^\s]*',
+          caseSensitive: false,
+        ),
+        '',
+      );
+      return cleaned.trim();
+    }
+
+    return raw;
+  }
+
   LinkPreview? get resolvedLinkPreview {
     final preview = linkPreview;
     if (preview != null &&
