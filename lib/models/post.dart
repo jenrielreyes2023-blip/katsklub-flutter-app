@@ -595,7 +595,11 @@ class Post {
       return discussionTitle.trim();
     }
     if (isAlbum && albumTitle.trim().isNotEmpty) {
-      return albumTitle.trim();
+      final title = albumTitle.trim();
+      if (title.toLowerCase() == 'carousel' || title.toLowerCase() == 'album') {
+        return '';
+      }
+      return title;
     }
     return '';
   }
