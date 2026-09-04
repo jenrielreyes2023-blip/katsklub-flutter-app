@@ -32,7 +32,7 @@ class VideoCallScreen extends StatefulWidget {
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
   bool _isDismissing = false;
-  Offset _localPipPosition = const Offset(20, 90);
+  Offset _localPipPosition = const Offset(16, 100);
 
   @override
   void initState() {
@@ -98,6 +98,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             ? ApiConfig.assetUrl(session!.targetAvatarUrl)
             : '';
 
+        final showRemoteInMain =
+            isConnected && (session?.isRemoteVideoAvailable ?? false);
+        final showLocalInPip =
+            showRemoteInMain && !isIncoming && !isEnded;
+
         return PopScope(
           canPop: isEndedOrIdle || _isDismissing,
           onPopInvokedWithResult: (didPop, _) {
@@ -109,150 +114,205 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             backgroundColor: const Color(0xFF0F172A),
             body: session == null
                 ? const SizedBox.shrink()
-                : Stack(
-                    children: [
-                      // 1. Remote Video / Background
-                      Positioned.fill(
-                        child: _buildRemoteView(session, avatarUrl, isConnected),
-                      ),
+                : SizedBox.expand(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // 1. FULLSCREEN MAIN VIDEO BACKGROUND
+                        Positioned.fill(
+                          child: _buildMainVideoView(
+                            session: session,
+                            showRemoteInMain: showRemoteInMain,
+                            avatarUrl: avatarUrl,
+                            isConnected: isConnected,
+                            isOutgoing: isOutgoing,
+                          ),
+                        ),
 
-                      // Gradient overlay for readability
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.black.withValues(alpha: 0.65),
-                                Colors.transparent,
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.8),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: const [0.0, 0.25, 0.65, 1.0],
+                        // 2. GRADIENT VIGNETTE OVERLAYS (Top & Bottom for readability)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.transparent,
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.75),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  stops: const [0.0, 0.2, 0.7, 1.0],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
 
-                      // 2. Top Bar (Caller info & duration)
-                      SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
+                        // 3. CALLING / RINGING / WAITING CENTER OVERLAY (when not showing remote video)
+                        if (!showRemoteInMain)
+                          Center(
+                            child: _buildWaitingOverlay(
+                              session: session,
+                              avatarUrl: avatarUrl,
+                              isIncoming: isIncoming,
+                              isOutgoing: isOutgoing,
+                              isConnected: isConnected,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: const Color(0xFFFF7A45),
-                                backgroundImage: avatarUrl.isNotEmpty
-                                    ? CachedNetworkImageProvider(avatarUrl)
-                                    : null,
-                                child: avatarUrl.isEmpty
-                                    ? Text(
-                                        session.targetFullName.isNotEmpty
-                                            ? session.targetFullName[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    : null,
+
+                        // 4. FLOATING DRAGGABLE LOCAL CAMERA PiP (When remote video is active)
+                        if (showLocalInPip)
+                          Positioned(
+                            right: _localPipPosition.dx,
+                            top: _localPipPosition.dy,
+                            child: GestureDetector(
+                              onPanUpdate: (details) {
+                                setState(() {
+                                  final size = MediaQuery.of(context).size;
+                                  final newX = (_localPipPosition.dx -
+                                          details.delta.dx)
+                                      .clamp(12.0, size.width - 130);
+                                  final newY = (_localPipPosition.dy +
+                                          details.delta.dy)
+                                      .clamp(80.0, size.height - 240);
+                                  _localPipPosition = Offset(newX, newY);
+                                });
+                              },
+                              child: _buildLocalPip(session),
+                            ),
+                          ),
+
+                        // 5. TOP HEADER BAR (Anchored at TOP: 0)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: SafeArea(
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      session.targetFullName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A)
+                                      .withValues(alpha: 0.75),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      isIncoming
-                                          ? 'Incoming Video Call...'
-                                          : isOutgoing
-                                              ? 'Calling...'
-                                              : isConnected
-                                                  ? _formatDuration(session.duration)
-                                                  : isEnded
-                                                      ? 'Call ended'
-                                                      : 'Connecting...',
-                                      style: TextStyle(
-                                        color: isConnected
-                                            ? const Color(0xFF10B981)
-                                            : Colors.white70,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: const Color(0xFFFF7A45),
+                                      backgroundImage: avatarUrl.isNotEmpty
+                                          ? CachedNetworkImageProvider(avatarUrl)
+                                          : null,
+                                      child: avatarUrl.isEmpty
+                                          ? Text(
+                                              session.targetFullName.isNotEmpty
+                                                  ? session.targetFullName[0]
+                                                      .toUpperCase()
+                                                  : '?',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            session.targetFullName,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 1),
+                                          Text(
+                                            isIncoming
+                                                ? '📞 Incoming Video Call...'
+                                                : isOutgoing
+                                                    ? '🎙️ Calling...'
+                                                    : isConnected
+                                                        ? '⏱️ ${_formatDuration(session.duration)}'
+                                                        : isEnded
+                                                            ? '🔴 Call ended'
+                                                            : '⚡ Connecting...',
+                                            style: TextStyle(
+                                              color: isConnected
+                                                  ? const Color(0xFF10B981)
+                                                  : const Color(0xFFFF9800),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.flip_camera_ios_rounded,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                      tooltip: 'Flip Camera',
+                                      onPressed: () {
+                                        TRTCCallService().switchCamera();
+                                      },
                                     ),
                                   ],
                                 ),
                               ),
-                              if (isConnected)
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.flip_camera_ios_rounded,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    TRTCCallService().switchCamera();
-                                  },
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // 3. Draggable Local Camera PiP (Picture-in-Picture)
-                      if (!isIncoming && !isEnded)
-                        Positioned(
-                          right: _localPipPosition.dx,
-                          top: _localPipPosition.dy,
-                          child: GestureDetector(
-                            onPanUpdate: (details) {
-                              setState(() {
-                                final screenSize = MediaQuery.of(context).size;
-                                final newX = (_localPipPosition.dx - details.delta.dx)
-                                    .clamp(12.0, screenSize.width - 130);
-                                final newY = (_localPipPosition.dy + details.delta.dy)
-                                    .clamp(60.0, screenSize.height - 240);
-                                _localPipPosition = Offset(newX, newY);
-                              });
-                            },
-                            child: _buildLocalPip(session),
-                          ),
-                        ),
-
-                      // 4. Bottom Controls Bar
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 24,
                             ),
-                            child: isIncoming
-                                ? _buildIncomingControls()
-                                : _buildActiveControls(session),
                           ),
                         ),
-                      ),
-                    ],
+
+                        // 6. BOTTOM CONTROLS DOCK (Firmly anchored at BOTTOM: 0)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: SafeArea(
+                            top: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                              child: isIncoming
+                                  ? _buildIncomingControls()
+                                  : _buildActiveControls(session),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
           ),
         );
@@ -260,43 +320,86 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  /// Remote video render view or elegant audio/waiting placeholder.
-  Widget _buildRemoteView(
-    TRTCCallSession session,
-    String avatarUrl,
-    bool isConnected,
-  ) {
-    if (session.isRemoteVideoAvailable && isConnected) {
+  /// Fullscreen video render view (either Remote video or Local camera preview).
+  Widget _buildMainVideoView({
+    required TRTCCallSession session,
+    required bool showRemoteInMain,
+    required String avatarUrl,
+    required bool isConnected,
+    required bool isOutgoing,
+  }) {
+    if (showRemoteInMain) {
       return TRTCCloudVideoView(
-        key: const ValueKey('remote_trtc_view'),
+        key: const ValueKey('fullscreen_remote_video_view'),
         onViewCreated: (viewId) {
           TRTCCallService().bindRemoteView(session.targetUserId, viewId);
         },
       );
     }
 
-    return Center(
+    // While waiting for peer to answer, or if peer has no video, display local camera fullscreen
+    if (!session.isCameraOff) {
+      return TRTCCloudVideoView(
+        key: const ValueKey('fullscreen_local_camera_preview'),
+        onViewCreated: (viewId) {
+          TRTCCallService().bindLocalView(viewId);
+        },
+      );
+    }
+
+    // Camera is off fallback
+    return Container(
+      color: const Color(0xFF0F172A),
+    );
+  }
+
+  /// Center badge shown while waiting or ringing.
+  Widget _buildWaitingOverlay({
+    required TRTCCallSession session,
+    required String avatarUrl,
+    required bool isIncoming,
+    required bool isOutgoing,
+    required bool isConnected,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFFFF7A45).withValues(alpha: 0.4),
-                width: 4,
+                color: const Color(0xFFFF7A45),
+                width: 3,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF7A45).withValues(alpha: 0.25),
-                  blurRadius: 36,
-                  spreadRadius: 8,
+                  color: const Color(0xFFFF7A45).withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 4,
                 ),
               ],
             ),
             child: CircleAvatar(
-              radius: 56,
+              radius: 46,
               backgroundColor: const Color(0xFF1E293B),
               backgroundImage: avatarUrl.isNotEmpty
                   ? CachedNetworkImageProvider(avatarUrl)
@@ -307,7 +410,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           ? session.targetFullName[0].toUpperCase()
                           : '?',
                       style: const TextStyle(
-                        fontSize: 42,
+                        fontSize: 36,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -315,25 +418,48 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   : null,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           Text(
             session.targetFullName,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            isConnected
-                ? 'Camera is off'
-                : session.status == CallStatus.outgoing
-                    ? 'Ringing...'
-                    : 'Connecting...',
+            '@${session.targetUsername}',
             style: const TextStyle(
               fontSize: 14,
               color: Colors.white60,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: isConnected
+                  ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                  : const Color(0xFFFF7A45).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              isIncoming
+                  ? 'Incoming Video Call...'
+                  : isOutgoing
+                      ? 'Ringing...'
+                      : isConnected
+                          ? 'Waiting for video...'
+                          : 'Connecting...',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isConnected
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFFF7A45),
+              ),
             ),
           ),
         ],
@@ -341,7 +467,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  /// Draggable Floating Local Preview card.
+  /// Draggable Floating Local Preview card (shown when remote video is fullscreen).
   Widget _buildLocalPip(TRTCCallSession session) {
     return Container(
       width: 110,
@@ -350,13 +476,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1.5,
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16,
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 18,
             offset: const Offset(0, 4),
           ),
         ],
@@ -371,7 +497,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               ),
             )
           : TRTCCloudVideoView(
-              key: const ValueKey('local_trtc_view'),
+              key: const ValueKey('pip_local_video_view'),
               onViewCreated: (viewId) {
                 TRTCCallService().bindLocalView(viewId);
               },
@@ -379,7 +505,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  /// Incoming Call controls (Accept / Reject).
+  /// Incoming Call controls (Decline / Accept).
   Widget _buildIncomingControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -404,69 +530,99 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  /// Active or Outgoing Call controls (Mute, Camera, Flip, Speaker, End).
+  /// Active or Outgoing Call controls (Mute, Camera, Flip, Speaker, End Call).
   Widget _buildActiveControls(TRTCCallSession session) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(36),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(40),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // 1. Microphone
           _iconAction(
             icon: session.isMuted
                 ? Icons.mic_off_rounded
                 : Icons.mic_rounded,
             isActive: !session.isMuted,
+            label: session.isMuted ? 'Muted' : 'Mic',
             onTap: () {
               TRTCCallService().toggleMute();
             },
           ),
+
+          // 2. Camera Toggle
           _iconAction(
             icon: session.isCameraOff
                 ? Icons.videocam_off_rounded
                 : Icons.videocam_rounded,
             isActive: !session.isCameraOff,
+            label: session.isCameraOff ? 'Cam Off' : 'Cam On',
             onTap: () {
               TRTCCallService().toggleCamera();
             },
           ),
-          _iconAction(
-            icon: Icons.flip_camera_ios_rounded,
-            isActive: true,
-            onTap: () {
-              TRTCCallService().switchCamera();
-            },
-          ),
+
+          // 3. Speaker Toggle
           _iconAction(
             icon: session.isSpeakerOn
                 ? Icons.volume_up_rounded
                 : Icons.volume_down_rounded,
             isActive: session.isSpeakerOn,
+            label: session.isSpeakerOn ? 'Speaker' : 'Earpiece',
             onTap: () {
               TRTCCallService().toggleSpeakerphone();
             },
           ),
-          _controlButton(
-            icon: Icons.call_end_rounded,
-            label: '',
-            color: const Color(0xFFEF4444),
+
+          // 4. Flip Camera
+          _iconAction(
+            icon: Icons.flip_camera_ios_rounded,
+            isActive: true,
+            label: 'Flip',
+            onTap: () {
+              TRTCCallService().switchCamera();
+            },
+          ),
+
+          // 5. End Call Button
+          GestureDetector(
             onTap: () {
               TRTCCallService().endCall();
             },
-            size: 50,
+            child: Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.call_end_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
+            ),
           ),
         ],
       ),
@@ -476,17 +632,18 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Widget _iconAction({
     required IconData icon,
     required bool isActive,
+    required String label,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(25),
       child: Container(
-        width: 46,
-        height: 46,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           color: isActive
-              ? Colors.white.withValues(alpha: 0.15)
+              ? Colors.white.withValues(alpha: 0.12)
               : Colors.redAccent.withValues(alpha: 0.25),
           shape: BoxShape.circle,
         ),
@@ -532,17 +689,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             ),
           ),
         ),
-        if (label.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
       ],
     );
   }
