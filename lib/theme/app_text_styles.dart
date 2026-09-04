@@ -220,7 +220,7 @@ class KatsText {
   static TextStyle reelFollow(BuildContext c, {bool isFollowing = false}) =>
       TextStyle(
         fontFamily: 'SF Pro Rounded',
-        color: isFollowing ? Colors.white70 : Colors.white,
+        color: isFollowing ? Colors.white70 : const Color(0xFFFF7A45),
         fontSize: 13.sp,
         fontWeight: FontWeight.w700,
         height: 1.0,

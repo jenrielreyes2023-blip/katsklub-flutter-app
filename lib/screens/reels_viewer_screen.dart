@@ -1758,7 +1758,7 @@ class _ReelCreatorInfo extends StatelessWidget {
                             height: 14.r,
                             child: const CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: Color(0xFFFF7A45),
                             ),
                           )
                         : Text(
