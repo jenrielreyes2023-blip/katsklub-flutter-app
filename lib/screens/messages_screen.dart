@@ -38,7 +38,7 @@ import '../widgets/presence_avatar_dot.dart';
 import '../widgets/special_name_text.dart';
 import '../widgets/inapp_camera_sheet.dart';
 import '../services/presence_service.dart';
-import '../services/webrtc_call_service.dart';
+import '../services/trtc_call_service.dart';
 import '../widgets/smooth_bottom_sheet.dart';
 import 'package:syncfusion_flutter_chat/chat.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -691,13 +691,22 @@ class _MessagesScreenState extends State<MessagesScreen>
         ),
         actions: [
           IconButton(
-            tooltip: 'Call',
+            tooltip: 'Voice Call',
             icon: Icon(
               Icons.call_outlined,
               color: theme.accent,
               size: 22,
             ),
             onPressed: _startAudioCall,
+          ),
+          IconButton(
+            tooltip: 'Video Call',
+            icon: Icon(
+              Icons.videocam_outlined,
+              color: theme.accent,
+              size: 24,
+            ),
+            onPressed: _startVideoCall,
           ),
           IconButton(
             tooltip: 'Wallpaper',
@@ -3095,12 +3104,32 @@ class _MessagesScreenState extends State<MessagesScreen>
       return;
     }
 
-    WebRTCCallService().startAudioCall(
+    TRTCCallService().startCall(
       targetUserId: t.otherUser.id!,
       targetUsername: t.otherUser.username ?? '',
       targetFullName: t.otherUser.fullName ?? t.otherUser.username ?? '',
       targetAvatarUrl: t.otherUser.avatarUrl ?? '',
       threadId: t.id,
+      isVideo: false,
+    );
+  }
+
+  void _startVideoCall() {
+    final t = _thread;
+    if (t == null || t.isGroup || t.otherUser.id == null || t.otherUser.id!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video calls are available in 1-on-1 chats.')),
+      );
+      return;
+    }
+
+    TRTCCallService().startCall(
+      targetUserId: t.otherUser.id!,
+      targetUsername: t.otherUser.username ?? '',
+      targetFullName: t.otherUser.fullName ?? t.otherUser.username ?? '',
+      targetAvatarUrl: t.otherUser.avatarUrl ?? '',
+      threadId: t.id,
+      isVideo: true,
     );
   }
 
