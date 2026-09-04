@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../config/api_config.dart';
 import '../models/post.dart';
 import '../services/normal_video_overlay_controller.dart';
 import '../services/normal_video_playback_session.dart';
 import '../services/normal_video_inline_controls.dart';
 import '../services/feed_service.dart';
+import '../theme/app_text_styles.dart';
 import 'comments_modal.dart';
 import 'custom_icons.dart';
 import 'share_post_sheet.dart';
@@ -522,10 +525,11 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                           post.authorFullName.isNotEmpty
                               ? post.authorFullName[0].toUpperCase()
                               : '?',
-                          style: const TextStyle(
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            color: Color(0xFF111827),
+                            fontSize: 14.sp,
+                            color: const Color(0xFF111827),
                           ),
                         )
                       : null,
@@ -542,17 +546,7 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                               post.authorFullName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black87,
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
+                              style: KatsText.reelAuthor(context),
                             ),
                           ),
                           if (post.authorIsVerified) ...[
@@ -570,10 +564,11 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                         children: [
                           Text(
                             _formatTimestamp(post.createdAt),
-                            style: const TextStyle(
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
                               color: Colors.white70,
-                              fontSize: 12,
-                              shadows: [
+                              fontSize: 12.sp,
+                              shadows: const [
                                 Shadow(
                                   color: Colors.black87,
                                   blurRadius: 4,
@@ -581,20 +576,21 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                               ],
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Text(
                               '·',
                               style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
                                 color: Colors.white70,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                               ),
                             ),
                           ),
                           Icon(
                             _privacyIcon(post.visibility),
                             color: Colors.white70,
-                            size: 12,
+                            size: 14.r,
                           ),
                         ],
                       ),
@@ -618,17 +614,7 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                   overflow: _isCaptionExpanded
                       ? TextOverflow.visible
                       : TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    height: 1.3,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black87,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
+                  style: KatsText.reelBody(context),
                 ),
               ),
             ],
@@ -641,11 +627,12 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                     builder: (context, VideoPlayerValue value, child) {
                       return Text(
                         _formatDuration(value.position),
-                        style: const TextStyle(
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
-                          shadows: [
+                          shadows: const [
                             Shadow(color: Colors.black87, blurRadius: 4),
                           ],
                         ),
@@ -671,11 +658,12 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                   const SizedBox(width: 8),
                   Text(
                     _formatDuration(controller.value.duration),
-                    style: const TextStyle(
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
                       color: Colors.white,
-                      fontSize: 11,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
-                      shadows: [
+                      shadows: const [
                         Shadow(color: Colors.black87, blurRadius: 4),
                       ],
                     ),
@@ -718,10 +706,10 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
               child: TextField(
                 controller: _commentController,
                 focusNode: _commentFocus,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: const InputDecoration(
+                style: KatsText.reelCommentInput(context),
+                decoration: InputDecoration(
                   hintText: 'Add a comment...',
-                  hintStyle: TextStyle(color: Colors.white70, fontSize: 14),
+                  hintStyle: KatsText.reelCommentHint(context),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
@@ -960,17 +948,7 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label!,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                shadows: [
-                  Shadow(
-                    color: Colors.black87,
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
+              style: KatsText.reelCount(context),
             ),
           ],
         ],
