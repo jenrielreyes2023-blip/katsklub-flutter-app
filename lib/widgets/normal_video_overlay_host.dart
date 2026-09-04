@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_overlay_controller.dart';

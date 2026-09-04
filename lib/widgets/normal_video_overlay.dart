@@ -661,8 +661,8 @@ class _NormalVideoOverlayState extends State<NormalVideoOverlay> {
                         allowScrubbing: true,
                         colors: VideoProgressColors(
                           playedColor: const Color(0xFFFF7A45),
-                          bufferedColor: Colors.white.withOpacity(0.2),
-                          backgroundColor: Colors.white.withOpacity(0.1),
+                          bufferedColor: Colors.white.withValues(alpha: 0.2),
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 5),
                       ),

@@ -490,29 +490,36 @@ class _ReelPageState extends State<_ReelPage> {
 
   Future<void> _repost() async {
     if (_isReposting) return;
+    setState(() => _isReposting = true);
 
-    HapticFeedback.lightImpact();
+    try {
+      HapticFeedback.lightImpact();
 
-    final repostedPost = await Navigator.of(context).push<Post>(
-      MaterialPageRoute(
-        builder: (_) => RepostPostScreen(originalPost: _reel),
-      ),
-    );
+      final repostedPost = await Navigator.of(context).push<Post>(
+        MaterialPageRoute(
+          builder: (_) => RepostPostScreen(originalPost: _reel),
+        ),
+      );
 
-    if (!mounted || repostedPost == null) {
-      return;
+      if (!mounted || repostedPost == null) {
+        return;
+      }
+
+      final updatedOriginal = repostedPost.originalPost;
+      setState(() {
+        _reel = updatedOriginal?.id == _reel.id
+            ? updatedOriginal!
+            : _reel.copyWith(repostCount: _reel.repostCount + 1);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reposted.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isReposting = false);
+      }
     }
-
-    final updatedOriginal = repostedPost.originalPost;
-    setState(() {
-      _reel = updatedOriginal?.id == _reel.id
-          ? updatedOriginal!
-          : _reel.copyWith(repostCount: _reel.repostCount + 1);
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reposted.')),
-    );
   }
 
   void _share() {
