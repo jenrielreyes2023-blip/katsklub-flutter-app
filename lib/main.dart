@@ -68,7 +68,12 @@ Future<void> main() async {
     }
   } catch (_) {}
   final authService = AuthService();
-  final currentUser = await authService.getCurrentUser();
+  User? currentUser;
+  try {
+    currentUser = await authService.getCurrentUser();
+  } catch (e) {
+    debugPrint('Error getting current user on launch: $e');
+  }
 
   runApp(
     KatsKlubApp(
