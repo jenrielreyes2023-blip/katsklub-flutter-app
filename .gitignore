@@ -77,4 +77,6 @@ katsklub-backend
 
 # Local developer attach scripts
 attach.*
+muse.*
+
 

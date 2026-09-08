@@ -11,6 +11,7 @@ The `users` table contains both real human accounts and simulated persona accoun
 ### 1. Real / Admin Accounts (`is_persona = FALSE`)
 * **`@jayriel` (User ID: 2)**: The primary owner and human developer of KatsKlub. **NEVER** use this account for automated bot actions, auto-comments, dummy test posts, or random updates unless explicitly instructed by the user.
 * **`@gemini` (User ID: 48)**: Main AI system / developer identity.
+* **`@ronaldo` (User ID: 89)**: Real organic user (`ronaldo delantar`). **NEVER** use or automate.
 * Any future real organic users who sign up via the mobile app will have `is_persona = FALSE`.
 
 ### 2. Persona Accounts (`is_persona = TRUE`)
