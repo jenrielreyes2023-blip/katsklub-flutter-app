@@ -12,6 +12,7 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/kats_top_bar.dart';
+import '../widgets/aurora_header.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
@@ -573,73 +574,17 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 );
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-                decoration: BoxDecoration(
-                  color: _isRefreshing
-                      ? (isDark ? const Color(0xFF261914) : const Color(0xFFFFF3ED))
-                      : Theme.of(context).colorScheme.surface,
-                  boxShadow: _isRefreshing
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                            blurRadius: 14,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                      : null,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: _isRefreshing
-                          ? const Color(0xFFFF7A45).withValues(alpha: 0.7)
-                          : Colors.transparent,
-                      width: 1.5,
-                    ),
+              child: AuroraHeader(
+                height: _homeHeaderHeight.h,
+                isRefreshing: _isRefreshing,
+                child: SizedBox(
+                  height: _homeHeaderHeight.h,
+                  child: KatsTopBar(
+                    unreadNotifications: _unreadNotifications,
+                    isMenuOpen: _isHomeMenuOpen,
+                    onHomeTap: _showHomeMenu,
+                    onNotificationsTap: _openNotifications,
                   ),
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (_isRefreshing)
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                const Color(0xFFFF7A45).withValues(alpha: isDark ? 0.25 : 0.18),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    SizedBox(
-                      height: _homeHeaderHeight.h,
-                      child: KatsTopBar(
-                        unreadNotifications: _unreadNotifications,
-                        isMenuOpen: _isHomeMenuOpen,
-                        onHomeTap: _showHomeMenu,
-                        onNotificationsTap: _openNotifications,
-                      ),
-                    ),
-                    if (_isRefreshing)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: SizedBox(
-                          height: 2.5,
-                          child: LinearProgressIndicator(
-                            backgroundColor: const Color(0xFFFF7A45).withValues(alpha: 0.18),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
-                          ),
-                        ),
-                      ),
-                  ],
                 ),
               ),
             ),
