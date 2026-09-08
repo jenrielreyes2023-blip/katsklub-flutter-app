@@ -31,7 +31,6 @@ import 'bookmarks_screen.dart';
 import 'game_room_screen.dart';
 import 'wallet_screen.dart';
 import 'youtube_search_screen.dart';
-import '../widgets/top_users_home_card.dart';
 import '../services/promotions_service.dart';
 
 
@@ -703,7 +702,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   int _homeItemCount(List<Post> posts) {
-    const fixedHeaderCount = 3;
+    const fixedHeaderCount = 2;
     final contentCount = _isInitialLoading || posts.isEmpty ? 1 : posts.length;
     final inlineSuggestions = _hasInlineSuggestions(posts) ? 1 : 0;
     final caughtUpFooter = _shouldShowCaughtUpFooter(posts) ? 1 : 0;
@@ -764,10 +763,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     if (index == 1) {
-      return const TopUsersHomeCard();
-    }
-
-    if (index == 2) {
       if (_hasEmptyStateSuggestions(posts)) {
         return _buildSuggestionsRail();
       }
@@ -775,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     final hasInlineRail = _hasInlineSuggestions(posts);
-    final inlineRailIndex = 3 + _kSuggestionsInlineAfter;
+    final inlineRailIndex = 2 + _kSuggestionsInlineAfter;
 
     if (index == _homeItemCount(posts) - 1) {
       return SizedBox(height: 18.h);
@@ -862,7 +857,7 @@ class _HomeScreenState extends State<HomeScreen>
       return _buildSuggestionsRail();
     }
 
-    var contentIndex = index - 3;
+    var contentIndex = index - 2;
     if (hasInlineRail && index > inlineRailIndex) {
       contentIndex -= 1;
     }
