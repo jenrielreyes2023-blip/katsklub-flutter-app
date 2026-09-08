@@ -496,6 +496,81 @@ class TRTCCallService {
     return true;
   }
 
+  /// Handles incoming call payload from notification or deep link.
+  void handleIncomingCallPayload({
+    BuildContext? context,
+    required String callId,
+    required String callerUserId,
+    required bool isVideo,
+    required String callerName,
+    required String callerAvatar,
+    int? threadId,
+  }) {
+    final current = sessionNotifier.value;
+    if (current != null &&
+        current.status != CallStatus.idle &&
+        current.status != CallStatus.ended) {
+      return;
+    }
+
+    sessionNotifier.value = TRTCCallSession(
+      callId: callId,
+      targetUserId: callerUserId,
+      targetUsername: callerName,
+      targetFullName: callerName,
+      targetAvatarUrl: callerAvatar,
+      threadId: threadId ?? 0,
+      status: CallStatus.incoming,
+      isVideo: isVideo,
+    );
+
+    final targetContext = context ?? UpdateChecker.navigatorKey.currentContext;
+    if (targetContext != null && targetContext.mounted) {
+      if (isVideo) {
+        VideoCallScreen.open(targetContext);
+      } else {
+        AudioCallScreen.open(targetContext);
+      }
+    }
+  }
+
+  /// Accepts an incoming call directly from notification action or full screen alert.
+  Future<void> acceptIncomingCall({
+    BuildContext? context,
+    required String callId,
+    required String callerUserId,
+    required bool isVideo,
+    required String callerName,
+    required String callerAvatar,
+    int? threadId,
+  }) async {
+    final current = sessionNotifier.value;
+    if (current == null || current.callId != callId) {
+      sessionNotifier.value = TRTCCallSession(
+        callId: callId,
+        targetUserId: callerUserId,
+        targetUsername: callerName,
+        targetFullName: callerName,
+        targetAvatarUrl: callerAvatar,
+        threadId: threadId ?? 0,
+        status: CallStatus.incoming,
+        isVideo: isVideo,
+      );
+
+      final targetContext =
+          context ?? UpdateChecker.navigatorKey.currentContext;
+      if (targetContext != null && targetContext.mounted) {
+        if (isVideo) {
+          VideoCallScreen.open(targetContext);
+        } else {
+          AudioCallScreen.open(targetContext);
+        }
+      }
+    }
+
+    await acceptCall();
+  }
+
   /// Rejects an incoming call.
   void rejectCall({String reason = 'rejected'}) {
     final current = sessionNotifier.value;

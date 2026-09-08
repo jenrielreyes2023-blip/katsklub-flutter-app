@@ -20,6 +20,7 @@ class MainActivity : AudioServiceActivity() {
     private var pendingNotificationTapData: Map<String, String>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        applyCallWindowFlags(intent)
         pendingNotificationTapData = extractKatsNotificationTapData(intent)
         super.onCreate(savedInstanceState)
         createUrgentNotificationChannel()
@@ -53,6 +54,7 @@ class MainActivity : AudioServiceActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        applyCallWindowFlags(intent)
 
         val data = extractKatsNotificationTapData(intent) ?: return
         val channel = notificationTapChannel
@@ -60,6 +62,29 @@ class MainActivity : AudioServiceActivity() {
             pendingNotificationTapData = data
         } else {
             channel.invokeMethod("notificationTap", data)
+        }
+    }
+
+    private fun applyCallWindowFlags(intent: Intent?) {
+        val hasCallAction = intent?.hasExtra(EXTRA_CALL_ACTION) == true
+        if (hasCallAction) {
+            val callId = intent?.getStringExtra(EXTRA_CALL_ID)
+            if (!callId.isNullOrEmpty()) {
+                cancelKatsCallNotification(callId)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            }
         }
     }
 
@@ -105,8 +130,17 @@ class MainActivity : AudioServiceActivity() {
         copyExtra("commentId")
         copyExtra("username")
         copyExtra(KATS_EXTRA_THREAD_ID, "threadId")
+        copyExtra(EXTRA_CALL_ACTION, "callAction")
+        copyExtra(EXTRA_CALL_ID, "callId")
+        copyExtra(EXTRA_CALLER_ID, "callerId")
+        copyExtra(EXTRA_CALL_IS_VIDEO, "isVideo")
+        copyExtra(EXTRA_THREAD_ID, "callThreadId")
+        copyExtra("callerName", "callerName")
+        copyExtra("callerAvatar", "callerAvatar")
 
-        if (!data.containsKey("type") && data.containsKey("threadId")) {
+        if (data.containsKey("callAction")) {
+            data["type"] = "call_action"
+        } else if (!data.containsKey("type") && data.containsKey("threadId")) {
             data["type"] = "message"
         }
 

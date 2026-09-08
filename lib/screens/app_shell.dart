@@ -125,6 +125,44 @@ class _AppShellState extends State<AppShell> {
     }
 
     switch (type) {
+      case 'call_action':
+      case 'call':
+      case 'call_invite':
+        final callAction = data['callAction']?.toString() ?? 'incoming';
+        final callId = data['callId']?.toString() ?? '';
+        final callerId = data['callerId']?.toString() ?? '';
+        final callerName = data['callerName']?.toString() ?? 'KatsKlub Member';
+        final callerAvatar = data['callerAvatar']?.toString() ?? '';
+        final isVideo = data['isVideo'] == 'true' || data['isVideo'] == true;
+        final threadId = int.tryParse(
+            data['threadId']?.toString() ?? data['callThreadId']?.toString() ?? '0');
+
+        if (callId.isNotEmpty && mounted) {
+          if (callAction == 'accept') {
+            TRTCCallService().acceptIncomingCall(
+              context: context,
+              callId: callId,
+              callerUserId: callerId,
+              isVideo: isVideo,
+              callerName: callerName,
+              callerAvatar: callerAvatar,
+              threadId: threadId,
+            );
+          } else {
+            TRTCCallService().handleIncomingCallPayload(
+              context: context,
+              callId: callId,
+              callerUserId: callerId,
+              isVideo: isVideo,
+              callerName: callerName,
+              callerAvatar: callerAvatar,
+              threadId: threadId,
+            );
+          }
+          return;
+        }
+        break;
+
       case 'message':
         final threadIdStr = data['threadId']?.toString();
         if (threadIdStr != null) {

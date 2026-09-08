@@ -10,20 +10,28 @@ import '../services/trtc_call_service.dart';
 class VideoCallScreen extends StatefulWidget {
   const VideoCallScreen({super.key});
 
+  static bool _isOpen = false;
+
   static Future<void> open(BuildContext context) async {
-    final nav = Navigator.of(context, rootNavigator: true);
-    await nav.push(
-      PageRouteBuilder<void>(
-        opaque: true,
-        transitionDuration: const Duration(milliseconds: 250),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return FadeTransition(
-            opacity: animation,
-            child: const VideoCallScreen(),
-          );
-        },
-      ),
-    );
+    if (_isOpen) return;
+    _isOpen = true;
+    try {
+      final nav = Navigator.of(context, rootNavigator: true);
+      await nav.push(
+        PageRouteBuilder<void>(
+          opaque: true,
+          transitionDuration: const Duration(milliseconds: 250),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return FadeTransition(
+              opacity: animation,
+              child: const VideoCallScreen(),
+            );
+          },
+        ),
+      );
+    } finally {
+      _isOpen = false;
+    }
   }
 
   @override

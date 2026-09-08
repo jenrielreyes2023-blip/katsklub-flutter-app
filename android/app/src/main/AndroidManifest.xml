@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="Katsklub"
         android:name="${applicationName}"
@@ -29,6 +31,8 @@
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
@@ -81,6 +85,14 @@
         <receiver
             android:name=".KatsDirectReplyReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".KatsCallActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.katsklub.app.ACTION_CALL_DECLINE"/>
+                <action android:name="com.katsklub.app.ACTION_CALL_ACCEPT"/>
+            </intent-filter>
+        </receiver>
         <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
                   android:exported="true"
                   tools:ignore="Instantiatable">

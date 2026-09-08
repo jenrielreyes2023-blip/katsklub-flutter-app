@@ -15,6 +15,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import java.net.HttpURLConnection
@@ -23,11 +25,21 @@ import java.util.Locale
 import kotlin.math.abs
 
 internal const val KATS_MESSAGE_CHANNEL_ID = "katsklub_messages_channel"
+internal const val KATS_CALL_CHANNEL_ID = "katsklub_incoming_calls_channel"
 internal const val KATS_REPLY_TEXT_KEY = "katsklub_reply_text"
 internal const val KATS_EXTRA_THREAD_ID = "thread_id"
 internal const val KATS_EXTRA_NOTIFICATION_ID = "notification_id"
 internal const val KATS_API_BASE_URL = "https://katsklub.top"
 private const val KATS_NOTIFICATION_AVATAR_SIZE = 256
+
+internal data class KatsIncomingCall(
+    val callId: String,
+    val callerId: String,
+    val callerName: String,
+    val callerAvatarUrl: String?,
+    val isVideo: Boolean,
+    val threadId: String?,
+)
 
 internal data class KatsIncomingMessage(
     val threadId: String,
@@ -72,6 +84,43 @@ internal fun Context.ensureKatsMessageChannel() {
     notificationManager.createNotificationChannel(channel)
 }
 
+internal fun Context.ensureKatsCallChannel() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        return
+    }
+
+    val notificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    val existingChannel = notificationManager.getNotificationChannel(KATS_CALL_CHANNEL_ID)
+    if (existingChannel != null) {
+        return
+    }
+
+    val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+    val audioAttributes = AudioAttributes.Builder()
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+        .build()
+
+    val channel = NotificationChannel(
+        KATS_CALL_CHANNEL_ID,
+        "KatsKlub Incoming Calls",
+        NotificationManager.IMPORTANCE_HIGH,
+    ).apply {
+        description = "High priority incoming audio and video call alerts"
+        enableLights(true)
+        lightColor = android.graphics.Color.GREEN
+        enableVibration(true)
+        vibrationPattern = longArrayOf(0, 1000, 1000, 1000, 1000, 1000)
+        lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        setSound(ringtoneUri, audioAttributes)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            setBypassDnd(true)
+        }
+    }
+    notificationManager.createNotificationChannel(channel)
+}
+
 internal fun Context.isKatsAppForeground(): Boolean {
     val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         ?: return false
@@ -97,6 +146,9 @@ internal fun Map<String, String>.toKatsIncomingMessage(): KatsIncomingMessage? {
     val type = firstValue("type", "notificationType", "kind", "event")
         ?.lowercase(Locale.US)
         .orEmpty()
+    if (type.contains("call")) {
+        return null
+    }
     val looksLikeMessage = type.contains("message") ||
         containsKey("threadId") ||
         containsKey("conversationId") ||
@@ -245,6 +297,60 @@ internal fun Map<String, String>.firstValue(vararg keys: String): String? {
     return null
 }
 
+internal fun katsCallNotificationId(callId: String): Int {
+    return 500_000 + abs(callId.hashCode() % 400_000)
+}
+
+internal fun Map<String, String>.toKatsIncomingCall(): KatsIncomingCall? {
+    val type = firstValue("type", "notificationType", "kind", "event")
+        ?.lowercase(Locale.US)
+        .orEmpty()
+    val isCallType = type == "call_invite" ||
+        type == "call_incoming" ||
+        type == "call" ||
+        type == "incoming_call" ||
+        type == "call:invite"
+    val hasCallId = containsKey("callId") || containsKey("call_id")
+    if (!isCallType && !hasCallId) {
+        return null
+    }
+
+    val callId = firstValue("callId", "call_id")?.trim() ?: return null
+    val callerId = firstValue("callerId", "caller_id", "callerUserId", "userId")?.trim() ?: ""
+    val callerName = firstValue(
+        "callerName",
+        "caller_name",
+        "callerFullName",
+        "fullName",
+        "name",
+        "title",
+        "senderName",
+    )?.trim().takeUnless { it.isNullOrEmpty() } ?: "KatsKlub Member"
+
+    val callerAvatarUrl = firstValue(
+        "callerAvatarUrl",
+        "caller_avatar_url",
+        "callerAvatar",
+        "avatarUrl",
+        "avatar",
+        "photoUrl",
+        "image",
+    )?.trim().takeUnless { it.isNullOrEmpty() }
+
+    val rawIsVideo = firstValue("isVideo", "is_video", "mediaType", "callType")?.lowercase(Locale.US)
+    val isVideo = rawIsVideo == "true" || rawIsVideo == "1" || rawIsVideo == "video"
+    val threadId = firstValue("threadId", "thread_id")?.trim()
+
+    return KatsIncomingCall(
+        callId = callId,
+        callerId = callerId,
+        callerName = callerName,
+        callerAvatarUrl = callerAvatarUrl,
+        isVideo = isVideo,
+        threadId = threadId,
+    )
+}
+
 internal fun katsNotificationId(threadId: String): Int {
     return 100_000 + abs(threadId.hashCode() % 800_000)
 }
@@ -322,6 +428,121 @@ internal fun Context.showKatsMessageNotification(message: KatsIncomingMessage) {
     val notificationManager =
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     notificationManager.notify(notificationId, builder.build())
+}
+
+internal fun Context.showKatsCallNotification(call: KatsIncomingCall) {
+    ensureKatsCallChannel()
+
+    val notificationId = katsCallNotificationId(call.callId)
+
+    // Full-screen incoming call intent (shows full screen caller ID on lock screen, heads-up banner when screen is on)
+    val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+        putExtra(EXTRA_CALL_ACTION, "incoming")
+        putExtra(EXTRA_CALL_ID, call.callId)
+        putExtra(EXTRA_CALLER_ID, call.callerId)
+        putExtra(EXTRA_CALL_IS_VIDEO, call.isVideo)
+        putExtra(EXTRA_THREAD_ID, call.threadId.orEmpty())
+        putExtra("callerName", call.callerName)
+        putExtra("callerAvatar", call.callerAvatarUrl.orEmpty())
+    }
+    val fullScreenPendingIntent = PendingIntent.getActivity(
+        this,
+        notificationId,
+        fullScreenIntent,
+        pendingIntentFlags(mutable = false),
+    )
+
+    // Accept action (launches app directly to connect call)
+    val acceptIntent = Intent(this, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+        putExtra(EXTRA_CALL_ACTION, "accept")
+        putExtra(EXTRA_CALL_ID, call.callId)
+        putExtra(EXTRA_CALLER_ID, call.callerId)
+        putExtra(EXTRA_CALL_IS_VIDEO, call.isVideo)
+        putExtra(EXTRA_THREAD_ID, call.threadId.orEmpty())
+        putExtra("callerName", call.callerName)
+        putExtra("callerAvatar", call.callerAvatarUrl.orEmpty())
+    }
+    val acceptPendingIntent = PendingIntent.getActivity(
+        this,
+        notificationId + 1,
+        acceptIntent,
+        pendingIntentFlags(mutable = false),
+    )
+
+    // Decline action (sends broadcast to dismiss notification and ping server reject)
+    val declineIntent = Intent(this, KatsCallActionReceiver::class.java).apply {
+        action = ACTION_CALL_DECLINE
+        putExtra(EXTRA_CALL_ID, call.callId)
+        putExtra(EXTRA_CALLER_ID, call.callerId)
+        putExtra(EXTRA_THREAD_ID, call.threadId.orEmpty())
+        putExtra(KATS_EXTRA_NOTIFICATION_ID, notificationId)
+    }
+    val declinePendingIntent = PendingIntent.getBroadcast(
+        this,
+        notificationId + 2,
+        declineIntent,
+        pendingIntentFlags(mutable = true),
+    )
+
+    val declineAction = Notification.Action.Builder(
+        android.R.drawable.ic_menu_close_clear_cancel,
+        "Decline",
+        declinePendingIntent,
+    ).build()
+
+    val acceptAction = Notification.Action.Builder(
+        android.R.drawable.ic_menu_call,
+        "Accept",
+        acceptPendingIntent,
+    ).build()
+
+    val callTypeLabel = if (call.isVideo) "Incoming KatsKlub Video Call..." else "Incoming KatsKlub Audio Call..."
+    val largeIcon = call.callerAvatarUrl?.let(::loadKatsAvatar)
+
+    val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Notification.Builder(this, KATS_CALL_CHANNEL_ID)
+    } else {
+        @Suppress("DEPRECATION")
+        Notification.Builder(this)
+    }
+
+    val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+
+    builder
+        .setSmallIcon(R.drawable.ic_notification)
+        .setColor(getKatsNotificationColor())
+        .setContentTitle(call.callerName)
+        .setContentText(callTypeLabel)
+        .setCategory(Notification.CATEGORY_CALL)
+        .setPriority(Notification.PRIORITY_MAX)
+        .setVisibility(Notification.VISIBILITY_PUBLIC)
+        .setOngoing(true)
+        .setAutoCancel(false)
+        .setSound(ringtoneUri)
+        .setFullScreenIntent(fullScreenPendingIntent, true)
+        .setContentIntent(fullScreenPendingIntent)
+        .addAction(declineAction)
+        .addAction(acceptAction)
+
+    if (largeIcon != null) {
+        builder.setLargeIcon(largeIcon)
+    }
+
+    val notificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.notify(notificationId, builder.build())
+}
+
+internal fun Context.cancelKatsCallNotification(callId: String) {
+    val notificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+    notificationManager?.cancel(katsCallNotificationId(callId))
 }
 
 internal fun Context.showKatsSocialNotification(notification: KatsIncomingNotification) {
