@@ -57,7 +57,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
-  static const double _homeHeaderHeight = 58;
+  static const double _homeHeaderHeight = 46;
   static const double _storiesRowHeight = 124;
   static const Duration _homeHeaderAnimationDuration =
       Duration(milliseconds: 180);

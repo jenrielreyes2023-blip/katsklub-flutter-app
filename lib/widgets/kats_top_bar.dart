@@ -27,14 +27,15 @@ class KatsTopBar extends StatelessWidget {
     final isDark = themeProvider.isDarkMode;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(999),
             onTap: onHomeTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -43,8 +44,9 @@ class KatsTopBar extends StatelessWidget {
                     style: TextStyle(
                       inherit: false,
                       color: const Color(0xFFFF7A45),
-                      fontSize: 22.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   const SizedBox(width: 2),
@@ -53,7 +55,7 @@ class KatsTopBar extends StatelessWidget {
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
                     color: const Color(0xFFFF7A45),
-                    size: 24,
+                    size: 19,
                   ),
                 ],
               ),
@@ -64,16 +66,18 @@ class KatsTopBar extends StatelessWidget {
             onPressed: () {
               Navigator.of(context).pushNamed('/youtube');
             },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: Container(
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.5.h),
               decoration: BoxDecoration(
                 color: const Color(0xFFFF0000),
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(6.r),
               ),
               child: const Icon(
                 Icons.play_arrow_rounded,
                 color: Colors.white,
-                size: 16,
+                size: 14,
               ),
             ),
             tooltip: 'YouTube Search',
@@ -82,14 +86,16 @@ class KatsTopBar extends StatelessWidget {
             onPressed: () {
               themeProvider.toggleTheme(!isDark);
             },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: Icon(
               isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
               color: const Color(0xFFFF7A45),
             ),
-            iconSize: 26,
+            iconSize: 21,
             tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           NotificationBellButton(
             unreadNotifications: unreadNotifications,
             onPressed: onNotificationsTap,
@@ -119,16 +125,16 @@ class NotificationBellButton extends StatelessWidget {
       customBorder: const CircleBorder(),
       onTap: onPressed,
       child: SizedBox(
-        width: 48,
-        height: 48,
+        width: 36,
+        height: 36,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Center(
               child: SvgPicture.string(
                 _notificationBellSvg,
-                width: 29,
-                height: 29,
+                width: 22,
+                height: 22,
                 colorFilter: const ColorFilter.mode(
                   Color(0xFFFF7A45),
                   BlendMode.srcIn,
@@ -137,8 +143,8 @@ class NotificationBellButton extends StatelessWidget {
             ),
             if (unreadNotifications > 0)
               Positioned(
-                right: 6,
-                top: 7,
+                right: 2,
+                top: 2,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: const Color(0xFFE11D48),
@@ -154,13 +160,13 @@ class NotificationBellButton extends StatelessWidget {
                   ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
+                      minWidth: 15,
+                      minHeight: 15,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
+                        horizontal: 3,
+                        vertical: 0.5,
                       ),
                       child: Center(
                         child: Text(
@@ -169,7 +175,7 @@ class NotificationBellButton extends StatelessWidget {
                           style: TextStyle(
                             inherit: false,
                             color: Colors.white,
-                            fontSize: 9.sp,
+                            fontSize: 8.5.sp,
                             fontWeight: FontWeight.w700,
                             height: 1.1,
                           ),
