@@ -443,7 +443,7 @@ class _AppShellState extends State<AppShell> {
             systemNavigationBarIconBrightness: Brightness.light,
           )
         : SystemUiOverlayStyle(
-            statusBarColor: isDark ? const Color(0xFF18191A) : Colors.white,
+            statusBarColor: Colors.transparent,
             statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
             statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
             systemNavigationBarColor: isDark ? const Color(0xFF18191A) : Colors.white,
