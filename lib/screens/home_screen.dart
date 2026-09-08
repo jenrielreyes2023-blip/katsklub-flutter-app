@@ -583,7 +583,8 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final statusBarHeight = MediaQuery.viewPaddingOf(context).top;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final totalHeaderHeight = statusBarHeight + _homeHeaderHeight.h;
     final posts = _homePosts(_posts);
 
     return ColoredBox(
@@ -600,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             RefreshIndicator(
               onRefresh: _refresh,
-              edgeOffset: _homeHeaderHeight.h,
+              edgeOffset: totalHeaderHeight,
               displacement: 24.h,
               color: const Color(0xFFFF7A45),
               backgroundColor: isDark ? const Color(0xFF222224) : Colors.white,
@@ -617,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   slivers: [
                     SliverToBoxAdapter(
-                      child: SizedBox(height: _homeHeaderHeight.h),
+                      child: SizedBox(height: totalHeaderHeight),
                     ),
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
@@ -656,14 +657,22 @@ class _HomeScreenState extends State<HomeScreen>
                   );
                 },
                 child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: SizedBox(
-                    height: _homeHeaderHeight.h,
-                    child: KatsTopBar(
-                      unreadNotifications: _unreadNotifications,
-                      isMenuOpen: _isHomeMenuOpen,
-                      onHomeTap: _showHomeMenu,
-                      onNotificationsTap: _openNotifications,
+                  color: _pullDistance > 0
+                      ? Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.78)
+                      : Theme.of(context).colorScheme.surface,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: statusBarHeight),
+                    child: SizedBox(
+                      height: _homeHeaderHeight.h,
+                      child: KatsTopBar(
+                        unreadNotifications: _unreadNotifications,
+                        isMenuOpen: _isHomeMenuOpen,
+                        onHomeTap: _showHomeMenu,
+                        onNotificationsTap: _openNotifications,
+                      ),
                     ),
                   ),
                 ),
@@ -671,7 +680,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             if (_pendingNewPosts.isNotEmpty)
               Positioned(
-                top: _homeHeaderHeight.h + 8.h,
+                top: totalHeaderHeight + 8.h,
                 left: 0,
                 right: 0,
                 child: Center(

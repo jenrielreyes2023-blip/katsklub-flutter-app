@@ -508,19 +508,25 @@ class _AppShellState extends State<AppShell> {
           body: Stack(
             clipBehavior: Clip.none,
             children: [
-              SafeArea(
-                child: PageStorage(
-                  bucket: _pageStorageBucket,
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: [
-                      for (int i = 0; i < screens.length; i++)
-                        HeroMode(
-                          enabled: i == _selectedIndex,
+              PageStorage(
+                bucket: _pageStorageBucket,
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: [
+                    HeroMode(
+                      enabled: _selectedIndex == 0,
+                      child: screens[0],
+                    ),
+                    for (int i = 1; i < screens.length; i++)
+                      HeroMode(
+                        enabled: i == _selectedIndex,
+                        child: SafeArea(
+                          top: true,
+                          bottom: false,
                           child: screens[i],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
               if (isCurrentRoute) const GlobalAudioMiniPlayer(),

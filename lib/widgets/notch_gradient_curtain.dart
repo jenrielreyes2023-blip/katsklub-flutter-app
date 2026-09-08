@@ -27,10 +27,10 @@ class NotchGradientCurtain extends StatelessWidget {
     final totalHeight = statusBarHeight + pullDistance;
 
     return Positioned(
-      top: -statusBarHeight,
+      top: 0,
       left: 0,
       right: 0,
-      height: totalHeight + 15, // extra room for the curved sag
+      height: totalHeight + 20, // extra room for the curved sag
       child: IgnorePointer(
         child: CustomPaint(
           size: Size(MediaQuery.of(context).size.width, totalHeight),
