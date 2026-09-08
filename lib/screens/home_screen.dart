@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isInitialLoading = true;
   bool _hasLoadedInitialContent = false;
   bool _hasLoadedNetworkFeed = false;
+  bool _isRefreshing = false;
   int _nextOffset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
@@ -223,10 +225,33 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _refresh() async {
-    await Future.wait<void>([
-      _loadHomeFeed(),
-      _loadSuggestions(),
-    ]);
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+    });
+    _isHeaderVisibleNotifier.value = true;
+    HapticFeedback.mediumImpact();
+
+    final stopwatch = Stopwatch()..start();
+    try {
+      await Future.wait<void>([
+        _loadHomeFeed(),
+        _loadSuggestions(),
+        _loadPromotions(),
+      ]);
+      _pendingNewPosts = [];
+      final elapsed = stopwatch.elapsedMilliseconds;
+      if (elapsed < 550) {
+        await Future.delayed(Duration(milliseconds: 550 - elapsed));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+        HapticFeedback.lightImpact();
+      }
+    }
   }
 
   Future<void> _loadSuggestions() async {
@@ -488,16 +513,22 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final posts = _homePosts(_posts);
 
     return ColoredBox(
-      color: Theme.of(context).brightness == Brightness.dark
+      color: isDark
           ? const Color(0xFF121212)
           : const Color(0xFFF7F8FA),
       child: Stack(
         children: [
           RefreshIndicator(
             onRefresh: _refresh,
+            edgeOffset: _homeHeaderHeight.h,
+            displacement: 24.h,
+            color: const Color(0xFFFF7A45),
+            backgroundColor: isDark ? const Color(0xFF222224) : Colors.white,
+            strokeWidth: 2.8,
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) =>
                   _handleHomeScrollNotification(notification, posts),
@@ -529,28 +560,86 @@ class _HomeScreenState extends State<HomeScreen>
             child: ValueListenableBuilder<bool>(
               valueListenable: _isHeaderVisibleNotifier,
               builder: (context, isHeaderVisible, child) {
+                final showHeader = _isRefreshing || isHeaderVisible;
                 return AnimatedSlide(
-                  offset: isHeaderVisible ? Offset.zero : const Offset(0, -1),
+                  offset: showHeader ? Offset.zero : const Offset(0, -1),
                   duration: _homeHeaderAnimationDuration,
                   curve: Curves.easeOutCubic,
                   child: AnimatedOpacity(
-                    opacity: isHeaderVisible ? 1 : 0,
+                    opacity: showHeader ? 1 : 0,
                     duration: _homeHeaderAnimationDuration,
                     curve: Curves.easeOutCubic,
                     child: child,
                   ),
                 );
               },
-              child: Material(
-                color: Theme.of(context).colorScheme.surface,
-                child: SizedBox(
-                  height: _homeHeaderHeight.h,
-                  child: KatsTopBar(
-                    unreadNotifications: _unreadNotifications,
-                    isMenuOpen: _isHomeMenuOpen,
-                    onHomeTap: _showHomeMenu,
-                    onNotificationsTap: _openNotifications,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: _isRefreshing
+                      ? (isDark ? const Color(0xFF261914) : const Color(0xFFFFF3ED))
+                      : Theme.of(context).colorScheme.surface,
+                  boxShadow: _isRefreshing
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: _isRefreshing
+                          ? const Color(0xFFFF7A45).withValues(alpha: 0.7)
+                          : Colors.transparent,
+                      width: 1.5,
+                    ),
                   ),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (_isRefreshing)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                const Color(0xFFFF7A45).withValues(alpha: isDark ? 0.25 : 0.18),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    SizedBox(
+                      height: _homeHeaderHeight.h,
+                      child: KatsTopBar(
+                        unreadNotifications: _unreadNotifications,
+                        isMenuOpen: _isHomeMenuOpen,
+                        onHomeTap: _showHomeMenu,
+                        onNotificationsTap: _openNotifications,
+                      ),
+                    ),
+                    if (_isRefreshing)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: SizedBox(
+                          height: 2.5,
+                          child: LinearProgressIndicator(
+                            backgroundColor: const Color(0xFFFF7A45).withValues(alpha: 0.18),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -589,6 +678,11 @@ class _HomeScreenState extends State<HomeScreen>
     final extentAfter = metrics.maxScrollExtent - metrics.pixels;
     if (!_isLoadingMore && !_isInitialLoading && _hasMore && extentAfter < 1200) {
       _loadMoreHomePosts();
+    }
+
+    if (_isRefreshing) {
+      _setHeaderVisible(true);
+      return false;
     }
 
     if (metrics.pixels <= 4) {

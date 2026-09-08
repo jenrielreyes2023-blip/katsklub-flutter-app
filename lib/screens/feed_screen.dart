@@ -5,7 +5,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
-import '../theme/app_text_styles.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -438,6 +437,13 @@ class _FeedScreenState extends State<FeedScreen>
           color: Theme.of(context).scaffoldBackgroundColor,
           child: RefreshIndicator(
             onRefresh: _refresh,
+            edgeOffset: headerHeight,
+            displacement: 24.h,
+            color: const Color(0xFFFF7A45),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF222224)
+                : Colors.white,
+            strokeWidth: 2.8,
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) =>
                   _handleFeedScrollNotification(notification, posts),
@@ -1013,7 +1019,7 @@ class _FeedScreenState extends State<FeedScreen>
     });
 
     try {
-      final updatedUser = await _feedService.unfollowUser(username);
+      await _feedService.unfollowUser(username);
       if (!mounted) return;
 
       setState(() {
