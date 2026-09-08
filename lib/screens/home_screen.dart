@@ -13,7 +13,6 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/kats_top_bar.dart';
-import '../widgets/aurora_header.dart';
 import '../widgets/notch_gradient_curtain.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
@@ -656,9 +655,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   );
                 },
-                child: AuroraHeader(
-                  height: _homeHeaderHeight.h,
-                  isRefreshing: _isRefreshing || _pullDistance > 10,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
                   child: SizedBox(
                     height: _homeHeaderHeight.h,
                     child: KatsTopBar(

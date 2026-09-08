@@ -84,90 +84,31 @@ class _NotchCurtainPainter extends CustomPainter {
       ..lineTo(w, 0)
       ..close();
 
-    // 2. Vertical sunset orange gradient from notch downwards
-    final alphaMultiplier = (0.55 + 0.45 * math.min(1.0, progress));
+    // 2. Soft, comfortable sunset orange gradient from notch downwards
+    final alphaMultiplier = (0.45 + 0.40 * math.min(1.0, progress));
     final curtainPaint = Paint()
       ..shader = ui.Gradient.linear(
         Offset(w * 0.5, 0),
         Offset(w * 0.5, h + sag),
         [
-          // Right at the notch & status bar: deep vibrant orange
-          const Color(0xFFFF5E1E).withValues(
-            alpha: (isDark ? 0.90 : 0.80) * alphaMultiplier,
-          ),
-          // Behind the top bar: warm radiant orange
+          // At the notch & status bar: smooth warm orange
           const Color(0xFFFF7A45).withValues(
-            alpha: (isDark ? 0.78 : 0.65) * alphaMultiplier,
+            alpha: (isDark ? 0.55 : 0.45) * alphaMultiplier,
           ),
-          // Lower section: glowing golden amber
-          const Color(0xFFFFB03A).withValues(
-            alpha: (isDark ? 0.45 : 0.35) * alphaMultiplier,
+          // Behind top bar: gentle peach
+          const Color(0xFFFF9E66).withValues(
+            alpha: (isDark ? 0.35 : 0.28) * alphaMultiplier,
           ),
-          // Bottom edge: soft peach fading to transparent
-          const Color(0xFFFFC371).withValues(
-            alpha: (isDark ? 0.15 : 0.10) * alphaMultiplier,
+          // Lower falloff: soft amber
+          const Color(0xFFFFB366).withValues(
+            alpha: (isDark ? 0.18 : 0.12) * alphaMultiplier,
           ),
           Colors.transparent,
         ],
-        const [0.0, 0.30, 0.65, 0.88, 1.0],
+        const [0.0, 0.45, 0.80, 1.0],
       );
 
     canvas.drawPath(path, curtainPaint);
-
-    // 3. Radial highlight centered at the notch (radiant bloom from top center)
-    final notchCenter = Offset(w * 0.5, statusBarHeight * 0.5);
-    final notchRadius = w * 0.65;
-    final notchGlowPaint = Paint()
-      ..shader = ui.Gradient.radial(
-        notchCenter,
-        notchRadius,
-        [
-          const Color(0xFFFFD166).withValues(
-            alpha: (isDark ? 0.50 : 0.35) * progress,
-          ),
-          const Color(0xFFFF7A45).withValues(
-            alpha: (isDark ? 0.25 : 0.18) * progress,
-          ),
-          Colors.transparent,
-        ],
-        const [0.0, 0.45, 1.0],
-      );
-
-    canvas.drawCircle(notchCenter, notchRadius, notchGlowPaint);
-
-    // 4. Glowing curved bottom edge line
-    final edgePath = Path()
-      ..moveTo(0, h - sag * 0.4)
-      ..quadraticBezierTo(
-        w * 0.5,
-        h + sag,
-        w,
-        h - sag * 0.4,
-      );
-
-    final edgePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0 * math.min(1.2, progress)
-      ..shader = ui.Gradient.linear(
-        Offset(0, h),
-        Offset(w, h),
-        [
-          Colors.transparent,
-          const Color(0xFFFF9E66).withValues(
-            alpha: (isDark ? 0.40 : 0.25) * progress,
-          ),
-          const Color(0xFFFFD166).withValues(
-            alpha: (isDark ? 0.90 : 0.70) * progress,
-          ),
-          const Color(0xFFFF9E66).withValues(
-            alpha: (isDark ? 0.40 : 0.25) * progress,
-          ),
-          Colors.transparent,
-        ],
-        const [0.0, 0.25, 0.5, 0.75, 1.0],
-      );
-
-    canvas.drawPath(edgePath, edgePaint);
   }
 
   @override
