@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:async';
-import 'dart:math' as math;
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -13,7 +12,6 @@ import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/kats_top_bar.dart';
-import '../widgets/notch_gradient_curtain.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
@@ -58,7 +56,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin {
   static const double _homeHeaderHeight = 58;
   static const double _storiesRowHeight = 124;
   static const Duration _homeHeaderAnimationDuration =
@@ -76,12 +74,6 @@ class _HomeScreenState extends State<HomeScreen>
   bool _hasLoadedInitialContent = false;
   bool _hasLoadedNetworkFeed = false;
   bool _isRefreshing = false;
-  double _pullDistance = 0.0;
-  double _dragStartY = 0.0;
-  bool _isTrackingPull = false;
-  bool _hasPassedThreshold = false;
-  late final AnimationController _pullSpringController;
-  Animation<double>? _pullSpringAnimation;
   int _nextOffset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
@@ -111,10 +103,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _pullSpringController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
     _scrollController.addListener(_handleScroll);
     _mediaSnapCoordinator = MediaPostSnapCoordinator(
       controller: _scrollController,
@@ -184,7 +172,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    _pullSpringController.dispose();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _mediaSnapCoordinator.dispose();
@@ -199,81 +186,6 @@ class _HomeScreenState extends State<HomeScreen>
     FeedService.unreadNotificationsNotifier
         .removeListener(_handleUnreadNotificationsChanged);
     super.dispose();
-  }
-
-  void _animatePullTo(double target) {
-    _pullSpringController.stop();
-    final start = _pullDistance;
-    if ((start - target).abs() < 0.5) {
-      if (mounted) setState(() => _pullDistance = target);
-      return;
-    }
-    _pullSpringAnimation = Tween<double>(begin: start, end: target).animate(
-      CurvedAnimation(
-        parent: _pullSpringController,
-        curve: Curves.easeOutCubic,
-      ),
-    )..addListener(() {
-        if (mounted) {
-          setState(() {
-            _pullDistance = _pullSpringAnimation!.value;
-          });
-        }
-      });
-    _pullSpringController.forward(from: 0.0);
-  }
-
-  void _handlePointerDown(PointerDownEvent event) {
-    if (_scrollController.hasClients && _scrollController.offset <= 2.0) {
-      _dragStartY = event.position.dy;
-      _isTrackingPull = true;
-      _hasPassedThreshold = false;
-      _pullSpringController.stop();
-    }
-  }
-
-  void _handlePointerMove(PointerMoveEvent event) {
-    if (_isTrackingPull && _scrollController.hasClients && _scrollController.offset <= 2.0) {
-      final deltaY = event.position.dy - _dragStartY;
-      if (deltaY > 0) {
-        // Fast, responsive 1:1 feel for short pull (like Facebook/Instagram)
-        final responsiveDistance = deltaY <= 45
-            ? deltaY * 0.95
-            : 42.75 + math.pow(deltaY - 45, 0.82) * 0.85;
-
-        final current = responsiveDistance.clamp(0.0, 200.0);
-        if (current >= 38.h && !_hasPassedThreshold) {
-          _hasPassedThreshold = true;
-          HapticFeedback.mediumImpact(); // Facebook-style physical click!
-        } else if (current < 32.h && _hasPassedThreshold) {
-          _hasPassedThreshold = false;
-        }
-
-        setState(() {
-          _pullDistance = current;
-        });
-      } else if (_pullDistance > 0) {
-        setState(() {
-          _pullDistance = 0.0;
-          _hasPassedThreshold = false;
-        });
-      }
-    }
-  }
-
-  void _finishPull() {
-    _isTrackingPull = false;
-    final shouldTrigger = _hasPassedThreshold || _pullDistance >= 38.h;
-    _hasPassedThreshold = false;
-
-    if (shouldTrigger && !_isRefreshing) {
-      // Effortless FB-style instant refresh on short pull!
-      _refresh();
-    } else if (_isRefreshing) {
-      _animatePullTo(75.h);
-    } else {
-      _animatePullTo(0.0);
-    }
   }
 
   void _bindFeedEvents() {
@@ -319,7 +231,6 @@ class _HomeScreenState extends State<HomeScreen>
     });
     _isHeaderVisibleNotifier.value = true;
     HapticFeedback.mediumImpact();
-    _animatePullTo(75.h);
 
     final stopwatch = Stopwatch()..start();
     try {
@@ -330,15 +241,14 @@ class _HomeScreenState extends State<HomeScreen>
       ]);
       _pendingNewPosts = [];
       final elapsed = stopwatch.elapsedMilliseconds;
-      if (elapsed < 550) {
-        await Future.delayed(Duration(milliseconds: 550 - elapsed));
+      if (elapsed < 500) {
+        await Future.delayed(Duration(milliseconds: 500 - elapsed));
       }
     } finally {
       if (mounted) {
         setState(() {
           _isRefreshing = false;
         });
-        _animatePullTo(0.0);
         HapticFeedback.lightImpact();
       }
     }
@@ -612,120 +522,107 @@ class _HomeScreenState extends State<HomeScreen>
       color: isDark
           ? const Color(0xFF121212)
           : const Color(0xFFF7F8FA),
-      child: Listener(
-        onPointerDown: _handlePointerDown,
-        onPointerMove: _handlePointerMove,
-        onPointerUp: (_) => _finishPull(),
-        onPointerCancel: (_) => _finishPull(),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            RefreshIndicator(
-              onRefresh: _refresh,
-              edgeOffset: totalHeaderHeight,
-              displacement: 24.h,
-              color: const Color(0xFFFF7A45),
-              backgroundColor: isDark ? const Color(0xFF222224) : Colors.white,
-              strokeWidth: 2.8,
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) =>
-                    _handleHomeScrollNotification(notification, posts),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  key: const PageStorageKey<String>('home-post-list'),
-                  cacheExtent: 1500,
-                  physics: const FeedMomentumScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: SizedBox(height: totalHeaderHeight),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _buildHomeItem(context, index, posts),
-                        childCount: _homeItemCount(posts),
-                      ),
-                    ),
-                  ],
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          RefreshIndicator(
+            onRefresh: _refresh,
+            edgeOffset: totalHeaderHeight,
+            displacement: 24.h,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: isDark ? const Color(0xFF222224) : Colors.white,
+            strokeWidth: 2.8,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) =>
+                  _handleHomeScrollNotification(notification, posts),
+              child: CustomScrollView(
+                controller: _scrollController,
+                key: const PageStorageKey<String>('home-post-list'),
+                cacheExtent: 1500,
+                physics: const FeedMomentumScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
                 ),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: totalHeaderHeight),
+                  ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _buildHomeItem(context, index, posts),
+                      childCount: _homeItemCount(posts),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              top: statusBarHeight,
-              left: 0,
-              right: 0,
-              child: ValueListenableBuilder<bool>(
-                valueListenable: _isHeaderVisibleNotifier,
-                builder: (context, isHeaderVisible, child) {
-                  final showHeader =
-                      _isRefreshing || _pullDistance > 0 || isHeaderVisible;
-                  return AnimatedSlide(
-                    offset: showHeader ? Offset.zero : const Offset(0, -1),
+          ),
+          Positioned(
+            top: statusBarHeight,
+            left: 0,
+            right: 0,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isHeaderVisibleNotifier,
+              builder: (context, isHeaderVisible, child) {
+                final showHeader = _isRefreshing || isHeaderVisible;
+                return AnimatedSlide(
+                  offset: showHeader ? Offset.zero : const Offset(0, -1),
+                  duration: _homeHeaderAnimationDuration,
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    opacity: showHeader ? 1 : 0,
                     duration: _homeHeaderAnimationDuration,
                     curve: Curves.easeOutCubic,
-                    child: AnimatedOpacity(
-                      opacity: showHeader ? 1 : 0,
-                      duration: _homeHeaderAnimationDuration,
-                      curve: Curves.easeOutCubic,
-                      child: child,
-                    ),
-                  );
-                },
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: SizedBox(
-                    height: _homeHeaderHeight.h,
-                    child: KatsTopBar(
-                      unreadNotifications: _unreadNotifications,
-                      isMenuOpen: _isHomeMenuOpen,
-                      onHomeTap: _showHomeMenu,
-                      onNotificationsTap: _openNotifications,
-                    ),
+                    child: child,
                   ),
-                ),
-              ),
-            ),
-            // Permanent status bar safe space shield: ensures text/letters NEVER scroll into status bar icons
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: statusBarHeight,
+                );
+              },
               child: Material(
                 color: Theme.of(context).colorScheme.surface,
-                elevation: 0,
-                child: const SizedBox.expand(),
-              ),
-            ),
-            // Notch gradient curtain: emerges from notch/status bar only during pull-to-refresh
-            NotchGradientCurtain(
-              pullDistance: _pullDistance,
-              statusBarHeight: statusBarHeight,
-              isRefreshing: _isRefreshing,
-            ),
-            if (_pendingNewPosts.isNotEmpty)
-              Positioned(
-                top: totalHeaderHeight + 8.h,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: _NewPostsBadge(
-                    count: _pendingNewPosts.length,
-                    onTap: _showPendingNewPosts,
+                child: SizedBox(
+                  height: _homeHeaderHeight.h,
+                  child: KatsTopBar(
+                    unreadNotifications: _unreadNotifications,
+                    isMenuOpen: _isHomeMenuOpen,
+                    onHomeTap: _showHomeMenu,
+                    onNotificationsTap: _openNotifications,
                   ),
                 ),
               ),
+            ),
+          ),
+          // Permanent status bar safe space shield: ensures text/letters NEVER scroll into status bar icons
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: statusBarHeight,
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              elevation: 0,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          if (_pendingNewPosts.isNotEmpty)
             Positioned(
+              top: totalHeaderHeight + 8.h,
               left: 0,
               right: 0,
-              bottom: 24.h,
               child: Center(
-                child: MediaLoadingChip(visible: _isMediaClamping),
+                child: _NewPostsBadge(
+                  count: _pendingNewPosts.length,
+                  onTap: _showPendingNewPosts,
+                ),
               ),
             ),
-          ],
-        ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 24.h,
+            child: Center(
+              child: MediaLoadingChip(visible: _isMediaClamping),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1063,29 +960,6 @@ class _HomeScreenState extends State<HomeScreen>
       enabled: posts.isNotEmpty,
       isMediaPost: hasSnappableMedia,
     );
-
-    if (notification is OverscrollNotification && notification.overscroll < 0) {
-      if (!_isRefreshing && !_isTrackingPull) {
-        final extra = -notification.overscroll * 0.85;
-        final next = (_pullDistance + extra).clamp(0.0, 200.0);
-        if (next >= 38.h && !_hasPassedThreshold) {
-          _hasPassedThreshold = true;
-          HapticFeedback.mediumImpact();
-        }
-        setState(() {
-          _pullDistance = next;
-        });
-      }
-    } else if (notification is ScrollEndNotification) {
-      if (!_isTrackingPull && !_isRefreshing) {
-        if (_pullDistance >= 38.h || _hasPassedThreshold) {
-          _hasPassedThreshold = false;
-          _refresh();
-        } else {
-          _animatePullTo(0.0);
-        }
-      }
-    }
 
     return _handleHomeScroll(notification);
   }
