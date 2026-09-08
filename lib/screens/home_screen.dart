@@ -57,7 +57,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   static const double _homeHeaderHeight = 46;
-  static const double _storiesRowHeight = 124;
+  double get _storiesRowHeight => 72.w + 2.h + 18.sp;
   static const Duration _homeHeaderAnimationDuration =
       Duration(milliseconds: 180);
 
@@ -1657,9 +1657,10 @@ class _StoriesRowState extends State<_StoriesRow>
     super.build(context);
 
     final hasOwnStories = widget.ownStories.isNotEmpty;
+    final rowHeight = 72.w + 2.h + 18.sp;
 
     return SizedBox(
-      height: 102.h,
+      height: rowHeight,
       child: ListView.separated(
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
@@ -1798,14 +1799,15 @@ class _OwnStoryAvatar extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 5.h),
+          SizedBox(height: 2.h),
           Text(
             hasStories ? 'Your Story' : 'Add Story',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 12.sp,
+              fontSize: 11.5.sp,
+              height: 1.1,
               fontWeight: FontWeight.w400,
             ),
           ),

@@ -2027,7 +2027,7 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
               Padding(
-                padding: EdgeInsets.fromLTRB(0, 10.h, 0, 8.h),
+                padding: EdgeInsets.fromLTRB(0, 2.h, 0, 8.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

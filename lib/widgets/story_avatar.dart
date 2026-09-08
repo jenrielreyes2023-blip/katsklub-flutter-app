@@ -109,7 +109,7 @@ class StoryAvatar extends StatelessWidget {
                   ),
               ],
             ),
-            SizedBox(height: 5.h),
+            SizedBox(height: 2.h),
             Text(
               label,
               maxLines: 1,
@@ -117,7 +117,8 @@ class StoryAvatar extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
-                fontSize: 12.sp,
+                fontSize: 11.5.sp,
+                height: 1.1,
                 fontWeight: FontWeight.w400,
               ),
             ),
