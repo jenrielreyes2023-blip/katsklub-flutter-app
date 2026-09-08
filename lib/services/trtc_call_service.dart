@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tencent_rtc_sdk/trtc_cloud.dart';
 import 'package:tencent_rtc_sdk/trtc_cloud_def.dart';
@@ -493,6 +494,12 @@ class TRTCCallService {
     _startDurationTimer();
 
     await _enterTRTCRoom(current.callId, current.isVideo);
+
+    try {
+      const MethodChannel('com.katsklub.app/notification_taps')
+          .invokeMethod('clearCallNotification', {'callId': current.callId});
+    } catch (_) {}
+
     return true;
   }
 
@@ -606,6 +613,11 @@ class TRTCCallService {
     _stopDurationTimer();
     _callTimeoutTimer?.cancel();
     CallSoundService.stop();
+
+    try {
+      const MethodChannel('com.katsklub.app/notification_taps')
+          .invokeMethod('clearCallNotification', {'callId': current?.callId ?? ''});
+    } catch (_) {}
 
     try {
       _trtcCloud?.stopLocalAudio();

@@ -25,7 +25,7 @@ import java.util.Locale
 import kotlin.math.abs
 
 internal const val KATS_MESSAGE_CHANNEL_ID = "katsklub_messages_channel"
-internal const val KATS_CALL_CHANNEL_ID = "katsklub_incoming_calls_channel"
+internal const val KATS_CALL_CHANNEL_ID = "katsklub_incoming_calls_channel_v2"
 internal const val KATS_REPLY_TEXT_KEY = "katsklub_reply_text"
 internal const val KATS_EXTRA_THREAD_ID = "thread_id"
 internal const val KATS_EXTRA_NOTIFICATION_ID = "notification_id"
@@ -534,9 +534,13 @@ internal fun Context.showKatsCallNotification(call: KatsIncomingCall) {
         builder.setLargeIcon(largeIcon)
     }
 
+    val notification = builder.build().apply {
+        flags = flags or Notification.FLAG_INSISTENT
+    }
+
     val notificationManager =
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    notificationManager.notify(notificationId, builder.build())
+    notificationManager.notify(notificationId, notification)
 }
 
 internal fun Context.cancelKatsCallNotification(callId: String) {

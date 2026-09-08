@@ -45,6 +45,17 @@ class MainActivity : AudioServiceActivity() {
                         notificationManager.cancelAll()
                         result.success(true)
                     }
+                    "clearCallNotification" -> {
+                        val callId = call.argument<String>("callId")
+                        if (!callId.isNullOrEmpty()) {
+                            cancelKatsCallNotification(callId)
+                        } else {
+                            val notificationManager =
+                                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                            notificationManager.cancelAll()
+                        }
+                        result.success(true)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -66,25 +77,28 @@ class MainActivity : AudioServiceActivity() {
     }
 
     private fun applyCallWindowFlags(intent: Intent?) {
-        val hasCallAction = intent?.hasExtra(EXTRA_CALL_ACTION) == true
-        if (hasCallAction) {
+        val callAction = intent?.getStringExtra(EXTRA_CALL_ACTION)
+        if (!callAction.isNullOrEmpty()) {
             val callId = intent?.getStringExtra(EXTRA_CALL_ID)
-            if (!callId.isNullOrEmpty()) {
+            // DO NOT cancel the notification if callAction is "incoming"!
+            // Only cancel if user explicitly pressed "accept" or "decline"
+            if ((callAction == "accept" || callAction == "decline") && !callId.isNullOrEmpty()) {
                 cancelKatsCallNotification(callId)
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(true)
                 setTurnScreenOn(true)
-            } else {
-                @Suppress("DEPRECATION")
-                window.addFlags(
-                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                    android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                )
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
+                keyguardManager?.requestDismissKeyguard(this, null)
             }
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
         }
     }
 

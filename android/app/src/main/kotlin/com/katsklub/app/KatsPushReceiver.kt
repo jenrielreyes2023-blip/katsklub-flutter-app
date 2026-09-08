@@ -53,6 +53,19 @@ class KatsPushReceiver : BroadcastReceiver() {
         val incomingCall = data.toKatsIncomingCall()
         if (incomingCall != null) {
             abortKatsPushBroadcastIfOrdered()
+
+            // Turn on screen on Honor/Huawei/Android devices when call arrives
+            try {
+                @Suppress("DEPRECATION")
+                val wakeLock = powerManager?.newWakeLock(
+                    android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                    android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                    android.os.PowerManager.ON_AFTER_RELEASE,
+                    "katsklub:incoming_call_screen_wake"
+                )
+                wakeLock?.acquire(20000)
+            } catch (_: Throwable) {}
+
             val pendingResult = goAsync()
             thread(name = "kats-call-notification") {
                 try {
