@@ -630,13 +630,8 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-            NotchGradientCurtain(
-              pullDistance: _pullDistance,
-              statusBarHeight: statusBarHeight,
-              isRefreshing: _isRefreshing,
-            ),
             Positioned(
-              top: 0,
+              top: statusBarHeight,
               left: 0,
               right: 0,
               child: ValueListenableBuilder<bool>(
@@ -657,26 +652,36 @@ class _HomeScreenState extends State<HomeScreen>
                   );
                 },
                 child: Material(
-                  color: _pullDistance > 0
-                      ? Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.78)
-                      : Theme.of(context).colorScheme.surface,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: statusBarHeight),
-                    child: SizedBox(
-                      height: _homeHeaderHeight.h,
-                      child: KatsTopBar(
-                        unreadNotifications: _unreadNotifications,
-                        isMenuOpen: _isHomeMenuOpen,
-                        onHomeTap: _showHomeMenu,
-                        onNotificationsTap: _openNotifications,
-                      ),
+                  color: Theme.of(context).colorScheme.surface,
+                  child: SizedBox(
+                    height: _homeHeaderHeight.h,
+                    child: KatsTopBar(
+                      unreadNotifications: _unreadNotifications,
+                      isMenuOpen: _isHomeMenuOpen,
+                      onHomeTap: _showHomeMenu,
+                      onNotificationsTap: _openNotifications,
                     ),
                   ),
                 ),
               ),
+            ),
+            // Permanent status bar safe space shield: ensures text/letters NEVER scroll into status bar icons
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: statusBarHeight,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                elevation: 0,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            // Notch gradient curtain: emerges from notch/status bar only during pull-to-refresh
+            NotchGradientCurtain(
+              pullDistance: _pullDistance,
+              statusBarHeight: statusBarHeight,
+              isRefreshing: _isRefreshing,
             ),
             if (_pendingNewPosts.isNotEmpty)
               Positioned(
