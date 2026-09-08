@@ -813,6 +813,17 @@ class FeedService {
 
   static io.Socket? getSocket() => _socket;
 
+  static final List<void Function(io.Socket)> _onSocketConnectedCallbacks = [];
+
+  static void onSocketReady(void Function(io.Socket) callback) {
+    if (_socket != null) {
+      try {
+        callback(_socket!);
+      } catch (_) {}
+    }
+    _onSocketConnectedCallbacks.add(callback);
+  }
+
   static void notifyProfileStatsChanged({
     required String username,
     int? followersCount,
@@ -872,6 +883,11 @@ class FeedService {
     );
 
     socket.onConnect((_) async {
+      for (final cb in List.of(_onSocketConnectedCallbacks)) {
+        try {
+          cb(socket);
+        } catch (_) {}
+      }
       await service.refreshUnreadNotificationsCount();
       if (notificationsNotifier.value.isNotEmpty) {
         await service.loadNotifications();
@@ -1133,6 +1149,11 @@ class FeedService {
 
     socket.connect();
     _socket = socket;
+    for (final cb in List.of(_onSocketConnectedCallbacks)) {
+      try {
+        cb(socket);
+      } catch (_) {}
+    }
     PresenceService.attach(socket);
 
     _notificationsPollTimer?.cancel();

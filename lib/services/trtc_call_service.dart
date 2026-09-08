@@ -148,6 +148,7 @@ class TRTCCallService {
   factory TRTCCallService() => _instance;
   TRTCCallService._internal() {
     sessionNotifier.addListener(_onSessionStatusChanged);
+    FeedService.onSocketReady(_setupSocketListeners);
   }
   static final TRTCCallService _instance = TRTCCallService._internal();
 
@@ -256,10 +257,25 @@ class TRTCCallService {
     }
   }
 
+  Timer? _socketRetryTimer;
+
   /// Initializes real-time socket events for call signaling.
   void initSocketListeners() {
     final socket = FeedService.getSocket();
+    if (socket != null) {
+      _setupSocketListeners(socket);
+    } else {
+      _socketRetryTimer?.cancel();
+      _socketRetryTimer = Timer(const Duration(milliseconds: 500), () {
+        initSocketListeners();
+      });
+    }
+  }
+
+  void _setupSocketListeners(dynamic socket) {
     if (socket == null) return;
+    _socketRetryTimer?.cancel();
+    _socketRetryTimer = null;
 
     socket.off('call:incoming');
     socket.off('call:accepted');
@@ -268,18 +284,34 @@ class TRTCCallService {
     socket.off('call:rejected');
 
     socket.on('call:incoming', (data) async {
+      debugPrint('[TRTC] Received call:incoming payload: $data');
       if (data is! Map) return;
       final callId = data['callId']?.toString() ?? '';
-      final caller = data['caller'];
+      if (callId.isEmpty) return;
+
+      final caller = data['caller'] is Map ? (data['caller'] as Map) : null;
+      final callerId = caller?['id']?.toString() ??
+          data['callerUserId']?.toString() ??
+          data['fromUserId']?.toString() ??
+          data['callerSocketId']?.toString() ??
+          '';
+      final callerUsername = caller?['username']?.toString() ??
+          data['callerUsername']?.toString() ??
+          'KatsKlub Member';
+      final callerFullName = caller?['fullName']?.toString() ??
+          data['callerFullName']?.toString() ??
+          callerUsername;
+      final callerAvatarUrl = caller?['avatarUrl']?.toString() ??
+          data['callerAvatarUrl']?.toString() ??
+          '';
+
       final threadId = _parseInt(data['threadId']);
       final isVideo = data['isVideo'] == true;
 
-      if (callId.isEmpty || caller is! Map) return;
-
-      final callerId = caller['id']?.toString() ?? '';
-      final callerUsername = caller['username']?.toString() ?? '';
-      final callerFullName = caller['fullName']?.toString() ?? callerUsername;
-      final callerAvatarUrl = caller['avatarUrl']?.toString() ?? '';
+      if (callerId.isEmpty) {
+        debugPrint('[TRTC] Incoming call dropped: missing callerId');
+        return;
+      }
 
       // If already in an active call, reject incoming call as busy
       if (sessionNotifier.value != null &&
@@ -288,6 +320,7 @@ class TRTCCallService {
         socket.emit('call:reject', {
           'callId': callId,
           'targetUserId': callerId,
+          'callerUserId': callerId,
           'reason': 'busy',
         });
         return;
@@ -315,6 +348,7 @@ class TRTCCallService {
     });
 
     socket.on('call:accepted', (data) async {
+      debugPrint('[TRTC] Received call:accepted payload: $data');
       if (data is! Map) return;
       final callId = data['callId']?.toString() ?? '';
       final current = sessionNotifier.value;
@@ -389,12 +423,22 @@ class TRTCCallService {
       }
     }
 
+    final myUser = await AuthService().getSavedUser();
+    final callerInfo = <String, dynamic>{
+      'id': myUser?.id?.toString() ?? '',
+      'username': myUser?.username ?? '',
+      'fullName': myUser?.fullName ?? myUser?.username ?? '',
+      'avatarUrl': myUser?.avatarUrl ?? '',
+    };
+
     // 2. Emit invite to socket
     socket.emit('call:invite', {
       'callId': callId,
       'targetUserId': targetUserId,
+      'callerUserId': myUser?.id?.toString() ?? '',
       'threadId': threadId,
       'isVideo': isVideo,
+      'caller': callerInfo,
     });
 
     _callTimeoutTimer?.cancel();
@@ -438,6 +482,7 @@ class TRTCCallService {
       socket.emit('call:accept', {
         'callId': current.callId,
         'targetUserId': current.targetUserId,
+        'callerUserId': current.targetUserId,
       });
     }
 
@@ -460,6 +505,7 @@ class TRTCCallService {
         socket.emit('call:reject', {
           'callId': current.callId,
           'targetUserId': current.targetUserId,
+          'callerUserId': current.targetUserId,
           'reason': reason,
         });
       }
@@ -476,6 +522,7 @@ class TRTCCallService {
         socket.emit('call:end', {
           'callId': current.callId,
           'targetUserId': current.targetUserId,
+          'callerUserId': current.targetUserId,
           'reason': reason,
         });
       }
