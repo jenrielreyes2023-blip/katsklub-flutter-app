@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen>
   double _pullDistance = 0.0;
   double _dragStartY = 0.0;
   bool _isTrackingPull = false;
+  bool _hasPassedThreshold = false;
   late final AnimationController _pullSpringController;
   Animation<double>? _pullSpringAnimation;
   int _nextOffset = 0;
@@ -226,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (_scrollController.hasClients && _scrollController.offset <= 2.0) {
       _dragStartY = event.position.dy;
       _isTrackingPull = true;
+      _hasPassedThreshold = false;
       _pullSpringController.stop();
     }
   }
@@ -234,13 +236,26 @@ class _HomeScreenState extends State<HomeScreen>
     if (_isTrackingPull && _scrollController.hasClients && _scrollController.offset <= 2.0) {
       final deltaY = event.position.dy - _dragStartY;
       if (deltaY > 0) {
-        final damped = math.pow(deltaY, 0.88).toDouble() * 0.95;
+        // Fast, responsive 1:1 feel for short pull (like Facebook/Instagram)
+        final responsiveDistance = deltaY <= 45
+            ? deltaY * 0.95
+            : 42.75 + math.pow(deltaY - 45, 0.82) * 0.85;
+
+        final current = responsiveDistance.clamp(0.0, 200.0);
+        if (current >= 38.h && !_hasPassedThreshold) {
+          _hasPassedThreshold = true;
+          HapticFeedback.mediumImpact(); // Facebook-style physical click!
+        } else if (current < 32.h && _hasPassedThreshold) {
+          _hasPassedThreshold = false;
+        }
+
         setState(() {
-          _pullDistance = damped.clamp(0.0, 220.0);
+          _pullDistance = current;
         });
       } else if (_pullDistance > 0) {
         setState(() {
           _pullDistance = 0.0;
+          _hasPassedThreshold = false;
         });
       }
     }
@@ -248,7 +263,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _finishPull() {
     _isTrackingPull = false;
-    if (_isRefreshing) {
+    final shouldTrigger = _hasPassedThreshold || _pullDistance >= 38.h;
+    _hasPassedThreshold = false;
+
+    if (shouldTrigger && !_isRefreshing) {
+      // Effortless FB-style instant refresh on short pull!
+      _refresh();
+    } else if (_isRefreshing) {
       _animatePullTo(75.h);
     } else {
       _animatePullTo(0.0);
@@ -1045,14 +1066,24 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (notification is OverscrollNotification && notification.overscroll < 0) {
       if (!_isRefreshing && !_isTrackingPull) {
-        final extra = -notification.overscroll * 0.45;
+        final extra = -notification.overscroll * 0.85;
+        final next = (_pullDistance + extra).clamp(0.0, 200.0);
+        if (next >= 38.h && !_hasPassedThreshold) {
+          _hasPassedThreshold = true;
+          HapticFeedback.mediumImpact();
+        }
         setState(() {
-          _pullDistance = (_pullDistance + extra).clamp(0.0, 220.0);
+          _pullDistance = next;
         });
       }
     } else if (notification is ScrollEndNotification) {
-      if (!_isTrackingPull && !_isRefreshing && _pullDistance > 0) {
-        _animatePullTo(0.0);
+      if (!_isTrackingPull && !_isRefreshing) {
+        if (_pullDistance >= 38.h || _hasPassedThreshold) {
+          _hasPassedThreshold = false;
+          _refresh();
+        } else {
+          _animatePullTo(0.0);
+        }
       }
     }
 
