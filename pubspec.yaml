@@ -58,6 +58,7 @@ dependencies:
   syncfusion_flutter_chat: ^34.1.33
   webview_flutter: ^4.8.0
   tencent_rtc_sdk: ^13.4.2
+  zego_express_engine: ^3.16.0
   crypto: ^3.0.7
   permission_handler: ^13.0.2
 

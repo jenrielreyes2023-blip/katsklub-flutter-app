@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/top_users_screen.dart';
+import '../screens/voice_room/voice_rooms_lobby_screen.dart';
 
 const String _topOutstandingSvg =
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
@@ -73,6 +74,55 @@ class KatsTopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const VoiceRoomsLobbyScreen(),
+                ),
+              );
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.5.h),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                ),
+                borderRadius: BorderRadius.circular(10.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 13,
+                  ),
+                  SizedBox(width: 2.w),
+                  Text(
+                    'Party',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            tooltip: 'Voice Party Rooms',
+          ),
+          const SizedBox(width: 2),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(

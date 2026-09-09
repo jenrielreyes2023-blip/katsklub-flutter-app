@@ -21,6 +21,7 @@ import 'utils/update_checker.dart';
 import 'providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/user_avatar_with_frame.dart';
+import 'widgets/voice_room_mini_overlay.dart';
 
 void _configureImageCache() {
   PaintingBinding.instance.imageCache.maximumSize = 1000;
@@ -368,13 +369,18 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
                   ),
                 ),
                 builder: (context, widget) {
-                  return MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      textScaler: TextScaler.linear(
-                        MediaQuery.of(context).textScaler.scale(1.0).clamp(0.85, 1.3),
+                  return Stack(
+                    children: [
+                      MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                          textScaler: TextScaler.linear(
+                            MediaQuery.of(context).textScaler.scale(1.0).clamp(0.85, 1.3),
+                          ),
+                        ),
+                        child: widget!,
                       ),
-                    ),
-                    child: widget!,
+                      const VoiceRoomMiniOverlay(),
+                    ],
                   );
                 },
                 routes: {
