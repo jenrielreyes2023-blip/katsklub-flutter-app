@@ -77,4 +77,74 @@ class CustomIcons {
   static const String _ghostSvg =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M22 20.07V12.18C22 6.57999 17.5 2 12 2S2 6.57999 2 12.18v7.89C2 21.33 2.74998 21.67 3.66998 20.83L4.66998 19.92C5.03998 19.58 5.64001 19.58 6.01001 19.92l2 1.83c.37.34.96997.34 1.33997.0L11.35 19.92C11.72 19.58 12.32 19.58 12.69 19.92l2 1.83C15.06 22.09 15.66 22.09 16.03 21.75l2-1.83C18.4 19.58 19 19.58 19.37 19.92L20.37 20.83C21.25 21.67 22 21.33 22 20.07z" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M8 14c2.37 1.78 5.63 1.78 8 0" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M12 11c1.1046.0 2-.8954 2-2 0-1.10457-.8954-2-2-2s-2 .89543-2 2c0 1.1046.8954 2 2 2z" stroke="#292D32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+  static Widget crown({Color color = const Color(0xFFFFB800), double size = 16}) {
+    return _svgIcon(_crownSvg, color: color, size: size);
+  }
+
+  static Widget giftBox({Color color = Colors.white, double size = 18}) {
+    return _svgIcon(_giftBoxSvg, color: color, size: size);
+  }
+
+  static Widget coinToken({Color color = const Color(0xFFFFB800), double size = 16}) {
+    return _svgIcon(_coinTokenSvg, color: color, size: size);
+  }
+
+  static Widget gamepad({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_gamepadSvg, color: color, size: size);
+  }
+
+  static Widget musicNote({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_musicNoteSvg, color: color, size: size);
+  }
+
+  static Widget chatBubble({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_chatBubbleSvg, color: color, size: size);
+  }
+
+  static Widget coffeeCup({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_coffeeCupSvg, color: color, size: size);
+  }
+
+  static Widget sparkles({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_sparklesSvg, color: color, size: size);
+  }
+
+  static Widget micParty({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_micSvg, color: color, size: size);
+  }
+
+  static Widget micOffParty({Color color = Colors.white, double size = 16}) {
+    return _svgIcon(_micOffSvg, color: color, size: size);
+  }
+
+  static const String _crownSvg =
+      '<svg viewBox="0 0 24 24" fill="#292D32" xmlns="http://www.w3.org/2000/svg"><path d="M5 19h14a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm-1.8-6.6l2.3-6.9a1 1 0 011.8-.1l2.8 4.2 3.1-6.1a1 1 0 011.8 0l3.1 6.1 2.8-4.2a1 1 0 011.8.1l2.3 6.9c.3.9-.4 1.7-1.3 1.7H4.5c-.9 0-1.6-.8-1.3-1.7z"/></svg>';
+
+  static const String _giftBoxSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
+
+  static const String _coinTokenSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><path d="M14.5 9h-3.5a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/><line x1="12" y1="7" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="17"/></svg>';
+
+  static const String _gamepadSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>';
+
+  static const String _musicNoteSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+
+  static const String _chatBubbleSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+
+  static const String _coffeeCupSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>';
+
+  static const String _sparklesSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.4 5 5 2.4-5 2.4-2.4 5-2.4-5-5-2.4 5-2.4z"/><path d="M19 16l1.2 2.5 2.5 1.2-2.5 1.2-1.2 2.5-1.2-2.5-2.5-1.2 2.5-1.2z"/></svg>';
+
+  static const String _micSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+
+  static const String _micOffSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+
 }

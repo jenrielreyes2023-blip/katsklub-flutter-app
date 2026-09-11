@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/voice_room.dart';
 import '../services/voice_room_controller.dart';
 import '../services/wallet_service.dart';
+import 'custom_icons.dart';
 
 /// Cute WePlay-style Virtual Gift Tray Drawer
 class VoiceRoomGiftSheet extends StatefulWidget {
@@ -136,8 +137,10 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
           // Header & Balance
           Row(
             children: [
+              CustomIcons.giftBox(color: const Color(0xFFFF7A45), size: 18),
+              SizedBox(width: 8.w),
               Text(
-                'Send Gift 🎁',
+                'Send Gift',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 17.sp,
@@ -154,7 +157,8 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Text('🪙 ', style: TextStyle(fontSize: 13)),
+                    CustomIcons.coinToken(color: const Color(0xFFFFB800), size: 13),
+                    SizedBox(width: 5.w),
                     Text(
                       _isLoadingWallet ? '...' : '${_myCoins.toStringAsFixed(1)} KC',
                       style: TextStyle(
@@ -225,13 +229,22 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                               : null,
                         ),
                         SizedBox(width: 6.w),
-                        Text(
-                          isHost ? '👑 ${r.fullName}' : r.fullName,
-                          style: TextStyle(
-                            color: isSelected ? const Color(0xFFFF7A45) : Colors.white,
-                            fontSize: 12.sp,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isHost) ...[
+                              CustomIcons.crown(color: const Color(0xFFFFB800), size: 11),
+                              SizedBox(width: 4.w),
+                            ],
+                            Text(
+                              r.fullName,
+                              style: TextStyle(
+                                color: isSelected ? const Color(0xFFFF7A45) : Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -285,12 +298,14 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                         height: 38.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: isSelected
+                              ? const Color(0xFFFF7A45).withValues(alpha: 0.2)
+                              : Colors.white.withValues(alpha: 0.08),
                         ),
                         child: Center(
-                          child: Text(
-                            gift.name.split(' ').last,
-                            style: const TextStyle(fontSize: 18),
+                          child: CustomIcons.giftBox(
+                            color: isSelected ? const Color(0xFFFF7A45) : Colors.white70,
+                            size: 18,
                           ),
                         ),
                       ),
@@ -313,7 +328,8 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                             SizedBox(height: 2.h),
                             Row(
                               children: [
-                                const Text('🪙 ', style: TextStyle(fontSize: 10)),
+                                CustomIcons.coinToken(color: const Color(0xFFFFB800), size: 10),
+                                SizedBox(width: 4.w),
                                 Text(
                                   '${gift.coins.toStringAsFixed(0)} KC',
                                   style: TextStyle(

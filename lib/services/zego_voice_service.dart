@@ -130,10 +130,12 @@ class ZegoVoiceService {
     try {
       _myStreamId = 'stream_${_currentRoomId}_user_${userId}_seat_$seatIndex';
       await ZegoExpressEngine.instance.startPublishingStream(_myStreamId!);
-      await ZegoExpressEngine.instance.muteMicrophone(false);
+      await ZegoExpressEngine.instance.muteMicrophone(_isMuted);
       _isPublishing = true;
-      _isMuted = false;
-      debugPrint('[ZegoVoiceService] Started publishing stream: $_myStreamId');
+      if (_isMuted) {
+        mySoundLevelNotifier.value = 0.0;
+      }
+      debugPrint('[ZegoVoiceService] Started publishing stream: $_myStreamId (muted: $_isMuted)');
       return true;
     } catch (e) {
       debugPrint('[ZegoVoiceService] startSpeaking error: $e');
@@ -162,18 +164,32 @@ class ZegoVoiceService {
 
   /// Toggle microphone mute
   Future<bool> toggleMute() async {
-    if (!_isPublishing) return false;
+    _isMuted = !_isMuted;
+    if (_isMuted) {
+      mySoundLevelNotifier.value = 0.0;
+    }
+    if (_isPublishing) {
+      try {
+        await ZegoExpressEngine.instance.muteMicrophone(_isMuted);
+      } catch (e) {
+        debugPrint('[ZegoVoiceService] toggleMute error: $e');
+      }
+    }
+    return _isMuted;
+  }
+
+  /// Explicitly set microphone mute state (e.g. when muted by admin or host)
+  Future<void> setMuted(bool mute) async {
+    _isMuted = mute;
+    if (mute) {
+      mySoundLevelNotifier.value = 0.0;
+    }
+    if (!_isPublishing) return;
 
     try {
-      _isMuted = !_isMuted;
-      await ZegoExpressEngine.instance.muteMicrophone(_isMuted);
-      if (_isMuted) {
-        mySoundLevelNotifier.value = 0.0;
-      }
-      return _isMuted;
+      await ZegoExpressEngine.instance.muteMicrophone(mute);
     } catch (e) {
-      debugPrint('[ZegoVoiceService] toggleMute error: $e');
-      return _isMuted;
+      debugPrint('[ZegoVoiceService] setMuted error: $e');
     }
   }
 

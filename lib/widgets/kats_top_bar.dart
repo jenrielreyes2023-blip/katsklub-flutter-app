@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/voice_room/voice_rooms_lobby_screen.dart';
+import 'custom_icons.dart';
 
 const String _topOutstandingSvg =
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
@@ -102,12 +103,11 @@ class KatsTopBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.mic_rounded,
+                  CustomIcons.micParty(
                     color: Colors.white,
                     size: 13,
                   ),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 3.w),
                   Text(
                     'Party',
                     style: TextStyle(

@@ -7,10 +7,14 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:visibility_detector/visibility_detector.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../models/story.dart';
+import '../models/voice_room.dart';
+import 'voice_room/voice_room_pin_screen.dart';
 import 'story_viewer_screen.dart';
 import '../services/feed_service.dart';
 import '../services/auth_service.dart';
@@ -102,6 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   List<User> _followSuggestions = [];
   final Set<String> _loadingSuggestedUsernames = {};
   List<Post> _reelsSuggestions = [];
+  VoiceRoom? _activeVoiceRoom;
 
   Future<void> _loadSuggestions() async {
     try {
@@ -170,6 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _loadSuggestions();
     _loadReelsSuggestions();
     _loadEquippedAdminFrame();
+    _loadActiveVoiceRoom();
   }
 
   @override
@@ -189,6 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       _loadSuggestions();
       _loadReelsSuggestions();
       _loadEquippedAdminFrame();
+      _loadActiveVoiceRoom();
     }
   }
 
@@ -387,6 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _reloadUserProfile(),
               _loadProfilePosts(),
               _loadStories(),
+              _loadActiveVoiceRoom(),
             ]);
             await Future.delayed(const Duration(milliseconds: 300));
           },
@@ -502,6 +510,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       _ProfileBio(
                         user: _profileUser,
                         isOwnProfile: isOwnProfile,
+                        activeVoiceRoom: _activeVoiceRoom,
+                        onOpenVoiceRoom: _activeVoiceRoom == null
+                            ? null
+                            : () => _openVoiceRoom(_activeVoiceRoom!),
                       ),
                       const SizedBox(height: 10),
                       _ProfileMetadataRow(user: _profileUser),
@@ -847,6 +859,47 @@ class _ProfileScreenState extends State<ProfileScreen>
         });
       }
     } catch (_) {}
+  }
+
+  Future<void> _loadActiveVoiceRoom() async {
+    final userId = _profileUser.id?.trim();
+    final username = _profileUser.username?.trim();
+    final identifier = (userId != null && userId.isNotEmpty)
+        ? userId
+        : (username ?? '');
+    if (identifier.isEmpty) return;
+
+    try {
+      final res = await http.get(ApiConfig.uri('/api/voice-rooms/user/$identifier'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['hasRoom'] == true && data['room'] != null) {
+          final room = VoiceRoom.fromJson(Map<String, dynamic>.from(data['room']));
+          if (mounted) {
+            setState(() {
+              _activeVoiceRoom = room;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[ProfileScreen] Error loading active voice room: $e');
+    }
+    if (mounted && _activeVoiceRoom != null) {
+      setState(() {
+        _activeVoiceRoom = null;
+      });
+    }
+  }
+
+  Future<void> _openVoiceRoom(VoiceRoom room) async {
+    final currentUser = await AuthService().getSavedUser();
+    if (!mounted || currentUser == null) return;
+    await VoiceRoomPinScreen.tryOpen(context, room, currentUser);
+    if (mounted) {
+      _loadActiveVoiceRoom();
+    }
   }
 
   Future<void> _loadProfilePosts() async {
@@ -2090,10 +2143,14 @@ class _ProfileBio extends StatelessWidget {
   const _ProfileBio({
     required this.user,
     required this.isOwnProfile,
+    this.activeVoiceRoom,
+    this.onOpenVoiceRoom,
   });
 
   final User user;
   final bool isOwnProfile;
+  final VoiceRoom? activeVoiceRoom;
+  final VoidCallback? onOpenVoiceRoom;
 
   @override
   Widget build(BuildContext context) {
@@ -2133,30 +2190,42 @@ class _ProfileBio extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(
-                child: SpecialNameText(
-                  username: user.username ?? '',
-                  displayName: user.displayName,
-                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: -0.2,
-                  ),
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: SpecialNameText(
+                        username: user.username ?? '',
+                        displayName: user.displayName,
+                        style: TextStyle(fontFamily: 'SF Pro Rounded',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                    if (user.isVerified) ...[
+                      const SizedBox(width: 5),
+                      const Icon(
+                        Icons.verified,
+                        size: 18,
+                        color: Color(0xFF1D9BF0),
+                      ),
+                    ],
+                    const SizedBox(width: 6),
+                    _buildCharmLevelBadge(user.charmLevel),
+                  ],
                 ),
               ),
-              if (user.isVerified) ...[
-                const SizedBox(width: 5),
-                const Icon(
-                  Icons.verified,
-                  size: 18,
-                  color: Color(0xFF1D9BF0),
-                ),
+              if (activeVoiceRoom != null) ...[
+                const SizedBox(width: 12),
+                _buildClubhousePill(context, activeVoiceRoom!),
               ],
-              const SizedBox(width: 6),
-              _buildCharmLevelBadge(user.charmLevel),
             ],
           ),
           if (achievements.isNotEmpty) ...[
@@ -2300,6 +2369,79 @@ class _ProfileBio extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildClubhousePill(BuildContext context, VoiceRoom room) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onOpenVoiceRoom?.call();
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8.5.w, vertical: 3.h),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1B1B20) : const Color(0xFFFFF4ED),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: const Color(0xFFFF7A45).withValues(alpha: isDark ? 0.38 : 0.45),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF7A45).withValues(alpha: isDark ? 0.16 : 0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 1.5),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.network(
+              'https://media.katsklub.top/assets/clubhouse_wave_1789127248478.gif',
+              width: 14.r,
+              height: 14.r,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.graphic_eq_rounded,
+                size: 13.r,
+                color: const Color(0xFFFF7A45),
+              ),
+            ),
+            SizedBox(width: 4.5.w),
+            Text(
+              'Clubhouse',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFFF7A45),
+                letterSpacing: -0.1,
+                height: 1.1,
+              ),
+            ),
+            if (room.isLocked) ...[
+              SizedBox(width: 3.w),
+              Icon(
+                Icons.lock_rounded,
+                size: 9.5.r,
+                color: const Color(0xFFFF7A45),
+              ),
+            ],
+            SizedBox(width: 2.5.w),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 8.r,
+              color: const Color(0xFFFF7A45).withValues(alpha: 0.8),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -130,7 +130,7 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
                           ),
                           SizedBox(width: 4.w),
                           Text(
-                            controller.isSeated ? 'On Mic' : 'Listening',
+                            controller.isOnMic ? 'On Mic' : 'Listening',
                             style: TextStyle(
                               color: Colors.white60,
                               fontSize: 10.sp,
@@ -143,8 +143,8 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
                   ),
                 ),
 
-                // Mic Mute (if seated)
-                if (controller.isSeated)
+                // Mic Mute (if on mic)
+                if (controller.isOnMic)
                   GestureDetector(
                     onTap: () => controller.toggleMute(),
                     child: Padding(
