@@ -514,32 +514,49 @@ class _ProfileOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final normalColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
-    const destructiveColor = Color(0xFFDC2626);
+    const destructiveColor = Color(0xFFED4956);
 
     return SafeArea(
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
+          color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 38.w,
-              height: 4.h,
+              width: 36.w,
+              height: 3.5.h,
+              margin: EdgeInsets.only(bottom: 10.h),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
+                color: isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6),
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 10.h),
             _ProfileOptionGroup(
               children: [
+                _ProfileOptionRow(
+                  label: 'About this account',
+                  icon: Icons.info_outline,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onAbout,
+                ),
+                const _ProfileOptionDivider(),
+                _ProfileOptionRow(
+                  label: 'Copy profile link',
+                  icon: Icons.link_rounded,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onCopyLink,
+                ),
+                const _ProfileOptionDivider(),
                 _ProfileOptionRow(
                   label: 'Mention @$username',
                   icon: Icons.alternate_email,
@@ -547,49 +564,33 @@ class _ProfileOptionsSheet extends StatelessWidget {
                   textColor: normalColor,
                   onTap: onMention,
                 ),
-                const _ProfileOptionDivider(),
-                _ProfileOptionRow(
-                  label: 'Copy profile link',
-                  icon: Icons.link,
-                  iconColor: normalColor,
-                  textColor: normalColor,
-                  onTap: onCopyLink,
-                ),
               ],
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 7.h),
             _ProfileOptionGroup(
               children: [
                 _ProfileOptionRow(
-                  label: 'Report @$username',
-                  icon: Icons.report_outlined,
-                  iconColor: destructiveColor,
-                  textColor: destructiveColor,
-                  onTap: onReport,
+                  label: isMuted ? 'Unmute @$username' : 'Mute @$username',
+                  icon: isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
+                  iconColor: normalColor,
+                  textColor: normalColor,
+                  onTap: onMute,
                 ),
                 const _ProfileOptionDivider(),
                 _ProfileOptionRow(
                   label: 'Block @$username',
-                  icon: Icons.block,
+                  icon: Icons.block_flipped,
                   iconColor: destructiveColor,
                   textColor: destructiveColor,
                   onTap: onBlock,
                 ),
                 const _ProfileOptionDivider(),
                 _ProfileOptionRow(
-                  label: isMuted ? 'Unmute @$username' : 'Mute @$username',
-                  icon: isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
+                  label: 'Report @$username',
+                  icon: Icons.flag_outlined,
                   iconColor: destructiveColor,
                   textColor: destructiveColor,
-                  onTap: onMute,
-                ),
-                const _ProfileOptionDivider(),
-                _ProfileOptionRow(
-                  label: 'About account',
-                  icon: Icons.info_outline,
-                  iconColor: normalColor,
-                  textColor: normalColor,
-                  onTap: onAbout,
+                  onTap: onReport,
                 ),
               ],
             ),
@@ -609,10 +610,13 @@ class _ProfileOptionGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius: BorderRadius.circular(14.r),
       child: ColoredBox(
-        color: isDark ? const Color(0xFF242526) : Colors.white,
-        child: Column(children: children),
+        color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ),
       ),
     );
   }
@@ -637,29 +641,33 @@ class _ProfileOptionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isDark ? const Color(0xFF242526) : Colors.white,
+      color: isDark ? const Color(0xFF1E1E20) : Colors.white,
       child: InkWell(
         onTap: onTap,
-        splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-        highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+        splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+        highlightColor: isDark ? const Color(0xFF242426) : const Color(0xFFF3F4F6),
         child: Container(
-          constraints: BoxConstraints(minHeight: 46.h),
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          constraints: BoxConstraints(minHeight: 42.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, size: 20.r, color: iconColor),
-              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w500,
                     color: textColor,
                     letterSpacing: -0.1,
                   ),
                 ),
+              ),
+              Icon(
+                icon,
+                size: 18.5.r,
+                color: iconColor,
               ),
             ],
           ),
@@ -674,15 +682,13 @@ class _ProfileOptionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF3E4042)
-            : const Color(0xFFE5E7EB),
-      ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Divider(
+      height: 0.5,
+      thickness: 0.5,
+      indent: 14.w,
+      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
     );
   }
 }
+

@@ -320,104 +320,363 @@ class _PostCardState extends State<PostCard> {
     await SmoothBottomSheetRoute.show<void>(
       context,
       builder: (context) => PostOptionsSheet(
-        actions: _buildPostActions(context),
+        groups: _buildPostActionGroups(context),
       ),
     );
   }
 
-  List<PostActionItem> _buildPostActions(BuildContext context) {
+  List<PostActionGroup> _buildPostActionGroups(BuildContext context) {
     if (_post.ownedByMe) {
       return [
-        PostActionItem(
-          icon: _post.isPinned ? Icons.pin_end_outlined : Icons.push_pin_outlined,
-          label: _post.isPinned ? 'Unpin from profile' : 'Pin to profile',
-          onTap: () async {
-            try {
-              final updated = _post.isPinned
-                  ? await FeedService().unpinPost(_post)
-                  : await FeedService().pinPost(_post);
-              if (mounted) {
-                setState(() {
-                  _post = updated;
-                });
-                widget.onUpdate?.call(updated);
-                _showMessage(updated.isPinned ? 'Post pinned to profile.' : 'Post unpinned from profile.');
-              }
-            } catch (e) {
-              _showMessage(e.toString().replaceAll('StateError: ', ''));
-            }
-          },
+        // Group 1: Hero AI Card
+        PostActionGroup(
+          actions: [
+            PostActionItem(
+              icon: Icons.auto_awesome,
+              label: 'Ask Kats AI',
+              subtitle: 'Analyze engagement & insights',
+              badgeText: 'NEW',
+              isHero: true,
+              onTap: () async => _showKatsAiSheet(),
+            ),
+          ],
         ),
-        PostActionItem(
-          icon: Icons.bookmark_border_rounded,
-          label: 'Save post',
-          subtitle: 'Add this to your saved items.',
-          onTap: () async => _showMessage('Post saved.'),
+
+        // Group 2: Quick Action / Sharing
+        PostActionGroup(
+          actions: [
+            PostActionItem(
+              icon: Icons.link_rounded,
+              label: 'Copy link',
+              onTap: _copyPostLink,
+            ),
+          ],
         ),
-        PostActionItem(
-          icon: Icons.edit_outlined,
-          label: 'Edit post',
-          onTap: _editPost,
+
+        // Group 3: Post Preferences
+        PostActionGroup(
+          actions: [
+            PostActionItem(
+              icon: _post.bookmarkedByMe
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              label: _post.bookmarkedByMe ? 'Remove from saved' : 'Save',
+              onTap: _toggleBookmark,
+            ),
+            PostActionItem(
+              icon: Icons.notifications_off_outlined,
+              label: 'Turn off notifications',
+              onTap: () async => _showMessage('Notifications turned off.'),
+            ),
+          ],
         ),
-        PostActionItem(
-          icon: Icons.privacy_tip_outlined,
-          label: 'Edit Privacy',
-          onTap: () async => _showMessage('Privacy edit coming soon.'),
-        ),
-        PostActionItem(
-          icon: Icons.camera_alt_outlined,
-          label: 'Share to Instagram',
-          onTap: () async => _showMessage('Share to Instagram coming soon.'),
-        ),
-        PostActionItem(
-          icon: Icons.archive_outlined,
-          label: 'Move to archive',
-          onTap: () async => _showMessage('Archive coming soon.'),
-        ),
-        PostActionItem(
-          icon: Icons.delete_outline_rounded,
-          label: 'Move to trash',
-          isDestructive: true,
-          onTap: _confirmDeletePost,
-        ),
-        PostActionItem(
-          icon: Icons.notifications_off_outlined,
-          label: 'Turn off notifications for this post',
-          onTap: () async => _showMessage('Notifications turned off.'),
-        ),
-        PostActionItem(
-          icon: Icons.link_rounded,
-          label: 'Copy link',
-          onTap: _copyPostLink,
+
+        // Group 4: Post Management & Moderation
+        PostActionGroup(
+          actions: [
+            PostActionItem(
+              icon: _post.isPinned
+                  ? Icons.pin_end_outlined
+                  : Icons.push_pin_outlined,
+              label: _post.isPinned ? 'Unpin from profile' : 'Pin to profile',
+              onTap: () async {
+                try {
+                  final updated = _post.isPinned
+                      ? await FeedService().unpinPost(_post)
+                      : await FeedService().pinPost(_post);
+                  if (mounted) {
+                    setState(() {
+                      _post = updated;
+                    });
+                    widget.onUpdate?.call(updated);
+                    _showMessage(updated.isPinned
+                        ? 'Post pinned to profile.'
+                        : 'Post unpinned from profile.');
+                  }
+                } catch (e) {
+                  _showMessage(e.toString().replaceAll('StateError: ', ''));
+                }
+              },
+            ),
+            PostActionItem(
+              icon: Icons.edit_outlined,
+              label: 'Edit post',
+              onTap: _editPost,
+            ),
+            PostActionItem(
+              icon: Icons.privacy_tip_outlined,
+              label: 'Edit Privacy',
+              onTap: () async => _showMessage('Privacy edit coming soon.'),
+            ),
+            PostActionItem(
+              icon: Icons.archive_outlined,
+              label: 'Move to archive',
+              onTap: () async => _showMessage('Archive coming soon.'),
+            ),
+            PostActionItem(
+              icon: Icons.delete_outline_rounded,
+              label: 'Move to trash',
+              isDestructive: true,
+              onTap: _confirmDeletePost,
+            ),
+          ],
         ),
       ];
     }
 
     return [
-      PostActionItem(
-        icon: Icons.bookmark_border_rounded,
-        label: 'Save post',
-        subtitle: 'Add this to your saved items.',
-        onTap: () async => _showMessage('Post saved.'),
+      // Group 1: Hero AI Card
+      PostActionGroup(
+        actions: [
+          PostActionItem(
+            icon: Icons.auto_awesome,
+            label: 'Ask Kats AI',
+            subtitle: 'Ask questions about this post',
+            badgeText: 'NEW',
+            isHero: true,
+            onTap: () async => _showKatsAiSheet(),
+          ),
+        ],
       ),
-      PostActionItem(
-        icon: Icons.visibility_off_outlined,
-        label: 'Hide post',
-        onTap: _hidePost,
+
+      // Group 2: Quick Action / Sharing
+      PostActionGroup(
+        actions: [
+          PostActionItem(
+            icon: Icons.link_rounded,
+            label: 'Copy link',
+            onTap: _copyPostLink,
+          ),
+        ],
       ),
-      PostActionItem(
-        icon: Icons.flag_outlined,
-        label: 'Report post',
-        onTap: () async {
-          _showReportPostDialog();
-        },
+
+      // Group 3: Feed Curation (Threads-style)
+      PostActionGroup(
+        actions: [
+          PostActionItem(
+            icon: _post.bookmarkedByMe
+                ? Icons.bookmark_rounded
+                : Icons.bookmark_border_rounded,
+            label: _post.bookmarkedByMe ? 'Remove from saved' : 'Save',
+            onTap: _toggleBookmark,
+          ),
+          PostActionItem(
+            icon: Icons.visibility_outlined,
+            label: 'Interested',
+            onTap: () async => _showMessage('Thanks! We\'ll show more posts like this.'),
+          ),
+          PostActionItem(
+            icon: Icons.visibility_off_outlined,
+            label: 'Not interested',
+            onTap: _hidePost,
+          ),
+        ],
       ),
-      PostActionItem(
-        icon: Icons.link_rounded,
-        label: 'Copy link',
-        onTap: _copyPostLink,
+
+      // Group 4: Safety & Moderation
+      PostActionGroup(
+        actions: [
+          PostActionItem(
+            icon: Icons.volume_off_outlined,
+            label: 'Mute @${_post.authorUsername}',
+            onTap: () async => _showMessage('@${_post.authorUsername} has been muted.'),
+          ),
+          PostActionItem(
+            icon: Icons.block_flipped,
+            label: 'Block @${_post.authorUsername}',
+            onTap: () async => _showMessage('@${_post.authorUsername} has been blocked.'),
+          ),
+          PostActionItem(
+            icon: Icons.error_outline_rounded,
+            label: 'Report',
+            isDestructive: true,
+            onTap: () async => _showReportPostDialog(),
+          ),
+        ],
       ),
     ];
+  }
+
+  Future<void> _toggleBookmark() async {
+    try {
+      final updated = await FeedService().toggleBookmark(_post);
+      if (mounted) {
+        setState(() {
+          _post = updated;
+        });
+        widget.onUpdate?.call(updated);
+        _showMessage(updated.bookmarkedByMe
+            ? 'Added to Bookmarks.'
+            : 'Removed from Bookmarks.');
+      }
+    } catch (_) {
+      _showMessage('Failed to update bookmark.');
+    }
+  }
+
+  void _showKatsAiSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1E1E20) : Colors.white;
+    final fg = isDark ? Colors.white : const Color(0xFF111827);
+    final subFg = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+
+    final cleanContent = _post.text.trim();
+    final summaryText = cleanContent.isNotEmpty
+        ? (cleanContent.length > 140
+            ? '${cleanContent.substring(0, 140)}...'
+            : cleanContent)
+        : 'This post features media shared by @${_post.authorUsername}.';
+
+    SmoothBottomSheetRoute.show<void>(
+      context,
+      builder: (sheetCtx) => SmoothSheetContainer(
+        maxHeightFraction: 0.70,
+        backgroundColor:
+            isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+        padding: EdgeInsets.fromLTRB(12.w, 4.h, 12.w, 16.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(7.r),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0095F6), Color(0xFF9B51E0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      Icon(Icons.auto_awesome, color: Colors.white, size: 16.r),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kats AI Assistant',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: fg,
+                          fontSize: 13.5.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Powered by Gemini AI',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: subFg,
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(sheetCtx).pop(),
+                  icon: Icon(Icons.close, color: subFg, size: 18.r),
+                  splashRadius: 18.r,
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14.r),
+              child: ColoredBox(
+                color: cardBg,
+                child: Padding(
+                  padding: EdgeInsets.all(14.r),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'POST INSIGHT',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: const Color(0xFF0095F6),
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(height: 5.h),
+                      Text(
+                        summaryText,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: fg,
+                          fontSize: 12.5.sp,
+                          height: 1.35,
+                        ),
+                      ),
+                      if (_post.location.isNotEmpty) ...[
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_outlined,
+                                size: 13.r, color: subFg),
+                            SizedBox(width: 4.w),
+                            Text(
+                              _post.location,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: subFg,
+                                fontSize: 11.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14.r),
+              child: ColoredBox(
+                color: cardBg,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    Clipboard.setData(ClipboardData(text: summaryText));
+                    _showMessage('AI summary copied to clipboard.');
+                  },
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Copy summary',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: fg,
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.copy_rounded, color: fg, size: 16.r),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmDeletePost() async {

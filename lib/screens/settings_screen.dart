@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -12,6 +13,17 @@ import 'help_center_screen.dart';
 import 'terms_of_use_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'gift_tester_screen.dart';
+
+// Threads Inset Grouped standard tokens.
+const _kSettingsBg = Color(0xFF101012);
+const _kCardBg = Color(0xFF1E1E20);
+const _kDivider = Color(0xFF2C2C2E);
+const _kDestructive = Color(0xFFED4956);
+const _kTitle = Color(0xFFFFFFFF);
+const _kBody = Color(0xFFE4E6EB);
+const _kSubtitle = Color(0xFF9CA3AF);
+const _kAccent = Color(0xFFFF7A45);
+const _kFont = 'SF Pro Rounded';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -244,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to update account privacy.'),
-          backgroundColor: Colors.red,
+          backgroundColor: _kDestructive,
         ),
       );
     }
@@ -268,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('All other sessions logged out successfully.'),
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xFF22C55E),
             ),
           );
         }
@@ -278,7 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(responseData['error'] ?? 'Failed to logout other sessions.'),
-              backgroundColor: Colors.red,
+              backgroundColor: _kDestructive,
             ),
           );
         }
@@ -288,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to connect to the server.'),
-            backgroundColor: Colors.red,
+            backgroundColor: _kDestructive,
           ),
         );
       }
@@ -314,57 +326,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLogoutOtherConfirm() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout Other Sessions?'),
-        content: const Text(
-          'This will sign you out from all other devices and active web browsers. Your current device will remain logged in.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _logoutOtherSessions();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout Others'),
-          ),
-        ],
-      ),
+    _showThreadsConfirm(
+      title: 'Log out other sessions?',
+      message:
+          'This will sign you out from all other devices and active web browsers. Your current device will stay logged in.',
+      confirmLabel: 'Log Out Others',
+      onConfirm: _logoutOtherSessions,
     );
   }
 
   void _showLogoutConfirm() {
+    _showThreadsConfirm(
+      title: 'Sign out?',
+      message: 'Are you sure you want to sign out of KatsKlub?',
+      confirmLabel: 'Sign Out',
+      onConfirm: _logout,
+    );
+  }
+
+  void _showThreadsConfirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    required VoidCallback onConfirm,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out?'),
-        content: const Text('Are you sure you want to log out of KatsKlub?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+      barrierColor: const Color(0x8A000000),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: isDark ? _kCardBg : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: _kFont,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? _kTitle : const Color(0xFF111827),
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: _kFont,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w400,
+                  color: isDark ? _kSubtitle : const Color(0xFF6B7280),
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: 18.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _DialogButton(
+                      label: 'Cancel',
+                      onTap: () => Navigator.pop(dialogContext),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _DialogButton(
+                      label: confirmLabel,
+                      isDestructive: true,
+                      onTap: () {
+                        Navigator.pop(dialogContext);
+                        onConfirm();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _logout();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -375,55 +421,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? suffixIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF2D2E30) : const Color(0x1F787878);
-    final fill = isDark ? const Color(0xFF1C1E21) : const Color(0xFFF9FAFB);
-    final focusColor = isDark ? const Color(0xFFFF7A45) : Colors.black;
+    final borderColor = isDark ? _kDivider : const Color(0xFFE5E5EA);
+    final fill = isDark ? _kSettingsBg : const Color(0xFFF9FAFB);
 
     return InputDecoration(
+      isDense: true,
       filled: true,
       fillColor: fill,
       hintText: hintText,
-      hintStyle: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF9CA3AF),
+      hintStyle: TextStyle(
+        fontFamily: _kFont,
+        fontSize: 12.5.sp,
+        fontWeight: FontWeight.w400,
+        color: isDark ? _kSubtitle : const Color(0xFF9CA3AF),
       ),
-      prefixIcon: Icon(
-        icon,
-        size: 20,
-        color: const Color(0xFF9CA3AF),
+      prefixIconConstraints: BoxConstraints(minWidth: 34.w, minHeight: 32.h),
+      prefixIcon: Padding(
+        padding: EdgeInsets.only(left: 10.w, right: 6.w),
+        child: Icon(
+          icon,
+          size: 15.r,
+          color: isDark ? _kSubtitle : const Color(0xFF9CA3AF),
+        ),
       ),
+      suffixIconConstraints: BoxConstraints(minWidth: 34.w, minHeight: 32.h),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: borderColor),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: borderColor),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: focusColor, width: 1.5),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: const BorderSide(color: _kAccent, width: 1),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final avatarUrl = _currentUser.avatarUrl ?? '';
-    final joinedDate = _currentUser.createdAt != null
-        ? DateTime.tryParse(_currentUser.createdAt!) != null
-            ? '${_getMonthName(DateTime.parse(_currentUser.createdAt!).month)} ${DateTime.parse(_currentUser.createdAt!).day}, ${DateTime.parse(_currentUser.createdAt!).year}'
-            : '-'
+    final parsedDate = _currentUser.createdAt != null
+        ? DateTime.tryParse(_currentUser.createdAt!)
+        : null;
+    final joinedDate = parsedDate != null
+        ? '${_getMonthName(parsedDate.month)} ${parsedDate.day}, ${parsedDate.year}'
         : '-';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF242526) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB);
-    final scaffoldBg = isDark ? const Color(0xFF18191A) : const Color(0xFFF9FAFB);
-    final textTitleColor = isDark ? Colors.white : const Color(0xFF111827);
-    final textSubtitleColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final scaffoldBg = isDark ? _kSettingsBg : const Color(0xFFF2F2F7);
+    final dividerColor = isDark ? _kDivider : const Color(0xFFE5E5EA);
+    final titleColor = isDark ? _kTitle : const Color(0xFF111827);
+    final bodyColor = isDark ? _kBody : const Color(0xFF374151);
+    final subtitleColor = isDark ? _kSubtitle : const Color(0xFF6B7280);
 
     return PopScope(
       canPop: false,
@@ -434,430 +488,456 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Scaffold(
         backgroundColor: scaffoldBg,
         appBar: AppBar(
-          backgroundColor: isDark ? const Color(0xFF18191A) : Colors.white,
-          surfaceTintColor: isDark ? const Color(0xFF18191A) : Colors.white,
+          backgroundColor: scaffoldBg,
+          surfaceTintColor: scaffoldBg,
           elevation: 0,
           scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Color(0xFFFF7A45)),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18.r, color: titleColor),
             onPressed: () => Navigator.pop(context, _currentUser),
           ),
           title: Text(
-            'Account Settings',
+            'Account settings',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black,
+              fontFamily: _kFont,
+              fontSize: 16.5.sp,
+              fontWeight: FontWeight.w600,
+              color: titleColor,
+              letterSpacing: -0.2,
             ),
           ),
           centerTitle: true,
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Divider(height: 1, color: cardBorder),
+            preferredSize: Size.fromHeight(0.5.h),
+            child: Container(height: 0.5.h, color: dividerColor),
           ),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Profile / Account Info Header Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: isDark ? const Color(0xFF18191A) : Colors.blue.shade50,
-                        backgroundImage: avatarUrl.isNotEmpty
-                            ? CachedNetworkImageProvider(ApiConfig.assetUrl(avatarUrl))
-                            : null,
-                        child: avatarUrl.isEmpty
-                            ? Text(
-                                _currentUser.initials,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? const Color(0xFFFF7A45) : Colors.blue.shade700,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _currentUser.displayName,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textTitleColor,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _currentUser.email ?? _currentUser.handle ?? '',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: textSubtitleColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Joined $joinedDate',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: textSubtitleColor,
-                              ),
-                            ),
-                          ],
+                // 1. Profile info island.
+                _IslandCard(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 14.w, vertical: 12.h),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 26.r,
+                          backgroundColor: isDark
+                              ? const Color(0xFF141416)
+                              : const Color(0xFFE5E5EA),
+                          backgroundImage: avatarUrl.isNotEmpty
+                              ? CachedNetworkImageProvider(
+                                  ApiConfig.assetUrl(avatarUrl))
+                              : null,
+                          child: avatarUrl.isEmpty
+                              ? Text(
+                                  _currentUser.initials,
+                                  style: TextStyle(
+                                    fontFamily: _kFont,
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kAccent,
+                                  ),
+                                )
+                              : null,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _currentUser.displayName,
+                                style: TextStyle(
+                                  fontFamily: _kFont,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: titleColor,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                _currentUser.email ?? _currentUser.handle ?? '',
+                                style: TextStyle(
+                                  fontFamily: _kFont,
+                                  fontSize: 12.5.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: subtitleColor,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Joined $joinedDate',
+                                style: TextStyle(
+                                  fontFamily: _kFont,
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: subtitleColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 18.h),
 
-                // Account Privacy Card (private account)
-                _buildSectionHeader(title: 'Account Privacy', icon: Icons.shield_outlined),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
-                  child: _buildPrivacySwitch(
+                // 2. Account privacy island.
+                const _SectionLabel('Account privacy'),
+                SizedBox(height: 8.h),
+                _IslandCard(
+                  child: _PrivacySwitch(
                     title: 'Private account',
                     subtitle:
-                        'When your account is private, only people you approve can see your posts and follow you.',
+                        'Only people you approve can see your posts and follow you.',
                     value: _isPrivate,
                     onChanged: _isSavingPrivateAccount
                         ? (_) {}
                         : (val) => _updatePrivateAccount(val),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 18.h),
 
-                // 2. Privacy Settings Card
-                _buildSectionHeader(title: 'Profile Privacy', icon: Icons.lock_outline_rounded),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
+                // 3. Profile privacy island.
+                const _SectionLabel('Profile privacy'),
+                SizedBox(height: 8.h),
+                _IslandCard(
                   child: Column(
                     children: [
-                      _buildPrivacySwitch(
+                      _PrivacySwitch(
                         title: 'Show email on profile',
-                        subtitle: 'Allow other users to see your email address',
+                        subtitle: 'Let others see your email address',
                         value: _showEmail,
                         onChanged: (val) => setState(() => _showEmail = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show phone on profile',
-                        subtitle: 'Allow other users to see your phone number',
+                        subtitle: 'Let others see your phone number',
                         value: _showPhone,
                         onChanged: (val) => setState(() => _showPhone = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show gender on profile',
-                        subtitle: 'Display your gender details on your profile page',
+                        subtitle: 'Display your gender on your profile',
                         value: _showGender,
                         onChanged: (val) => setState(() => _showGender = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show birthday on profile',
-                        subtitle: 'Allow your birth date to be displayed to others',
+                        subtitle: 'Display your birth date to others',
                         value: _showBirthday,
                         onChanged: (val) => setState(() => _showBirthday = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show location on profile',
-                        subtitle: 'Share your city and country details publicly',
+                        subtitle: 'Share your city and country publicly',
                         value: _showLocation,
                         onChanged: (val) => setState(() => _showLocation = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show followers list',
-                        subtitle: 'Allow other users to view your followers list',
+                        subtitle: 'Let others view your followers list',
                         value: _showFollowers,
                         onChanged: (val) => setState(() => _showFollowers = val),
                       ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-                      ),
-                      _buildPrivacySwitch(
+                      const _Hairline(),
+                      _PrivacySwitch(
                         title: 'Show following list',
-                        subtitle: 'Allow other users to view the list of people you follow',
+                        subtitle: 'Let others view who you follow',
                         value: _showFollowing,
                         onChanged: (val) => setState(() => _showFollowing = val),
                       ),
                       if (_privacyError != null) ...[
-                        const SizedBox(height: 14),
-                        _buildStatusBox(message: _privacyError!, isSuccess: false),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                              14.w, 10.h, 14.w, 0),
+                          child: _StatusBox(
+                              message: _privacyError!, isSuccess: false),
+                        ),
                       ],
                       if (_privacySuccess != null) ...[
-                        const SizedBox(height: 14),
-                        _buildStatusBox(message: _privacySuccess!, isSuccess: true),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                              14.w, 10.h, 14.w, 0),
+                          child: _StatusBox(
+                              message: _privacySuccess!, isSuccess: true),
+                        ),
                       ],
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _isSavingPrivacy ? null : _updatePrivacy,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF7A45),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: _isSavingPrivacy
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Save privacy settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Padding(
+                        padding: EdgeInsets.all(14.w),
+                        child: _PrimaryButton(
+                          label: 'Save privacy settings',
+                          isLoading: _isSavingPrivacy,
+                          onPressed:
+                              _isSavingPrivacy ? null : _updatePrivacy,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 18.h),
 
-                // 3. Change Password Card
-                _buildSectionHeader(title: 'Change Password', icon: Icons.vpn_key_outlined),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
+                // 4. Change password island.
+                const _SectionLabel('Change password'),
+                SizedBox(height: 8.h),
+                _IslandCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Current Password',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151)),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _currentPasswordController,
-                        obscureText: _obscureCurrent,
-                        style: TextStyle(color: textTitleColor),
-                        decoration: _inputDecoration(
-                          hintText: 'Enter current password',
-                          icon: Icons.lock_open_rounded,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                              color: const Color(0xFF9CA3AF),
-                              size: 20,
-                            ),
-                            onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 0),
+                        child: Text(
+                          'Current password',
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: bodyColor,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'New Password',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151)),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _newPasswordController,
-                        obscureText: _obscureNew,
-                        style: TextStyle(color: textTitleColor),
-                        decoration: _inputDecoration(
-                          hintText: 'Minimum 8 characters',
-                          icon: Icons.lock_outline_rounded,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                              color: const Color(0xFF9CA3AF),
-                              size: 20,
+                      SizedBox(height: 4.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: TextField(
+                          controller: _currentPasswordController,
+                          obscureText: _obscureCurrent,
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w500,
+                            color: titleColor,
+                          ),
+                          decoration: _inputDecoration(
+                            hintText: 'Enter current password',
+                            icon: Icons.lock_open_rounded,
+                            suffixIcon: IconButton(
+                              padding: EdgeInsets.only(right: 8.w),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                _obscureCurrent
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: _kSubtitle,
+                                size: 16.r,
+                              ),
+                              onPressed: () => setState(
+                                  () => _obscureCurrent = !_obscureCurrent),
                             ),
-                            onPressed: () => setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Confirm New Password',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151)),
+                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: Text(
+                          'New password',
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: bodyColor,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirm,
-                        style: TextStyle(color: textTitleColor),
-                        decoration: _inputDecoration(
-                          hintText: 'Repeat new password',
-                          icon: Icons.lock_outline_rounded,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                              color: const Color(0xFF9CA3AF),
-                              size: 20,
+                      SizedBox(height: 4.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: TextField(
+                          controller: _newPasswordController,
+                          obscureText: _obscureNew,
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w500,
+                            color: titleColor,
+                          ),
+                          decoration: _inputDecoration(
+                            hintText: 'Minimum 8 characters',
+                            icon: Icons.lock_outline_rounded,
+                            suffixIcon: IconButton(
+                              padding: EdgeInsets.only(right: 8.w),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                _obscureNew
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: _kSubtitle,
+                                size: 16.r,
+                              ),
+                              onPressed: () => setState(
+                                  () => _obscureNew = !_obscureNew),
                             ),
-                            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: Text(
+                          'Confirm new password',
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: bodyColor,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirm,
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w500,
+                            color: titleColor,
+                          ),
+                          decoration: _inputDecoration(
+                            hintText: 'Repeat new password',
+                            icon: Icons.lock_outline_rounded,
+                            suffixIcon: IconButton(
+                              padding: EdgeInsets.only(right: 8.w),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                _obscureConfirm
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: _kSubtitle,
+                                size: 16.r,
+                              ),
+                              onPressed: () => setState(() =>
+                                  _obscureConfirm = !_obscureConfirm),
+                            ),
                           ),
                         ),
                       ),
                       if (_passwordError != null) ...[
-                        const SizedBox(height: 14),
-                        _buildStatusBox(message: _passwordError!, isSuccess: false),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 0),
+                          child: _StatusBox(
+                              message: _passwordError!, isSuccess: false),
+                        ),
                       ],
                       if (_passwordSuccess != null) ...[
-                        const SizedBox(height: 14),
-                        _buildStatusBox(message: _passwordSuccess!, isSuccess: true),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 0),
+                          child: _StatusBox(
+                              message: _passwordSuccess!, isSuccess: true),
+                        ),
                       ],
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _isSavingPassword ? null : _updatePassword,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF7A45),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: _isSavingPassword
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Save password', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 12.h),
+                        child: _PrimaryButton(
+                          label: 'Save password',
+                          isLoading: _isSavingPassword,
+                          onPressed:
+                              _isSavingPassword ? null : _updatePassword,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 18.h),
 
-                // 4. Session Management Card
-                _buildSectionHeader(title: 'Sessions', icon: Icons.devices_other_rounded),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
+                // 5. Sessions island.
+                const _SectionLabel('Sessions'),
+                SizedBox(height: 8.h),
+                _IslandCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Keep your current device active and sign out from everywhere else.',
-                        style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF4B5563)),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: _isLoggingOutOther ? null : _showLogoutOtherConfirm,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white : const Color(0xFF374151),
-                            side: BorderSide(color: isDark ? const Color(0xFF4E4F51) : const Color(0xFFD1D5DB)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 0),
+                        child: Text(
+                          'Keep this device active and sign out everywhere else.',
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 12.5.sp,
+                            fontWeight: FontWeight.w400,
+                            color: subtitleColor,
+                            height: 1.4,
                           ),
-                          child: _isLoggingOutOther
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: isDark ? Colors.white : Colors.black54,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(14.w),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 36.h,
+                          child: OutlinedButton(
+                            onPressed: _isLoggingOutOther
+                                ? null
+                                : _showLogoutOtherConfirm,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: titleColor,
+                              side: BorderSide(color: dividerColor, width: 0.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: _isLoggingOutOther
+                                ? SizedBox(
+                                    width: 16.r,
+                                    height: 16.r,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: titleColor,
+                                    ),
+                                  )
+                                : Text(
+                                    'Log out all other sessions',
+                                    style: TextStyle(
+                                      fontFamily: _kFont,
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                )
-                              : const Text('Logout all other sessions', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 18.h),
 
-                // 5. Support & Legal
-                _buildSectionHeader(title: 'Support & Legal', icon: Icons.info_outline_rounded),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cardBorder),
-                  ),
+                // 6. Support & Legal island.
+                const _SectionLabel('Support & legal'),
+                SizedBox(height: 8.h),
+                _IslandCard(
                   child: Column(
                     children: [
-                      _buildLegalRow(
-                        icon: Icons.card_giftcard_rounded,
-                        title: 'Gift Animation Tester',
+                      _NavRow(
+                        icon: Icons.card_giftcard_outlined,
+                        title: 'Gift animation tester',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const GiftTesterScreen(),
+                              builder: (context) =>
+                                  const GiftTesterScreen(),
                             ),
                           );
                         },
                       ),
-                      Divider(color: cardBorder, height: 1),
-                      _buildLegalRow(
+                      const _Hairline(),
+                      _NavRow(
                         icon: Icons.info_outline_rounded,
                         title: 'About KatsKlub',
                         onTap: () {
@@ -869,41 +949,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: cardBorder, height: 1),
-                      _buildLegalRow(
+                      const _Hairline(),
+                      _NavRow(
                         icon: Icons.help_outline_rounded,
-                        title: 'Help Center',
+                        title: 'Help center',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const HelpCenterScreen(),
+                              builder: (context) =>
+                                  const HelpCenterScreen(),
                             ),
                           );
                         },
                       ),
-                      Divider(color: cardBorder, height: 1),
-                      _buildLegalRow(
-                        icon: Icons.gavel_rounded,
-                        title: 'Terms of Use',
+                      const _Hairline(),
+                      _NavRow(
+                        icon: Icons.gavel_outlined,
+                        title: 'Terms of use',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const TermsOfUseScreen(),
+                              builder: (context) =>
+                                  const TermsOfUseScreen(),
                             ),
                           );
                         },
                       ),
-                      Divider(color: cardBorder, height: 1),
-                      _buildLegalRow(
+                      const _Hairline(),
+                      _NavRow(
                         icon: Icons.shield_outlined,
-                        title: 'Privacy Policy',
+                        title: 'Privacy policy',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PrivacyPolicyScreen(),
+                              builder: (context) =>
+                                  const PrivacyPolicyScreen(),
                             ),
                           );
                         },
@@ -911,208 +994,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 18.h),
 
-                // 6. Danger Zone / Account Deletion
-                _buildSectionHeader(title: 'Danger Zone', icon: Icons.warning_amber_rounded, color: const Color(0xFFE53935)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0x22EF4444) : Colors.red.shade50.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade100),
-                  ),
+                // 7. Danger zone island.
+                const _SectionLabel('Danger zone', isDestructive: true),
+                SizedBox(height: 8.h),
+                _IslandCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Deleting your account is permanent and cannot be undone.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFFE53935)),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 0),
+                        child: Text(
+                          'Deleting your account is permanent and cannot be undone.',
+                          style: TextStyle(
+                            fontFamily: _kFont,
+                            fontSize: 12.5.sp,
+                            fontWeight: FontWeight.w400,
+                            color: _kDestructive,
+                            height: 1.4,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: null, // Disabled / Coming soon
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red.shade400,
-                            side: BorderSide(color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade200),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Padding(
+                        padding: EdgeInsets.all(14.w),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 36.h,
+                          child: OutlinedButton(
+                            onPressed: null,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  _kDestructive.withValues(alpha: 0.5),
+                              side: BorderSide(
+                                  color: _kDestructive.withValues(
+                                      alpha: 0.4),
+                                  width: 0.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: Text(
+                              'Delete account (coming soon)',
+                              style: TextStyle(
+                                fontFamily: _kFont,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                          child: const Text('Delete account (Coming Soon)', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 18.h),
 
-                // 6. Logout Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoggingOut ? null : _showLogoutConfirm,
-                    icon: _isLoggingOut
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.logout_rounded, size: 20),
-                    label: Text(_isLoggingOut ? 'Logging out...' : 'Sign Out', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE53935),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // 8. Sign out island.
+                _IslandCard(
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(14.r),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14.r),
+                      onTap: _isLoggingOut ? null : _showLogoutConfirm,
+                      splashColor: isDark
+                          ? const Color(0xFF2C2C2E)
+                          : const Color(0xFFE5E5EA),
+                      highlightColor: isDark
+                          ? const Color(0xFF252528)
+                          : const Color(0xFFF2F2F7),
+                      child: Container(
+                        constraints: BoxConstraints(minHeight: 40.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 8.h),
+                        alignment: Alignment.center,
+                        child: _isLoggingOut
+                            ? SizedBox(
+                                width: 16.r,
+                                height: 16.r,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _kDestructive,
+                                ),
+                              )
+                            : Text(
+                                'Sign out',
+                                style: TextStyle(
+                                  fontFamily: _kFont,
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: _kDestructive,
+                                ),
+                              ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.h),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader({required String title, required IconData icon, Color? color}) {
-    final effectiveColor = color ?? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFF7A45) : Colors.black);
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: effectiveColor),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: effectiveColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegalRow({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textTitleColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF1F2937);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFFFF7A45)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: textTitleColor,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrivacySwitch({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeColor: const Color(0xFFFF7A45),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusBox({required String message, required bool isSuccess}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final Color bgColor;
-    final Color borderColor;
-    final Color textColor;
-    
-    if (isSuccess) {
-      bgColor = isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
-      borderColor = const Color(0xFF10B981);
-      textColor = isDark ? const Color(0xFF34D399) : const Color(0xFF065F46);
-    } else {
-      bgColor = isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2);
-      borderColor = const Color(0xFFEF4444);
-      textColor = isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B);
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: borderColor.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        message,
-        style: TextStyle(
-          fontSize: 13,
-          color: textColor,
-          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -1137,5 +1119,324 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return months[month - 1];
     }
     return '';
+  }
+}
+
+/// Threads Inset Grouped island card: #1E1E20 at 14.r with subtle 0.5px border.
+class _IslandCard extends StatelessWidget {
+  const _IslandCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? _kCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: isDark ? _kDivider : const Color(0xFFE5E5EA),
+          width: 0.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14.r),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Small inset section label above each island.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text, {this.isDestructive = false});
+
+  final String text;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.only(left: 4.w),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: _kFont,
+          fontSize: 12.5.sp,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
+          color: isDestructive
+              ? _kDestructive
+              : (isDark ? _kSubtitle : const Color(0xFF6C6C70)),
+        ),
+      ),
+    );
+  }
+}
+
+/// 0.5 hairline divider with 14.w left inset.
+class _Hairline extends StatelessWidget {
+  const _Hairline();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.only(left: 14.w),
+      child: Container(
+        height: 0.5.h,
+        color: isDark ? _kDivider : const Color(0xFFE5E5EA),
+      ),
+    );
+  }
+}
+
+/// Compact 44px nav row: label left (w500), chevron right.
+class _NavRow extends StatelessWidget {
+  const _NavRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+        highlightColor: isDark ? const Color(0xFF252528) : const Color(0xFFF2F2F7),
+        child: Container(
+          constraints: BoxConstraints(minHeight: 44.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          child: Row(
+            children: [
+              Icon(icon, size: 19.r, color: _kAccent),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: _kFont,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? _kTitle : const Color(0xFF111827),
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  size: 20.r, color: isDark ? _kSubtitle : const Color(0xFF8E8E93)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact 44px privacy toggle row.
+class _PrivacySwitch extends StatelessWidget {
+  const _PrivacySwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      constraints: BoxConstraints(minHeight: 44.h),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: _kFont,
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? _kTitle : const Color(0xFF111827),
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontFamily: _kFont,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? _kSubtitle : const Color(0xFF6B7280),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Transform.scale(
+            scale: 0.85,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: _kAccent,
+              activeThumbColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-width primary action button inside an island.
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 36.h,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _kAccent,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _kAccent.withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 16.r,
+                height: 16.r,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                label,
+                style: TextStyle(
+                  fontFamily: _kFont,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.1,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _StatusBox extends StatelessWidget {
+  const _StatusBox({required this.message, required this.isSuccess});
+
+  final String message;
+  final bool isSuccess;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isSuccess
+        ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
+        : (isDark ? const Color(0xFF3A1418) : const Color(0xFFFEF2F2));
+    final borderColor = isSuccess ? const Color(0xFF10B981) : _kDestructive;
+    final textColor = isSuccess
+        ? (isDark ? const Color(0xFF34D399) : const Color(0xFF065F46))
+        : (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B));
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: borderColor.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          fontFamily: _kFont,
+          fontSize: 12.5.sp,
+          fontWeight: FontWeight.w500,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+}
+
+/// Dialog action button: neutral fill or destructive tint.
+class _DialogButton extends StatelessWidget {
+  const _DialogButton({
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final neutralBg = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7);
+    final neutralFg = isDark ? Colors.white : const Color(0xFF111827);
+
+    return SizedBox(
+      height: 42.h,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          backgroundColor:
+              isDestructive ? _kDestructive : neutralBg,
+          foregroundColor: isDestructive ? Colors.white : neutralFg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: _kFont,
+            fontSize: 13.5.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 }

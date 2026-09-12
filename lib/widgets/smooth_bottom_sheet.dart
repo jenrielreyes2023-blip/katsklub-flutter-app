@@ -91,29 +91,27 @@ class KatsBottomSheet {
       isScrollControlled: true,
       builder: (sheetContext) {
         final bottomPadding = MediaQuery.paddingOf(sheetContext).bottom;
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final cardBg = isDark ? const Color(0xFF242526) : Colors.white;
+        const sheetBg = Color(0xFF101012);
+        const cardBg = Color(0xFF1E1E20);
+        const dragHandleColor = Color(0xFF38383A);
+        const dividerColor = Color(0xFF2C2C2E);
 
         return Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? Theme.of(sheetContext).colorScheme.surface
-                : const Color(0xFFF3F4F6),
+            color: sheetBg,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
-          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
+          padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 14.h + bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Standard Drag Handle Pill
               Container(
-                width: 38.w,
-                height: 4.h,
+                width: 36.w,
+                height: 3.5.h,
                 margin: EdgeInsets.only(bottom: 10.h),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF3E4042)
-                      : const Color(0xFF9CA3AF),
+                  color: dragHandleColor,
                   borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
@@ -124,19 +122,20 @@ class KatsBottomSheet {
                   child: Text(
                     title,
                     style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
                       fontSize: 13.5.sp,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF111827),
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
               ],
 
-              // Standard Rounded Card Wrapper
+              // Standard Rounded Island Card Wrapper
               ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(14.r),
                 child: DecoratedBox(
-                  decoration: BoxDecoration(color: cardBg),
+                  decoration: const BoxDecoration(color: cardBg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -148,12 +147,10 @@ class KatsBottomSheet {
                         if (i != items.length - 1)
                           Padding(
                             padding: EdgeInsets.only(left: 14.w),
-                            child: Divider(
+                            child: const Divider(
                               height: 1,
-                              thickness: 1,
-                              color: isDark
-                                  ? const Color(0xFF3E4042)
-                                  : const Color(0xFFE5E7EB),
+                              thickness: 0.5,
+                              color: dividerColor,
                             ),
                           ),
                       ],
@@ -203,19 +200,14 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final itemBg = isDark ? const Color(0xFF242526) : Colors.white;
-    final itemFg = item.isDestructive
-        ? const Color(0xFFDC2626)
-        : (isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827));
-    final iconColor = item.isDestructive
-        ? const Color(0xFFDC2626)
-        : (isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827));
+    const itemBg = Color(0xFF1E1E20);
+    final itemFg =
+        item.isDestructive ? const Color(0xFFED4956) : Colors.white;
 
     final iconWidget = Icon(
       item.icon,
-      color: iconColor,
-      size: 20.r,
+      color: itemFg,
+      size: 18.5.r,
     );
 
     final titleColumn = Expanded(
@@ -226,9 +218,10 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
           Text(
             item.title,
             style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
               color: itemFg,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w700,
+              fontSize: 13.5.sp,
+              fontWeight: FontWeight.w500,
               letterSpacing: -0.1,
             ),
           ),
@@ -237,7 +230,8 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
             Text(
               item.subtitle!,
               style: TextStyle(
-                color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                fontFamily: 'SF Pro Rounded',
+                color: const Color(0xFF8E8E93),
                 fontSize: 10.5.sp,
                 fontWeight: FontWeight.w500,
               ),
@@ -251,11 +245,11 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
       color: itemBg,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-        highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+        splashColor: const Color(0xFF3A3B3C),
+        highlightColor: const Color(0xFF2F3031),
         child: Container(
-          constraints: BoxConstraints(minHeight: 46.h),
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          constraints: BoxConstraints(minHeight: 44.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
           child: Row(
             children: [
               if (!iconOnRight) ...[
@@ -281,22 +275,30 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
 class SmoothSheetContainer extends StatelessWidget {
   const SmoothSheetContainer({
     required this.child,
-    this.maxHeightFraction = 0.85,
+    this.maxHeightFraction = 0.88,
     this.padding,
+    this.backgroundColor,
+    this.handleColor,
+    this.showHandle = true,
     super.key,
   });
 
   final Widget child;
   final double maxHeightFraction;
   final EdgeInsetsGeometry? padding;
+  final Color? backgroundColor;
+  final Color? handleColor;
+  final bool showHandle;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E1F20) : const Color(0xFFF7F7F7);
-    final handleColor = isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB);
+    final defaultBg = isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7);
+    final defaultHandle = isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6);
+    final effectiveBg = backgroundColor ?? defaultBg;
+    final effectiveHandle = handleColor ?? defaultHandle;
     final screenHeight = MediaQuery.of(context).size.height;
-    final effectivePadding = padding ?? EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h);
+    final effectivePadding = padding ?? EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 12.h);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -306,22 +308,24 @@ class SmoothSheetContainer extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: screenHeight * maxHeightFraction),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: bgColor,
+            color: effectiveBg,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           padding: effectivePadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 38.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: handleColor,
-                  borderRadius: BorderRadius.circular(999.r),
+              if (showHandle) ...[
+                Container(
+                  width: 36.w,
+                  height: 3.5.h,
+                  margin: EdgeInsets.only(bottom: 10.h),
+                  decoration: BoxDecoration(
+                    color: effectiveHandle,
+                    borderRadius: BorderRadius.circular(999.r),
+                  ),
                 ),
-              ),
-              SizedBox(height: 10.h),
+              ],
               Flexible(child: child),
             ],
           ),
@@ -330,3 +334,4 @@ class SmoothSheetContainer extends StatelessWidget {
     );
   }
 }
+

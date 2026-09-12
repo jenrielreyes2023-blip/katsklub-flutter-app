@@ -2687,10 +2687,14 @@ class _PostDetailYouTubePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = preview.imageUrl.trim();
-    final title = preview.title.trim().isNotEmpty
-        ? preview.title.trim()
-        : 'YouTube video';
+    final title = preview.title.trim();
+    final hasDisplayableTitle = title.isNotEmpty &&
+        title.toLowerCase() != 'youtube video' &&
+        title.toLowerCase() != 'youtube';
     final description = preview.description.trim();
+    final hasDisplayableDescription = description.isNotEmpty &&
+        description.toLowerCase() != 'youtube video' &&
+        description.toLowerCase() != 'youtube';
 
     return GestureDetector(
       onTap: onTap,
@@ -2749,20 +2753,21 @@ class _PostDetailYouTubePreviewCard extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+          if (hasDisplayableTitle)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
-          if (description.isNotEmpty)
+          if (hasDisplayableDescription)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
               child: Text(

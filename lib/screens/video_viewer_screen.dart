@@ -98,8 +98,8 @@ class _VideoViewerScreenState extends State<VideoViewerScreen> {
       setState(() {
         _videos = mergedVideos;
         _currentIndex = 0;
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        _nextOffset = page.posts.length;
+        _hasMore = page.hasMore && page.posts.length >= _pageSize;
         _isLoading = false;
       });
 
@@ -136,8 +136,11 @@ class _VideoViewerScreenState extends State<VideoViewerScreen> {
 
       setState(() {
         _videos = _mergeVideos(_videos, page.posts);
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        final advanced = _nextOffset + page.posts.length;
+        _nextOffset = (page.offset > _nextOffset)
+            ? (page.offset + page.posts.length)
+            : advanced;
+        _hasMore = page.hasMore && page.posts.length >= _pageSize;
         _isLoading = false;
       });
     } catch (_) {

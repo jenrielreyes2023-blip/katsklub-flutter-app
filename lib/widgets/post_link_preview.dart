@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import '../models/post.dart'; // For LinkPreview
 import '../services/youtube_service.dart';
@@ -64,6 +65,7 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
     normalVideoMutedNotifier.removeListener(_handleMuteChanged);
     if (_activeCard == this) {
       _activeCard = null;
+      WakelockPlus.disable().catchError((_) {});
     }
     _disposeController();
     super.dispose();
@@ -167,6 +169,7 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
       } else {
         await _controller!.setVolume(normalVideoMuted() ? 0.0 : 1.0);
         await _controller!.play();
+        WakelockPlus.enable().catchError((_) {});
         if (mounted) {
           setState(() {
             _isPlaying = true;
@@ -216,6 +219,7 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
 
       _controller = controller;
       await controller.play();
+      WakelockPlus.enable().catchError((_) {});
 
       if (mounted) {
         setState(() {
@@ -233,6 +237,7 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
   }
 
   void _pause() {
+    WakelockPlus.disable().catchError((_) {});
     if (_controller != null && _controller!.value.isPlaying) {
       _controller!.pause();
     }
@@ -257,9 +262,10 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
   @override
   Widget build(BuildContext context) {
     final imageUrl = widget.preview.imageUrl.trim();
-    final title = widget.preview.title.trim().isNotEmpty
-        ? widget.preview.title.trim()
-        : 'YouTube video';
+    final title = widget.preview.title.trim();
+    final hasDisplayableTitle = title.isNotEmpty &&
+        title.toLowerCase() != 'youtube video' &&
+        title.toLowerCase() != 'youtube';
 
     final controller = _controller;
     final showInlinePlayer =
@@ -393,19 +399,20 @@ class _YouTubePreviewCardState extends State<YouTubePreviewCard> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
+            if (hasDisplayableTitle)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

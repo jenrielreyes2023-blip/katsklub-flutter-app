@@ -4600,70 +4600,73 @@ class _MenuSheet extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 38.w,
-            height: 4.h,
-            margin: EdgeInsets.only(bottom: 10.h),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF3E4042) : const Color(0xFF9CA3AF),
-              borderRadius: BorderRadius.circular(999.r),
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36.w,
+              height: 3.5.h,
+              margin: EdgeInsets.only(bottom: 10.h),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6),
+                borderRadius: BorderRadius.circular(999.r),
+              ),
             ),
-          ),
-          _MoreOptionsCard(
-            children: [
-              _MoreOptionsRow(
-                label: 'Copy profile link',
-                icon: Icons.link_rounded,
-                onTap: () => Navigator.pop(context, 'copy_link'),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          _MoreOptionsCard(
-            children: [
-              _MoreOptionsRow(
-                label: 'About account',
-                icon: Icons.info_outline_rounded,
-                onTap: () => Navigator.pop(context, 'about'),
-              ),
-              const _MoreOptionsDivider(),
-              _MoreOptionsRow(
-                label: 'Edit profile',
-                icon: Icons.edit_outlined,
-                onTap: () => Navigator.pop(context, 'edit_profile'),
-              ),
-              const _MoreOptionsDivider(),
-              _MoreOptionsRow(
-                label: 'Account settings',
-                icon: Icons.tune_rounded,
-                onTap: () => Navigator.pop(context, 'settings'),
-              ),
-              const _MoreOptionsDivider(),
-              _MoreOptionsRow(
-                label: 'Manage Featured Photos',
-                icon: Icons.star_border_rounded,
-                onTap: () => Navigator.pop(context, 'manage_featured_photos'),
-              ),
-              if (user.isAdmin) ...[
-                const _MoreOptionsDivider(),
+            _MoreOptionsCard(
+              children: [
                 _MoreOptionsRow(
-                  label: 'Admin Dashboard',
-                  icon: Icons.shield_outlined,
-                  onTap: () => Navigator.pop(context, 'admin_dashboard'),
+                  label: 'Copy profile link',
+                  icon: Icons.link_rounded,
+                  onTap: () => Navigator.pop(context, 'copy_link'),
                 ),
               ],
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: 7.h),
+            _MoreOptionsCard(
+              children: [
+                _MoreOptionsRow(
+                  label: 'About account',
+                  icon: Icons.info_outline,
+                  onTap: () => Navigator.pop(context, 'about'),
+                ),
+                const _MoreOptionsDivider(),
+                _MoreOptionsRow(
+                  label: 'Edit profile',
+                  icon: Icons.edit_outlined,
+                  onTap: () => Navigator.pop(context, 'edit_profile'),
+                ),
+                const _MoreOptionsDivider(),
+                _MoreOptionsRow(
+                  label: 'Account settings',
+                  icon: Icons.tune_rounded,
+                  onTap: () => Navigator.pop(context, 'settings'),
+                ),
+                const _MoreOptionsDivider(),
+                _MoreOptionsRow(
+                  label: 'Manage Featured Photos',
+                  icon: Icons.star_border_rounded,
+                  onTap: () => Navigator.pop(context, 'manage_featured_photos'),
+                ),
+                if (user.isAdmin) ...[
+                  const _MoreOptionsDivider(),
+                  _MoreOptionsRow(
+                    label: 'Admin Dashboard',
+                    icon: Icons.shield_outlined,
+                    onTap: () => Navigator.pop(context, 'admin_dashboard'),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4678,10 +4681,10 @@ class _MoreOptionsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius: BorderRadius.circular(14.r),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF242526) : Colors.white,
+          color: isDark ? const Color(0xFF1E1E20) : Colors.white,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -4706,35 +4709,37 @@ class _MoreOptionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rowBg = isDark ? const Color(0xFF242526) : Colors.white;
+    final rowBg = isDark ? const Color(0xFF1E1E20) : Colors.white;
+    final itemColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
 
     return Material(
       color: rowBg,
       child: InkWell(
         onTap: onTap,
-        splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-        highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
+        splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+        highlightColor: isDark ? const Color(0xFF242426) : const Color(0xFFF3F4F6),
         child: Container(
-          constraints: BoxConstraints(minHeight: 46.h),
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          constraints: BoxConstraints(minHeight: 42.h),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
-                    color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
+                    color: itemColor,
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w500,
                     letterSpacing: -0.1,
                   ),
                 ),
               ),
               Icon(
                 icon,
-                color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
-                size: 20.r,
+                color: itemColor,
+                size: 18.5.r,
               ),
             ],
           ),
@@ -4750,13 +4755,11 @@ class _MoreOptionsDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
-      ),
+    return Divider(
+      height: 0.5,
+      thickness: 0.5,
+      indent: 14.w,
+      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
     );
   }
 }

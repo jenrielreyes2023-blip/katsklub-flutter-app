@@ -3,12 +3,12 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -270,97 +270,157 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     Widget? suffixIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const borderColor = Color(0x1F787878);
+    final borderColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB);
     return InputDecoration(
+      isDense: true,
       filled: true,
-      fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF9FAFB),
+      fillColor: isDark ? const Color(0xFF141416) : const Color(0xFFF9FAFB),
       hintText: hintText,
-      hintStyle: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF9CA3AF),
+      hintStyle: TextStyle(
+        fontFamily: 'SF Pro Rounded',
+        fontSize: 13.sp,
+        fontWeight: FontWeight.w400,
+        color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
       ),
       prefixIcon: Icon(
         icon,
-        size: 20,
-        color: const Color(0xFF9CA3AF),
+        size: 16.r,
+        color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+      ),
+      prefixIconConstraints: BoxConstraints(
+        minWidth: 34.w,
+        minHeight: 32.h,
       ),
       suffixIcon: suffixIcon,
+      suffixIconConstraints: BoxConstraints(
+        minWidth: 32.w,
+        minHeight: 32.h,
+      ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFFF7A45), width: 1.5),
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: const BorderSide(color: Color(0xFFFF7A45), width: 1.2),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.5.h),
     );
   }
+
 
   Future<void> _pickAvatar() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF3F4F6),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E4042) : const Color(0xFFD1D5DB),
-                borderRadius: BorderRadius.circular(999),
+      barrierColor: Colors.black.withValues(alpha: 0.52),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 36.w,
+                height: 3.5.h,
+                margin: EdgeInsets.only(bottom: 10.h),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF242526) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: <Widget>[
-                  ListTile(
-                    leading: Icon(Icons.photo_camera_outlined, color: isDark ? const Color(0xFFFF7A45) : Colors.black),
-                    title: Text(
-                      'Take photo',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14.r),
+                child: ColoredBox(
+                  color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                  child: Column(
+                    children: <Widget>[
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+                          splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 42.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Take photo',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.photo_camera_outlined,
+                                  size: 18.5.r,
+                                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: isDark ? const Color(0xFF3E4042) : const Color(0xFFE5E7EB),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.photo_library_outlined, color: isDark ? const Color(0xFFFF7A45) : Colors.black),
-                    title: Text(
-                      'Choose from gallery',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      Divider(
+                        height: 0.5,
+                        thickness: 0.5,
+                        indent: 14.w,
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
                       ),
-                    ),
-                    onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+                          splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 42.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Choose from gallery',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.photo_library_outlined,
+                                  size: 18.5.r,
+                                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -575,74 +635,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final labelColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF374151);
 
     return Scaffold(
-      backgroundColor: isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF9FAFB),
+      backgroundColor: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF101012) : Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: const Color(0xFFFF7A45)),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18.r,
+            color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+          ),
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Edit Profile',
+          'Edit profile',
           style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 16.5.sp,
+            fontWeight: FontWeight.w600,
+            color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF111827),
+            letterSpacing: -0.2,
           ),
         ),
         centerTitle: true,
         actions: [
           if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Center(
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF7A45)),
+                  width: 20.r,
+                  height: 20.r,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFFF7A45),
+                  ),
                 ),
               ),
             )
           else
             TextButton(
               onPressed: _saveProfile,
-              child: const Text(
+              child: Text(
                 'Save',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF7A45),
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFFF7A45),
                 ),
               ),
             ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB)),
+          preferredSize: const Size.fromHeight(0.5),
+          child: Divider(
+            height: 0.5,
+            thickness: 0.5,
+            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+          ),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_errorMessage != null) ...[
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(color: const Color(0xFFFCA5A5)),
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      color: Color(0xFFB91C1C),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
               ],
 
               // Avatar section
@@ -652,8 +730,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     GestureDetector(
                       onTap: _isSaving ? null : _pickAvatar,
                       child: CircleAvatar(
-                        radius: 46,
-                        backgroundColor: isDark ? const Color(0xFF2A2B2D) : Colors.blue.shade50,
+                        radius: 46.r,
+                        backgroundColor: isDark ? const Color(0xFF1E1E20) : Colors.blue.shade50,
                         backgroundImage: _avatarPreviewBytes != null
                             ? MemoryImage(_avatarPreviewBytes!)
                             : (_avatarUrl != null && _avatarUrl!.trim().isNotEmpty
@@ -663,7 +741,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ? Text(
                                 initials,
                                 style: TextStyle(
-                                  fontSize: 30,
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 30.sp,
                                   fontWeight: FontWeight.bold,
                                   color: isDark ? const Color(0xFFFF7A45) : Colors.blue.shade700,
                                 ),
@@ -677,14 +756,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: GestureDetector(
                         onTap: _isSaving ? null : _pickAvatar,
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: EdgeInsets.all(6.r),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF4A5CF9),
+                            color: Color(0xFFFF7A45),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt_rounded,
-                            size: 16,
+                            size: 16.r,
                             color: Colors.white,
                           ),
                         ),
@@ -693,22 +772,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Center(
+              SizedBox(height: 14.h),
+              Center(
                 child: Text(
                   'Or pick a default avatar:',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Center(
                 child: SizedBox(
-                  height: 52,
-                  width: 260,
+                  height: 52.r,
+                  width: 260.w,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _defaultAvatars.length,
@@ -718,14 +798,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       return GestureDetector(
                         onTap: () => _selectDefaultAvatar(path),
                         child: Container(
-                          margin: const EdgeInsets.only(right: 12),
-                          width: 52,
-                          height: 52,
+                          margin: EdgeInsets.only(right: 12.w),
+                          width: 52.r,
+                          height: 52.r,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF4A5CF9) : Colors.transparent,
-                              width: 3,
+                              color: isSelected ? const Color(0xFFFF7A45) : Colors.transparent,
+                              width: 2.5,
                             ),
                           ),
                           child: Padding(
@@ -743,16 +823,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 20.h),
 
-              // Inputs Card (Account Settings theme styling)
+              // Inputs Card (Threads Inset Grouped Island)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242526) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                  borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF2F3031) : const Color(0xFFE5E7EB),
+                    color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+                    width: 0.5,
                   ),
                 ),
                 child: Column(
@@ -761,44 +842,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Full Name
                     Text(
                       'Full name',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 5.h),
                     TextField(
                       controller: _fullNameController,
                       maxLength: 80,
                       enabled: !_isSaving,
+                      buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                      ),
                       decoration: _inputDecoration(
                         hintText: 'Enter your full name',
                         icon: Icons.person_outline_rounded,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 10.h),
 
                     // Bio
-                    Text(
-                      'Bio',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Bio',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 12.5.sp,
+                            fontWeight: FontWeight.w500,
+                            color: labelColor,
+                          ),
+                        ),
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _bioController,
+                          builder: (context, value, _) {
+                            return Text(
+                              '${value.text.length}/280',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w400,
+                                color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 5.h),
                     TextField(
                       controller: _bioController,
                       maxLength: 280,
                       maxLines: null,
                       enabled: !_isSaving,
+                      buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                      ),
                       decoration: _inputDecoration(
                         hintText: 'Tell us about yourself...',
                         icon: Icons.notes_rounded,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 10.h),
 
-                    // Gender (Dropdown same as registration style but using the Settings styling wrapper)
+                    // Gender
                     Text(
                       'Gender',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 5.h),
                     _DropdownField(
                       value: _selectedGender,
                       items: _genders,
@@ -808,14 +937,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 10.h),
 
-                    // Date of birth (Same as registration dropdown format)
+                    // Date of birth
                     Text(
                       'Date of birth',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 5.h),
                     Row(
                       children: <Widget>[
                         Expanded(
@@ -829,7 +963,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8.w),
                         Expanded(
                           child: _DropdownField(
                             value: _selectedDay,
@@ -841,7 +975,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8.w),
                         Expanded(
                           child: _DropdownField(
                             value: _selectedYear,
@@ -855,14 +989,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 10.h),
 
-                    // Location - Country (Autocomplete select same as registration page)
+                    // Location - Country
                     Text(
                       'Country',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 5.h),
                     _SearchSelectField(
                       controller: _countryController,
                       focusNode: _countryFocusNode,
@@ -875,33 +1014,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         hintText: _isLoadingCountries ? 'Loading countries...' : 'Choose your country',
                         icon: Icons.public_rounded,
                         suffixIcon: _isLoadingCountries
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                            ? SizedBox(
+                                width: 14.r,
+                                height: 14.r,
+                                child: const CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Icon(
+                            : Icon(
                                 Icons.keyboard_arrow_down_rounded,
-                                color: Color(0xFF9CA3AF),
+                                size: 18.r,
+                                color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
                               ),
                       ),
                     ),
                     if (_countryLoadError != null && _countries.isEmpty) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         _countryLoadError!,
-                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                        style: TextStyle(fontSize: 12.sp, color: Colors.red),
                       ),
                     ],
 
-                    // Location - City (Autocomplete select same as registration page)
+                    // Location - City
                     if (_selectedCountry != null) ...[
-                      const SizedBox(height: 16),
+                      SizedBox(height: 10.h),
                       Text(
                         'City',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: labelColor),
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 12.5.sp,
+                          fontWeight: FontWeight.w500,
+                          color: labelColor,
+                        ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 5.h),
                       _SearchSelectField(
                         controller: _cityController,
                         focusNode: _cityFocusNode,
@@ -914,59 +1059,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           hintText: _isLoadingCities ? 'Loading cities...' : 'Choose your city',
                           icon: Icons.location_city_rounded,
                           suffixIcon: _isLoadingCities
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                              ? SizedBox(
+                                  width: 14.r,
+                                  height: 14.r,
+                                  child: const CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Icon(
+                              : Icon(
                                   Icons.keyboard_arrow_down_rounded,
-                                  color: Color(0xFF9CA3AF),
+                                  size: 18.r,
+                                  color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
                                 ),
                         ),
                       ),
                       if (_cityLoadError != null && _cities.isEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           _cityLoadError!,
-                          style: const TextStyle(fontSize: 12, color: Colors.red),
+                          style: TextStyle(fontSize: 12.sp, color: Colors.red),
                         ),
                       ],
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 20.h),
 
               // Websites Section Header
               Row(
                 children: [
-                  SvgPicture.string(
-                    '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.0598 10.9399c2.25 2.25 2.25 5.89.0 8.13-2.25 2.24-5.88995 2.25-8.12995.0s-2.25-5.89.0-8.13" stroke="#4A5CF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity=".4" d="M10.5909 13.4099c-2.33996-2.34-2.33996-6.14002.0-8.49002 2.34-2.35 6.14-2.34 8.49.0s2.34 6.14002.0 8.49002" stroke="#4A5CF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
-                    width: 18,
-                    height: 18,
+                  Icon(
+                    Icons.link_rounded,
+                    size: 16.r,
+                    color: const Color(0xFFFF7A45),
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 6.w),
+                  Text(
                     'Websites',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A5CF9)),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
 
-              // Websites List
+              // Websites List (Fully dynamic dark mode support with snug padding)
               ..._profileLinks.asMap().entries.map((entry) {
                 final idx = entry.key;
                 final link = entry.value;
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
+                  margin: EdgeInsets.only(bottom: 8.h),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+                      width: 0.5,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -974,49 +1128,91 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            width: 24,
-                            height: 24,
+                            width: 22.r,
+                            height: 22.r,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(4),
+                              color: isDark ? const Color(0xFF28282B) : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(5.r),
                             ),
                             alignment: Alignment.center,
                             child: link.faviconUrl.isNotEmpty
                                 ? CachedNetworkImage(
                                     imageUrl: link.faviconUrl,
-                                    errorWidget: (_, __, ___) => const Text('↗', style: TextStyle(fontSize: 12, color: Colors.blue)),
+                                    width: 13.r,
+                                    height: 13.r,
+                                    errorWidget: (_, __, ___) => Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 11.r,
+                                      color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                    ),
                                   )
-                                : const Text('↗', style: TextStyle(fontSize: 12, color: Colors.blue)),
+                                : Icon(
+                                    Icons.open_in_new_rounded,
+                                    size: 11.r,
+                                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                  ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Expanded(
                             child: TextFormField(
                               initialValue: link.url,
                               enabled: !_isSaving && !link.isFetching,
-                              decoration: const InputDecoration(
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                              ),
+                              decoration: InputDecoration(
                                 hintText: 'https://example.com',
+                                hintStyle: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 13.sp,
+                                  color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+                                ),
                                 isDense: true,
                                 border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 2.h),
                               ),
                               onChanged: (val) => setState(() => link.url = val),
                             ),
                           ),
                         ],
                       ),
-                      const Divider(height: 16, color: Color(0xFFF3F4F6)),
+                      Divider(
+                        height: 6.h,
+                        thickness: 0.5,
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                      ),
                       TextFormField(
                         initialValue: link.title,
                         enabled: !_isSaving && !link.isFetching,
                         maxLength: 100,
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Website title',
+                          hintStyle: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 13.sp,
+                            color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+                          ),
                           counterText: '',
                           isDense: true,
                           border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 2.h),
                         ),
                         onChanged: (val) => setState(() => link.title = val),
                       ),
-                      const Divider(height: 16, color: Color(0xFFF3F4F6)),
+                      Divider(
+                        height: 6.h,
+                        thickness: 0.5,
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1024,19 +1220,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             onPressed: (_isSaving || link.isFetching || link.url.trim().isEmpty)
                                 ? null
                                 : () => _fetchLinkMetadata(link),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
                             child: link.isFetching
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                ? SizedBox(
+                                    width: 12.r,
+                                    height: 12.r,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFFFF7A45),
+                                    ),
                                   )
-                                : const Text(
+                                : Text(
                                     'Fetch title & icon',
-                                    style: TextStyle(fontSize: 12, color: Color(0xFF4A5CF9), fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 11.5.sp,
+                                      color: const Color(0xFFFF7A45),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              color: const Color(0xFFED4956),
+                              size: 16.r,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             onPressed: _isSaving ? null : () => setState(() => _profileLinks.removeAt(idx)),
                           ),
                         ],
@@ -1047,22 +1262,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               }),
 
               if (_profileLinks.length < 5) ...[
-                OutlinedButton.icon(
-                  onPressed: _isSaving
-                      ? null
-                      : () {
-                          setState(() {
-                            _profileLinks.add(_EditableProfileLink());
-                          });
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF4A5CF9),
-                    side: const BorderSide(color: Color(0xFF4A5CF9)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                Material(
+                  color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: InkWell(
+                    onTap: _isSaving
+                        ? null
+                        : () {
+                            setState(() {
+                              _profileLinks.add(_EditableProfileLink());
+                            });
+                          },
+                    borderRadius: BorderRadius.circular(8.r),
+                    splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                    child: Container(
+                      height: 36.h,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            size: 16.r,
+                            color: const Color(0xFFFF7A45),
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            'Add website',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFFFF7A45),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('Add website'),
                 ),
               ],
             ],
@@ -1173,64 +1417,86 @@ class _AvatarEditorScreenState extends State<_AvatarEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF101012) : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF101012) : Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black),
         ),
-        title: const Text(
+        title: Text(
           'Adjust avatar',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : Colors.black,
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 16.5.sp,
+            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         actions: <Widget>[
           TextButton(
             onPressed: _isSaving ? null : _resetTransform,
-            child: const Text(
+            child: Text(
               'Reset',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+              ),
             ),
           ),
           TextButton(
             onPressed: _isSaving ? null : _saveAvatar,
             child: _isSaving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? SizedBox(
+                    width: 18.r,
+                    height: 18.r,
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF7A45)),
                   )
-                : const Text(
+                : Text(
                     'Use',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFFF7A45),
+                    ),
                   ),
           ),
         ],
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
           child: Column(
             children: <Widget>[
-              const Text(
+              Text(
                 'Pinch to zoom and drag to position your profile photo.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF6C7174)),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6C7174),
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 6.h),
+              Text(
                 'The photo inside the circle is what will be saved.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
+                  color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+                ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 20.h),
               Expanded(
                 child: Center(
                   child: SizedBox(
@@ -1250,12 +1516,11 @@ class _AvatarEditorScreenState extends State<_AvatarEditorScreen> {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: <Widget>[
-                                  const ColoredBox(
-                                    color: Color(0xFFF3F4F7),
+                                  ColoredBox(
+                                    color: isDark ? const Color(0xFF1E1E20) : const Color(0xFFF3F4F7),
                                   ),
                                   InteractiveViewer(
-                                    transformationController:
-                                        _transformController,
+                                    transformationController: _transformController,
                                     minScale: 1.0,
                                     maxScale: 4.5,
                                     boundaryMargin: const EdgeInsets.all(140),
@@ -1302,41 +1567,57 @@ class _AvatarEditorScreenState extends State<_AvatarEditorScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Row(
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _isSaving ? null : _resetTransform,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0F1419),
-                        side: const BorderSide(color: Color(0xFFD1D5DB)),
+                        foregroundColor: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF0F1419),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF38383A) : const Color(0xFFD1D5DB),
+                        ),
                         shape: const StadiumBorder(),
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: Size.fromHeight(46.h),
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: const Text('Reset'),
+                      label: Text(
+                        'Reset',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5.sp,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     flex: 2,
                     child: SizedBox(
-                      height: 48,
+                      height: 46.h,
                       child: FilledButton(
                         onPressed: _isSaving ? null : _saveAvatar,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F1419),
+                          backgroundColor: const Color(0xFFFF7A45),
                           foregroundColor: Colors.white,
                           shape: const StadiumBorder(),
                         ),
                         child: _isSaving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            ? SizedBox(
+                                width: 18.r,
+                                height: 18.r,
+                                child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('Save avatar'),
+                            : Text(
+                                'Save avatar',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -1356,7 +1637,7 @@ class _CircleMaskPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.5);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.5);
     final outerPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final innerPath = Path()..addOval(Rect.fromCircle(
       center: Offset(size.width / 2, size.height / 2),
@@ -1386,33 +1667,39 @@ class _DropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB);
     return SizedBox(
-      height: 48,
+      height: 36.h,
       child: DropdownButtonFormField<String>(
         initialValue: (value != null && items.contains(value)) ? value : null,
         isExpanded: true,
+        isDense: true,
+        iconSize: 18.r,
+        dropdownColor: isDark ? const Color(0xFF1E1E20) : Colors.white,
         decoration: InputDecoration(
+          isDense: true,
           filled: true,
-          fillColor: isDark ? const Color(0xFF1E1F20) : const Color(0xFFF3F4F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          fillColor: isDark ? const Color(0xFF141416) : const Color(0xFFF9FAFB),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(8.r),
+            borderSide: BorderSide(color: borderColor, width: 0.5),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(8.r),
+            borderSide: BorderSide(color: borderColor, width: 0.5),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8.r),
             borderSide: const BorderSide(color: Color(0xFFFF7A45), width: 1.2),
           ),
         ),
         hint: Text(
           items.first,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF6C7174),
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            fontSize: 13.sp,
+            color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
           ),
         ),
         items: items
@@ -1424,7 +1711,9 @@ class _DropdownField extends StatelessWidget {
                   item,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
@@ -1460,6 +1749,8 @@ class _SearchSelectField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return RawAutocomplete<String>(
@@ -1492,6 +1783,12 @@ class _SearchSelectField extends StatelessWidget {
               enabled: enabled,
               textInputAction: TextInputAction.done,
               onChanged: onChanged,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+              ),
               decoration: decoration.copyWith(
                 hintText: hintText,
               ),
@@ -1499,26 +1796,33 @@ class _SearchSelectField extends StatelessWidget {
           },
           optionsViewBuilder: (context, onOptionSelected, filteredOptions) {
             final optionsList = filteredOptions.toList(growable: false);
-            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
                 elevation: 8,
-                color: isDark ? const Color(0xFF242526) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                child: ConstrainedBox(
+                color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                borderRadius: BorderRadius.circular(10.r),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+                      width: 0.5,
+                    ),
+                  ),
                   constraints: BoxConstraints(
                     minWidth: constraints.maxWidth,
                     maxWidth: constraints.maxWidth,
-                    maxHeight: 220,
+                    maxHeight: 200.h,
                   ),
                   child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(vertical: 4.h),
                     shrinkWrap: true,
                     itemCount: optionsList.length,
                     separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: isDark ? const Color(0xFF2F3031) : const Color(0xFFF1F5F9),
+                      height: 0.5,
+                      thickness: 0.5,
+                      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF1F5F9),
                     ),
                     itemBuilder: (context, index) {
                       final option = optionsList[index];
@@ -1528,14 +1832,16 @@ class _SearchSelectField extends StatelessWidget {
                           FocusManager.instance.primaryFocus?.unfocus();
                         },
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 8.h,
                           ),
                           child: Text(
                             option,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontFamily: 'SF Pro Rounded',
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),

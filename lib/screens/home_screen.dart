@@ -987,13 +987,21 @@ class _HomeScreenState extends State<HomeScreen>
           limit: 10,
         );
         if (!mounted) return;
+        if (page.posts.isEmpty) {
+          hasMore = false;
+          break;
+        }
+
         final existingIds = _posts.map((p) => p.id).toSet()..addAll(allNew.map((p) => p.id));
         final newUniquePosts = page.posts.where((p) => !existingIds.contains(p.id)).toList();
         // Apply friend filter like _homePosts does to check if this page actually yields visible posts
         final visible = newUniquePosts.where((post) => post.ownedByMe || post.isFollowingAuthor || post.authorIsAuthor || post.authorIsAdmin).toList();
         allNew.addAll(newUniquePosts);
-        currentOffset = page.offset + page.posts.length;
-        hasMore = page.hasMore;
+        final advancedOffset = currentOffset + page.posts.length;
+        currentOffset = (page.offset > currentOffset)
+            ? (page.offset + page.posts.length)
+            : advancedOffset;
+        hasMore = page.hasMore && page.posts.length >= 10;
         if (visible.isNotEmpty || !hasMore) break;
         attempts++;
         if (!hasMore) break;
@@ -1436,11 +1444,11 @@ class _HomeMenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sheetBgColor = isDark ? const Color(0xFF1C1E21) : const Color(0xFFF7F7F7);
-    final cardBgColor = isDark ? const Color(0xFF242526) : Colors.white;
-    final dragHandleColor = isDark ? const Color(0xFF4E4F51) : const Color(0xFFD1D5DB);
-    final dividerColor = isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB);
-    final footerColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B);
+    final sheetBgColor = isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7);
+    final cardBgColor = isDark ? const Color(0xFF1E1E20) : Colors.white;
+    final dragHandleColor = isDark ? const Color(0xFF38383A) : const Color(0xFFD1D5DB);
+    final dividerColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB);
+    final footerColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
 
     return SafeArea(
       top: false,
@@ -1449,24 +1457,26 @@ class _HomeMenuSheet extends StatelessWidget {
           color: sheetBgColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
+        padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 14.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 38.w,
-              height: 4.h,
+              width: 36.w,
+              height: 3.5.h,
+              margin: EdgeInsets.only(bottom: 10.h),
               decoration: BoxDecoration(
                 color: dragHandleColor,
                 borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            SizedBox(height: 10.h),
+            // Group 1: Navigation & Features Island
             ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(14.r),
               child: ColoredBox(
                 color: cardBgColor,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _HomeMenuItem(
                       label: 'Bookmarks',
@@ -1481,6 +1491,7 @@ class _HomeMenuSheet extends StatelessWidget {
                         );
                       },
                     ),
+                    Divider(height: 1, thickness: 0.5, indent: 14.w, color: dividerColor),
                     _HomeMenuItem(
                       label: 'Wallet',
                       icon: Icons.account_balance_wallet_outlined,
@@ -1494,8 +1505,9 @@ class _HomeMenuSheet extends StatelessWidget {
                         );
                       },
                     ),
+                    Divider(height: 1, thickness: 0.5, indent: 14.w, color: dividerColor),
                     _HomeMenuItem(
-                      label: 'Play Mini-Games',
+                      label: 'Mini-Games',
                       icon: Icons.videogame_asset_outlined,
                       onTap: () {
                         Navigator.of(context).pop();
@@ -1507,10 +1519,10 @@ class _HomeMenuSheet extends StatelessWidget {
                         );
                       },
                     ),
+                    Divider(height: 1, thickness: 0.5, indent: 14.w, color: dividerColor),
                     _HomeMenuItem(
-                      label: 'YouTube Search & Videos',
-                      icon: Icons.play_circle_fill_rounded,
-                      color: const Color(0xFFFF0000),
+                      label: 'YouTube',
+                      icon: Icons.play_circle_outline_rounded,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.push(
@@ -1519,9 +1531,21 @@ class _HomeMenuSheet extends StatelessWidget {
                         );
                       },
                     ),
-                    Divider(height: 1, color: dividerColor),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 7.h),
+            // Group 2: Account & Session Island
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14.r),
+              child: ColoredBox(
+                color: cardBgColor,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     _HomeMenuItem(
-                      label: 'Account settings',
+                      label: 'Settings',
                       icon: Icons.settings_outlined,
                       onTap: () {
                         Navigator.of(context).pop();
@@ -1536,10 +1560,11 @@ class _HomeMenuSheet extends StatelessWidget {
                         );
                       },
                     ),
+                    Divider(height: 1, thickness: 0.5, indent: 14.w, color: dividerColor),
                     _HomeMenuItem(
                       label: 'Logout',
-                      icon: Icons.logout_rounded,
-                      color: const Color(0xFFE53935),
+                      icon: Icons.logout_outlined,
+                      color: const Color(0xFFED4956),
                       onTap: () async {
                         Navigator.of(context).pop();
                         await onLogout();
@@ -1556,7 +1581,7 @@ class _HomeMenuSheet extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: footerColor,
-                  fontSize: 11.5.sp,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w400,
                 ),
                 children: const [
@@ -1583,44 +1608,44 @@ class _HomeMenuItem extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
-    this.color = const Color(0xFF1C1E21),
+    this.color,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final resolvedColor = color == const Color(0xFF1C1E21)
-        ? (isDark ? Colors.white : const Color(0xFF1C1E21))
-        : color;
+    final resolvedColor = color ?? (isDark ? Colors.white : const Color(0xFF111827));
 
-    return InkWell(
-      onTap: onTap,
-      splashColor: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFE5E7EB),
-      highlightColor: isDark ? const Color(0xFF2F3031) : const Color(0xFFF3F4F6),
-      child: Container(
-        constraints: BoxConstraints(minHeight: 46.h),
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Rounded',
-                  color: resolvedColor,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.1,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE5E5EA),
+        highlightColor: isDark ? const Color(0xFF242426) : const Color(0xFFF2F2F7),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: resolvedColor,
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
-            ),
-            Icon(icon, color: resolvedColor, size: 20.r),
-          ],
+              Icon(icon, color: resolvedColor, size: 18.5.r),
+            ],
+          ),
         ),
       ),
     );

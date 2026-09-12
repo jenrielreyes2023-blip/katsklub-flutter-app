@@ -338,8 +338,11 @@ class _FeedScreenState extends State<FeedScreen>
       final page =
           await _feedService.loadFeed(offset: offset, limit: _pageSize);
       loadedPosts = _mergePosts(loadedPosts, page.posts);
-      offset = page.offset + page.posts.length;
-      hasMore = page.hasMore;
+      final advanced = offset + page.posts.length;
+      offset = (page.offset > offset)
+          ? (page.offset + page.posts.length)
+          : advanced;
+      hasMore = page.hasMore && page.posts.length >= _pageSize;
 
       if (!hasMore || page.posts.isEmpty) {
         break;
@@ -371,8 +374,11 @@ class _FeedScreenState extends State<FeedScreen>
       setState(() {
         final mergedPosts = _mergePosts(_posts, page.posts);
         _posts = mergedPosts;
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        final advanced = _nextOffset + page.posts.length;
+        _nextOffset = (page.offset > _nextOffset)
+            ? (page.offset + page.posts.length)
+            : advanced;
+        _hasMore = page.hasMore && page.posts.length >= _pageSize;
         _isLoadingMore = false;
       });
     } catch (e, stack) {

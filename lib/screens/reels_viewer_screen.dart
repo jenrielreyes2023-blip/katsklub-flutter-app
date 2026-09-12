@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -54,6 +55,7 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable().catchError((_) {});
     final playlist = _initialPlaylist();
     _reels = playlist;
     _currentIndex = _initialIndex(playlist);
@@ -68,6 +70,7 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable().catchError((_) {});
     _pageController.dispose();
     super.dispose();
   }
@@ -88,8 +91,8 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
       setState(() {
         _reels = mergedReels;
         _currentIndex = 0;
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        _nextOffset = page.posts.length;
+        _hasMore = page.hasMore && page.posts.length >= _pageSize;
         _isLoading = false;
       });
 
@@ -126,8 +129,11 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
 
       setState(() {
         _reels = _mergeReels(_reels, page.posts);
-        _nextOffset = page.offset + page.posts.length;
-        _hasMore = page.hasMore;
+        final advanced = _nextOffset + page.posts.length;
+        _nextOffset = (page.offset > _nextOffset)
+            ? (page.offset + page.posts.length)
+            : advanced;
+        _hasMore = page.hasMore && page.posts.length >= _pageSize;
         _isLoading = false;
       });
     } catch (_) {

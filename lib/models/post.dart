@@ -648,7 +648,7 @@ class Post {
     }
 
     final videoId = youtubeVideoId.trim();
-    final customTitle = videoTitle.trim().isNotEmpty ? videoTitle.trim() : 'YouTube video';
+    final customTitle = videoTitle.trim();
     return LinkPreview(
       url: 'https://www.youtube.com/watch?v=$videoId',
       title: customTitle,

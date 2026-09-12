@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 
@@ -123,6 +124,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable().catchError((_) {});
     _startPlayback();
   }
 
@@ -384,6 +386,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   void dispose() {
     _cleanPlayerTimer?.cancel();
     _disposeControllers();
+    WakelockPlus.disable().catchError((_) {});
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }

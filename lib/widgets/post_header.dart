@@ -427,6 +427,10 @@ class PostActionItem {
     required this.onTap,
     this.subtitle,
     this.isDestructive = false,
+    this.badgeText,
+    this.badgeColor,
+    this.trailing,
+    this.isHero = false,
   });
 
   final IconData icon;
@@ -434,41 +438,95 @@ class PostActionItem {
   final String? subtitle;
   final Future<void> Function() onTap;
   final bool isDestructive;
+  final String? badgeText;
+  final Color? badgeColor;
+  final Widget? trailing;
+  final bool isHero;
+}
+
+class PostActionGroup {
+  const PostActionGroup({
+    required this.actions,
+    this.title,
+  });
+
+  final List<PostActionItem> actions;
+  final String? title;
 }
 
 class PostOptionsSheet extends StatelessWidget {
   const PostOptionsSheet({
-    required this.actions,
+    this.actions,
+    this.groups,
     super.key,
-  });
+  }) : assert(actions != null || groups != null, 'Provide either actions or groups');
 
-  final List<PostActionItem> actions;
+  final List<PostActionItem>? actions;
+  final List<PostActionGroup>? groups;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBgColor = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final cardBgColor = isDark ? const Color(0xFF1E1E20) : Colors.white;
+
+    final effectiveGroups = groups ?? [PostActionGroup(actions: actions ?? [])];
 
     return SmoothSheetContainer(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: ColoredBox(
-          color: cardBgColor,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < actions.length; index++) ...[
-                PostOptionsRow(action: actions[index]),
-                if (index != actions.length - 1)
-                  Divider(
-                    height: 1,
-                    color: isDark
-                        ? const Color(0xFF3E4042)
-                        : const Color(0xFFE5E7EB),
+      maxHeightFraction: 0.90,
+      backgroundColor: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+      padding: EdgeInsets.fromLTRB(12.w, 4.h, 12.w, 14.h),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var g = 0; g < effectiveGroups.length; g++) ...[
+              if (effectiveGroups[g].title != null &&
+                  effectiveGroups[g].title!.isNotEmpty) ...[
+                Padding(
+                  padding: EdgeInsets.only(left: 4.w, bottom: 5.h),
+                  child: Text(
+                    effectiveGroups[g].title!,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? const Color(0xFF8E8E93)
+                          : const Color(0xFF6B7280),
+                      letterSpacing: 0.1,
+                    ),
                   ),
+                ),
               ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14.r),
+                child: ColoredBox(
+                  color: cardBgColor,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0;
+                          i < effectiveGroups[g].actions.length;
+                          i++) ...[
+                        PostOptionsRow(action: effectiveGroups[g].actions[i]),
+                        if (i != effectiveGroups[g].actions.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            indent: 14.w,
+                            color: isDark
+                                ? const Color(0xFF2C2C2E)
+                                : const Color(0xFFE5E5EA),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (g != effectiveGroups.length - 1) SizedBox(height: 7.h),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -485,54 +543,107 @@ class PostOptionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = action.isDestructive
-        ? const Color(0xFFDC2626)
-        : Theme.of(context).colorScheme.onSurface;
+        ? const Color(0xFFED4956)
+        : (isDark ? Colors.white : const Color(0xFF111827));
+    final iconColor = action.isDestructive
+        ? const Color(0xFFED4956)
+        : (isDark ? Colors.white : const Color(0xFF1C1C1E));
 
-    return InkWell(
-      onTap: () async {
-        Navigator.of(context).pop();
-        await action.onTap();
-      },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(action.icon, color: color, size: 20.r),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    action.label,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                      letterSpacing: -0.1,
+    final verticalPadding = action.subtitle != null ? 9.h : 8.5.h;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          Navigator.of(context).pop();
+          await action.onTap();
+        },
+        splashColor:
+            isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE5E5EA),
+        highlightColor:
+            isDark ? const Color(0xFF242426) : const Color(0xFFF2F2F7),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: verticalPadding),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            action.label,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: color,
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                        ),
+                        if (action.badgeText != null &&
+                            action.badgeText!.isNotEmpty) ...[
+                          SizedBox(width: 6.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5.w, vertical: 1.5.h),
+                            decoration: BoxDecoration(
+                              color: action.badgeColor ??
+                                  const Color(0xFF0095F6),
+                              borderRadius: BorderRadius.circular(999.r),
+                            ),
+                            child: Text(
+                              action.badgeText!,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white,
+                                fontSize: 8.5.sp,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
-                  if (action.subtitle != null) ...[
-                    SizedBox(height: 2.h),
-                    Text(
-                      action.subtitle!,
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFFB0B3B8)
-                            : const Color(0xFF65676B),
-                        fontSize: 10.5.sp,
-                        height: 1.3,
+                    if (action.subtitle != null &&
+                        action.subtitle!.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
+                      Text(
+                        action.subtitle!,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: isDark
+                              ? const Color(0xFF8E8E93)
+                              : const Color(0xFF8E8E93),
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                          height: 1.2,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: 10.w),
+              if (action.trailing != null)
+                action.trailing!
+              else
+                Icon(
+                  action.icon,
+                  color: iconColor,
+                  size: 18.5.r,
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -1224,12 +1224,22 @@ class FeedService {
     );
     final posts = _readPosts(data);
 
+    final resolvedOffset = _readInt(data['offset'] ?? data['postsOffset']);
+    final effectiveOffset =
+        (resolvedOffset == 0 && cleanOffset > 0) ? cleanOffset : resolvedOffset;
+    final resolvedLimit = _readInt(data['limit'] ?? data['postsLimit']);
+    final effectiveLimit =
+        resolvedLimit == 0 ? cleanLimit : resolvedLimit;
+    final hasMore =
+        (data['hasMore'] == true || data['postsHasMore'] == true) &&
+            posts.isNotEmpty &&
+            posts.length >= effectiveLimit;
+
     return FeedPageResult(
       posts: posts,
-      offset: _readInt(data['offset']),
-      limit:
-          _readInt(data['limit']) == 0 ? cleanLimit : _readInt(data['limit']),
-      hasMore: data['hasMore'] == true,
+      offset: effectiveOffset,
+      limit: effectiveLimit,
+      hasMore: hasMore,
     );
   }
 
@@ -1251,12 +1261,21 @@ class FeedService {
     );
     final posts = _readPosts(data);
 
+    final resolvedOffset = _readInt(data['offset'] ?? data['reelsOffset']);
+    final effectiveOffset =
+        (resolvedOffset == 0 && cleanOffset > 0) ? cleanOffset : resolvedOffset;
+    final resolvedLimit = _readInt(data['limit'] ?? data['reelsLimit']);
+    final effectiveLimit =
+        resolvedLimit == 0 ? cleanLimit : resolvedLimit;
+    final hasMore = data['hasMore'] == true &&
+        posts.isNotEmpty &&
+        posts.length >= effectiveLimit;
+
     return FeedPageResult(
       posts: posts,
-      offset: _readInt(data['offset']),
-      limit:
-          _readInt(data['limit']) == 0 ? cleanLimit : _readInt(data['limit']),
-      hasMore: data['hasMore'] == true,
+      offset: effectiveOffset,
+      limit: effectiveLimit,
+      hasMore: hasMore,
       totalCount: _readInt(data['totalCount']),
     );
   }
@@ -1287,12 +1306,22 @@ class FeedService {
       await _saveCachedPosts(_cachedDiscoverPostsKey, posts);
     }
 
+    final resolvedOffset = _readInt(data['offset'] ?? data['postsOffset']);
+    final effectiveOffset =
+        (resolvedOffset == 0 && cleanOffset > 0) ? cleanOffset : resolvedOffset;
+    final resolvedLimit = _readInt(data['limit'] ?? data['postsLimit']);
+    final effectiveLimit =
+        resolvedLimit == 0 ? cleanLimit : resolvedLimit;
+    final hasMore =
+        (data['hasMore'] == true || data['postsHasMore'] == true) &&
+            posts.isNotEmpty &&
+            posts.length >= effectiveLimit;
+
     return FeedPageResult(
       posts: posts,
-      offset: _readInt(data['offset']),
-      limit:
-          _readInt(data['limit']) == 0 ? cleanLimit : _readInt(data['limit']),
-      hasMore: data['hasMore'] == true,
+      offset: effectiveOffset,
+      limit: effectiveLimit,
+      hasMore: hasMore,
       totalCount: _readInt(data['totalCount']),
     );
   }
@@ -2565,8 +2594,8 @@ class FeedService {
         .toList();
   }
 
-  Future<List<User>> loadFollowSuggestions() async {
-    final data = await _authenticatedGet('/api/users/suggestions');
+  Future<List<User>> loadFollowSuggestions({int limit = 15}) async {
+    final data = await _authenticatedGet('/api/users/suggestions?limit=$limit');
     final users = data['users'];
     if (users is! List) {
       return const <User>[];
@@ -2705,9 +2734,13 @@ class FeedService {
         await _getJson(ApiConfig.uri('/api/posts'), headers);
 
     final posts = _readPosts(feedData);
-    final offset = _readInt(feedData['offset']);
-    final limit = _readInt(feedData['limit']);
-    final hasMore = feedData['hasMore'] == true;
+    final offset = _readInt(feedData['postsOffset'] ?? feedData['offset']);
+    final limit = _readInt(feedData['postsLimit'] ?? feedData['limit']);
+    final effectiveLimit = limit == 0 ? 20 : limit;
+    final hasMore =
+        (feedData['postsHasMore'] == true || feedData['hasMore'] == true) &&
+            posts.isNotEmpty &&
+            posts.length >= effectiveLimit;
 
     if (posts.isNotEmpty) {
       // fire-and-forget cache save — don't block the return
