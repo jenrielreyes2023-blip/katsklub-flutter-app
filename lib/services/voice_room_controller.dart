@@ -27,6 +27,7 @@ class VoiceRoomController extends ChangeNotifier {
   VoiceRoomGift? _activePlayingGift;
   VoiceRoomUser? _activeGiftSender;
   VoiceRoomUser? _activeGiftReceiver;
+  int _giftPlayToken = 0;
 
   VoiceRoom? get currentRoom => _currentRoom;
   User? get currentUser => _currentUser;
@@ -37,6 +38,7 @@ class VoiceRoomController extends ChangeNotifier {
   bool get isOnMic => isHost || isSeated;
   double get hostSoundLevel => isHost ? (ZegoVoiceService().mySoundLevelNotifier.value) : _hostSoundLevel;
   bool get isHostMuted => isHost ? _isMuted : _isHostMuted;
+  int get giftPlayToken => _giftPlayToken;
   bool get isHost {
     try {
       if (_currentRoom == null || _currentUser == null) return false;
@@ -638,18 +640,20 @@ class VoiceRoomController extends ChangeNotifier {
         final sender = VoiceRoomUser.fromJson(senderMap);
         final receiver = VoiceRoomUser.fromJson(receiverMap);
 
-        _playGiftAnimation(gift, sender, receiver);
-
-        _messages.add(
-          VoiceRoomMessage(
-            id: 'gift-${DateTime.now().millisecondsSinceEpoch}',
-            message: '${sender.fullName} sent ${gift.name} to ${receiver.fullName}!',
-            sender: sender,
-            createdAt: DateTime.now(),
-            isSystem: true,
-          ),
-        );
-        notifyListeners();
+        // If not sent by me, play animation and add to messages (sender already played optimistically)
+        if (_currentUser == null || sender.id.toString() != _currentUser!.id.toString()) {
+          _playGiftAnimation(gift, sender, receiver);
+          _messages.add(
+            VoiceRoomMessage(
+              id: 'gift-${DateTime.now().millisecondsSinceEpoch}',
+              message: '${sender.fullName} sent ${gift.name} to ${receiver.fullName}!',
+              sender: sender,
+              createdAt: DateTime.now(),
+              isSystem: true,
+            ),
+          );
+          notifyListeners();
+        }
       }
     });
 
@@ -730,6 +734,7 @@ class VoiceRoomController extends ChangeNotifier {
   }
 
   void _playGiftAnimation(VoiceRoomGift gift, VoiceRoomUser sender, VoiceRoomUser receiver) {
+    _giftPlayToken++;
     _activePlayingGift = gift;
     _activeGiftSender = sender;
     _activeGiftReceiver = receiver;
@@ -900,22 +905,41 @@ class VoiceRoomController extends ChangeNotifier {
   /// Send virtual gift
   Future<void> sendGift(VoiceRoomGift gift, VoiceRoomUser receiver) async {
     if (_currentRoom == null || _currentUser == null) return;
+
+    final sender = VoiceRoomUser(
+      id: int.tryParse(_currentUser!.id ?? '') ?? 0,
+      username: _currentUser!.username ?? '',
+      fullName: _currentUser!.fullName ?? _currentUser!.username ?? 'User',
+      avatarUrl: _currentUser!.avatarUrl ?? '',
+    );
+
+    // Play immediately on sender's screen for zero-latency instant feedback
+    _playGiftAnimation(gift, sender, receiver);
+
+    // Add local chat notification immediately
+    _messages.add(
+      VoiceRoomMessage(
+        id: 'gift-${DateTime.now().millisecondsSinceEpoch}',
+        message: '${sender.fullName} sent ${gift.name} to ${receiver.fullName}!',
+        sender: sender,
+        createdAt: DateTime.now(),
+        isSystem: true,
+      ),
+    );
+    notifyListeners();
+
     final socket = FeedService.getSocket();
     if (socket != null && socket.connected) {
       socket.emit('voice_room:gift', {
         'roomId': _currentRoom!.id,
-        'sender': {
-          'id': _currentUser!.id,
-          'username': _currentUser!.username,
-          'fullName': _currentUser!.fullName ?? _currentUser!.username,
-          'avatarUrl': _currentUser!.avatarUrl ?? '',
-        },
+        'sender': sender.toJson(),
         'receiver': receiver.toJson(),
         'gift': {
           'id': gift.id,
           'name': gift.name,
           'coins': gift.coins,
           'icon': gift.icon,
+          'emoji': gift.emoji,
           'svgaUrl': gift.svgaUrl,
           'desc': gift.desc,
         },

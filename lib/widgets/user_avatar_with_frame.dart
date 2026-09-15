@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -117,6 +117,8 @@ class UserAvatarWithFrame extends StatelessWidget {
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
         final isSpringFrame = pathLower.contains('spring_blossom_frame');
+        final isBeachFrame =
+            pathLower.contains('beach-frame') || pathLower.contains('beach_frame');
 
         final double frameSize;
         if (isWingFrame) {
@@ -124,6 +126,8 @@ class UserAvatarWithFrame extends StatelessWidget {
         } else if (isTestFrame) {
           frameSize = size * 1.48;
         } else if (isSpringFrame) {
+          frameSize = size * 1.35;
+        } else if (isBeachFrame) {
           frameSize = size * 1.35;
         } else {
           frameSize = size * 1.25;
@@ -259,7 +263,13 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
 
   Future<void> _loadSvga() async {
     try {
-      final videoItem = await SVGAParser.shared.decodeFromAssets(widget.framePath);
+      final byteData = await rootBundle.load(widget.framePath);
+      final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+      final videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+      // Explicitly hide stray or unclipped layers from SVGA
+      videoItem.dynamicItem.setHidden(true, 'shim');
+      videoItem.dynamicItem.setHidden(true, 'glint');
+      videoItem.dynamicItem.setHidden(true, 'spark');
       if (mounted) {
         setState(() {
           _controller?.videoItem = videoItem;
@@ -288,9 +298,11 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
     return SizedBox(
       width: widget.frameSize,
       height: widget.frameSize,
-      child: SVGAImage(
-        _controller!,
-        fit: BoxFit.contain,
+      child: ClipRect(
+        child: SVGAImage(
+          _controller!,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

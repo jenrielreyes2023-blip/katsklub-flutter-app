@@ -312,6 +312,7 @@ class VoiceRoomGift {
   final String name;
   final double coins;
   final String icon;
+  final String emoji;
   final String svgaUrl;
   final String desc;
 
@@ -320,6 +321,7 @@ class VoiceRoomGift {
     required this.name,
     required this.coins,
     required this.icon,
+    this.emoji = '🎁',
     required this.svgaUrl,
     required this.desc,
   });
@@ -330,32 +332,72 @@ class VoiceRoomGift {
       name: 'Red Rose',
       coins: 5.0,
       icon: 'assets/gifts/rocket_icon.png',
-      svgaUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/rocket_audio.svga',
-      desc: 'A lovely rose to show warmth & friendship',
+      emoji: '🌹',
+      svgaUrl: 'assets/gifts/rose.svga',
+      desc: 'Delicate blooming red rose with soft glowing petals',
     ),
     VoiceRoomGift(
       id: 'gift_boba',
-      name: 'Kats Boba Milk Tea',
+      name: 'Kats Boba Tea',
       coins: 20.0,
       icon: 'assets/gifts/rocket_icon.png',
-      svgaUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/rocket.svga',
-      desc: 'Sweet refreshing boba milk tea treat!',
+      emoji: '🧋',
+      svgaUrl: 'assets/gifts/boba.svga',
+      desc: 'Sweet refreshing brown sugar boba milk tea treat!',
+    ),
+    VoiceRoomGift(
+      id: 'gift_heart',
+      name: 'Crystal Heart',
+      coins: 50.0,
+      icon: 'assets/gifts/rocket_icon.png',
+      emoji: '💖',
+      svgaUrl: 'assets/gifts/heartbeat.svga',
+      desc: 'Luminous romantic beating heart with sparkling diamond glow',
+    ),
+    VoiceRoomGift(
+      id: 'gift_crown',
+      name: 'Royal Crown',
+      coins: 100.0,
+      icon: 'assets/gifts/fireworks_icon.png',
+      emoji: '👑',
+      svgaUrl: 'assets/gifts/kingset.svga',
+      desc: 'Exquisite king crown jewelry with royal golden aura',
     ),
     VoiceRoomGift(
       id: 'gift_fireworks',
       name: 'Fireworks Festival',
-      coins: 100.0,
+      coins: 250.0,
       icon: 'assets/gifts/fireworks_icon.png',
-      svgaUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/fireworks_audio.svga',
-      desc: 'Sky lit up with grand fireworks & sound!',
+      emoji: '🎆',
+      svgaUrl: 'assets/gifts/halloween.svga',
+      desc: 'Sky lit up with grand celebratory fireworks display!',
     ),
     VoiceRoomGift(
       id: 'gift_rocket',
-      name: 'Cosmic Space Rocket',
+      name: 'Cosmic Rocket',
       coins: 500.0,
       icon: 'assets/gifts/rocket_icon.png',
-      svgaUrl: 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_gifts/rocket_audio.svga',
-      desc: 'Launch a supersonic space rocket across the room!',
+      emoji: '🚀',
+      svgaUrl: 'assets/gifts/rocket.svga',
+      desc: 'Launch a supersonic space rocket blasting across the room!',
+    ),
+    VoiceRoomGift(
+      id: 'gift_super_car',
+      name: 'Porsche Supercar',
+      coins: 1000.0,
+      icon: 'assets/gifts/rocket_icon.png',
+      emoji: '🏎️',
+      svgaUrl: 'assets/gifts/posche.svga',
+      desc: 'Luxury racing supercar speeding with dynamic roar',
+    ),
+    VoiceRoomGift(
+      id: 'gift_galaxy',
+      name: 'Celestial Galaxy',
+      coins: 2500.0,
+      icon: 'assets/gifts/fireworks_icon.png',
+      emoji: '🌌',
+      svgaUrl: 'assets/gifts/galaxy.svga',
+      desc: 'Breathtaking celestial galaxy with glowing stellar aura',
     ),
   ];
 }

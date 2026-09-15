@@ -254,124 +254,188 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
             ),
           ),
 
-          SizedBox(height: 16.h),
+          SizedBox(height: 14.h),
 
-          // Gift Grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: VoiceRoomGift.availableGifts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 2.2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemBuilder: (context, index) {
-              final gift = VoiceRoomGift.availableGifts[index];
-              final isSelected = gift.id == _selectedGift.id;
+          // Gift Grid (4 columns x 2 rows, compact & elegant)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: 210.h),
+            child: GridView.builder(
+              shrinkWrap: true,
+              itemCount: VoiceRoomGift.availableGifts.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 0.82,
+                crossAxisSpacing: 8.w,
+                mainAxisSpacing: 8.h,
+              ),
+              itemBuilder: (context, index) {
+                final gift = VoiceRoomGift.availableGifts[index];
+                final isSelected = gift.id == _selectedGift.id;
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedGift = gift;
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFFFF7A45).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedGift = gift;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFFFF7A45)
-                          : Colors.white.withValues(alpha: 0.08),
-                      width: isSelected ? 1.5 : 1.0,
+                          ? const Color(0xFFFF7A45).withValues(alpha: 0.18)
+                          : Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFFF7A45)
+                            : Colors.white.withValues(alpha: 0.07),
+                        width: isSelected ? 1.8 : 1.0,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                              ),
+                            ]
+                          : null,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38.w,
-                        height: 38.w,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected
-                              ? const Color(0xFFFF7A45).withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.08),
-                        ),
-                        child: Center(
-                          child: CustomIcons.giftBox(
-                            color: isSelected ? const Color(0xFFFF7A45) : Colors.white70,
-                            size: 18,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Gift Icon / Emoji Display
+                        Container(
+                          width: 40.r,
+                          height: 40.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: isSelected
+                                  ? [const Color(0xFFFF7A45).withValues(alpha: 0.4), const Color(0x22FF7A45)]
+                                  : [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.02)],
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              gift.emoji,
+                              style: TextStyle(fontSize: 22.sp),
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(height: 5.h),
+                        Text(
+                          gift.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                            fontSize: 10.5.sp,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            CustomIcons.coinToken(color: const Color(0xFFFFB800), size: 10),
+                            SizedBox(width: 3.w),
                             Text(
-                              gift.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              gift.coins.toStringAsFixed(0),
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFFFFB800),
+                                fontSize: 10.5.sp,
+                                fontWeight: FontWeight.w700,
                               ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Row(
-                              children: [
-                                CustomIcons.coinToken(color: const Color(0xFFFFB800), size: 10),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  '${gift.coins.toStringAsFixed(0)} KC',
-                                  style: TextStyle(
-                                    color: const Color(0xFFFFB800),
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
 
-          SizedBox(height: 18.h),
+          SizedBox(height: 10.h),
 
-          // Send Button
-          SizedBox(
+          // Gift Description Info Pill
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  _selectedGift.emoji,
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    _selectedGift.desc,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 11.sp,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 14.h),
+
+          // Send Button with Sunset Gradient
+          Container(
             width: double.infinity,
             height: 44.h,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF7A59), Color(0xFFFF5252)],
+              ),
+              borderRadius: BorderRadius.circular(22.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF7A59).withValues(alpha: 0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: ElevatedButton(
               onPressed: _sendGift,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A45),
+                backgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(22.r),
                 ),
-                elevation: 0,
               ),
-              child: Text(
-                'Send ${_selectedGift.name} (${_selectedGift.coins.toStringAsFixed(0)} KC)',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CustomIcons.giftBox(color: Colors.white, size: 16),
+                  SizedBox(width: 6.w),
+                  Text(
+                    'Send ${_selectedGift.name} (${_selectedGift.coins.toStringAsFixed(0)} KC)',
+                    style: TextStyle(
+                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

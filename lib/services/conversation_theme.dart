@@ -15,6 +15,7 @@ class ConversationTheme {
     required this.otherBubbleText,
     required this.accent,
     this.ownBubbleGradient,
+    this.isCustomAsset = false,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class ConversationTheme {
   final Color otherBubbleText;
   final Color accent;
   final List<Color>? ownBubbleGradient;
+  final bool isCustomAsset;
 
   static const ConversationTheme classic = ConversationTheme(
     id: 'classic',
@@ -33,91 +35,104 @@ class ConversationTheme {
     background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF111827),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF111827),
-    accent: Color(0xFF111827),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
   );
 
   static const ConversationTheme ocean = ConversationTheme(
     id: 'ocean',
     label: 'Ocean',
-    background: Color(0xFFEAF4FF),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF2563EB),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF0F172A),
-    accent: Color(0xFF2563EB),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
   );
 
   static const ConversationTheme sunset = ConversationTheme(
     id: 'sunset',
     label: 'Sunset',
-    background: Color(0xFFFFF4EC),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFFF97316),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF3F2210),
-    accent: Color(0xFFF97316),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFFFB7185), Color(0xFFF97316)],
   );
 
   static const ConversationTheme bubbleDream = ConversationTheme(
     id: 'bubble_dream',
     label: 'Bubble Dream',
-    background: Color(0xFFF5F3FF),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF8B5CF6),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF4C1D95),
-    accent: Color(0xFF8B5CF6),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+  );
+
+  static const ConversationTheme sagittarius = ConversationTheme(
+    id: 'sagittarius',
+    label: 'Sagittarius Celestial',
+    background: Color(0xFFF7F8FA),
+    ownBubble: Color(0xFFFBBF24),
+    ownBubbleText: Color(0xFF381E00),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
+    ownBubbleGradient: [Color(0xFFFDE047), Color(0xFFF59E0B)],
+    isCustomAsset: true,
   );
 
   static const ConversationTheme emerald = ConversationTheme(
     id: 'emerald',
     label: 'Emerald',
-    background: Color(0xFFF0FDF4),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF10B981),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF064E3B),
-    accent: Color(0xFF10B981),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFF34D399), Color(0xFF059669)],
   );
 
   static const ConversationTheme crimson = ConversationTheme(
     id: 'crimson',
     label: 'Crimson',
-    background: Color(0xFFFFF1F2),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFFE11D48),
     ownBubbleText: Colors.white,
-    otherBubble: Colors.white,
-    otherBubbleText: Color(0xFF881337),
-    accent: Color(0xFFE11D48),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFFFB7185), Color(0xFFE11D48)],
   );
 
   static const ConversationTheme cyberpunk = ConversationTheme(
     id: 'cyberpunk',
     label: 'Cyberpunk',
-    background: Color(0xFF0D0221),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF00F0FF),
     ownBubbleText: Color(0xFF0D0221),
-    otherBubble: Color(0xFF261447),
-    otherBubbleText: Color(0xFFFF007F),
-    accent: Color(0xFF00F0FF),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFF00F0FF), Color(0xFFFF007F)],
   );
 
   static const ConversationTheme midnight = ConversationTheme(
     id: 'midnight',
     label: 'Midnight',
-    background: Color(0xFF0F172A),
+    background: Color(0xFFF7F8FA),
     ownBubble: Color(0xFF6366F1),
     ownBubbleText: Colors.white,
-    otherBubble: Color(0xFF1E293B),
-    otherBubbleText: Color(0xFFE2E8F0),
-    accent: Color(0xFF6366F1),
+    otherBubble: Color(0xFFE4E6EB),
+    otherBubbleText: Color(0xFF1C1E21),
+    accent: Color(0xFFFF7A59),
     ownBubbleGradient: [Color(0xFF818CF8), Color(0xFF4F46E5)],
   );
 
@@ -128,94 +143,107 @@ class ConversationTheme {
         return const ConversationTheme(
           id: 'classic',
           label: 'Classic',
-          background: Color(0xFF0F0F10),
-          ownBubble: Color(0xFFFF7A45),
+          background: Color(0xFF18191A),
+          ownBubble: Color(0xFFFF7A59),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFFFF7A45),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
         );
       case 'ocean':
         return const ConversationTheme(
           id: 'ocean',
           label: 'Ocean',
-          background: Color(0xFF0F0F10),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFF3B82F6),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFF3B82F6),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
         );
       case 'sunset':
         return const ConversationTheme(
           id: 'sunset',
           label: 'Sunset',
-          background: Color(0xFF0F0F10),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFFF97316),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFFF97316),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFFFB7185), Color(0xFFF97316)],
         );
       case 'bubble_dream':
         return const ConversationTheme(
           id: 'bubble_dream',
           label: 'Bubble Dream',
-          background: Color(0xFF0F0F10),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFF8B5CF6),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFF8B5CF6),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+        );
+      case 'sagittarius':
+        return const ConversationTheme(
+          id: 'sagittarius',
+          label: 'Sagittarius Celestial',
+          background: Color(0xFF18191A),
+          ownBubble: Color(0xFFFBBF24),
+          ownBubbleText: Color(0xFF381E00),
+          otherBubble: Color(0xFF242526),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
+          ownBubbleGradient: [Color(0xFFFDE047), Color(0xFFF59E0B)],
+          isCustomAsset: true,
         );
       case 'emerald':
         return const ConversationTheme(
           id: 'emerald',
           label: 'Emerald',
-          background: Color(0xFF0F0F10),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFF10B981),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFF10B981),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFF34D399), Color(0xFF059669)],
         );
       case 'crimson':
         return const ConversationTheme(
           id: 'crimson',
           label: 'Crimson',
-          background: Color(0xFF0F0F10),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFFE11D48),
           ownBubbleText: Colors.white,
           otherBubble: Color(0xFF242526),
-          otherBubbleText: Color(0xFFE4E6EB),
-          accent: Color(0xFFE11D48),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFFFB7185), Color(0xFFE11D48)],
         );
       case 'cyberpunk':
         return const ConversationTheme(
           id: 'cyberpunk',
           label: 'Cyberpunk',
-          background: Color(0xFF0D0221),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFF00F0FF),
           ownBubbleText: Color(0xFF0D0221),
-          otherBubble: Color(0xFF261447),
-          otherBubbleText: Color(0xFFFF007F),
-          accent: Color(0xFF00F0FF),
+          otherBubble: Color(0xFF242526),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFF00F0FF), Color(0xFFFF007F)],
         );
       case 'midnight':
         return const ConversationTheme(
           id: 'midnight',
           label: 'Midnight',
-          background: Color(0xFF0F172A),
+          background: Color(0xFF18191A),
           ownBubble: Color(0xFF6366F1),
           ownBubbleText: Colors.white,
-          otherBubble: Color(0xFF1E293B),
-          otherBubbleText: Color(0xFFE2E8F0),
-          accent: Color(0xFF6366F1),
+          otherBubble: Color(0xFF242526),
+          otherBubbleText: Colors.white,
+          accent: Color(0xFFFF7A59),
           ownBubbleGradient: [Color(0xFF818CF8), Color(0xFF4F46E5)],
         );
       default:
@@ -228,6 +256,7 @@ class ConversationTheme {
     ocean,
     sunset,
     bubbleDream,
+    sagittarius,
     emerald,
     crimson,
     cyberpunk,

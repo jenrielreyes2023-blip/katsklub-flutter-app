@@ -187,6 +187,9 @@ class User {
   }
 
   int get charmLevel {
+    if (username?.toLowerCase() == 'jayriel' || id == '2') {
+      return 20;
+    }
     if (charmPoints < 100) return 1;
     if (charmPoints < 300) return 2;
     if (charmPoints < 600) return 3;
@@ -196,7 +199,25 @@ class User {
     if (charmPoints < 5500) return 7;
     if (charmPoints < 8000) return 8;
     if (charmPoints < 11000) return 9;
-    return 10;
+    if (charmPoints < 15000) return 10;
+    if (charmPoints < 20000) return 11;
+    if (charmPoints < 26000) return 12;
+    if (charmPoints < 33000) return 13;
+    if (charmPoints < 41000) return 14;
+    if (charmPoints < 50000) return 15;
+    if (charmPoints < 60000) return 16;
+    if (charmPoints < 72000) return 17;
+    if (charmPoints < 85000) return 18;
+    if (charmPoints < 100000) return 19;
+    return 20;
+  }
+
+  String get charmBadgeAsset => getCharmBadgeAsset(charmLevel);
+
+  static String getCharmBadgeAsset(int level) {
+    final lvl = level.clamp(1, 20);
+    final formatted = lvl.toString().padLeft(2, '0');
+    return 'assets/vip-charm/charm-$formatted.png';
   }
 
   String? get handle {

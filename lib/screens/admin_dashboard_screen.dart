@@ -3090,6 +3090,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return 'elsa';
       case ThemeProductType.bubbleDream:
         return 'bubble_dream';
+      case ThemeProductType.sagittariusBubble:
+        return 'sagittarius';
     }
   }
 

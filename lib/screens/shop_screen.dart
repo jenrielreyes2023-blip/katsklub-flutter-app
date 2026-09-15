@@ -36,6 +36,7 @@ enum ThemeProductType {
   cuteHeart,
   elsa,
   bubbleDream,
+  sagittariusBubble,
 }
 
 const List<ThemeProductData> themeProducts = [
@@ -481,11 +482,11 @@ const List<ThemeProductData> themeProducts = [
   ),
   ThemeProductData(
     type: ThemeProductType.bubbleDream,
-    title: 'Chat Premium - Bubble Dream Theme',
+    title: 'Chat Bubble - Bubble Dream Skin',
     description:
-        'Stylize your direct messages with a soft lavender background and beautiful pink-to-violet gradient bubble chat messages.',
+        'Stylize your direct messages with beautiful pink-to-violet gradient bubble chat messages.',
     successMessage:
-        'The Bubble Dream Chat Theme is now active on your account! Your direct messages will feature the premium gradient chat bubbles.',
+        'The Bubble Dream Chat Bubble Skin is now active on your account! Your direct messages will feature the premium gradient chat bubbles.',
     previewLabel: 'you',
     previewInitial: 'Y',
     assetPath: '',
@@ -495,11 +496,33 @@ const List<ThemeProductData> themeProducts = [
       Color(0xFFF3E8FF),
       Colors.white,
     ],
-    badgeText: 'NEW CHAT THEME',
+    badgeText: 'NEW BUBBLE SKIN',
     badgeGradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     buttonGradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     previewAvatarColor: Color(0xFFF5F3FF),
     previewInitialColor: Color(0xFF8B5CF6),
+  ),
+  ThemeProductData(
+    type: ThemeProductType.sagittariusBubble,
+    title: 'Chat Bubble - Sagittarius Celestial Skin',
+    description:
+        'Transform your direct messages with glowing golden Sagittarius celestial bubbles, animated wing-and-bow ornaments, and radiant crystal details.',
+    successMessage:
+        'The Sagittarius Celestial Chat Bubble Skin is now active on your account! Your direct messages will feature the animated celestial chat bubbles.',
+    previewLabel: 'you',
+    previewInitial: 'Y',
+    assetPath: 'assets/chatbubble/sagittarius_bubble.png',
+    previewGradient: [
+      Color(0xFF161128),
+      Color(0xFF261D3D),
+      Color(0xFF381F66),
+      Colors.white,
+    ],
+    badgeText: 'VIP ANIMATED',
+    badgeGradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
+    buttonGradient: [Color(0xFFF59E0B), Color(0xFFB45309)],
+    previewAvatarColor: Color(0xFFFEF3C7),
+    previewInitialColor: Color(0xFFB45309),
   ),
 ];
 
@@ -558,13 +581,59 @@ class _ShopScreenState extends State<ShopScreen> {
     _loadThemeState();
   }
 
+  void _switchTab(int index) {
+    if (_activeTabIndex == index) return;
+    setState(() {
+      _activeTabIndex = index;
+      if (index == 0) {
+        ThemeProductData? selected;
+        for (final p in _visibleProducts) {
+          if (!_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedPostcardTheme) {
+            selected = p;
+            break;
+          }
+        }
+        _selectedTheme = selected ??
+            _visibleProducts.firstWhere(
+              (p) => !_isBubbleProduct(p.type),
+              orElse: () => _visibleProducts.first,
+            );
+      } else if (index == 1) {
+        ThemeProductData? selected;
+        for (final p in _visibleProducts) {
+          if (_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedBubbleTheme) {
+            selected = p;
+            break;
+          }
+        }
+        _selectedTheme = selected ??
+            _visibleProducts.firstWhere(
+              (p) => _isBubbleProduct(p.type),
+              orElse: () => _visibleProducts.first,
+            );
+      }
+    });
+  }
+
   bool _isGeminiOnly(ThemeProductType type) {
     return type == ThemeProductType.geminiRogerHunter ||
         type == ThemeProductType.geminiRogerWolf;
   }
 
   bool _canApplyTheme(ThemeProductType type) {
-    return !_isGeminiOnly(type) || _currentUsername == 'gemini';
+    final isJayrielOrAdmin = _currentUsername == 'jayriel' ||
+        _currentUser?.id == '2' ||
+        (_currentUser?.isAdmin ?? false);
+    if (isJayrielOrAdmin) {
+      return true;
+    }
+    if (_isGeminiOnly(type)) {
+      return _currentUsername == 'gemini';
+    }
+    if (_isBubbleProduct(type)) {
+      return false; // Locked for regular users in shop
+    }
+    return true;
   }
 
   String _themeKeyFor(ThemeProductType type) {
@@ -611,11 +680,18 @@ class _ShopScreenState extends State<ShopScreen> {
         return 'elsa';
       case ThemeProductType.bubbleDream:
         return 'bubble_dream';
+      case ThemeProductType.sagittariusBubble:
+        return 'sagittarius';
     }
   }
 
+  bool _isBubbleProduct(ThemeProductType type) {
+    return type == ThemeProductType.bubbleDream ||
+        type == ThemeProductType.sagittariusBubble;
+  }
+
   bool _isApplied(ThemeProductType type) {
-    if (type == ThemeProductType.bubbleDream) {
+    if (_isBubbleProduct(type)) {
       return _appliedBubbleTheme == _themeKeyFor(type);
     }
     return _appliedPostcardTheme == _themeKeyFor(type);
@@ -657,7 +733,7 @@ class _ShopScreenState extends State<ShopScreen> {
       _currentUsername = (user?.username ?? '').trim().toLowerCase();
       _visibleProducts = visible;
 
-      final prefs = SharedPreferences.getInstance().then((p) {
+      SharedPreferences.getInstance().then((p) {
         final saved = p.getString('admin_equipped_frame');
         if (mounted && saved != null) {
           setState(() {
@@ -670,7 +746,7 @@ class _ShopScreenState extends State<ShopScreen> {
       ThemeProductData? selected;
       if (_appliedPostcardTheme.isNotEmpty) {
         for (final p in visible) {
-          if (p.type != ThemeProductType.bubbleDream && _themeKeyFor(p.type) == _appliedPostcardTheme) {
+          if (!_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedPostcardTheme) {
             selected = p;
             break;
           }
@@ -678,7 +754,7 @@ class _ShopScreenState extends State<ShopScreen> {
       }
       if (selected == null && _appliedBubbleTheme.isNotEmpty) {
         for (final p in visible) {
-          if (p.type == ThemeProductType.bubbleDream && _themeKeyFor(p.type) == _appliedBubbleTheme) {
+          if (_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedBubbleTheme) {
             selected = p;
             break;
           }
@@ -697,7 +773,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _setApplied(ThemeProductType type, bool applied) async {
-    if (type == ThemeProductType.bubbleDream) {
+    if (_isBubbleProduct(type)) {
       final themeVal = applied ? _themeKeyFor(type) : '';
       final updatedUser = await _feedService.updateCurrentUserBubbleTheme(themeVal);
       await ConversationThemeStore.setGlobalBubbleTheme(themeVal);
@@ -916,7 +992,7 @@ class _ShopScreenState extends State<ShopScreen> {
       );
     }
 
-    if (selected.type == ThemeProductType.bubbleDream) {
+    if (_isBubbleProduct(selected.type)) {
       return _buildChatPreviewCard(selected);
     }
 
@@ -1180,11 +1256,19 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildChatPreviewCard(ThemeProductData selected) {
+    final isSagittarius = selected.type == ThemeProductType.sagittariusBubble;
+
+    final bgColor = isSagittarius ? const Color(0xFF161128) : const Color(0xFFF5F3FF);
+    final headerBg = isSagittarius ? const Color(0xFF211938) : Colors.white.withOpacity(0.95);
+    final headerTextColor = isSagittarius ? Colors.white : const Color(0xFF111827);
+    final headerBorderColor = isSagittarius ? const Color(0xFF322554) : Colors.grey.shade100;
+    final accentColor = isSagittarius ? const Color(0xFFF59E0B) : const Color(0xFF8B5CF6);
+
     return Container(
       width: double.infinity,
       height: 240,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F3FF),
+        color: bgColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -1199,27 +1283,38 @@ class _ShopScreenState extends State<ShopScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+              color: headerBg,
+              border: Border(bottom: BorderSide(color: headerBorderColor)),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 14,
-                  backgroundColor: Colors.purple.shade100,
-                  child: const Text('G', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.purple)),
+                  backgroundColor: isSagittarius ? const Color(0xFFFEF3C7) : Colors.purple.shade100,
+                  child: Text(
+                    'G',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSagittarius ? const Color(0xFFB45309) : Colors.purple,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Gemini',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: headerTextColor,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.more_horiz, size: 18, color: Colors.grey),
+                Icon(
+                  Icons.more_horiz,
+                  size: 18,
+                  color: isSagittarius ? Colors.white54 : Colors.grey,
+                ),
               ],
             ),
           ),
@@ -1235,9 +1330,13 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isSagittarius ? const Color(0xFF261D3D) : Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.purple.shade50),
+                        border: Border.all(
+                          color: isSagittarius
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+                              : Colors.purple.shade50,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.02),
@@ -1246,10 +1345,12 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ],
                       ),
-                      child: const Text(
-                        'Hi! How is the new chat bubble theme? 💬',
+                      child: Text(
+                        isSagittarius
+                            ? 'Sagittarius Celestial Theme equipped! 🏹✨'
+                            : 'Hi! How is the new chat bubble theme? 💬',
                         style: TextStyle(
-                          color: Color(0xFF4C1D95),
+                          color: isSagittarius ? const Color(0xFFFDE68A) : const Color(0xFF4C1D95),
                           fontSize: 12,
                         ),
                       ),
@@ -1258,32 +1359,80 @@ class _ShopScreenState extends State<ShopScreen> {
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
+                    child: isSagittarius
+                        ? Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: const BoxDecoration(
+                                  image: DecorationImage(
+                                    image: AssetImage('assets/chatbubble/sagittarius_bubble.png'),
+                                    centerSlice: Rect.fromLTRB(35, 25, 225, 55),
+                                    fit: BoxFit.fill,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Super glowing and celestial! 🪐✨',
+                                  style: TextStyle(
+                                    color: Color(0xFF381E00),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: -14,
+                                right: -12,
+                                child: IgnorePointer(
+                                  child: Image.asset(
+                                    'assets/chatbubble/sagittarius_top_right.webp',
+                                    width: 36,
+                                    height: 36,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: -10,
+                                left: -10,
+                                child: IgnorePointer(
+                                  child: Image.asset(
+                                    'assets/chatbubble/sagittarius_bottom_left.webp',
+                                    width: 28,
+                                    height: 28,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              'Looks super premium and aesthetic! 😍',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: const Text(
-                        'Looks super premium and aesthetic! 😍',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -1291,26 +1440,29 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: Colors.white,
+            color: isSagittarius ? const Color(0xFF211938) : Colors.white,
             child: Row(
               children: [
                 Expanded(
                   child: Container(
                     height: 32,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: isSagittarius ? const Color(0xFF161128) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Type a message...',
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                      style: TextStyle(
+                        color: isSagittarius ? Colors.white38 : Colors.grey.shade400,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.send, color: Color(0xFF8B5CF6), size: 18),
+                Icon(Icons.send, color: accentColor, size: 18),
               ],
             ),
           ),
@@ -1666,6 +1818,21 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option 0.5: Tropical Beach SVGA Frame (beach-frame.svga)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Tropical Beach SVGA Frame',
+            description: 'Exclusive 30FPS animated summer beach & ocean SVGA frame.',
+            framePath: 'assets/frames/beach-frame.svga',
+            badgeText: 'SVGA BEACH',
+            badgeGradient: const [Color(0xFF06B6D4), Color(0xFFF59E0B)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/beach-frame.svga',
+            onEquip: () => _equipAdminFrame('assets/frames/beach-frame.svga', 'Tropical Beach SVGA Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Tropical Beach SVGA Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 1: Golden Admin Frame (bframe.png)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
@@ -1853,7 +2020,7 @@ class _ShopScreenState extends State<ShopScreen> {
           bottom: false,
           child: Column(
             children: [
-              // Segmented Tab Selector
+              // Segmented Tab Selector (3 Tabs)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Container(
@@ -1866,9 +2033,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   child: Row(
                     children: [
+                      // Tab 0: Postcards
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _activeTabIndex = 0),
+                          onTap: () => _switchTab(0),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             decoration: BoxDecoration(
@@ -1879,21 +2047,22 @@ class _ShopScreenState extends State<ShopScreen> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              'Available Themes',
+                              'Postcards',
                               style: TextStyle(
                                 color: _activeTabIndex == 0
                                     ? Colors.white
                                     : const Color(0xFF4B5563),
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                         ),
                       ),
+                      // Tab 1: Chat Bubbles
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _activeTabIndex = 1),
+                          onTap: () => _switchTab(1),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             decoration: BoxDecoration(
@@ -1907,34 +2076,34 @@ class _ShopScreenState extends State<ShopScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Owned Items',
+                                  'Chat Bubbles',
                                   style: TextStyle(
                                     color: _activeTabIndex == 1
                                         ? Colors.white
                                         : const Color(0xFF4B5563),
-                                    fontSize: 13,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 2,
+                                    horizontal: 5,
+                                    vertical: 1.5,
                                   ),
                                   decoration: BoxDecoration(
                                     color: _activeTabIndex == 1
                                         ? Colors.white.withOpacity(0.3)
                                         : const Color(0xFFE5E7EB),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    (_currentUser?.isAdmin ?? false) ? '5' : '0',
+                                    'VIP',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
-                                          : const Color(0xFF374151),
-                                      fontSize: 11,
+                                          : const Color(0xFFD97706),
+                                      fontSize: 9.5,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -1944,12 +2113,38 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ),
                       ),
+                      // Tab 2: Owned Items
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _switchTab(2),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 2
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Owned',
+                              style: TextStyle(
+                                color: _activeTabIndex == 2
+                                    ? Colors.white
+                                    : const Color(0xFF4B5563),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
 
-              // Tab 0: Themes (Live Preview + Available Themes List)
+              // Tab 0: Postcards
               if (_activeTabIndex == 0) ...[
                 // Live Preview Section
                 Padding(
@@ -1958,7 +2153,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Live Interactive Preview',
+                        'Live Postcard Preview',
                         style: TextStyle(
                           color: Color(0xFF111827),
                           fontSize: 15,
@@ -1972,35 +2167,42 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
 
-                // Themes List Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Available Themes',
-                        style: TextStyle(
-                          color: Color(0xFF111827),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
+                // Postcards List Header
+                Builder(
+                  builder: (context) {
+                    final postcards = _visibleProducts
+                        .where((p) => !_isBubbleProduct(p.type))
+                        .toList();
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Available Postcards',
+                            style: TextStyle(
+                              color: Color(0xFF111827),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${postcards.length} postcards',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      Text(
-                        '${_visibleProducts.length} themes',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
 
-                // Themes List
+                // Postcards List
                 Expanded(
                   child: _isThemeStateLoading
                       ? const Center(
@@ -2008,30 +2210,131 @@ class _ShopScreenState extends State<ShopScreen> {
                             color: Color(0xFFA855F7),
                           ),
                         )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          itemCount: _visibleProducts.length,
-                          itemBuilder: (context, index) {
-                            final theme = _visibleProducts[index];
-                            final isSelected =
-                                _selectedTheme?.type == theme.type;
-                            return _ThemeListItem(
-                              theme: theme,
-                              isSelected: isSelected,
-                              isApplied: _isApplied(theme.type),
-                              isLocked: !_canApplyTheme(theme.type),
-                              onTap: () => _onSelectTheme(theme),
+                      : Builder(
+                          builder: (context) {
+                            final postcards = _visibleProducts
+                                .where((p) => !_isBubbleProduct(p.type))
+                                .toList();
+                            return ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              itemCount: postcards.length,
+                              itemBuilder: (context, index) {
+                                final theme = postcards[index];
+                                final isSelected =
+                                    _selectedTheme?.type == theme.type;
+                                return _ThemeListItem(
+                                  theme: theme,
+                                  isSelected: isSelected,
+                                  isApplied: _isApplied(theme.type),
+                                  isLocked: !_canApplyTheme(theme.type),
+                                  onTap: () => _onSelectTheme(theme),
+                                );
+                              },
                             );
                           },
                         ),
                 ),
 
                 // Bottom Action Bar
-                if (_selectedTheme != null)
+                if (_selectedTheme != null && !_isBubbleProduct(_selectedTheme!.type))
+                  _buildBottomActionBar(context, _selectedTheme!),
+              ] else if (_activeTabIndex == 1) ...[
+                // Tab 1: Chat Bubbles
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Live Chat Bubble Preview',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildLivePreviewCard(_selectedTheme),
+                    ],
+                  ),
+                ),
+
+                // Bubbles List Header
+                Builder(
+                  builder: (context) {
+                    final bubbles = _visibleProducts
+                        .where((p) => _isBubbleProduct(p.type))
+                        .toList();
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Chat Bubble Skins',
+                            style: TextStyle(
+                              color: Color(0xFF111827),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${bubbles.length} skins',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Bubbles List
+                Expanded(
+                  child: _isThemeStateLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFA855F7),
+                          ),
+                        )
+                      : Builder(
+                          builder: (context) {
+                            final bubbles = _visibleProducts
+                                .where((p) => _isBubbleProduct(p.type))
+                                .toList();
+                            return ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              itemCount: bubbles.length,
+                              itemBuilder: (context, index) {
+                                final theme = bubbles[index];
+                                final isSelected =
+                                    _selectedTheme?.type == theme.type;
+                                return _ThemeListItem(
+                                  theme: theme,
+                                  isSelected: isSelected,
+                                  isApplied: _isApplied(theme.type),
+                                  isLocked: !_canApplyTheme(theme.type),
+                                  onTap: () => _onSelectTheme(theme),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+
+                // Bottom Action Bar
+                if (_selectedTheme != null && _isBubbleProduct(_selectedTheme!.type))
                   _buildBottomActionBar(context, _selectedTheme!),
               ] else ...[
-                // Tab 1: Owned Items
+                // Tab 2: Owned Items / Frames
                 Expanded(
                   child: _buildOwnedItemsTab(),
                 ),

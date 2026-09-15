@@ -47,7 +47,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   final TextEditingController _chatTextController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   SVGAAnimationController? _svgaController;
-  String? _currentlyPlayingSvgaUrl;
+  int _lastHandledGiftToken = -1;
 
   @override
   void initState() {
@@ -82,14 +82,13 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
       });
     }
 
-    // Play SVGA Gift animation if active
+    // Play SVGA Gift animation whenever a new gift token is emitted
     final activeGift = controller.activePlayingGift;
     if (activeGift != null && activeGift.svgaUrl.isNotEmpty) {
-      if (_currentlyPlayingSvgaUrl != activeGift.svgaUrl) {
+      if (_lastHandledGiftToken != controller.giftPlayToken) {
+        _lastHandledGiftToken = controller.giftPlayToken;
         _playSvgaGift(activeGift.svgaUrl);
       }
-    } else {
-      _currentlyPlayingSvgaUrl = null;
     }
 
     setState(() {});
@@ -97,8 +96,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
   Future<void> _playSvgaGift(String url) async {
     try {
-      _currentlyPlayingSvgaUrl = url;
-      final videoItem = await SVGAParser.shared.decodeFromURL(url);
+      final videoItem = url.startsWith('assets/')
+          ? await SVGAParser.shared.decodeFromAssets(url)
+          : await SVGAParser.shared.decodeFromURL(url);
       if (mounted) {
         _svgaController?.videoItem = videoItem;
         _svgaController?.reset();
@@ -1368,41 +1368,101 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   Positioned.fill(
                     child: SVGAImage(_svgaController!),
                   ),
+
                   Positioned(
-                    top: 100.h,
+                    top: 80.h,
                     left: 20.w,
                     right: 20.w,
                     child: Center(
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
+                            horizontal: 14.w, vertical: 8.h),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                            colors: [Color(0xFF2E1065), Color(0xFF701A75), Color(0xFF9D174D)],
                           ),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(24.r),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1.2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF7A45).withValues(alpha: 0.5),
-                              blurRadius: 16,
+                              color: const Color(0xFFEC4899).withValues(alpha: 0.45),
+                              blurRadius: 20,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CustomIcons.giftBox(color: Colors.white, size: 16),
-                            SizedBox(width: 6.w),
+                            // Sender Avatar
+                            CircleAvatar(
+                              radius: 13.r,
+                              backgroundColor: Colors.white24,
+                              backgroundImage: (controller.activeGiftSender?.avatarUrl.isNotEmpty ?? false)
+                                  ? CachedNetworkImageProvider(controller.activeGiftSender!.avatarUrl)
+                                  : null,
+                              child: (controller.activeGiftSender?.avatarUrl.isEmpty ?? true)
+                                  ? const Icon(Icons.person, size: 14, color: Colors.white)
+                                  : null,
+                            ),
+                            SizedBox(width: 8.w),
+                            // Details
                             Flexible(
-                              child: Text(
-                                '${controller.activeGiftSender?.fullName ?? ''} sent ${controller.activePlayingGift?.name ?? ''} to ${controller.activeGiftReceiver?.fullName ?? ''}!',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w800,
+                              child: RichText(
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: controller.activeGiftSender?.fullName ?? '',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' sent ',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11.5.sp,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: controller.activePlayingGift?.name ?? '',
+                                      style: TextStyle(
+                                        color: const Color(0xFFFFD54F),
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' to ',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11.5.sp,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: controller.activeGiftReceiver?.fullName ?? '',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
+                            SizedBox(width: 8.w),
+                            // Gift Emoji
+                            Text(
+                              controller.activePlayingGift?.emoji ?? '🎁',
+                              style: TextStyle(fontSize: 20.sp),
                             ),
                           ],
                         ),

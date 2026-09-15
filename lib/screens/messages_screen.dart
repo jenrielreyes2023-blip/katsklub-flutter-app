@@ -694,7 +694,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             tooltip: 'Voice Call',
             icon: Icon(
               Icons.call_outlined,
-              color: theme.accent,
+              color: isDark ? Colors.white : const Color(0xFF111827),
               size: 22,
             ),
             onPressed: _startAudioCall,
@@ -703,7 +703,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             tooltip: 'Video Call',
             icon: Icon(
               Icons.videocam_outlined,
-              color: theme.accent,
+              color: isDark ? Colors.white : const Color(0xFF111827),
               size: 24,
             ),
             onPressed: _startVideoCall,
@@ -2699,12 +2699,12 @@ class _MessagesScreenState extends State<MessagesScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.palette_rounded, size: 14, color: Color(0xFF3B82F6)),
+                      const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: Color(0xFFFF7A59)),
                       SizedBox(width: 6),
                       Text(
                         message.sentByMe
-                            ? 'You changed the chat theme$displayName'
-                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat theme$displayName',
+                            ? 'You equipped the chat bubble skin$displayName'
+                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} equipped the chat bubble skin$displayName',
                         style: TextStyle(fontFamily: 'SF Pro Rounded',
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -3162,8 +3162,9 @@ class _MessagesScreenState extends State<MessagesScreen>
             },
           ),
         KatsSheetItem(
-          title: 'Change theme',
-          icon: Icons.palette_outlined,
+          title: 'Chat Bubble Skin',
+          subtitle: 'Customize your sent message bubbles',
+          icon: Icons.chat_bubble_outline_rounded,
           showIconOnRight: false,
           onTap: () {
             Navigator.of(context).pop();
@@ -4041,6 +4042,10 @@ class _MessagesScreenState extends State<MessagesScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF111827);
 
+    final isJayrielOrAdmin = _currentUser?.username == 'jayriel' ||
+        _currentUser?.id == '2' ||
+        (_currentUser?.isAdmin ?? false);
+
     KatsBottomSheet.showCustom<void>(
       context,
       child: Column(
@@ -4049,14 +4054,29 @@ class _MessagesScreenState extends State<MessagesScreen>
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              'Conversation theme',
-              style: TextStyle(
-                fontFamily: 'SF Pro Rounded',
-                color: textColor,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w800,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chat Bubble Skin',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: textColor,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Choose the bubble skin for your sent messages',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -4068,12 +4088,25 @@ class _MessagesScreenState extends State<MessagesScreen>
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (sheetContext, index) {
                 final preset = ConversationTheme.presets[index];
+                final isLocked = !isJayrielOrAdmin && preset.id != 'classic';
                 return SizedBox(
                   width: 96,
                   child: _ThemePreviewCard(
                     theme: preset,
                     selected: preset.id == current.id,
+                    isLocked: isLocked,
                     onTap: () async {
+                      if (isLocked) {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('This chat bubble skin is locked. Unlock it in KatShop!'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        return;
+                      }
                       await ConversationThemeStore.setTheme(
                         t.id,
                         preset.id,
@@ -4107,8 +4140,6 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _composer() {
-    final theme = _getTheme();
-
     final isKatswipeBot = _thread?.otherUser.username?.toLowerCase() == 'katswipe';
     if (isKatswipeBot) {
       return SafeArea(
@@ -4159,17 +4190,11 @@ class _MessagesScreenState extends State<MessagesScreen>
         ? const Color(0xFF383A40)
         : const Color(0xFFE4E6EB);
 
-    final sendGradient = theme.ownBubbleGradient != null
-        ? LinearGradient(
-            colors: theme.ownBubbleGradient!,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : LinearGradient(
-            colors: [theme.accent, theme.accent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
+    const sendGradient = LinearGradient(
+      colors: [Color(0xFFFF7A59), Color(0xFFFF5252)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
 
     return SafeArea(
       top: false,
@@ -4181,19 +4206,19 @@ class _MessagesScreenState extends State<MessagesScreen>
             if (_editingTarget != null)
               _EditingMessageBar(
                 target: _editingTarget!,
-                accent: theme.accent,
+                accent: const Color(0xFFFF7A59),
                 onClose: _isSending ? null : _clearEditTarget,
               ),
             if (_replyTarget != null)
               _ReplyingToBar(
                 target: _replyTarget!,
-                accent: theme.accent,
+                accent: const Color(0xFFFF7A59),
                 onClose: _isSending ? null : _clearReplyTarget,
               ),
             if (_replyingGhostPost != null)
               _GhostPostReplyBar(
                 post: _replyingGhostPost!,
-                accent: theme.accent,
+                accent: const Color(0xFFFF7A59),
                 onClose: _isSending
                     ? null
                     : () {
@@ -4233,7 +4258,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         _ComposerActionButton(
                           icon: Icons.add_circle_outline_rounded,
                           tooltip: 'Attach media or files',
-                          color: theme.accent,
+                          color: const Color(0xFFFF7A59),
                           onPressed: _isSending ? null : _showAttachmentPickerModal,
                         ),
                         if (!hasText) ...[
@@ -4368,7 +4393,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.accent.withValues(alpha: 0.35),
+                        color: const Color(0xFFFF7A59).withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -5644,26 +5669,43 @@ class _MessageBubble extends StatelessWidget {
     final imageOnly =
         attachments.length == 1 && attachments.first.isImage && body.isEmpty;
 
+    final isSagittarius = theme.id == 'sagittarius';
+    final useCustomAsset = isSagittarius && sentByMe && !imageOnly;
+
+    final bubbleDecoration = BoxDecoration(
+      color: useCustomAsset
+          ? null
+          : (useGradient
+              ? null
+              : (sentByMe ? theme.ownBubble : theme.otherBubble)),
+      gradient: (useCustomAsset || !useGradient)
+          ? null
+          : LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: theme.ownBubbleGradient!,
+            ),
+      image: useCustomAsset
+          ? const DecorationImage(
+              image: AssetImage('assets/chatbubble/sagittarius_bubble.png'),
+              centerSlice: Rect.fromLTRB(35, 25, 225, 55),
+              fit: BoxFit.fill,
+            )
+          : null,
+      border: null,
+      borderRadius: useCustomAsset ? null : borderRadius,
+    );
+
     final bubble = Container(
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.72,
       ),
       padding: imageOnly
           ? const EdgeInsets.all(4)
-          : const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-      decoration: BoxDecoration(
-        color: useGradient
-            ? null
-            : (sentByMe ? theme.ownBubble : theme.otherBubble),
-        gradient: useGradient
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: theme.ownBubbleGradient!,
-              )
-            : null,
-        borderRadius: borderRadius,
-      ),
+          : (useCustomAsset
+              ? const EdgeInsets.symmetric(horizontal: 16, vertical: 11)
+              : const EdgeInsets.symmetric(horizontal: 13, vertical: 9)),
+      decoration: bubbleDecoration,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment:
@@ -5710,7 +5752,9 @@ class _MessageBubble extends StatelessWidget {
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
-                final checkColor = seenByOther ? Colors.white : Colors.white70;
+                final checkColor = useCustomAsset
+                    ? theme.ownBubbleText.withValues(alpha: seenByOther ? 0.9 : 0.55)
+                    : (seenByOther ? Colors.white : Colors.white70);
 
                 return Row(
                   mainAxisSize: MainAxisSize.min,
@@ -5722,7 +5766,9 @@ class _MessageBubble extends StatelessWidget {
                         fontSize: 8.5.sp,
                         fontWeight: FontWeight.w400,
                         color: sentByMe
-                            ? Colors.white.withValues(alpha: 0.7)
+                            ? (useCustomAsset
+                                ? theme.ownBubbleText.withValues(alpha: 0.65)
+                                : Colors.white.withValues(alpha: 0.7))
                             : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)),
                       ),
                     ),
@@ -5743,6 +5789,40 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
 
+    Widget decoratedBubble = bubble;
+    if (useCustomAsset) {
+      decoratedBubble = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          bubble,
+          Positioned(
+            top: -14,
+            right: -12,
+            child: IgnorePointer(
+              child: Image.asset(
+                'assets/chatbubble/sagittarius_top_right.webp',
+                width: 38,
+                height: 38,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -10,
+            left: -10,
+            child: IgnorePointer(
+              child: Image.asset(
+                'assets/chatbubble/sagittarius_bottom_left.webp',
+                width: 30,
+                height: 30,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     Widget row;
     if (sentByMe) {
       row = Align(
@@ -5751,7 +5831,7 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            bubble,
+            decoratedBubble,
             _MessageReactionBadges(
               message: message,
               sentByMe: true,
@@ -7039,11 +7119,13 @@ class _ThemePreviewCard extends StatelessWidget {
     required this.theme,
     required this.selected,
     required this.onTap,
+    this.isLocked = false,
   });
 
   final ConversationTheme theme;
   final bool selected;
   final VoidCallback onTap;
+  final bool isLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -7067,57 +7149,81 @@ class _ThemePreviewCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: displayTheme.background,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
+            Stack(
+              children: [
+                Container(
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: displayTheme.background,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: 46,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: displayTheme.otherBubble,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          width: 60,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: useGradient ? null : displayTheme.ownBubble,
+                            gradient: useGradient
+                                ? LinearGradient(
+                                    colors: displayTheme.ownBubbleGradient!,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isLocked)
+                  Positioned(
+                    top: 6,
+                    right: 6,
                     child: Container(
-                      width: 46,
-                      height: 12,
+                      padding: const EdgeInsets.all(3.5),
                       decoration: BoxDecoration(
-                        color: displayTheme.otherBubble,
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.black.withValues(alpha: 0.65),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_rounded,
+                        size: 11,
+                        color: Color(0xFFFBBF24),
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      width: 60,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: useGradient ? null : displayTheme.ownBubble,
-                        gradient: useGradient
-                            ? LinearGradient(
-                                colors: displayTheme.ownBubbleGradient!,
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
             SizedBox(height: 8),
             Text(
               displayTheme.label,
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 color: selected
                     ? displayTheme.accent
                     : (isDark ? Colors.white : const Color(0xFF111827)),
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),
