@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
@@ -1348,6 +1349,12 @@ class _ReplyTile extends StatelessWidget {
                                   color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                   fontWeight: FontWeight.w700,
                                 ),
+                                recognizer: (reply.replyToUsername ?? '').trim().isNotEmpty
+                                    ? (TapGestureRecognizer()
+                                      ..onTap = () {
+                                        onMentionTap(reply.replyToUsername!.trim());
+                                      })
+                                    : null,
                               ),
                           ],
                         ),

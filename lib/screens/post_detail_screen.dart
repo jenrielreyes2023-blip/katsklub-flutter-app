@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,7 @@ import '../widgets/repost_source_preview.dart';
 import '../widgets/share_post_sheet.dart';
 import '../widgets/sensitive_content_wrapper.dart';
 import '../widgets/smooth_bottom_sheet.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'image_viewer_screen.dart';
 import 'repost_post_screen.dart';
 import 'youtube_player_screen.dart';
@@ -2946,21 +2948,13 @@ class _PostMetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        CircleAvatar(
+        UserAvatarWithFrame(
+          avatarUrl: post.authorAvatarUrl,
+          initials: post.authorInitials,
           radius: 18,
-          backgroundColor: const Color(0xFFE5E7EB),
-          backgroundImage: post.authorAvatarUrl.trim().isEmpty
-              ? null
-              : NetworkImage(ApiConfig.assetUrl(post.authorAvatarUrl)),
-          child: post.authorAvatarUrl.trim().isEmpty
-              ? Text(
-                  post.authorInitials,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                )
-              : null,
+          isAdmin: post.authorIsAdmin,
+          framePath: post.authorAvatarFrame,
+          preserveLayoutFootprint: true,
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -4155,31 +4149,17 @@ class _InlineCommentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = comment.authorAvatarUrl.trim();
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        UserAvatarWithFrame(
+          avatarUrl: comment.authorAvatarUrl,
+          initials: comment.authorInitials,
+          radius: 16,
+          isAdmin: comment.authorIsAdmin,
+          framePath: comment.authorAvatarFrame,
+          preserveLayoutFootprint: true,
           onTap: () => _openAuthor(context),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: const Color(0xFFE5E7EB),
-            backgroundImage: avatarUrl.isEmpty
-                ? null
-                : CachedNetworkImageProvider(ApiConfig.assetUrl(avatarUrl)),
-            child: avatarUrl.isEmpty
-                ? Text(
-                    comment.authorInitials,
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
-                  )
-                : null,
-          ),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -4451,6 +4431,24 @@ class _CommentMessageBlock extends StatelessWidget {
           style: KatsText.commentBody(context),
           onHashtagTap: (_) {},
           onMentionTap: onMentionTap,
+          prefixSpans: [
+            if ((comment.replyToFullName ?? '').trim().isNotEmpty)
+              TextSpan(
+                text: '${comment.replyToFullName!.trim()} ',
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF60A5FA)
+                      : const Color(0xFF2563EB),
+                  fontWeight: FontWeight.w700,
+                ),
+                recognizer: (comment.replyToUsername ?? '').trim().isNotEmpty
+                    ? (TapGestureRecognizer()
+                      ..onTap = () {
+                        onMentionTap(comment.replyToUsername!.trim());
+                      })
+                    : null,
+              ),
+          ],
         ),
       ],
     );
