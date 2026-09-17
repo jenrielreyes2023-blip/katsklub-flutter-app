@@ -2013,6 +2013,7 @@ class _ProfileAvatar extends StatelessWidget {
       initials: user.initials,
       radius: 40.0,
       framePath: activeFrame,
+      preserveLayoutFootprint: false,
     );
 
     return GestureDetector(

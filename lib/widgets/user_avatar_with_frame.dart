@@ -132,10 +132,13 @@ class UserAvatarWithFrame extends StatelessWidget {
         } else if (isSpringFrame) {
           frameSize = size * 1.35;
         } else if (isBeachFrame) {
-          frameSize = size * 1.35;
+          frameSize = size * 1.50;
         } else {
           frameSize = size * 1.25;
         }
+
+        final double xOffset = isBeachFrame ? (10.0 / 480.0) * frameSize : 0.0;
+        final double yOffset = isBeachFrame ? (12.5 / 480.0) * frameSize : 0.0;
 
         final double effectiveWidth = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
         final double effectiveHeight = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
@@ -153,8 +156,8 @@ class UserAvatarWithFrame extends StatelessWidget {
               // Layer 2 (Top): The frame image, Lottie, or SVGA overlay wrapped in IgnorePointer and RepaintBoundary
               if (hasFrame)
                 Positioned(
-                  left: (effectiveWidth - frameSize) / 2,
-                  top: (effectiveHeight - frameSize) / 2,
+                  left: (effectiveWidth - frameSize) / 2 + xOffset,
+                  top: (effectiveHeight - frameSize) / 2 + yOffset,
                   width: frameSize,
                   height: frameSize,
                   child: IgnorePointer(
@@ -311,11 +314,9 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
     return SizedBox(
       width: widget.frameSize,
       height: widget.frameSize,
-      child: ClipRect(
-        child: SVGAImage(
-          _controller!,
-          fit: BoxFit.contain,
-        ),
+      child: SVGAImage(
+        _controller!,
+        fit: BoxFit.contain,
       ),
     );
   }
