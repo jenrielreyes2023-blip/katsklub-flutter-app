@@ -53,7 +53,13 @@ widget na walang handler — tandaan sa mga susunod na UI.
 - `test/hashtag_text_test.dart` (BAGO, flutter_test convention gaya ng
   `test/auth_service_test.dart`) — 4 tests: dotted mention full-span + tap
   target, trailing dot excluded, plain kapag walang handler, hashtag unaffected.
-- Test run: [RESULT PENDING — i-update ito pagbalik ng `flutter test`].
+- Test run: HINDI tumakbo sa sandbox (`flutter test` 2× na-stuck 30min na walang
+  output, pati `flutter --version` timeout — Flutter CLI hindi usable doon).
+  I-run sa dev machine/CI: `flutter test test/hashtag_text_test.dart`.
+- Pattern semantics na-verify via independent check (JS /u transliteration ng
+  exact patterns): `@itsuki.ren` OLD→`@itsuki`/`itsuki` (sirang tap target),
+  NEW→`@itsuki.ren`/`itsuki.ren`; `@ronaldo.` trailing dot excluded;
+  `@ronaldo` unchanged; `#manila` unaffected; `@x.y.z` full match.
 
 ## Kailangang gawin (isang AI na kayang mag multi-line edit, o manual)
 
