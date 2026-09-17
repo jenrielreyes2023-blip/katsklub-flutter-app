@@ -1,11 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../config/api_config.dart';
 import '../models/post.dart';
 import '../theme/app_text_styles.dart';
 import '../models/post_comment.dart';
@@ -1427,6 +1425,7 @@ class _CommentAvatar extends StatelessWidget {
       initials: comment.authorInitials,
       radius: size / 2,
       isAdmin: comment.authorIsAdmin,
+      framePath: comment.authorAvatarFrame,
     );
   }
 }

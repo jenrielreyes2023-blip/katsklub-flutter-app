@@ -16,6 +16,7 @@ class PostComment {
     required this.authorIsVerified,
     required this.authorIsAuthor,
     required this.authorIsAdmin,
+    this.authorAvatarFrame,
     this.likeCount = 0,
     this.likedByMe = false,
   });
@@ -36,6 +37,7 @@ class PostComment {
   final bool authorIsVerified;
   final bool authorIsAuthor;
   final bool authorIsAdmin;
+  final String? authorAvatarFrame;
   final int likeCount;
   final bool likedByMe;
 
@@ -43,6 +45,7 @@ class PostComment {
     int? replyCount,
     int? likeCount,
     bool? likedByMe,
+    String? authorAvatarFrame,
   }) {
     return PostComment(
       id: id,
@@ -61,6 +64,7 @@ class PostComment {
       authorIsVerified: authorIsVerified,
       authorIsAuthor: authorIsAuthor,
       authorIsAdmin: authorIsAdmin,
+      authorAvatarFrame: authorAvatarFrame ?? this.authorAvatarFrame,
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
     );
@@ -97,6 +101,10 @@ class PostComment {
           json['authorIsAuthor'] == true || json['author_is_author'] == true,
       authorIsAdmin:
           json['authorIsAdmin'] == true || json['author_is_admin'] == true,
+      authorAvatarFrame: _readString(json['authorAvatarFrame'] ??
+          json['author_avatar_frame'] ??
+          json['avatarFrame'] ??
+          json['avatar_frame']),
       likeCount: _readInt(json['likeCount'] ?? json['like_count']),
       likedByMe: json['likedByMe'] == true || json['liked_by_me'] == true || json['liked'] == true,
     );

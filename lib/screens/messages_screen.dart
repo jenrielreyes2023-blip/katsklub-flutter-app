@@ -5269,35 +5269,13 @@ class _NewConversationIntro extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Big circular avatar.
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFE5E7EB),
-              border: Border.all(
-                color: accent.withValues(alpha: 0.18),
-                width: 2,
-              ),
-              image: avatarUrl.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(ApiConfig.assetUrl(avatarUrl)),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            alignment: Alignment.center,
-            child: avatarUrl.isEmpty
-                ? Text(
-                    other.initials,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                    ),
-                  )
-                : null,
+          // Big circular avatar with frame.
+          UserAvatarWithFrame(
+            avatarUrl: avatarUrl,
+            initials: other.initials,
+            radius: 48,
+            isAdmin: false,
+            avatarFrame: other.avatarFrame,
           ),
           SizedBox(height: 12),
           // Display name.
@@ -5490,18 +5468,12 @@ class _ThreadAvatar extends StatelessWidget {
     final user = thread?.otherUser;
     final avatarUrl = user?.avatarUrl?.trim() ?? '';
 
-    final avatar = CircleAvatar(
+    final avatar = UserAvatarWithFrame(
+      avatarUrl: avatarUrl,
+      initials: user?.initials ?? 'K',
       radius: 18,
-      backgroundColor: const Color(0xFFE5E7EB),
-      backgroundImage: avatarUrl.isNotEmpty
-          ? NetworkImage(ApiConfig.assetUrl(avatarUrl))
-          : null,
-      child: avatarUrl.isEmpty
-          ? Text(
-              user?.initials ?? 'K',
-              style: TextStyle(fontFamily: 'SF Pro Rounded',fontWeight: FontWeight.w800),
-            )
-          : null,
+      isAdmin: false,
+      avatarFrame: user?.avatarFrame,
     );
 
     return PresenceAvatarDot(
@@ -5669,8 +5641,17 @@ class _MessageBubble extends StatelessWidget {
     final imageOnly =
         attachments.length == 1 && attachments.first.isImage && body.isEmpty;
 
-    final isSagittarius = theme.id == 'sagittarius';
-    final useCustomAsset = isSagittarius && sentByMe && !imageOnly;
+    final senderBubbleSkin = (sentByMe
+            ? (ConversationThemeStore.activeBubbleThemeId.isNotEmpty
+                ? ConversationThemeStore.activeBubbleThemeId
+                : (message.sender.bubbleTheme ?? ''))
+            : (message.sender.bubbleTheme ?? ''))
+        .trim()
+        .toLowerCase();
+
+    final isSagittarius = senderBubbleSkin == 'sagittarius' ||
+        (sentByMe && theme.id == 'sagittarius');
+    final useCustomAsset = isSagittarius && !imageOnly;
 
     final bubbleDecoration = BoxDecoration(
       color: useCustomAsset
@@ -5740,7 +5721,9 @@ class _MessageBubble extends StatelessWidget {
                 text: body,
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
-                  color: sentByMe ? theme.ownBubbleText : theme.otherBubbleText,
+                  color: useCustomAsset
+                      ? const Color(0xFF381E00)
+                      : (sentByMe ? theme.ownBubbleText : theme.otherBubbleText),
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
                   height: 1.33,
@@ -5753,7 +5736,7 @@ class _MessageBubble extends StatelessWidget {
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 final checkColor = useCustomAsset
-                    ? theme.ownBubbleText.withValues(alpha: seenByOther ? 0.9 : 0.55)
+                    ? const Color(0xFF381E00).withValues(alpha: seenByOther ? 0.9 : 0.55)
                     : (seenByOther ? Colors.white : Colors.white70);
 
                 return Row(
@@ -5767,9 +5750,11 @@ class _MessageBubble extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                         color: sentByMe
                             ? (useCustomAsset
-                                ? theme.ownBubbleText.withValues(alpha: 0.65)
+                                ? const Color(0xFF381E00).withValues(alpha: 0.65)
                                 : Colors.white.withValues(alpha: 0.7))
-                            : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)),
+                            : (useCustomAsset
+                                ? const Color(0xFF381E00).withValues(alpha: 0.65)
+                                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF))),
                       ),
                     ),
                     if (sentByMe) ...[
@@ -5795,30 +5780,57 @@ class _MessageBubble extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           bubble,
-          Positioned(
-            top: -14,
-            right: -12,
-            child: IgnorePointer(
-              child: Image.asset(
-                'assets/chatbubble/sagittarius_top_right.webp',
-                width: 38,
-                height: 38,
-                fit: BoxFit.contain,
+          if (sentByMe) ...[
+            Positioned(
+              top: -14,
+              right: -12,
+              child: IgnorePointer(
+                child: Image.asset(
+                  'assets/chatbubble/sagittarius_top_right.webp',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: -10,
-            left: -10,
-            child: IgnorePointer(
-              child: Image.asset(
-                'assets/chatbubble/sagittarius_bottom_left.webp',
-                width: 30,
-                height: 30,
-                fit: BoxFit.contain,
+            Positioned(
+              bottom: -10,
+              left: -10,
+              child: IgnorePointer(
+                child: Image.asset(
+                  'assets/chatbubble/sagittarius_bottom_left.webp',
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
-          ),
+          ] else ...[
+            Positioned(
+              top: -14,
+              left: -12,
+              child: IgnorePointer(
+                child: Image.asset(
+                  'assets/chatbubble/sagittarius_top_left.webp',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -10,
+              right: -10,
+              child: IgnorePointer(
+                child: Image.asset(
+                  'assets/chatbubble/sagittarius_bottom_right.webp',
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
         ],
       );
     }
@@ -5850,6 +5862,7 @@ class _MessageBubble extends StatelessWidget {
                 ? _SmallUserAvatar(
                     avatarUrl: message.sender.avatarUrl,
                     initials: message.sender.initials,
+                    avatarFrame: message.sender.avatarFrame,
                   )
                 : const SizedBox.shrink(),
           ),
@@ -5858,7 +5871,7 @@ class _MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                bubble,
+                decoratedBubble,
                 _MessageReactionBadges(
                   message: message,
                   sentByMe: false,
@@ -6592,10 +6605,12 @@ class _SmallUserAvatar extends StatelessWidget {
   const _SmallUserAvatar({
     required this.avatarUrl,
     required this.initials,
+    this.avatarFrame,
   });
 
   final String? avatarUrl;
   final String initials;
+  final String? avatarFrame;
 
   @override
   Widget build(BuildContext context) {
@@ -6604,6 +6619,7 @@ class _SmallUserAvatar extends StatelessWidget {
       initials: initials,
       radius: 11,
       isAdmin: false,
+      avatarFrame: avatarFrame,
     );
   }
 }
@@ -6880,21 +6896,12 @@ class _MessagesThreadAvatar extends StatelessWidget {
 
     final avatarUrl = thread.otherUser.avatarUrl?.trim() ?? '';
 
-    final avatar = CircleAvatar(
+    final avatar = UserAvatarWithFrame(
+      avatarUrl: avatarUrl,
+      initials: thread.otherUser.initials,
       radius: 21,
-      backgroundColor: const Color(0xFFE5E7EB),
-      backgroundImage: avatarUrl.isNotEmpty
-          ? NetworkImage(ApiConfig.assetUrl(avatarUrl))
-          : null,
-      child: avatarUrl.isEmpty
-          ? Text(
-              thread.otherUser.initials,
-              style: TextStyle(fontFamily: 'SF Pro Rounded',
-                color: Color(0xFF111827),
-                fontWeight: FontWeight.w800,
-              ),
-            )
-          : null,
+      isAdmin: false,
+      avatarFrame: thread.otherUser.avatarFrame,
     );
 
     return PresenceAvatarDot(

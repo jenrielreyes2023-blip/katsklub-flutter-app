@@ -16,6 +16,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     required this.avatarUrl,
     this.radius = 40.0,
     this.framePath,
+    this.avatarFrame,
     this.isAdmin = false,
     this.initials = '',
     this.onTap,
@@ -24,6 +25,7 @@ class UserAvatarWithFrame extends StatelessWidget {
   final String avatarUrl;
   final double radius;
   final String? framePath;
+  final String? avatarFrame;
   final bool isAdmin;
   final String initials;
   final VoidCallback? onTap;
@@ -107,7 +109,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: equippedAdminFrameNotifier,
       builder: (context, globalEquippedFrame, _) {
-        final String? effectiveFrame = framePath ?? (isAdmin ? globalEquippedFrame : null);
+        final String? effectiveFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ?? (isAdmin ? globalEquippedFrame : null);
         final cleanFrame = (effectiveFrame == 'none' || effectiveFrame == null) ? null : effectiveFrame.trim();
         final pathLower = (cleanFrame ?? '').toLowerCase();
         final hasFrame = cleanFrame != null && cleanFrame.isNotEmpty;

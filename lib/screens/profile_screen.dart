@@ -1998,7 +1998,10 @@ class _ProfileAvatar extends StatelessWidget {
     final hasStories = userStories.isNotEmpty;
 
     final String? activeFrame;
-    if (user.isAdmin) {
+    final userFrame = user.avatarFrame?.trim();
+    if (userFrame != null && userFrame.isNotEmpty) {
+      activeFrame = userFrame == 'none' ? null : userFrame;
+    } else if (user.isAdmin) {
       final selected = equippedAdminFrame ?? 'assets/frames/bframe.png';
       activeFrame = (selected == 'none' || selected.trim().isEmpty) ? null : selected;
     } else {

@@ -188,6 +188,7 @@ class Post {
     required this.isFollowingAuthor,
     this.authorProfileBorder,
     this.authorPostcardTheme,
+    this.authorAvatarFrame,
     required this.ownedByMe,
     required this.visibility,
     required this.repostOriginalPostId,
@@ -261,6 +262,7 @@ class Post {
   final bool isFollowingAuthor;
   final String? authorProfileBorder;
   final String? authorPostcardTheme;
+  final String? authorAvatarFrame;
   final bool ownedByMe;
   final String visibility;
   final String repostOriginalPostId;
@@ -361,6 +363,12 @@ class Post {
             json['author_postcard_theme'] ??
             json['postcardTheme'] ??
             json['postcard_theme'],
+      ),
+      authorAvatarFrame: _readString(
+        json['authorAvatarFrame'] ??
+            json['author_avatar_frame'] ??
+            json['avatarFrame'] ??
+            json['avatar_frame'],
       ),
       ownedByMe: json['ownedByMe'] == true,
       visibility: _readString(json['visibility']) ?? 'public',
@@ -478,6 +486,7 @@ class Post {
     String? repostOriginalPostId,
     Post? originalPost,
     String? authorPostcardTheme,
+    String? authorAvatarFrame,
     List<User>? withUsers,
     bool? isPoll,
     String? pollQuestion,
@@ -506,6 +515,7 @@ class Post {
       isFollowingAuthor: isFollowingAuthor ?? this.isFollowingAuthor,
       authorProfileBorder: authorProfileBorder,
       authorPostcardTheme: authorPostcardTheme ?? this.authorPostcardTheme,
+      authorAvatarFrame: authorAvatarFrame ?? this.authorAvatarFrame,
       ownedByMe: ownedByMe,
       visibility: visibility,
       repostOriginalPostId: repostOriginalPostId ?? this.repostOriginalPostId,

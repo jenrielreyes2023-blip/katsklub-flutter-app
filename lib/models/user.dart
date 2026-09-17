@@ -34,6 +34,7 @@ class User {
     this.profileBorder,
     this.postcardTheme,
     this.bubbleTheme,
+    this.avatarFrame,
     this.achievements = const [],
     this.profileLinks = const [],
     this.featuredPhotos = const [],
@@ -78,6 +79,7 @@ class User {
   final String? profileBorder;
   final String? postcardTheme;
   final String? bubbleTheme;
+  final String? avatarFrame;
   final List<String> achievements;
   final List<ProfileLink> profileLinks;
   final List<FeaturedPhoto> featuredPhotos;
@@ -155,6 +157,9 @@ class User {
       ),
       bubbleTheme: _readString(
         json['bubbleTheme'] ?? json['bubble_theme'],
+      ),
+      avatarFrame: _readString(
+        json['avatarFrame'] ?? json['avatar_frame'],
       ),
       achievements: _readStringList(json['achievements']),
       profileLinks: _readProfileLinks(json['profileLinks'] ?? json['profile_links']),
@@ -266,6 +271,7 @@ class User {
     String? profileBorder,
     String? postcardTheme,
     String? bubbleTheme,
+    String? avatarFrame,
     List<String>? achievements,
     List<ProfileLink>? profileLinks,
     List<FeaturedPhoto>? featuredPhotos,
@@ -298,6 +304,7 @@ class User {
     final nextProfileBorder = profileBorder ?? this.profileBorder;
     final nextPostcardTheme = postcardTheme ?? this.postcardTheme;
     final nextBubbleTheme = bubbleTheme ?? this.bubbleTheme;
+    final nextAvatarFrame = avatarFrame ?? this.avatarFrame;
     final nextAchievements = achievements ?? this.achievements;
     final nextProfileLinks = profileLinks ?? this.profileLinks;
     final nextFeaturedPhotos = featuredPhotos ?? this.featuredPhotos;
@@ -323,6 +330,8 @@ class User {
       ..['profileBorder'] = nextProfileBorder
       ..['postcardTheme'] = nextPostcardTheme
       ..['bubbleTheme'] = nextBubbleTheme
+      ..['avatarFrame'] = nextAvatarFrame
+      ..['avatar_frame'] = nextAvatarFrame
       ..['achievements'] = nextAchievements
       ..['profileLinks'] = nextProfileLinks.map((l) => l.toJson()).toList()
       ..['featuredPhotos'] = nextFeaturedPhotos.map((p) => p.toJson()).toList()
@@ -366,6 +375,7 @@ class User {
       profileBorder: nextProfileBorder,
       postcardTheme: nextPostcardTheme,
       bubbleTheme: nextBubbleTheme,
+      avatarFrame: nextAvatarFrame,
       achievements: nextAchievements,
       profileLinks: nextProfileLinks,
       featuredPhotos: nextFeaturedPhotos,

@@ -573,6 +573,18 @@ class _ShopScreenState extends State<ShopScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
+
+    // Sync with backend PostgreSQL database so all users see the equipped frame!
+    try {
+      final updatedUser = await _feedService.updateCurrentUserAvatarFrame(framePath);
+      if (mounted) {
+        setState(() {
+          _currentUser = updatedUser;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error syncing avatar frame with server: $e');
+    }
   }
 
   @override
@@ -733,14 +745,20 @@ class _ShopScreenState extends State<ShopScreen> {
       _currentUsername = (user?.username ?? '').trim().toLowerCase();
       _visibleProducts = visible;
 
-      SharedPreferences.getInstance().then((p) {
-        final saved = p.getString('admin_equipped_frame');
-        if (mounted && saved != null) {
-          setState(() {
-            _equippedAdminFrame = saved;
-          });
-        }
-      });
+      final serverFrame = user?.avatarFrame?.trim();
+      if (serverFrame != null && serverFrame.isNotEmpty) {
+        _equippedAdminFrame = serverFrame;
+        equippedAdminFrameNotifier.value = serverFrame;
+      } else {
+        SharedPreferences.getInstance().then((p) {
+          final saved = p.getString('admin_equipped_frame');
+          if (mounted && saved != null) {
+            setState(() {
+              _equippedAdminFrame = saved;
+            });
+          }
+        });
+      }
 
       // Initialize selected theme for live preview
       ThemeProductData? selected;

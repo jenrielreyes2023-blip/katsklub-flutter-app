@@ -57,6 +57,7 @@ class PostHeader extends StatelessWidget {
           initials: post.authorInitials,
           radius: 20,
           isAdmin: post.authorIsAdmin,
+          framePath: post.authorAvatarFrame,
           onTap: onOpenAuthor,
         ),
         const SizedBox(width: 10),

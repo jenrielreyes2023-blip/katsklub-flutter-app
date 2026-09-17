@@ -1885,6 +1885,30 @@ class FeedService {
     return updatedUser;
   }
 
+  Future<User> updateCurrentUserAvatarFrame(String avatarFrame) async {
+    final normalizedFrame = avatarFrame.trim();
+    final data = await _authenticatedPatch(
+      '/api/me/avatar-frame',
+      body: {'avatarFrame': normalizedFrame},
+    );
+    final user = data['user'];
+    if (data['ok'] != true || user is! Map<String, dynamic>) {
+      throw StateError(
+        _readErrorMessage(data) ?? 'Failed to update avatar frame.',
+      );
+    }
+
+    final updatedUser = User.fromJson(user);
+    await _authService.saveCurrentUser(updatedUser);
+
+    final username = updatedUser.username?.trim().toLowerCase() ?? '';
+    if (username.isNotEmpty) {
+      notifyProfileStatsChanged(username: username, user: updatedUser);
+    }
+
+    return updatedUser;
+  }
+
   Future<User?> followUser(String username) async {
     final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
     if (cleanUsername.isEmpty) {

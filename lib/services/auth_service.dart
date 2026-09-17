@@ -892,6 +892,9 @@ class AuthService {
         bubbleTheme: hasKey(['bubbleTheme', 'bubble_theme'])
             ? user.bubbleTheme
             : oldUser.bubbleTheme,
+        avatarFrame: hasKey(['avatarFrame', 'avatar_frame'])
+            ? user.avatarFrame
+            : oldUser.avatarFrame,
       );
       await _saveUser(mergedUser);
     } else {
