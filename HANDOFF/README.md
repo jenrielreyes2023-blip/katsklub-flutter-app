@@ -5,7 +5,10 @@ Bawat change may sariling file. Basahin mo mula sa pinakabagong numero.
 
 ## Index
 
-- `03-reply-mention-fix.md` (PINAKABAGO) — reply sa nested reply nagpapakita ng
+- `04-postpage-mentions.md` (PINAKABAGO) — post page walang blue mentions:
+  sponsored cards plain-Text (spec ng fix, hindi pa nalalapat) + mention regex
+  naayos na para sa dotted usernames + bagong `test/hashtag_text_test.dart`.
+- `03-reply-mention-fix.md` — reply sa nested reply nagpapakita ng
   tamang pangalan + persistence column. Backend fix, nasa working tree,
   HINDI pa naka-commit. Kailangan: commit + push, `git pull` + `pm2 restart`
   sa VPS.

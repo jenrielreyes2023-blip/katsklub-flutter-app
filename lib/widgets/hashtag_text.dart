@@ -114,11 +114,11 @@ final RegExp _hashtagPattern = RegExp(
   unicode: true,
 );
 final RegExp _mentionPattern = RegExp(
-  r'@([\p{L}\p{N}_]+)',
+  r'@([\p{L}\p{N}_]+(?:\.[\p{L}\p{N}_]+)*)',
   unicode: true,
 );
 final RegExp _linkifiedPattern = RegExp(
-  r'(#([\p{L}\p{N}_]+)|@([\p{L}\p{N}_]+))',
+  r'(#([\p{L}\p{N}_]+)|@([\p{L}\p{N}_]+(?:\.[\p{L}\p{N}_]+)*))',
   unicode: true,
 );
 

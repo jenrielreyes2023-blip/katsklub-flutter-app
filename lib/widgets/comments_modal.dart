@@ -1862,24 +1862,7 @@ class _CommentComposer extends StatelessWidget {
 }
 
 PostComment _copyCommentWithReplyCount(PostComment comment, int replyCount) {
-  return PostComment(
-    id: comment.id,
-    postId: comment.postId,
-    body: comment.body,
-    createdAt: comment.createdAt,
-    parentCommentId: comment.parentCommentId,
-    replyToUserId: comment.replyToUserId,
-    replyToUsername: comment.replyToUsername,
-    replyToFullName: comment.replyToFullName,
-    replyCount: replyCount,
-    authorId: comment.authorId,
-    authorFullName: comment.authorFullName,
-    authorUsername: comment.authorUsername,
-    authorAvatarUrl: comment.authorAvatarUrl,
-    authorIsVerified: comment.authorIsVerified,
-    authorIsAuthor: comment.authorIsAuthor,
-    authorIsAdmin: comment.authorIsAdmin,
-  );
+  return comment.copyWith(replyCount: replyCount);
 }
 
 Future<void> _showReportCommentDialog(BuildContext context, PostComment comment) async {

@@ -20,6 +20,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     this.isAdmin = false,
     this.initials = '',
     this.onTap,
+    this.preserveLayoutFootprint = true,
   });
 
   final String avatarUrl;
@@ -29,6 +30,7 @@ class UserAvatarWithFrame extends StatelessWidget {
   final bool isAdmin;
   final String initials;
   final VoidCallback? onTap;
+  final bool preserveLayoutFootprint;
 
   @override
   Widget build(BuildContext context) {
@@ -135,9 +137,12 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.25;
         }
 
+        final double effectiveWidth = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
+        final double effectiveHeight = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
+
         final widgetStack = SizedBox(
-          width: hasFrame ? frameSize : size,
-          height: hasFrame ? frameSize : size,
+          width: effectiveWidth,
+          height: effectiveHeight,
           child: Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
@@ -147,26 +152,32 @@ class UserAvatarWithFrame extends StatelessWidget {
 
               // Layer 2 (Top): The frame image, Lottie, or SVGA overlay wrapped in IgnorePointer and RepaintBoundary
               if (hasFrame)
-                IgnorePointer(
-                  child: RepaintBoundary(
-                    child: isLottie
-                        ? _LottieFrameOverlay(
-                            framePath: cleanFrame,
-                            frameSize: frameSize,
-                          )
-                        : isSvga
-                            ? _SvgaFrameOverlay(
-                                framePath: cleanFrame,
-                                frameSize: frameSize,
-                              )
-                            : Image.asset(
-                                cleanFrame,
-                                width: frameSize,
-                                height: frameSize,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const SizedBox.shrink(),
-                              ),
+                Positioned(
+                  left: (effectiveWidth - frameSize) / 2,
+                  top: (effectiveHeight - frameSize) / 2,
+                  width: frameSize,
+                  height: frameSize,
+                  child: IgnorePointer(
+                    child: RepaintBoundary(
+                      child: isLottie
+                          ? _LottieFrameOverlay(
+                              framePath: cleanFrame,
+                              frameSize: frameSize,
+                            )
+                          : isSvga
+                              ? _SvgaFrameOverlay(
+                                  framePath: cleanFrame,
+                                  frameSize: frameSize,
+                                )
+                              : Image.asset(
+                                  cleanFrame,
+                                  width: frameSize,
+                                  height: frameSize,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const SizedBox.shrink(),
+                                ),
+                    ),
                   ),
                 ),
             ],
