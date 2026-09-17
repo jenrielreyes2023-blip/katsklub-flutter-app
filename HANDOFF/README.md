@@ -5,7 +5,11 @@ Bawat change may sariling file. Basahin mo mula sa pinakabagong numero.
 
 ## Index
 
-- `01-suggestions-random-fix.md` (PINAKABAGO) — "Suggested for you" ginawang
+- `03-reply-mention-fix.md` (PINAKABAGO) — reply sa nested reply nagpapakita ng
+  tamang pangalan + persistence column. Backend fix, nasa working tree,
+  HINDI pa naka-commit. Kailangan: commit + push, `git pull` + `pm2 restart`
+  sa VPS.
+- `01-suggestions-random-fix.md` — "Suggested for you" ginawang
   random + nirerespeto na ang `limit` param. Backend fix, nasa working tree,
   HINDI pa naka-commit. Kailangan: commit + push, `git pull` + `pm2 restart`
   sa VPS.
