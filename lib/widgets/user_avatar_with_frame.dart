@@ -120,6 +120,9 @@ class UserAvatarWithFrame extends StatelessWidget {
         final isSvga = pathLower.endsWith('.svga');
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
+        final isNeonFrame = pathLower.contains('neon.json') ||
+            pathLower.contains('neon_frame') ||
+            pathLower.contains('/neon');
         final isSpringFrame = pathLower.contains('spring_blossom_frame');
         final isBeachFrame =
             pathLower.contains('beach-frame') || pathLower.contains('beach_frame');
@@ -131,6 +134,8 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.85;
         } else if (isTestFrame) {
           frameSize = size * 1.48;
+        } else if (isNeonFrame) {
+          frameSize = size * 1.70;
         } else if (isBeachFrame) {
           frameSize = size * 1.50;
         } else if (isSpringFrame) {

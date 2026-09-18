@@ -1821,6 +1821,21 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
         if (isAdmin) ...[
+          // Option: Cyber Neon Pulse Frame (neon.json)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Cyber Neon Pulse Frame',
+            description: 'Futuristic rotating purple accent & electric cyan glowing neon Lottie frame.',
+            framePath: 'assets/frames/neon.json',
+            badgeText: 'CYBER LOTTIE',
+            badgeGradient: const [Color(0xFF00F0FF), Color(0xFFD946EF)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/neon.json',
+            onEquip: () => _equipAdminFrame('assets/frames/neon.json', 'Cyber Neon Pulse Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Cyber Neon Pulse Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option: Purple Kawaii Animated Frame (purpleav.webp)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,

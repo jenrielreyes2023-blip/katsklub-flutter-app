@@ -100,6 +100,7 @@ flutter:
     - assets/frames/cframe.png
     - assets/frames/wing_frame.json
     - assets/frames/test_frame.json
+    - assets/frames/neon.json
     - assets/frames/spring_blossom_frame.png
     - assets/frames/spring_blossom_frame.svga
     - assets/frames/spring_blossom_frame.webp
