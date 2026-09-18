@@ -1821,6 +1821,21 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
         if (isAdmin) ...[
+          // Option: Purple Kawaii Animated Frame (purpleav.webp)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Purple Kawaii Animated Frame',
+            description: 'Exclusive animated purple ribbon frame with sparkling accents & peeking eyes.',
+            framePath: 'assets/frames/purpleav.webp',
+            badgeText: 'NEW KAWAII',
+            badgeGradient: const [Color(0xFFA855F7), Color(0xFF7C3AED)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/purpleav.webp',
+            onEquip: () => _equipAdminFrame('assets/frames/purpleav.webp', 'Purple Kawaii Animated Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Purple Kawaii Animated Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 0: Spring Master Blossom Frame (spring_blossom_frame.webp)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
