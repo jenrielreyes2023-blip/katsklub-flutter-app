@@ -2788,23 +2788,23 @@ class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
   Future<void> _load() async {
     try {
       Uint8List? bytes;
+      final fileName = widget.svgaPath.split('/').last;
+      final cdnUrl = 'https://media.katsklub.top/badges/$fileName?v=4';
       try {
-        final byteData = await rootBundle.load(widget.svgaPath);
-        bytes = byteData.buffer
-            .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+        final file = await DefaultCacheManager().getSingleFile(cdnUrl);
+        bytes = await file.readAsBytes();
       } catch (_) {
-        // Fallback to CDN if asset not yet bundled in debug
-        final fileName = widget.svgaPath.split('/').last;
-        final cdnUrl = 'https://media.katsklub.top/badges/$fileName';
         try {
-          final file = await DefaultCacheManager().getSingleFile(cdnUrl);
-          bytes = await file.readAsBytes();
-        } catch (_) {
-          try {
-            final res = await http.get(Uri.parse(cdnUrl));
-            if (res.statusCode == 200) bytes = res.bodyBytes;
-          } catch (_) {}
-        }
+          final res = await http.get(Uri.parse(cdnUrl));
+          if (res.statusCode == 200) bytes = res.bodyBytes;
+        } catch (_) {}
+      }
+      if (bytes == null || bytes.isEmpty) {
+        try {
+          final byteData = await rootBundle.load(widget.svgaPath);
+          bytes = byteData.buffer
+              .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+        } catch (_) {}
       }
 
       if (bytes == null || bytes.isEmpty) return;
