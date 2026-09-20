@@ -32,7 +32,7 @@ const List<_AdminAchievementOption> _achievementOptions = [
   _AdminAchievementOption(key: 'google_workspace', label: 'Google Workspace'),
   _AdminAchievementOption(key: 'pop_superstar', label: 'Pop Superstar'),
   _AdminAchievementOption(key: 'fresh_paw', label: 'Fresh Paw'),
-  _AdminAchievementOption(key: 'rising_paw', label: 'Rising Paw'),
+  _AdminAchievementOption(key: 'rising_paw', label: 'Rising Paw (SVGA Badge)'),
   _AdminAchievementOption(key: 'badge_snow', label: 'Snow Whispers (SVGA Badge)'),
   _AdminAchievementOption(key: 'badge_nemesis', label: 'Nemesis Aura (SVGA Badge)'),
 ];

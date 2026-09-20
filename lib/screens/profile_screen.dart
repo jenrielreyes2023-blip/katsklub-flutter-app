@@ -2630,16 +2630,6 @@ class _ProfileAchievementPill extends StatelessWidget {
     if (theme == _ProfileAchievementTheme.googleWorkspace) {
       return const _RawSvgAchievement(svgString: _googleWorkspaceSvg);
     }
-    if (theme == _ProfileAchievementTheme.risingPaw) {
-      return _SvgSweepShimmer(
-        animation: motionAnimation,
-        child: Image.asset(
-          'assets/images/rp4.png',
-          height: 28,
-          fit: BoxFit.contain,
-        ),
-      );
-    }
     if (theme == _ProfileAchievementTheme.top50) {
       return _SvgSweepShimmer(
         animation: motionAnimation,
@@ -3369,26 +3359,16 @@ enum _ProfileAchievementTheme {
   ),
   risingPaw(
     _AchievementThemeStyle(
-      pillColors: [
-        Color(0xFFFF5E36),
-        Color(0xFFFFAE33),
-        Color(0xFFFEDB37),
-      ],
-      badgeGradient: [
-        Color(0xFFFFFBEB),
-        Color(0xFFFEF3C7),
-        Color(0xFFFDE68A),
-      ],
-      badgeBorderColor: Color(0xFFEA580C),
-      badgeInnerRingColor: Color(0x66F97316),
-      badgeIconColor: Color(0xFFEA580C),
+      pillColors: [Colors.transparent],
+      badgeGradient: [Colors.transparent],
+      badgeBorderColor: Colors.transparent,
+      badgeInnerRingColor: Colors.transparent,
+      badgeIconColor: Colors.transparent,
       badgeShape: _AchievementBadgeShape.coin,
-      iconSvg:
-          '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.64 5.64l1.41 1.41M16.95 16.95l1.41 1.41M18.36 5.64l-1.41 1.41M7.05 16.95l-1.41 1.41" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8.5" cy="11.5" r="1.2"/><circle cx="10.8" cy="9.5" r="1.2"/><circle cx="13.2" cy="9.5" r="1.2"/><circle cx="15.5" cy="11.5" r="1.2"/><path d="M12 12.8c-1.8 0-3 1.2-3 2.7s1.2 2.7 3 2.7 3-1.2 3-2.7-1.2-2.7-3-2.7z"/></svg>',
-      iconWidth: 12.0,
-      iconHeight: 12.0,
-      textColor: Colors.white,
-      textStrokeColor: Color(0xFFC2410C),
+      iconSvg: '',
+      iconWidth: 0,
+      iconHeight: 0,
+      svgaPillPath: 'assets/badge/risingpaw.svga',
     ),
   ),
   top50(
