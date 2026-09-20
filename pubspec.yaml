@@ -105,6 +105,7 @@ flutter:
     - assets/frames/spring_blossom_frame.svga
     - assets/frames/spring_blossom_frame.webp
     - assets/frames/beach-frame.svga
+    - assets/frames/kawaii2.svga
     - assets/frames/images/
     - assets/frames/purpleav.webp
     - assets/animations/empty_status.json

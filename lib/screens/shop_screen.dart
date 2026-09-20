@@ -1881,6 +1881,21 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option 0.6: Kawaii Cat Blossom SVGA Frame (kawaii2.svga)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Kawaii Cat Blossom SVGA Frame',
+            description: 'Exclusive 60FPS animated cute kitty & falling sakura petals SVGA frame.',
+            framePath: 'assets/frames/kawaii2.svga',
+            badgeText: 'SVGA KAWAII',
+            badgeGradient: const [Color(0xFFEC4899), Color(0xFFF43F5E)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/kawaii2.svga',
+            onEquip: () => _equipAdminFrame('assets/frames/kawaii2.svga', 'Kawaii Cat Blossom SVGA Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Kawaii Cat Blossom SVGA Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 1: Golden Admin Frame (bframe.png)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
