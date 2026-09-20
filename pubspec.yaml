@@ -108,7 +108,6 @@ flutter:
     - assets/frames/beach-frame.svga
     - assets/frames/kawaii2.svga
     - assets/frames/orna.svga
-    - assets/frames/blue-orb-v1.svga
     - assets/frames/images/
     - assets/frames/purpleav.webp
     - assets/animations/empty_status.json
