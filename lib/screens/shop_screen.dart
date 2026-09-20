@@ -1913,6 +1913,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option 0.8: Cosmic Blue Orb SVGA Frame (blue-orb-v1.svga)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Cosmic Blue Orb SVGA Frame',
+            description: 'Exclusive 30FPS rotating celestial vortex of glowing blue cosmic plasma.',
+            framePath: 'assets/frames/blue-orb-v1.svga',
+            badgeText: 'SVGA COSMIC',
+            badgeGradient: const [Color(0xFF0284C7), Color(0xFF2563EB)],
+            isEquipped: _equippedAdminFrame == 'assets/frames/blue-orb-v1.svga' ||
+                _equippedAdminFrame == 'https://media.katsklub.top/frames/blue-orb-v1.svga',
+            onEquip: () => _equipAdminFrame('assets/frames/blue-orb-v1.svga', 'Cosmic Blue Orb SVGA Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Cosmic Blue Orb SVGA Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option 1: Golden Admin Frame (bframe.png)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,

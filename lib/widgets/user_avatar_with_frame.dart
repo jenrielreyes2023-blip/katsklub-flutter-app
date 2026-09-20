@@ -134,6 +134,8 @@ class UserAvatarWithFrame extends StatelessWidget {
             pathLower.contains('kawaii2') || pathLower.contains('kawaii');
         final isOrnaFrame =
             pathLower.contains('orna');
+        final isBlueOrbFrame =
+            pathLower.contains('blue-orb') || pathLower.contains('blue_orb');
         final isPurpleFrame =
             pathLower.contains('purpleav') || pathLower.contains('purple_av');
 
@@ -144,7 +146,7 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.48;
         } else if (isNeonFrame) {
           frameSize = size * 1.70;
-        } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame) {
+        } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame || isBlueOrbFrame) {
           frameSize = size * 1.50;
         } else if (isSpringFrame) {
           frameSize = size * 1.35;
