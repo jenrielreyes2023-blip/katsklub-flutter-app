@@ -89,4 +89,16 @@ class ApiConfig {
     final name = fileName.split('/').last.trim();
     return 'https://raw.githubusercontent.com/jenrielreyes2023-blip/katsklub-flutter-app/main/deploy_postcards/$name';
   }
+
+  /// Resolves an avatar frame to a Cloudflare R2 CDN URL or local asset path.
+  static String frameUrl(String value) {
+    final url = value.trim();
+    if (url.isEmpty || url == 'none') return '';
+    if (url.startsWith('assets/')) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) {
+      return 'https://media.katsklub.top$url';
+    }
+    return 'https://media.katsklub.top/frames/$url';
+  }
 }

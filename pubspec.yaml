@@ -49,6 +49,7 @@ dependencies:
 
   # UI, Fonts & Animations
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
   flutter_screenutil: ^5.9.3
   flutter_svg: ^2.2.4
   google_fonts: ^6.2.1

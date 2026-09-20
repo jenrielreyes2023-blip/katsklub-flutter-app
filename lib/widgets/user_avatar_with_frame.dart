@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 import 'package:flutter_svga/flutter_svga.dart';
 import '../config/api_config.dart';
@@ -111,13 +113,15 @@ class UserAvatarWithFrame extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: equippedAdminFrameNotifier,
       builder: (context, globalEquippedFrame, _) {
-        final String? effectiveFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ?? (isAdmin ? globalEquippedFrame : null);
-        final cleanFrame = (effectiveFrame == 'none' || effectiveFrame == null) ? null : effectiveFrame.trim();
-        final pathLower = (cleanFrame ?? '').toLowerCase();
-        final hasFrame = cleanFrame != null && cleanFrame.isNotEmpty;
+        final String? rawFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ?? (isAdmin ? globalEquippedFrame : null);
+        final cleanRaw = (rawFrame == 'none' || rawFrame == null) ? null : rawFrame.trim();
+        final effectiveFrame = cleanRaw != null ? ApiConfig.frameUrl(cleanRaw) : null;
+        final hasFrame = effectiveFrame != null && effectiveFrame.isNotEmpty;
+        final pathLower = (effectiveFrame ?? '').toLowerCase();
 
-        final isLottie = pathLower.endsWith('.json');
-        final isSvga = pathLower.endsWith('.svga');
+        final isRemote = pathLower.startsWith('http://') || pathLower.startsWith('https://');
+        final isLottie = pathLower.endsWith('.json') || pathLower.contains('.json?');
+        final isSvga = pathLower.endsWith('.svga') || pathLower.contains('.svga?');
         final isWingFrame = pathLower.contains('wing_frame');
         final isTestFrame = pathLower.contains('test_frame');
         final isNeonFrame = pathLower.contains('neon.json') ||
@@ -138,16 +142,17 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.48;
         } else if (isNeonFrame) {
           frameSize = size * 1.70;
-        } else if (isBeachFrame) {
-          frameSize = size * 1.50;
-        } else if (isKawaiiFrame) {
+        } else if (isBeachFrame || isKawaiiFrame) {
           frameSize = size * 1.50;
         } else if (isSpringFrame) {
           frameSize = size * 1.35;
         } else if (isPurpleFrame) {
           frameSize = size * 1.38;
+        } else if (isSvga) {
+          // Default optimal scale for remote/local SVGA avatar frames
+          frameSize = size * 1.50;
         } else {
-          frameSize = size * 1.25;
+          frameSize = size * 1.30;
         }
 
         final double xOffset = isBeachFrame ? (10.0 / 480.0) * frameSize : 0.0;
@@ -177,22 +182,31 @@ class UserAvatarWithFrame extends StatelessWidget {
                     child: RepaintBoundary(
                       child: isLottie
                           ? _LottieFrameOverlay(
-                              framePath: cleanFrame,
+                              framePath: effectiveFrame,
                               frameSize: frameSize,
                             )
                           : isSvga
                               ? _SvgaFrameOverlay(
-                                  framePath: cleanFrame,
+                                  framePath: effectiveFrame,
                                   frameSize: frameSize,
                                 )
-                              : Image.asset(
-                                  cleanFrame,
-                                  width: frameSize,
-                                  height: frameSize,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const SizedBox.shrink(),
-                                ),
+                              : isRemote
+                                  ? CachedNetworkImage(
+                                      imageUrl: effectiveFrame,
+                                      width: frameSize,
+                                      height: frameSize,
+                                      fit: BoxFit.contain,
+                                      errorWidget: (context, error, stackTrace) =>
+                                          const SizedBox.shrink(),
+                                    )
+                                  : Image.asset(
+                                      effectiveFrame,
+                                      width: frameSize,
+                                      height: frameSize,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const SizedBox.shrink(),
+                                    ),
                     ),
                   ),
                 ),
@@ -242,25 +256,42 @@ class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
     super.dispose();
   }
 
+  void _onLoaded(LottieComposition composition) {
+    _controller.duration = composition.duration;
+    final pathLower = widget.framePath.toLowerCase();
+    if (pathLower.contains('wing_frame')) {
+      // Wing frame skips initial circle morph state and continuously loops expanded wings segment
+      _controller.repeat(min: 0.35, max: 1.0);
+    } else {
+      // Full uncut animation loop for standard Lottie frames
+      _controller.repeat();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isRemote = widget.framePath.startsWith('http://') ||
+        widget.framePath.startsWith('https://');
+
+    if (isRemote) {
+      return Lottie.network(
+        widget.framePath,
+        width: widget.frameSize,
+        height: widget.frameSize,
+        fit: BoxFit.contain,
+        controller: _controller,
+        onLoaded: _onLoaded,
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      );
+    }
+
     return Lottie.asset(
       widget.framePath,
       width: widget.frameSize,
       height: widget.frameSize,
       fit: BoxFit.contain,
       controller: _controller,
-      onLoaded: (composition) {
-        _controller.duration = composition.duration;
-        final pathLower = widget.framePath.toLowerCase();
-        if (pathLower.contains('wing_frame')) {
-          // Wing frame skips initial circle morph state and continuously loops expanded wings segment
-          _controller.repeat(min: 0.35, max: 1.0);
-        } else {
-          // Full uncut animation loop for standard Lottie frames
-          _controller.repeat();
-        }
-      },
+      onLoaded: _onLoaded,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
   }
@@ -282,6 +313,7 @@ class _SvgaFrameOverlay extends StatefulWidget {
 class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
     with SingleTickerProviderStateMixin {
   SVGAAnimationController? _controller;
+  String? _loadedPath;
 
   @override
   void initState() {
@@ -290,23 +322,50 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
     _loadSvga();
   }
 
+  @override
+  void didUpdateWidget(covariant _SvgaFrameOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.framePath != widget.framePath) {
+      _loadSvga();
+    }
+  }
+
   Future<void> _loadSvga() async {
+    final targetPath = widget.framePath;
+    _loadedPath = targetPath;
     try {
-      final byteData = await rootBundle.load(widget.framePath);
-      final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+      final isRemote = targetPath.startsWith('http://') ||
+          targetPath.startsWith('https://');
+
+      Uint8List bytes;
+      if (isRemote) {
+        try {
+          final file = await DefaultCacheManager().getSingleFile(targetPath);
+          bytes = await file.readAsBytes();
+        } catch (_) {
+          final res = await http.get(Uri.parse(targetPath));
+          bytes = res.bodyBytes;
+        }
+      } else {
+        final byteData = await rootBundle.load(targetPath);
+        bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+      }
+
+      if (_loadedPath != targetPath) return;
+
       final videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
       // Explicitly hide stray or unclipped layers from SVGA
       videoItem.dynamicItem.setHidden(true, 'shim');
       videoItem.dynamicItem.setHidden(true, 'glint');
       videoItem.dynamicItem.setHidden(true, 'spark');
-      if (mounted) {
+      if (mounted && _loadedPath == targetPath) {
         setState(() {
           _controller?.videoItem = videoItem;
           _controller?.repeat();
         });
       }
     } catch (e) {
-      debugPrint('Error loading SVGA frame ${widget.framePath}: $e');
+      debugPrint('Error loading SVGA frame $targetPath: $e');
     }
   }
 
