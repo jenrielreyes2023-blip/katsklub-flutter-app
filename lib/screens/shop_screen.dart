@@ -1887,12 +1887,12 @@ class _ShopScreenState extends State<ShopScreen> {
             initials: initials,
             title: 'Kawaii Cat Blossom SVGA Frame',
             description: 'Exclusive 60FPS animated cute kitty & falling sakura petals SVGA frame.',
-            framePath: 'https://media.katsklub.top/frames/kawaii2.svga',
+            framePath: 'assets/frames/kawaii2.svga',
             badgeText: 'SVGA KAWAII',
             badgeGradient: const [Color(0xFFEC4899), Color(0xFFF43F5E)],
-            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/kawaii2.svga' ||
-                _equippedAdminFrame == 'assets/frames/kawaii2.svga',
-            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/kawaii2.svga', 'Kawaii Cat Blossom SVGA Frame'),
+            isEquipped: _equippedAdminFrame == 'assets/frames/kawaii2.svga' ||
+                _equippedAdminFrame == 'https://media.katsklub.top/frames/kawaii2.svga',
+            onEquip: () => _equipAdminFrame('assets/frames/kawaii2.svga', 'Kawaii Cat Blossom SVGA Frame'),
             onUnequip: () => _equipAdminFrame('none', 'Kawaii Cat Blossom SVGA Frame'),
           ),
           const SizedBox(height: 12),
@@ -1903,12 +1903,12 @@ class _ShopScreenState extends State<ShopScreen> {
             initials: initials,
             title: 'Golden Angel Ornament SVGA Frame',
             description: 'Exclusive 30FPS animated golden crescent with fairy angel & stars.',
-            framePath: 'https://media.katsklub.top/frames/orna.svga',
+            framePath: 'assets/frames/orna.svga',
             badgeText: 'SVGA ORNAMENT',
             badgeGradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/orna.svga' ||
-                _equippedAdminFrame == 'assets/frames/orna.svga',
-            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/orna.svga', 'Golden Angel Ornament SVGA Frame'),
+            isEquipped: _equippedAdminFrame == 'assets/frames/orna.svga' ||
+                _equippedAdminFrame == 'https://media.katsklub.top/frames/orna.svga',
+            onEquip: () => _equipAdminFrame('assets/frames/orna.svga', 'Golden Angel Ornament SVGA Frame'),
             onUnequip: () => _equipAdminFrame('none', 'Golden Angel Ornament SVGA Frame'),
           ),
           const SizedBox(height: 12),

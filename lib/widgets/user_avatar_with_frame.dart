@@ -339,23 +339,78 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
       final isRemote = targetPath.startsWith('http://') ||
           targetPath.startsWith('https://');
 
-      Uint8List bytes;
+      Uint8List? bytes;
       if (isRemote) {
         try {
           final file = await DefaultCacheManager().getSingleFile(targetPath);
           bytes = await file.readAsBytes();
         } catch (_) {
-          final res = await http.get(Uri.parse(targetPath));
-          bytes = res.bodyBytes;
+          try {
+            final res = await http.get(Uri.parse(targetPath));
+            if (res.statusCode == 200) bytes = res.bodyBytes;
+          } catch (_) {}
         }
       } else {
-        final byteData = await rootBundle.load(targetPath);
-        bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+        try {
+          final byteData = await rootBundle.load(targetPath);
+          bytes = byteData.buffer
+              .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+        } catch (_) {
+          // If local asset is not yet in bundle (e.g. newly added and user only hot-restarted),
+          // fallback gracefully to CDN URL
+          final fileName = targetPath.split('/').last;
+          try {
+            final cdnUrl = 'https://media.katsklub.top/frames/$fileName';
+            final file = await DefaultCacheManager().getSingleFile(cdnUrl);
+            bytes = await file.readAsBytes();
+          } catch (_) {
+            try {
+              final res = await http.get(Uri.parse(
+                  'https://media.katsklub.top/frames/$fileName?t=${DateTime.now().millisecondsSinceEpoch}'));
+              if (res.statusCode == 200) bytes = res.bodyBytes;
+            } catch (_) {}
+          }
+        }
       }
 
-      if (_loadedPath != targetPath) return;
+      if (_loadedPath != targetPath || bytes == null || bytes.isEmpty) return;
 
-      final videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+      MovieEntity videoItem;
+      try {
+        videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+      } catch (decodeErr) {
+        // If decoding failed (e.g. stale/corrupted disk cache from earlier version),
+        // bust cache and attempt recovery
+        debugPrint(
+            'SVGA decode error for $targetPath: $decodeErr. Attempting fresh recovery...');
+        if (isRemote) {
+          try {
+            await DefaultCacheManager().removeFile(targetPath);
+          } catch (_) {}
+          // Try local asset first
+          final fileName = targetPath.split('/').last;
+          try {
+            final byteData = await rootBundle.load('assets/frames/$fileName');
+            bytes = byteData.buffer
+                .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+            videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+          } catch (_) {
+            // Fresh download with cache buster
+            final freshRes = await http.get(Uri.parse(
+                '$targetPath?t=${DateTime.now().millisecondsSinceEpoch}'));
+            bytes = freshRes.bodyBytes;
+            videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+          }
+        } else {
+          // Local decode failed, try fresh CDN
+          final fileName = targetPath.split('/').last;
+          final freshRes = await http.get(Uri.parse(
+              'https://media.katsklub.top/frames/$fileName?t=${DateTime.now().millisecondsSinceEpoch}'));
+          bytes = freshRes.bodyBytes;
+          videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+        }
+      }
+
       // Explicitly hide stray or unclipped layers from SVGA
       videoItem.dynamicItem.setHidden(true, 'shim');
       videoItem.dynamicItem.setHidden(true, 'glint');
