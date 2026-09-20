@@ -116,6 +116,7 @@ flutter:
     - assets/vip-charm/
     - assets/klubhouse/
     - assets/chatbubble/
+    - assets/badge/
 
   fonts:
     - family: SF Pro Rounded

@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svga/flutter_svga.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -2491,6 +2493,26 @@ const Map<String, _ProfileAchievementDefinition>
     title: 'Preview',
     theme: _ProfileAchievementTheme.assetPreview,
   ),
+  'badge_snow': _ProfileAchievementDefinition(
+    key: 'badge_snow',
+    title: 'Snow Whispers',
+    theme: _ProfileAchievementTheme.snowBadge,
+  ),
+  'snow_badge': _ProfileAchievementDefinition(
+    key: 'snow_badge',
+    title: 'Snow Whispers',
+    theme: _ProfileAchievementTheme.snowBadge,
+  ),
+  'badge_nemesis': _ProfileAchievementDefinition(
+    key: 'badge_nemesis',
+    title: 'Nemesis Aura',
+    theme: _ProfileAchievementTheme.nemesisBadge,
+  ),
+  'nemesis_badge': _ProfileAchievementDefinition(
+    key: 'nemesis_badge',
+    title: 'Nemesis Aura',
+    theme: _ProfileAchievementTheme.nemesisBadge,
+  ),
 };
 
 List<_ProfileAchievementDefinition> _resolveProfileAchievements(
@@ -2596,6 +2618,9 @@ class _ProfileAchievementPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = theme.style;
+    if (style.svgaPillPath != null) {
+      return _SvgaAchievementPill(svgaPath: style.svgaPillPath!);
+    }
     if (style.assetPillPath != null) {
       return _AssetAchievementPill(assetPath: style.assetPillPath!);
     }
@@ -2746,6 +2771,85 @@ class _AssetAchievementPill extends StatelessWidget {
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _SvgaAchievementPill extends StatefulWidget {
+  const _SvgaAchievementPill({required this.svgaPath});
+
+  final String svgaPath;
+
+  @override
+  State<_SvgaAchievementPill> createState() => _SvgaAchievementPillState();
+}
+
+class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
+    with SingleTickerProviderStateMixin {
+  SVGAAnimationController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SVGAAnimationController(vsync: this);
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      Uint8List? bytes;
+      try {
+        final byteData = await rootBundle.load(widget.svgaPath);
+        bytes = byteData.buffer
+            .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+      } catch (_) {
+        // Fallback to CDN if asset not yet bundled in debug
+        final fileName = widget.svgaPath.split('/').last;
+        final cdnUrl = 'https://media.katsklub.top/badges/$fileName';
+        try {
+          final file = await DefaultCacheManager().getSingleFile(cdnUrl);
+          bytes = await file.readAsBytes();
+        } catch (_) {
+          try {
+            final res = await http.get(Uri.parse(cdnUrl));
+            if (res.statusCode == 200) bytes = res.bodyBytes;
+          } catch (_) {}
+        }
+      }
+
+      if (bytes == null || bytes.isEmpty) return;
+      final videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
+      if (mounted) {
+        setState(() {
+          _controller?.videoItem = videoItem;
+          _controller?.repeat();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading SVGA badge: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const badgeHeight = 28.0;
+    const badgeWidth = badgeHeight * (500.0 / 133.0); // ~105.2
+    if (_controller?.videoItem == null) {
+      return const SizedBox(height: badgeHeight, width: badgeWidth);
+    }
+    return SizedBox(
+      height: badgeHeight,
+      width: badgeWidth,
+      child: SVGAImage(
+        _controller!,
+        fit: BoxFit.contain,
+      ),
     );
   }
 }
@@ -3248,6 +3352,34 @@ enum _ProfileAchievementTheme {
       iconHeight: 0,
       assetPillPath: 'assets/images/achievement_pill_preview_v1_trimmed.png',
     ),
+  ),
+  snowBadge(
+    _AchievementThemeStyle(
+      pillColors: [Colors.transparent],
+      badgeGradient: [Colors.transparent],
+      badgeBorderColor: Colors.transparent,
+      badgeInnerRingColor: Colors.transparent,
+      badgeIconColor: Colors.transparent,
+      badgeShape: _AchievementBadgeShape.coin,
+      iconSvg: '',
+      iconWidth: 0,
+      iconHeight: 0,
+      svgaPillPath: 'assets/badge/badge-snow.svga',
+    ),
+  ),
+  nemesisBadge(
+    _AchievementThemeStyle(
+      pillColors: [Colors.transparent],
+      badgeGradient: [Colors.transparent],
+      badgeBorderColor: Colors.transparent,
+      badgeInnerRingColor: Colors.transparent,
+      badgeIconColor: Colors.transparent,
+      badgeShape: _AchievementBadgeShape.coin,
+      iconSvg: '',
+      iconWidth: 0,
+      iconHeight: 0,
+      svgaPillPath: 'assets/badge/badge-nemesis.svga',
+    ),
   );
 
   const _ProfileAchievementTheme(this.style);
@@ -3283,6 +3415,7 @@ class _AchievementThemeStyle {
     this.pillBorderColor,
     this.badgeScale = 1.16,
     this.assetPillPath,
+    this.svgaPillPath,
     this.textShadows,
     this.fontFamily,
     this.fontSize,
@@ -3303,6 +3436,7 @@ class _AchievementThemeStyle {
   final Color? pillBorderColor;
   final double badgeScale;
   final String? assetPillPath;
+  final String? svgaPillPath;
   final List<Shadow>? textShadows;
   final String? fontFamily;
   final double? fontSize;
