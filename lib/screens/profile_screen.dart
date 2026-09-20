@@ -2619,7 +2619,10 @@ class _ProfileAchievementPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = theme.style;
     if (style.svgaPillPath != null) {
-      return _SvgaAchievementPill(svgaPath: style.svgaPillPath!);
+      return _SvgaAchievementPill(
+        svgaPath: style.svgaPillPath!,
+        motionAnimation: motionAnimation,
+      );
     }
     if (style.assetPillPath != null) {
       return _AssetAchievementPill(assetPath: style.assetPillPath!);
@@ -2680,16 +2683,9 @@ class _ProfileAchievementPill extends StatelessWidget {
                 boxShadow: theme == _ProfileAchievementTheme.top50
                     ? [
                         BoxShadow(
-                          color: const Color(0xFFFF5E3A).withValues(alpha: 0.65),
+                          color: const Color(0xFFE9B44C).withValues(alpha: 0.45),
                           blurRadius: 10,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 0),
-                        ),
-                        BoxShadow(
-                          color: const Color(0xFFFF2A00).withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 0),
+                          offset: const Offset(0, 3),
                         ),
                       ]
                     : null,
@@ -2776,9 +2772,13 @@ class _AssetAchievementPill extends StatelessWidget {
 }
 
 class _SvgaAchievementPill extends StatefulWidget {
-  const _SvgaAchievementPill({required this.svgaPath});
+  const _SvgaAchievementPill({
+    required this.svgaPath,
+    this.motionAnimation,
+  });
 
   final String svgaPath;
+  final Animation<double>? motionAnimation;
 
   @override
   State<_SvgaAchievementPill> createState() => _SvgaAchievementPillState();
@@ -2846,9 +2846,98 @@ class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
     return SizedBox(
       height: badgeHeight,
       width: badgeWidth,
-      child: SVGAImage(
-        _controller!,
-        fit: BoxFit.contain,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          SVGAImage(
+            _controller!,
+            fit: BoxFit.contain,
+          ),
+          if (widget.motionAnimation != null)
+            Positioned.fill(
+              child: _SvgaPillShimmer(
+                animation: widget.motionAnimation!,
+                width: badgeWidth,
+                height: badgeHeight,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SvgaPillShimmer extends StatelessWidget {
+  const _SvgaPillShimmer({
+    required this.animation,
+    required this.width,
+    required this.height,
+  });
+
+  final Animation<double> animation;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height / 2),
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            final value = animation.value;
+            const activeUntil = 0.70;
+            final isActive = value < activeUntil;
+            if (!isActive) {
+              return const SizedBox.shrink();
+            }
+
+            final progress = value / activeUntil;
+            final startX = -height * 1.6;
+            final totalDistance = width + (height * 3.2);
+            final currentX = startX + (progress * totalDistance);
+            final pulse = 0.32 + (((math.sin(progress * math.pi) + 1) / 2) * 0.28);
+
+            return Stack(
+              children: [
+                Positioned(
+                  left: currentX,
+                  top: -height,
+                  bottom: -height,
+                  child: Transform.rotate(
+                    angle: -0.36,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 22,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0),
+                            Colors.white.withValues(alpha: pulse * 0.45),
+                            Colors.white.withValues(alpha: pulse * 0.85),
+                            Colors.white.withValues(alpha: pulse * 0.45),
+                            Colors.white.withValues(alpha: 0),
+                          ],
+                          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: pulse * 0.4),
+                            blurRadius: 10,
+                            spreadRadius: 1.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
