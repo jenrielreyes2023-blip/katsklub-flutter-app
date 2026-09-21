@@ -138,6 +138,8 @@ class UserAvatarWithFrame extends StatelessWidget {
             pathLower.contains('purpleav') || pathLower.contains('purple_av');
         final isHeartFrame =
             pathLower.contains('heart');
+        final isPotionFrame =
+            pathLower.contains('potion') || pathLower.contains('magical_potion');
 
         final double frameSize;
         if (isWingFrame) {
@@ -148,6 +150,8 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.70;
         } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame) {
           frameSize = size * 1.50;
+        } else if (isPotionFrame) {
+          frameSize = size * 1.42;
         } else if (isHeartFrame) {
           frameSize = size * 1.46;
         } else if (isSpringFrame) {

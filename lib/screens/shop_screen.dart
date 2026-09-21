@@ -1852,6 +1852,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option: Magical Potion Animated Frame (magical_potion.webp)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Magical Potion Animated Frame',
+            description: 'Translucent crystal flask with bubbling purple potion, popping cork & magical aura clouds.',
+            framePath: 'https://media.katsklub.top/frames/magical_potion.webp',
+            badgeText: 'MAGICAL POTION',
+            badgeGradient: const [Color(0xFF9333EA), Color(0xFFC084FC)],
+            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/magical_potion.webp' ||
+                _equippedAdminFrame == 'magical_potion.webp',
+            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/magical_potion.webp', 'Magical Potion Animated Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Magical Potion Animated Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option: Purple Kawaii Animated Frame (purpleav.webp)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
