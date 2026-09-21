@@ -2773,7 +2773,7 @@ class _AssetAchievementPill extends StatelessWidget {
     }
     return Image.asset(
       assetPath,
-      height: 34,
+      height: 28,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
@@ -2856,9 +2856,10 @@ class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
     return SizedBox(
       height: badgeHeight,
       width: badgeWidth,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(badgeHeight / 2),
+        child: Stack(
+          children: [
           SVGAImage(
             _controller!,
             fit: BoxFit.contain,
@@ -2872,6 +2873,7 @@ class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
               ),
             ),
         ],
+        ),
       ),
     );
   }
