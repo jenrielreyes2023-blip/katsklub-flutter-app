@@ -2751,6 +2751,16 @@ class _AssetAchievementPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: assetPath,
+        height: 34,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        placeholder: (context, url) => const SizedBox(height: 34, width: 34),
+        errorWidget: (context, url, error) => const SizedBox.shrink(),
+      );
+    }
     return Image.asset(
       assetPath,
       height: 34,
@@ -3368,7 +3378,7 @@ enum _ProfileAchievementTheme {
       iconSvg: '',
       iconWidth: 0,
       iconHeight: 0,
-      assetPillPath: 'assets/images/rising_paw.webp',
+      assetPillPath: 'https://media.katsklub.top/badges/risingpaw.webp',
     ),
   ),
   top50(
