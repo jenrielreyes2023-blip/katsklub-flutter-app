@@ -2513,6 +2513,16 @@ const Map<String, _ProfileAchievementDefinition>
     title: 'Nemesis Aura',
     theme: _ProfileAchievementTheme.nemesisBadge,
   ),
+  'soulful': _ProfileAchievementDefinition(
+    key: 'soulful',
+    title: 'Soulful',
+    theme: _ProfileAchievementTheme.soulfulBadge,
+  ),
+  'badge_soulful': _ProfileAchievementDefinition(
+    key: 'badge_soulful',
+    title: 'Soulful',
+    theme: _ProfileAchievementTheme.soulfulBadge,
+  ),
 };
 
 List<_ProfileAchievementDefinition> _resolveProfileAchievements(
@@ -3458,6 +3468,20 @@ enum _ProfileAchievementTheme {
       iconWidth: 0,
       iconHeight: 0,
       svgaPillPath: 'assets/badge/badge-nemesis.svga',
+    ),
+  ),
+  soulfulBadge(
+    _AchievementThemeStyle(
+      pillColors: [Colors.transparent],
+      badgeGradient: [Colors.transparent],
+      badgeBorderColor: Colors.transparent,
+      badgeInnerRingColor: Colors.transparent,
+      badgeIconColor: Colors.transparent,
+      badgeShape: _AchievementBadgeShape.coin,
+      iconSvg: '',
+      iconWidth: 0,
+      iconHeight: 0,
+      assetPillPath: 'https://media.katsklub.top/badges/soulful.webp',
     ),
   );
 
