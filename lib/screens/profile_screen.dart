@@ -2628,14 +2628,19 @@ class _ProfileAchievementPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = theme.style;
+    final pillHeight = style.pillHeight ?? 23.0;
     if (style.svgaPillPath != null) {
       return _SvgaAchievementPill(
         svgaPath: style.svgaPillPath!,
         motionAnimation: motionAnimation,
+        height: pillHeight,
       );
     }
     if (style.assetPillPath != null) {
-      return _AssetAchievementPill(assetPath: style.assetPillPath!);
+      return _AssetAchievementPill(
+        assetPath: style.assetPillPath!,
+        height: pillHeight,
+      );
     }
     if (theme == _ProfileAchievementTheme.googleWorkspace) {
       return const _RawSvgAchievement(svgString: _googleWorkspaceSvg);
@@ -2645,7 +2650,7 @@ class _ProfileAchievementPill extends StatelessWidget {
         animation: motionAnimation,
         child: Image.asset(
           'assets/images/top2.png',
-          height: 26,
+          height: pillHeight,
           fit: BoxFit.contain,
         ),
       );
@@ -2755,25 +2760,31 @@ class _ProfileAchievementPill extends StatelessWidget {
 }
 
 class _AssetAchievementPill extends StatelessWidget {
-  const _AssetAchievementPill({required this.assetPath});
+  const _AssetAchievementPill({
+    required this.assetPath,
+    this.height = 23.0,
+  });
 
   final String assetPath;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
+    final width = height * (500.0 / 133.0);
     if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: assetPath,
-        height: 34,
+        height: height,
+        width: width,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
-        placeholder: (context, url) => const SizedBox(height: 34, width: 34),
+        placeholder: (context, url) => SizedBox(height: height, width: width),
         errorWidget: (context, url, error) => const SizedBox.shrink(),
       );
     }
     return Image.asset(
       assetPath,
-      height: 28,
+      height: height,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
@@ -2785,10 +2796,12 @@ class _SvgaAchievementPill extends StatefulWidget {
   const _SvgaAchievementPill({
     required this.svgaPath,
     this.motionAnimation,
+    this.height = 23.0,
   });
 
   final String svgaPath;
   final Animation<double>? motionAnimation;
+  final double height;
 
   @override
   State<_SvgaAchievementPill> createState() => _SvgaAchievementPillState();
@@ -2848,10 +2861,10 @@ class _SvgaAchievementPillState extends State<_SvgaAchievementPill>
 
   @override
   Widget build(BuildContext context) {
-    const badgeHeight = 28.0;
-    const badgeWidth = badgeHeight * (500.0 / 133.0); // ~105.2
+    final badgeHeight = widget.height;
+    final badgeWidth = badgeHeight * (500.0 / 133.0); // ~86.5 at 23.0
     if (_controller?.videoItem == null) {
-      return const SizedBox(height: badgeHeight, width: badgeWidth);
+      return SizedBox(height: badgeHeight, width: badgeWidth);
     }
     return SizedBox(
       height: badgeHeight,
@@ -3524,6 +3537,7 @@ class _AchievementThemeStyle {
     this.textShadows,
     this.fontFamily,
     this.fontSize,
+    this.pillHeight,
   });
 
   final List<Color> pillColors;
@@ -3545,6 +3559,7 @@ class _AchievementThemeStyle {
   final List<Shadow>? textShadows;
   final String? fontFamily;
   final double? fontSize;
+  final double? pillHeight;
 }
 
 class _AchievementBadge extends StatelessWidget {
