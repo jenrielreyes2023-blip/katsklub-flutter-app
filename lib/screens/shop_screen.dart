@@ -547,6 +547,31 @@ class _ShopScreenState extends State<ShopScreen> {
   ThemeProductData? _selectedTheme;
   String _equippedAdminFrame = 'assets/frames/bframe.png';
 
+  List<Map<String, dynamic>> _dynamicFrames = [];
+  List<String> _dynamicCategories = ['All'];
+  String _selectedFrameCategory = 'All';
+  bool _isLoadingFrames = false;
+
+  Future<void> _fetchDynamicFrames() async {
+    setState(() => _isLoadingFrames = true);
+    try {
+      final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/frames'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && mounted) {
+          setState(() {
+            _dynamicFrames = List<Map<String, dynamic>>.from(data['frames'] ?? []);
+            _dynamicCategories = List<String>.from(data['categories'] ?? ['All']);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching dynamic frames: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingFrames = false);
+    }
+  }
+
   Future<void> _equipAdminFrame(String framePath, String frameName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('admin_equipped_frame', framePath);
@@ -591,6 +616,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     _loadThemeState();
+    _fetchDynamicFrames();
   }
 
   void _switchTab(int index) {
@@ -1806,20 +1832,113 @@ class _ShopScreenState extends State<ShopScreen> {
     final avatarUrl = _currentUser?.avatarUrl ?? '';
     final initials = _currentUser?.initials ?? 'U';
 
+    final filteredDynamicFrames = _selectedFrameCategory == 'All'
+        ? _dynamicFrames
+        : _dynamicFrames.where((f) => f['category'] == _selectedFrameCategory).toList();
+
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const Text(
-          'Avatar Frames & Accessories',
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Avatar Frames & Accessories',
+              style: TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+            if (_dynamicFrames.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${filteredDynamicFrames.length} items',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF7C3AED),
+                  ),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+
+        // Category Chips
+        if (_dynamicCategories.length > 1) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: _dynamicCategories.map((cat) {
+                final isSelected = cat == _selectedFrameCategory;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF8B5CF6).withOpacity(0.18),
+                    backgroundColor: const Color(0xFFF3F4F6),
+                    checkmarkColor: const Color(0xFF8B5CF6),
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFF4B5563),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent,
+                      ),
+                    ),
+                    onSelected: (_) {
+                      setState(() => _selectedFrameCategory = cat);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Loading indicator
+        if (_isLoadingFrames && _dynamicFrames.isEmpty) ...[
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+            ),
+          ),
+        ],
+
+        // Dynamic Frames from Cloudflare R2 / API
+        for (final frame in filteredDynamicFrames) ...[
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: frame['name'] ?? 'Frame',
+            description: frame['description'] ?? 'Animated avatar decoration frame.',
+            framePath: frame['frameUrl'],
+            badgeText: (frame['category'] ?? 'FRAME').toString().toUpperCase(),
+            badgeGradient: const [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+            isEquipped: _equippedAdminFrame == frame['frameUrl'] ||
+                _equippedAdminFrame == frame['key'] ||
+                _currentUser?.avatarFrame == frame['frameUrl'],
+            onEquip: () => _equipAdminFrame(frame['frameUrl'], frame['name'] ?? 'Frame'),
+            onUnequip: () => _equipAdminFrame('none', frame['name'] ?? 'Frame'),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         if (isAdmin) ...[
           // Option: Cyber Neon Pulse Frame (neon.json)
           _buildAdminFrameCard(
