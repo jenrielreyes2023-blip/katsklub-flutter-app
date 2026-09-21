@@ -136,6 +136,8 @@ class UserAvatarWithFrame extends StatelessWidget {
             pathLower.contains('orna');
         final isPurpleFrame =
             pathLower.contains('purpleav') || pathLower.contains('purple_av');
+        final isHeartFrame =
+            pathLower.contains('heart');
 
         final double frameSize;
         if (isWingFrame) {
@@ -146,6 +148,8 @@ class UserAvatarWithFrame extends StatelessWidget {
           frameSize = size * 1.70;
         } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame) {
           frameSize = size * 1.50;
+        } else if (isHeartFrame) {
+          frameSize = size * 1.46;
         } else if (isSpringFrame) {
           frameSize = size * 1.35;
         } else if (isPurpleFrame) {

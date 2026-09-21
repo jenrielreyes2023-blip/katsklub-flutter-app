@@ -1836,6 +1836,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Option: Floating Hearts Animated Frame (heart_512.webp)
+          _buildAdminFrameCard(
+            avatarUrl: avatarUrl,
+            initials: initials,
+            title: 'Floating Hearts Animated Frame',
+            description: 'Adorable animated floating pink hearts with center pop animation streamed from Cloudflare R2.',
+            framePath: 'https://media.katsklub.top/frames/heart_512.webp',
+            badgeText: 'SWEET HEARTS',
+            badgeGradient: const [Color(0xFFFF2D55), Color(0xFFFF69B4)],
+            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/heart_512.webp' ||
+                _equippedAdminFrame == 'https://media.katsklub.top/frames/heart%20512%20optimized.webp',
+            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/heart_512.webp', 'Floating Hearts Animated Frame'),
+            onUnequip: () => _equipAdminFrame('none', 'Floating Hearts Animated Frame'),
+          ),
+          const SizedBox(height: 12),
+
           // Option: Purple Kawaii Animated Frame (purpleav.webp)
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,

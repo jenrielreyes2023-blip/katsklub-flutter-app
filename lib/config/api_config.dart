@@ -95,10 +95,12 @@ class ApiConfig {
     final url = value.trim();
     if (url.isEmpty || url == 'none') return '';
     if (url.startsWith('assets/')) return url;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/')) {
-      return 'https://media.katsklub.top$url';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Uri.encodeFull(url);
     }
-    return 'https://media.katsklub.top/frames/$url';
+    if (url.startsWith('/')) {
+      return 'https://media.katsklub.top${Uri.encodeFull(url)}';
+    }
+    return 'https://media.katsklub.top/frames/${Uri.encodeComponent(url)}';
   }
 }
