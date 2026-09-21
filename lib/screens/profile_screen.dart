@@ -3368,7 +3368,7 @@ enum _ProfileAchievementTheme {
       iconSvg: '',
       iconWidth: 0,
       iconHeight: 0,
-      svgaPillPath: 'assets/badge/risingpaw.svga',
+      assetPillPath: 'assets/images/rising_paw.webp',
     ),
   ),
   top50(
