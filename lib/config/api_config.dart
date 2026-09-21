@@ -4,6 +4,9 @@ class ApiConfig {
     defaultValue: 'https://katsklub.top',
   );
 
+  static String get baseUrl => apiBaseUrl;
+  static const String framesPath = '/api/frames';
+
   static const String loginPath = '/api/auth/login';
   static const String logoutPath = '/api/auth/logout';
   static const String mePath = '/api/me';

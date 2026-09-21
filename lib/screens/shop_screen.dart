@@ -555,7 +555,9 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> _fetchDynamicFrames() async {
     setState(() => _isLoadingFrames = true);
     try {
-      final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/frames'));
+      final res = await http.get(
+        Uri.parse('${ApiConfig.apiBaseUrl}${ApiConfig.framesPath}'),
+      );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['ok'] == true && mounted) {
