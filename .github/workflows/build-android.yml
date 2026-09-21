@@ -48,10 +48,11 @@ jobs:
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
       - name: Deploy APK to https://katsklub.top/katsklub-latest.apk
-        continue-on-error: true
         run: |
           echo "Deploying APK to server..."
-          curl -s -X POST https://katsklub.top/api/admin/deploy-apk \
+          curl --fail --retry 3 --retry-delay 5 \
+            --resolve katsklub.top:443:43.134.234.140 \
+            -X POST https://katsklub.top/api/admin/deploy-apk \
             -H "x-deploy-token: katsklub_apk_secret_2026" \
             -F "apk=@build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
-          echo "Deployment step completed."
+          echo "Deployment step completed successfully."
