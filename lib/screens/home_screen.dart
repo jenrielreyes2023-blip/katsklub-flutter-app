@@ -58,8 +58,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
-  static const double _homeHeaderHeight = 46;
-  double get _storiesRowHeight => 78.w + 4.h + 18.sp;
+  static const double _homeHeaderHeight = 42;
+  double get _storiesRowHeight => 64.w + 2.h + 14.sp;
   static const Duration _homeHeaderAnimationDuration =
       Duration(milliseconds: 180);
 
@@ -584,7 +584,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: SizedBox(height: totalHeaderHeight),
+                    child: SizedBox(height: totalHeaderHeight + 2.h),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -1723,7 +1723,7 @@ class _StoriesRowState extends State<_StoriesRow>
     super.build(context);
 
     final hasOwnStories = widget.ownStories.isNotEmpty;
-    final rowHeight = 78.w + 4.h + 18.sp;
+    final rowHeight = 64.w + 2.h + 14.sp;
 
     return SizedBox(
       height: rowHeight,
@@ -1732,10 +1732,10 @@ class _StoriesRowState extends State<_StoriesRow>
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
         ),
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        padding: EdgeInsets.symmetric(horizontal: 10.w),
         scrollDirection: Axis.horizontal,
         itemCount: widget.storyGroups.length + 1,
-        separatorBuilder: (_, __) => SizedBox(width: 4.w),
+        separatorBuilder: (_, __) => SizedBox(width: 6.w),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _OwnStoryAvatar(

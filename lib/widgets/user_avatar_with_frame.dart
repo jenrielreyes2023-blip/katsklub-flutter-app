@@ -41,7 +41,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
     final hasStoryRing = storyRingGradient != null;
-    final innerRadius = hasStoryRing ? math.max(1.0, radius - 4.5.r) : radius;
+    final innerRadius = hasStoryRing ? math.max(1.0, radius - 3.5.r) : radius;
 
     Widget avatarChild;
     if (cleanUrl.isEmpty) {
@@ -180,13 +180,13 @@ class UserAvatarWithFrame extends StatelessWidget {
           effectiveAvatar = Container(
             width: size,
             height: size,
-            padding: EdgeInsets.all(2.5.r),
+            padding: EdgeInsets.all(2.0.r),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: storyRingGradient,
             ),
             child: Container(
-              padding: EdgeInsets.all(2.r),
+              padding: EdgeInsets.all(1.5.r),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 shape: BoxShape.circle,

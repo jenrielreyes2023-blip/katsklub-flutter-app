@@ -38,7 +38,7 @@ class StoryAvatar extends StatelessWidget {
       customBorder: const CircleBorder(),
       onTap: onTap,
       child: SizedBox(
-        width: 84.w,
+        width: 62.w,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -48,7 +48,7 @@ class StoryAvatar extends StatelessWidget {
                 UserAvatarWithFrame(
                   avatarUrl: avatarUrl,
                   initials: initials,
-                  radius: 32.w,
+                  radius: 26.w,
                   avatarFrame: avatarFrame,
                   isAdmin: isAdmin,
                   storyRingGradient: gradient,
@@ -61,24 +61,24 @@ class StoryAvatar extends StatelessWidget {
                       behavior: HitTestBehavior.opaque,
                       onTap: onPlusTap ?? onTap,
                       child: Container(
-                        width: 20.w,
-                        height: 20.w,
+                        width: 17.w,
+                        height: 17.w,
                         decoration: BoxDecoration(
                           color: const Color(0xFF2563EB),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5.w),
+                          border: Border.all(color: Colors.white, width: 1.2.w),
                         ),
                         child: Icon(
                           Icons.add,
                           color: Colors.white,
-                          size: 14.r,
+                          size: 12.r,
                         ),
                       ),
                     ),
                   ),
               ],
             ),
-            SizedBox(height: 3.h),
+            SizedBox(height: 2.h),
             Text(
               label,
               maxLines: 1,
@@ -86,7 +86,7 @@ class StoryAvatar extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
-                fontSize: 11.5.sp,
+                fontSize: 10.5.sp,
                 height: 1.1,
                 fontWeight: FontWeight.w400,
               ),

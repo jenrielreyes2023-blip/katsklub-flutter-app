@@ -285,26 +285,26 @@ class StorySkeletonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rowHeight = 72.w + 2.h + 18.sp;
+    final rowHeight = 64.w + 2.h + 14.sp;
     return SizedBox(
       height: rowHeight,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        padding: EdgeInsets.symmetric(horizontal: 10.w),
         scrollDirection: Axis.horizontal,
         itemCount: count,
-        separatorBuilder: (_, __) => SizedBox(width: 4.w),
+        separatorBuilder: (_, __) => SizedBox(width: 6.w),
         itemBuilder: (context, index) {
-          final avatarSize = 72.w;
+          final avatarSize = 52.w;
           final labelWidth = switch (index % 4) {
-            0 => 62.w,
-            1 => 50.w,
-            2 => 56.w,
-            _ => 44.w,
+            0 => 46.w,
+            1 => 38.w,
+            2 => 42.w,
+            _ => 36.w,
           };
 
           return SkeletonPulse(
             child: SizedBox(
-              width: 82.w,
+              width: 62.w,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
