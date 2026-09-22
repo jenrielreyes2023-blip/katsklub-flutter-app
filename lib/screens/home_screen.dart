@@ -57,7 +57,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   static const double _homeHeaderHeight = 46;
-  double get _storiesRowHeight => 72.w + 2.h + 18.sp;
+  double get _storiesRowHeight => 78.w + 4.h + 18.sp;
   static const Duration _homeHeaderAnimationDuration =
       Duration(milliseconds: 180);
 
@@ -1682,11 +1682,12 @@ class _StoriesRowState extends State<_StoriesRow>
     super.build(context);
 
     final hasOwnStories = widget.ownStories.isNotEmpty;
-    final rowHeight = 72.w + 2.h + 18.sp;
+    final rowHeight = 78.w + 4.h + 18.sp;
 
     return SizedBox(
       height: rowHeight,
       child: ListView.separated(
+        clipBehavior: Clip.none,
         key: PageStorageKey<String>(
           'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
         ),
@@ -1716,6 +1717,8 @@ class _StoriesRowState extends State<_StoriesRow>
             label: firstStory.authorFullName,
             initials: firstStory.initials,
             avatarUrl: firstStory.authorAvatarUrl,
+            avatarFrame: firstStory.authorAvatarFrame,
+            isAdmin: firstStory.authorIsAdmin,
             onTap: () => widget.onStoryTap(viewerGroupIndex, 0),
           );
         },
@@ -1740,104 +1743,16 @@ class _OwnStoryAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 82.w,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              InkWell(
-                customBorder: const CircleBorder(),
-                onTap: onOpenViewer ?? onCreateStory,
-                child: Container(
-                  width: 72.w,
-                  height: 72.w,
-                  padding: EdgeInsets.all(2.5.r),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
-                    ),
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(2.r),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: SizedBox.expand(
-                        child: user.avatarUrl?.trim().isEmpty ?? true
-                            ? ColoredBox(
-                                color: const Color(0xFFE5E7EB),
-                                child: Center(
-                                  child: Text(
-                                    user.initials,
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1C1E21),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : CachedNetworkImage(
-                                imageUrl: ApiConfig.assetUrl(user.avatarUrl!),
-                                fit: BoxFit.cover,
-                                fadeInDuration: Duration.zero,
-                                fadeOutDuration: Duration.zero,
-                                placeholderFadeInDuration: Duration.zero,
-                                placeholder: (context, url) => const ColoredBox(
-                                  color: Color(0xFFE5E7EB),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const ColoredBox(
-                                  color: Color(0xFFE5E7EB),
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: GestureDetector(
-                  onTap: onCreateStory,
-                  child: Container(
-                    width: 20.w,
-                    height: 20.w,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5.w),
-                    ),
-                    child: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                      size: 14.r,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            hasStories ? 'Your Story' : 'Add Story',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              fontSize: 11.5.sp,
-              height: 1.1,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
+    return StoryAvatar(
+      label: hasStories ? 'Your Story' : 'Add Story',
+      initials: user.initials,
+      avatarUrl: user.avatarUrl ?? '',
+      avatarFrame: user.avatarFrame,
+      isAdmin: user.isAdmin,
+      isOwnStory: true,
+      showPlus: true,
+      onTap: onOpenViewer ?? onCreateStory,
+      onPlusTap: onCreateStory,
     );
   }
 }

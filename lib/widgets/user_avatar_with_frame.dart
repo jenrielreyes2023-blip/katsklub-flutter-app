@@ -23,6 +23,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     this.initials = '',
     this.onTap,
     this.preserveLayoutFootprint = true,
+    this.storyRingGradient,
   });
 
   final String avatarUrl;
@@ -33,23 +34,26 @@ class UserAvatarWithFrame extends StatelessWidget {
   final String initials;
   final VoidCallback? onTap;
   final bool preserveLayoutFootprint;
+  final Gradient? storyRingGradient;
 
   @override
   Widget build(BuildContext context) {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
+    final hasStoryRing = storyRingGradient != null;
+    final innerRadius = hasStoryRing ? math.max(1.0, radius - 4.5.r) : radius;
 
     Widget avatarChild;
     if (cleanUrl.isEmpty) {
       avatarChild = CircleAvatar(
-        radius: radius,
+        radius: innerRadius,
         backgroundColor: const Color(0xFFE5E7EB),
         child: Text(
           initials,
           style: TextStyle(
             fontWeight: FontWeight.w800,
             color: const Color(0xFF111827),
-            fontSize: math.max(1.0, (radius * 0.7).sp),
+            fontSize: math.max(1.0, (innerRadius * 0.7).sp),
           ),
         ),
       );
@@ -63,20 +67,20 @@ class UserAvatarWithFrame extends StatelessWidget {
 
       if (memoryBytes != null && memoryBytes.isNotEmpty) {
         avatarChild = CircleAvatar(
-          radius: radius,
+          radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
           backgroundImage: MemoryImage(memoryBytes),
         );
       } else {
         avatarChild = CircleAvatar(
-          radius: radius,
+          radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
           child: Text(
             initials,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
-              fontSize: math.max(1.0, (radius * 0.7).sp),
+              fontSize: math.max(1.0, (innerRadius * 0.7).sp),
             ),
           ),
         );
@@ -87,23 +91,23 @@ class UserAvatarWithFrame extends StatelessWidget {
         memCacheWidth: 300,
         maxWidthDiskCache: 300,
         imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: radius,
+          radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
           backgroundImage: imageProvider,
         ),
         placeholder: (context, url) => CircleAvatar(
-          radius: radius,
+          radius: innerRadius,
           backgroundColor: const Color(0xFFF3F4F6),
         ),
         errorWidget: (context, url, error) => CircleAvatar(
-          radius: radius,
+          radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
           child: Text(
             initials,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
-              fontSize: math.max(1.0, (radius * 0.7).sp),
+              fontSize: math.max(1.0, (innerRadius * 0.7).sp),
             ),
           ),
         ),
@@ -171,6 +175,29 @@ class UserAvatarWithFrame extends StatelessWidget {
         final double effectiveWidth = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
         final double effectiveHeight = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
 
+        Widget effectiveAvatar = avatarChild;
+        if (hasStoryRing) {
+          effectiveAvatar = Container(
+            width: size,
+            height: size,
+            padding: EdgeInsets.all(2.5.r),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: storyRingGradient,
+            ),
+            child: Container(
+              padding: EdgeInsets.all(2.r),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: avatarChild,
+              ),
+            ),
+          );
+        }
+
         final widgetStack = SizedBox(
           width: effectiveWidth,
           height: effectiveHeight,
@@ -178,8 +205,8 @@ class UserAvatarWithFrame extends StatelessWidget {
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // Layer 1 (Bottom): The CircleAvatar displaying the user photo
-              avatarChild,
+              // Layer 1 (Bottom): The CircleAvatar / Story Ring displaying the user photo
+              effectiveAvatar,
 
               // Layer 2 (Top): The frame image, Lottie, or SVGA overlay wrapped in IgnorePointer and RepaintBoundary
               if (hasFrame)

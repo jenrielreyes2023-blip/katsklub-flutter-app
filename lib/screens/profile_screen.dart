@@ -842,11 +842,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                 .map((v) => ProfileVisitorInfo(
                       username: v.username!,
                       avatarUrl: v.avatarUrl ?? '',
+                      visitedAt: v.raw['visitedAt']?.toString(),
                     ))
                 .toList();
+            final newCount =
+                await _feedService.computeNewVisitorsCount(username, visitors);
             resolvedUser = user.copyWith(
-              recentVisitors: visitorInfos,
-              newVisitorsCount: visitorInfos.length,
+              recentVisitors: visitorInfos.isNotEmpty
+                  ? visitorInfos
+                  : _profileUser.recentVisitors,
+              newVisitorsCount: newCount,
             );
           } catch (_) {}
         }

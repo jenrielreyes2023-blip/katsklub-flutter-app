@@ -21,6 +21,8 @@ class Story {
     this.viewCount = 0,
     this.reactionCount = 0,
     this.hasReacted = false,
+    this.authorAvatarFrame,
+    this.authorIsAdmin = false,
   });
 
   final String id;
@@ -44,11 +46,15 @@ class Story {
   final int viewCount;
   final int reactionCount;
   final bool hasReacted;
+  final String? authorAvatarFrame;
+  final bool authorIsAdmin;
 
   Story copyWith({
     int? viewCount,
     int? reactionCount,
     bool? hasReacted,
+    String? authorAvatarFrame,
+    bool? authorIsAdmin,
   }) {
     return Story(
       id: id,
@@ -72,6 +78,8 @@ class Story {
       viewCount: viewCount ?? this.viewCount,
       reactionCount: reactionCount ?? this.reactionCount,
       hasReacted: hasReacted ?? this.hasReacted,
+      authorAvatarFrame: authorAvatarFrame ?? this.authorAvatarFrame,
+      authorIsAdmin: authorIsAdmin ?? this.authorIsAdmin,
     );
   }
 
@@ -106,6 +114,14 @@ class Story {
       viewCount: json['viewCount'] is int ? json['viewCount'] as int : int.tryParse(json['viewCount']?.toString() ?? '') ?? 0,
       reactionCount: json['reactionCount'] is int ? json['reactionCount'] as int : int.tryParse(json['reactionCount']?.toString() ?? '') ?? 0,
       hasReacted: json['hasReacted'] == true || json['has_reacted'] == true,
+      authorAvatarFrame: _readString(json['authorAvatarFrame']) ??
+          _readString(json['avatarFrame']) ??
+          _readString(json['avatar_frame']) ??
+          _readString(json['author_avatar_frame']),
+      authorIsAdmin: json['authorIsAdmin'] == true ||
+          json['isAdmin'] == true ||
+          json['is_admin'] == true ||
+          json['author_is_admin'] == true,
     );
   }
 

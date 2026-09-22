@@ -523,16 +523,19 @@ class FeaturedPhoto {
 class ProfileVisitorInfo {
   final String username;
   final String avatarUrl;
+  final String? visitedAt;
 
   ProfileVisitorInfo({
     required this.username,
     required this.avatarUrl,
+    this.visitedAt,
   });
 
   factory ProfileVisitorInfo.fromJson(Map<String, dynamic> json) {
     return ProfileVisitorInfo(
       username: (json['username'] ?? '').toString(),
       avatarUrl: (json['avatarUrl'] ?? json['avatar_url'] ?? '').toString(),
+      visitedAt: json['visitedAt']?.toString() ?? json['visited_at']?.toString(),
     );
   }
 
@@ -540,6 +543,7 @@ class ProfileVisitorInfo {
     return {
       'username': username,
       'avatarUrl': avatarUrl,
+      'visitedAt': visitedAt,
     };
   }
 }

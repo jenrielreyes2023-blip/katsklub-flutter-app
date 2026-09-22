@@ -32,6 +32,10 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
     });
     try {
       final visitors = await _feedService.loadProfileVisitors();
+      final currentUsername = widget.currentUser.username;
+      if (currentUsername != null && currentUsername.isNotEmpty) {
+        await _feedService.markVisitorsAsChecked(currentUsername);
+      }
       if (mounted) {
         setState(() {
           _visitors = visitors;

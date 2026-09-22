@@ -112,11 +112,14 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
           .map((v) => ProfileVisitorInfo(
                 username: v.username!,
                 avatarUrl: v.avatarUrl ?? '',
+                visitedAt: v.raw['visitedAt']?.toString(),
               ))
           .toList();
+      final username = widget.user.username ?? '';
+      final newCount = await FeedService().computeNewVisitorsCount(username, visitors);
       widget.onUpdated?.call(widget.user.copyWith(
         recentVisitors: visitorInfos,
-        newVisitorsCount: visitorInfos.length,
+        newVisitorsCount: newCount,
       ));
     } catch (_) {}
   }
@@ -268,14 +271,23 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
 
     return GestureDetector(
       onTap: () async {
+        final username = widget.user.username;
+        if (username != null && username.isNotEmpty) {
+          await FeedService().markVisitorsAsChecked(username);
+        }
+        widget.onUpdated?.call(widget.user.copyWith(
+          newVisitorsCount: 0,
+        ));
+
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => VisitorsScreen(currentUser: widget.user),
           ),
         );
-        final username = widget.user.username;
-        if (username != null && username.isNotEmpty) {
+
+        if (username != null && username.isNotEmpty && mounted) {
+          await FeedService().markVisitorsAsChecked(username);
           final updatedUser = await FeedService().loadUserProfile(username);
           if (updatedUser != null && mounted) {
             try {
@@ -285,14 +297,21 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   .map((v) => ProfileVisitorInfo(
                         username: v.username!,
                         avatarUrl: v.avatarUrl ?? '',
+                        visitedAt: v.raw['visitedAt']?.toString(),
                       ))
                   .toList();
+              final nextVisitors = visitorInfos.isNotEmpty
+                  ? visitorInfos
+                  : widget.user.recentVisitors;
               widget.onUpdated?.call(updatedUser.copyWith(
-                recentVisitors: visitorInfos,
+                recentVisitors: nextVisitors,
                 newVisitorsCount: 0,
               ));
             } catch (_) {
-              widget.onUpdated?.call(updatedUser);
+              widget.onUpdated?.call(updatedUser.copyWith(
+                recentVisitors: widget.user.recentVisitors,
+                newVisitorsCount: 0,
+              ));
             }
           }
         }

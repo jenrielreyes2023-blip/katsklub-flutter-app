@@ -1833,6 +1833,57 @@ class FeedService {
     return const [];
   }
 
+  Future<DateTime?> getLastCheckedVisitorsTime(String username) async {
+    final clean = username.trim().toLowerCase();
+    if (clean.isEmpty) return null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final iso = prefs.getString('last_checked_visitors_at_$clean');
+      if (iso != null && iso.isNotEmpty) {
+        return DateTime.tryParse(iso)?.toLocal();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> markVisitorsAsChecked(String username, [DateTime? time]) async {
+    final clean = username.trim().toLowerCase();
+    if (clean.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final target = time ?? DateTime.now();
+      await prefs.setString(
+        'last_checked_visitors_at_$clean',
+        target.toUtc().toIso8601String(),
+      );
+    } catch (_) {}
+  }
+
+  Future<int> computeNewVisitorsCount(String username, List<User> visitors) async {
+    if (visitors.isEmpty) return 0;
+    final lastChecked = await getLastCheckedVisitorsTime(username);
+    if (lastChecked == null) {
+      final now = DateTime.now();
+      return visitors.where((v) {
+        final visitedAtStr = v.raw['visitedAt']?.toString() ?? v.createdAt;
+        if (visitedAtStr == null || visitedAtStr.isEmpty) return false;
+        final dt = DateTime.tryParse(visitedAtStr)?.toLocal();
+        return dt != null && now.difference(dt).inHours < 24;
+      }).length;
+    }
+    int newCount = 0;
+    for (final v in visitors) {
+      final visitedAtStr = v.raw['visitedAt']?.toString() ?? v.createdAt;
+      if (visitedAtStr != null && visitedAtStr.isNotEmpty) {
+        final dt = DateTime.tryParse(visitedAtStr)?.toLocal();
+        if (dt != null && dt.isAfter(lastChecked)) {
+          newCount++;
+        }
+      }
+    }
+    return newCount;
+  }
+
   Future<User> updateCurrentUserPostcardTheme(String postcardTheme) async {
     final normalizedTheme = postcardTheme.trim().toLowerCase();
     final data = await _authenticatedPatch(
