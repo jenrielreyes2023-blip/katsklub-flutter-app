@@ -72,6 +72,14 @@ Future<void> main() async {
   User? currentUser;
   try {
     currentUser = await authService.getCurrentUser();
+    final userFrame = currentUser?.avatarFrame?.trim();
+    if (userFrame != null && userFrame.isNotEmpty) {
+      equippedAdminFrameNotifier.value = userFrame;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('admin_equipped_frame', userFrame);
+      } catch (_) {}
+    }
   } catch (e) {
     debugPrint('Error getting current user on launch: $e');
   }

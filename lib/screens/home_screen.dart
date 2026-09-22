@@ -9,6 +9,7 @@ import '../config/api_config.dart';
 import '../models/post.dart';
 import '../models/story.dart';
 import '../models/user.dart';
+import '../services/auth_service.dart';
 import '../services/feed_service.dart';
 import '../widgets/comments_modal.dart';
 import '../widgets/kats_top_bar.dart';
@@ -18,6 +19,7 @@ import '../widgets/media_post_snap_coordinator.dart';
 import '../widgets/post_card.dart';
 import '../widgets/share_post_sheet.dart';
 import '../widgets/story_avatar.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'create_story_screen.dart';
 import 'image_viewer_screen.dart';
 import 'notifications_screen.dart';
@@ -62,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
       Duration(milliseconds: 180);
 
   final FeedService _feedService = FeedService();
+  late User _currentUser;
 
   List<Post> _posts = [];
   List<Post> _promotions = [];
@@ -102,6 +105,11 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
+    final initialFrame = widget.user.avatarFrame?.trim();
+    if (initialFrame != null && initialFrame.isNotEmpty && initialFrame != 'none') {
+      equippedAdminFrameNotifier.value = initialFrame;
+    }
     _scrollController.addListener(_handleScroll);
     _mediaSnapCoordinator = MediaPostSnapCoordinator(
       controller: _scrollController,
@@ -135,6 +143,13 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didUpdateWidget(HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.user != oldWidget.user) {
+      _currentUser = widget.user;
+      final newFrame = widget.user.avatarFrame?.trim();
+      if (newFrame != null && newFrame.isNotEmpty && newFrame != 'none') {
+        equippedAdminFrameNotifier.value = newFrame;
+      }
+    }
     final userChanged = oldWidget.user.id != widget.user.id;
     final tokenChanged = oldWidget.refreshToken != widget.refreshToken;
 
@@ -237,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen>
         _loadHomeFeed(),
         _loadSuggestions(),
         _loadPromotions(),
+        _refreshCurrentUser(),
       ]);
       _pendingNewPosts = [];
       final elapsed = stopwatch.elapsedMilliseconds;
@@ -251,6 +267,21 @@ class _HomeScreenState extends State<HomeScreen>
         HapticFeedback.lightImpact();
       }
     }
+  }
+
+  Future<void> _refreshCurrentUser() async {
+    try {
+      final fresh = await AuthService().getCurrentUser();
+      if (fresh != null && mounted) {
+        setState(() {
+          _currentUser = fresh;
+        });
+        final frame = fresh.avatarFrame?.trim();
+        if (frame != null && frame.isNotEmpty) {
+          equippedAdminFrameNotifier.value = frame;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadSuggestions() async {
@@ -448,6 +479,16 @@ class _HomeScreenState extends State<HomeScreen>
     final username = event.username.trim().toLowerCase();
     if (!mounted || username.isEmpty) {
       return;
+    }
+
+    if (event.user != null && _isCurrentUser(username)) {
+      setState(() {
+        _currentUser = event.user!;
+      });
+      final newFrame = event.user!.avatarFrame?.trim();
+      if (newFrame != null && newFrame.isNotEmpty) {
+        equippedAdminFrameNotifier.value = newFrame;
+      }
     }
 
     List<Post>? nextPosts;
@@ -753,7 +794,7 @@ class _HomeScreenState extends State<HomeScreen>
           key: ValueKey<String>(
             'home-stories-row-${_storyGroups.map((g) => g.first.id).join('-')}',
           ),
-          user: widget.user,
+          user: _currentUser,
           ownStories: _ownStories,
           storyGroups: _storyGroups,
           onStoryTap: _openStoryViewer,
@@ -1743,16 +1784,30 @@ class _OwnStoryAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoryAvatar(
-      label: hasStories ? 'Your Story' : 'Add Story',
-      initials: user.initials,
-      avatarUrl: user.avatarUrl ?? '',
-      avatarFrame: user.avatarFrame,
-      isAdmin: user.isAdmin,
-      isOwnStory: true,
-      showPlus: true,
-      onTap: onOpenViewer ?? onCreateStory,
-      onPlusTap: onCreateStory,
+    return ValueListenableBuilder<String>(
+      valueListenable: equippedAdminFrameNotifier,
+      builder: (context, liveFrame, _) {
+        final cleanLive = liveFrame.trim();
+        final String? effectiveFrame;
+        if (cleanLive.isNotEmpty) {
+          effectiveFrame = cleanLive == 'none' ? null : cleanLive;
+        } else {
+          final uFrame = user.avatarFrame?.trim();
+          effectiveFrame = (uFrame == null || uFrame.isEmpty || uFrame == 'none') ? null : uFrame;
+        }
+
+        return StoryAvatar(
+          label: hasStories ? 'Your Story' : 'Add Story',
+          initials: user.initials,
+          avatarUrl: user.avatarUrl ?? '',
+          avatarFrame: effectiveFrame ?? 'none',
+          isAdmin: user.isAdmin,
+          isOwnStory: true,
+          showPlus: true,
+          onTap: onOpenViewer ?? onCreateStory,
+          onPlusTap: onCreateStory,
+        );
+      },
     );
   }
 }
