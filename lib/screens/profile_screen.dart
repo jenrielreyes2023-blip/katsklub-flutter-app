@@ -2523,6 +2523,16 @@ const Map<String, _ProfileAchievementDefinition>
     title: 'Soulful',
     theme: _ProfileAchievementTheme.soulfulBadge,
   ),
+  'samurai': _ProfileAchievementDefinition(
+    key: 'samurai',
+    title: 'Samurai Master',
+    theme: _ProfileAchievementTheme.samuraiBadge,
+  ),
+  'badge_samurai': _ProfileAchievementDefinition(
+    key: 'badge_samurai',
+    title: 'Samurai Master',
+    theme: _ProfileAchievementTheme.samuraiBadge,
+  ),
 };
 
 List<_ProfileAchievementDefinition> _resolveProfileAchievements(
@@ -3497,6 +3507,20 @@ enum _ProfileAchievementTheme {
       iconWidth: 0,
       iconHeight: 0,
       assetPillPath: 'https://media.katsklub.top/badges/soulful.webp',
+    ),
+  ),
+  samuraiBadge(
+    _AchievementThemeStyle(
+      pillColors: [Colors.transparent],
+      badgeGradient: [Colors.transparent],
+      badgeBorderColor: Colors.transparent,
+      badgeInnerRingColor: Colors.transparent,
+      badgeIconColor: Colors.transparent,
+      badgeShape: _AchievementBadgeShape.coin,
+      iconSvg: '',
+      iconWidth: 0,
+      iconHeight: 0,
+      assetPillPath: 'https://media.katsklub.top/badges/samurai.webp',
     ),
   );
 

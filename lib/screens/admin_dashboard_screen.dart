@@ -36,6 +36,7 @@ const List<_AdminAchievementOption> _achievementOptions = [
   _AdminAchievementOption(key: 'badge_snow', label: 'Snow Whispers (SVGA Badge)'),
   _AdminAchievementOption(key: 'badge_nemesis', label: 'Nemesis Aura (SVGA Badge)'),
   _AdminAchievementOption(key: 'soulful', label: 'Soulful (Animated Badge)'),
+  _AdminAchievementOption(key: 'samurai', label: 'Samurai Master (Animated Badge)'),
 ];
 
 final Map<String, _AdminAchievementOption> _achievementOptionsByKey = {
