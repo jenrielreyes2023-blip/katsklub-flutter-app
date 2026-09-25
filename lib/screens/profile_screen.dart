@@ -46,6 +46,7 @@ import 'settings_screen.dart';
 import '../theme/app_text_styles.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'edit_profile_screen.dart';
+import 'cover_photo_editor_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1361,6 +1362,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             Navigator.of(sheetContext).pop();
             _handleViewCoverPhoto();
           },
+          onRepositionCover: () {
+            Navigator.of(sheetContext).pop();
+            _repositionCurrentCoverPhoto();
+          },
           onTakePhoto: () {
             Navigator.of(sheetContext).pop();
             _pickCoverImage(ImageSource.camera);
@@ -1378,58 +1383,116 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Future<void> _repositionCurrentCoverPhoto() async {
+    final cover = _profileUser.coverUrl?.trim();
+    if (cover == null || cover.isEmpty) return;
+
+    setState(() => _isUpdatingCover = true);
+    try {
+      final file = await DefaultCacheManager()
+          .getSingleFile(ApiConfig.assetUrl(cover));
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      setState(() => _isUpdatingCover = false);
+
+      final cropResult =
+          await Navigator.of(context).push<CoverPhotoCropResult>(
+        MaterialPageRoute(
+          builder: (_) => CoverPhotoEditorScreen(
+            imageBytes: bytes,
+            userAvatarUrl: _profileUser.avatarUrl,
+            userInitials: _profileUser.fullName?.isNotEmpty == true
+                ? _profileUser.fullName![0]
+                : (_profileUser.username?.isNotEmpty == true
+                    ? _profileUser.username![0]
+                    : 'K'),
+          ),
+        ),
+      );
+
+      if (cropResult == null || !mounted) return;
+
+      await _uploadCoverDataUrl(cropResult.dataUrl);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUpdatingCover = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load cover photo for editing: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _pickCoverImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: source,
-        imageQuality: 88,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        imageQuality: 92,
+        maxWidth: 2400,
+        maxHeight: 2400,
       );
       if (picked == null || !mounted) return;
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
 
-      setState(() => _isUpdatingCover = true);
-
-      final mimeType = picked.path.toLowerCase().endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg';
-      final dataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
-
-      final result =
-          await _authService.updateCoverPhoto(coverImageDataUrl: dataUrl);
-      if (!mounted) return;
-
-      if (result.ok && result.user != null) {
-        setState(() {
-          _profileUser = result.user!;
-          _isUpdatingCover = false;
-        });
-        widget.onUserUpdated?.call(result.user!);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cover photo updated successfully!'),
-            behavior: SnackBarBehavior.floating,
+      // Open interactive reposition & crop editor screen
+      final cropResult =
+          await Navigator.of(context).push<CoverPhotoCropResult>(
+        MaterialPageRoute(
+          builder: (_) => CoverPhotoEditorScreen(
+            imageBytes: bytes,
+            userAvatarUrl: _profileUser.avatarUrl,
+            userInitials: _profileUser.fullName?.isNotEmpty == true
+                ? _profileUser.fullName![0]
+                : (_profileUser.username?.isNotEmpty == true
+                    ? _profileUser.username![0]
+                    : 'K'),
           ),
-        );
-      } else {
-        setState(() => _isUpdatingCover = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Failed to update cover photo.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+        ),
+      );
+
+      if (cropResult == null || !mounted) return;
+
+      await _uploadCoverDataUrl(cropResult.dataUrl);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUpdatingCover = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error choosing cover photo: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadCoverDataUrl(String dataUrl) async {
+    setState(() => _isUpdatingCover = true);
+    final result =
+        await _authService.updateCoverPhoto(coverImageDataUrl: dataUrl);
+    if (!mounted) return;
+
+    if (result.ok && result.user != null) {
+      setState(() {
+        _profileUser = result.user!;
+        _isUpdatingCover = false;
+      });
+      widget.onUserUpdated?.call(result.user!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cover photo updated successfully!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      setState(() => _isUpdatingCover = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.error ?? 'Failed to update cover photo.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -5466,6 +5529,7 @@ class _CoverPhotoOptionsSheet extends StatelessWidget {
   const _CoverPhotoOptionsSheet({
     required this.hasCover,
     required this.onViewCover,
+    this.onRepositionCover,
     required this.onPickGallery,
     required this.onTakePhoto,
     required this.onRemoveCover,
@@ -5473,6 +5537,7 @@ class _CoverPhotoOptionsSheet extends StatelessWidget {
 
   final bool hasCover;
   final VoidCallback onViewCover;
+  final VoidCallback? onRepositionCover;
   final VoidCallback onPickGallery;
   final VoidCallback onTakePhoto;
   final VoidCallback onRemoveCover;
@@ -5512,6 +5577,14 @@ class _CoverPhotoOptionsSheet extends StatelessWidget {
                     onTap: onViewCover,
                   ),
                   const _MoreOptionsDivider(),
+                  if (onRepositionCover != null) ...[
+                    _MoreOptionsRow(
+                      label: 'Reposition cover photo',
+                      icon: Icons.open_with_rounded,
+                      onTap: onRepositionCover!,
+                    ),
+                    const _MoreOptionsDivider(),
+                  ],
                 ],
                 _MoreOptionsRow(
                   label: 'Take photo',

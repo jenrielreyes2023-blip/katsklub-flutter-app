@@ -8,11 +8,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import 'cover_photo_editor_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({
@@ -522,6 +524,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: isDark ? const Color(0xFF1E1E20) : Colors.white,
                   child: Column(
                     children: <Widget>[
+                      if (hasExistingCover) ...[
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () =>
+                                Navigator.of(sheetContext).pop('reposition'),
+                            splashColor: isDark
+                                ? const Color(0xFF28282B)
+                                : const Color(0xFFE5E7EB),
+                            child: Container(
+                              constraints: BoxConstraints(minHeight: 42.h),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 14.w, vertical: 8.5.h),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Reposition cover photo',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        fontSize: 13.5.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark
+                                            ? const Color(0xFFE4E6EB)
+                                            : const Color(0xFF111827),
+                                        letterSpacing: -0.1,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.open_with_rounded,
+                                    size: 18.5.r,
+                                    color: isDark
+                                        ? const Color(0xFFE4E6EB)
+                                        : const Color(0xFF111827),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Divider(
+                          height: 0.5,
+                          thickness: 0.5,
+                          indent: 14.w,
+                          color: isDark
+                              ? const Color(0xFF2C2C2E)
+                              : const Color(0xFFE5E5EA),
+                        ),
+                      ],
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -654,27 +706,79 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
+    if (action == 'reposition') {
+      Uint8List? rawBytes = _coverPreviewBytes;
+      if (rawBytes == null &&
+          _coverUrl != null &&
+          _coverUrl!.trim().isNotEmpty) {
+        try {
+          final file = await DefaultCacheManager()
+              .getSingleFile(ApiConfig.assetUrl(_coverUrl!));
+          rawBytes = await file.readAsBytes();
+        } catch (e) {
+          debugPrint('Error loading cover for reposition: $e');
+        }
+      }
+      if (rawBytes == null || !mounted) return;
+
+      final cropResult =
+          await Navigator.of(context).push<CoverPhotoCropResult>(
+        MaterialPageRoute(
+          builder: (_) => CoverPhotoEditorScreen(
+            imageBytes: rawBytes!,
+            userAvatarUrl: widget.user.avatarUrl,
+            userInitials: widget.user.fullName?.isNotEmpty == true
+                ? widget.user.fullName![0]
+                : (widget.user.username?.isNotEmpty == true
+                    ? widget.user.username![0]
+                    : 'K'),
+          ),
+        ),
+      );
+      if (cropResult == null || !mounted) return;
+
+      setState(() {
+        _coverPreviewBytes = cropResult.previewBytes;
+        _coverDataUrl = cropResult.dataUrl;
+        _removeCover = false;
+      });
+      return;
+    }
+
     final source =
         action == 'camera' ? ImageSource.camera : ImageSource.gallery;
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: source,
-        imageQuality: 88,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        imageQuality: 92,
+        maxWidth: 2400,
+        maxHeight: 2400,
       );
       if (picked == null || !mounted) return;
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
 
-      final mimeType = picked.path.toLowerCase().endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg';
+      final cropResult =
+          await Navigator.of(context).push<CoverPhotoCropResult>(
+        MaterialPageRoute(
+          builder: (_) => CoverPhotoEditorScreen(
+            imageBytes: bytes,
+            userAvatarUrl: widget.user.avatarUrl,
+            userInitials: widget.user.fullName?.isNotEmpty == true
+                ? widget.user.fullName![0]
+                : (widget.user.username?.isNotEmpty == true
+                    ? widget.user.username![0]
+                    : 'K'),
+          ),
+        ),
+      );
+      if (cropResult == null || !mounted) return;
+
       setState(() {
-        _coverPreviewBytes = bytes;
-        _coverDataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
+        _coverPreviewBytes = cropResult.previewBytes;
+        _coverDataUrl = cropResult.dataUrl;
         _removeCover = false;
       });
     } catch (e) {
