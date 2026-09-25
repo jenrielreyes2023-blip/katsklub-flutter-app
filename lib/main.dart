@@ -61,27 +61,27 @@ Future<void> main() async {
   );
   _configureImageCache();
   configureHttpOverrides();
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final savedFrame = prefs.getString('admin_equipped_frame');
-    if (savedFrame != null && savedFrame.isNotEmpty) {
-      equippedAdminFrameNotifier.value = savedFrame;
-    }
-  } catch (_) {}
   final authService = AuthService();
   User? currentUser;
   try {
     currentUser = await authService.getCurrentUser();
-    final userFrame = currentUser?.avatarFrame?.trim();
-    if (userFrame != null && userFrame.isNotEmpty) {
-      equippedAdminFrameNotifier.value = userFrame;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('admin_equipped_frame', userFrame);
-      } catch (_) {}
-    }
   } catch (e) {
     debugPrint('Error getting current user on launch: $e');
+  }
+
+  final userFrame = currentUser?.avatarFrame?.trim();
+  if (currentUser != null && userFrame != null && userFrame.isNotEmpty && userFrame != 'none') {
+    equippedAdminFrameNotifier.value = userFrame;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('admin_equipped_frame', userFrame);
+    } catch (_) {}
+  } else {
+    equippedAdminFrameNotifier.value = 'none';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('admin_equipped_frame');
+    } catch (_) {}
   }
 
   runApp(
@@ -121,6 +121,20 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
   }
 
   Future<void> _handleLogin(User user) async {
+    final userFrame = user.avatarFrame?.trim();
+    final effective = (userFrame != null && userFrame.isNotEmpty && userFrame != 'none')
+        ? userFrame
+        : 'none';
+    equippedAdminFrameNotifier.value = effective;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (effective != 'none') {
+        await prefs.setString('admin_equipped_frame', effective);
+      } else {
+        await prefs.remove('admin_equipped_frame');
+      }
+    } catch (_) {}
+
     await FeedService.ensureRealtimeSync();
     if (!mounted) return;
 
@@ -130,9 +144,15 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
   }
 
   Future<void> _handleLogout() async {
+    equippedAdminFrameNotifier.value = 'none';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('admin_equipped_frame');
+    } catch (_) {}
     await widget.authService.logout();
     await ConversationThemeStore.clear();
     await FeedService.resetRealtimeSync();
+    await FeedService.clearUserFeedCache();
     if (!mounted) return;
 
     setState(() {

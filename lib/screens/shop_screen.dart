@@ -545,7 +545,7 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isThemeStateLoading = true;
   List<ThemeProductData> _visibleProducts = [];
   ThemeProductData? _selectedTheme;
-  String _equippedAdminFrame = 'assets/frames/bframe.png';
+  String _equippedAdminFrame = 'none';
 
   List<Map<String, dynamic>> _dynamicFrames = [];
   List<String> _dynamicCategories = ['All'];
@@ -576,7 +576,11 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _equipAdminFrame(String framePath, String frameName) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('admin_equipped_frame', framePath);
+    if (framePath != 'none') {
+      await prefs.setString('admin_equipped_frame', framePath);
+    } else {
+      await prefs.remove('admin_equipped_frame');
+    }
 
     // Instantly notify ProfileScreen and all avatar frame listeners in real time!
     equippedAdminFrameNotifier.value = framePath;
@@ -774,18 +778,12 @@ class _ShopScreenState extends State<ShopScreen> {
       _visibleProducts = visible;
 
       final serverFrame = user?.avatarFrame?.trim();
-      if (serverFrame != null && serverFrame.isNotEmpty) {
+      if (serverFrame != null && serverFrame.isNotEmpty && serverFrame != 'none') {
         _equippedAdminFrame = serverFrame;
         equippedAdminFrameNotifier.value = serverFrame;
       } else {
-        SharedPreferences.getInstance().then((p) {
-          final saved = p.getString('admin_equipped_frame');
-          if (mounted && saved != null) {
-            setState(() {
-              _equippedAdminFrame = saved;
-            });
-          }
-        });
+        _equippedAdminFrame = 'none';
+        equippedAdminFrameNotifier.value = 'none';
       }
 
       // Initialize selected theme for live preview

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_svga/flutter_svga.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:visibility_detector/visibility_detector.dart';
@@ -143,10 +142,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadEquippedAdminFrame() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('admin_equipped_frame');
-    if (saved != null) {
-      equippedAdminFrameNotifier.value = saved;
+    if (!isOwnProfile) return;
+    final serverFrame = _profileUser.avatarFrame?.trim();
+    if (serverFrame != null && serverFrame.isNotEmpty && serverFrame != 'none') {
+      equippedAdminFrameNotifier.value = serverFrame;
+    } else {
+      equippedAdminFrameNotifier.value = 'none';
     }
     if (mounted) {
       setState(() {
@@ -2008,9 +2009,11 @@ class _ProfileAvatar extends StatelessWidget {
     final userFrame = user.avatarFrame?.trim();
     if (userFrame != null && userFrame.isNotEmpty) {
       activeFrame = userFrame == 'none' ? null : userFrame;
-    } else if (user.isAdmin) {
-      final selected = equippedAdminFrame ?? 'assets/frames/bframe.png';
-      activeFrame = (selected == 'none' || selected.trim().isEmpty) ? null : selected;
+    } else if (isOwnProfile &&
+        equippedAdminFrame != null &&
+        equippedAdminFrame != 'none' &&
+        equippedAdminFrame!.trim().isNotEmpty) {
+      activeFrame = equippedAdminFrame!.trim();
     } else {
       activeFrame = null;
     }

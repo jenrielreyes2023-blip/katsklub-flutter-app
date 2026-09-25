@@ -941,6 +941,10 @@ class AuthService {
     await prefs.remove(sessionCookieKey);
     await prefs.remove(_authTokenKey);
     await prefs.remove(_userKey);
+    await prefs.remove('admin_equipped_frame');
+    await prefs.remove('cached_home_posts');
+    await prefs.remove('cached_discover_posts');
+    await prefs.remove('cached_stories');
   }
 
   Future<String?> getToken() async {

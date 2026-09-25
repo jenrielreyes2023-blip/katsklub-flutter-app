@@ -50,7 +50,7 @@ class StoryAvatar extends StatelessWidget {
                   initials: initials,
                   radius: 26.w,
                   avatarFrame: avatarFrame,
-                  isAdmin: isAdmin,
+                  isAdmin: isOwnStory && isAdmin,
                   storyRingGradient: gradient,
                 ),
                 if (showPlus)

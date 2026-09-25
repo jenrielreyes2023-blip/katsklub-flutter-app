@@ -10,7 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_svga/flutter_svga.dart';
 import '../config/api_config.dart';
 
-final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('assets/frames/bframe.png');
+final ValueNotifier<String> equippedAdminFrameNotifier = ValueNotifier<String>('none');
 
 class UserAvatarWithFrame extends StatelessWidget {
   const UserAvatarWithFrame({
@@ -117,7 +117,9 @@ class UserAvatarWithFrame extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: equippedAdminFrameNotifier,
       builder: (context, globalEquippedFrame, _) {
-        final String? rawFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ?? (isAdmin ? globalEquippedFrame : null);
+        final cleanGlobal = globalEquippedFrame.trim();
+        final String? rawFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ??
+            (isAdmin && cleanGlobal.isNotEmpty && cleanGlobal != 'none' ? cleanGlobal : null);
         final cleanRaw = (rawFrame == 'none' || rawFrame == null) ? null : rawFrame.trim();
         final effectiveFrame = cleanRaw != null ? ApiConfig.frameUrl(cleanRaw) : null;
         final hasFrame = effectiveFrame != null && effectiveFrame.isNotEmpty;

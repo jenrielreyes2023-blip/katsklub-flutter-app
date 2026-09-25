@@ -107,9 +107,10 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _currentUser = widget.user;
     final initialFrame = widget.user.avatarFrame?.trim();
-    if (initialFrame != null && initialFrame.isNotEmpty && initialFrame != 'none') {
-      equippedAdminFrameNotifier.value = initialFrame;
-    }
+    equippedAdminFrameNotifier.value =
+        (initialFrame != null && initialFrame.isNotEmpty && initialFrame != 'none')
+            ? initialFrame
+            : 'none';
     _scrollController.addListener(_handleScroll);
     _mediaSnapCoordinator = MediaPostSnapCoordinator(
       controller: _scrollController,
@@ -146,9 +147,10 @@ class _HomeScreenState extends State<HomeScreen>
     if (widget.user != oldWidget.user) {
       _currentUser = widget.user;
       final newFrame = widget.user.avatarFrame?.trim();
-      if (newFrame != null && newFrame.isNotEmpty && newFrame != 'none') {
-        equippedAdminFrameNotifier.value = newFrame;
-      }
+      equippedAdminFrameNotifier.value =
+          (newFrame != null && newFrame.isNotEmpty && newFrame != 'none')
+              ? newFrame
+              : 'none';
     }
     final userChanged = oldWidget.user.id != widget.user.id;
     final tokenChanged = oldWidget.refreshToken != widget.refreshToken;
@@ -163,6 +165,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _resetForUserSwitch() {
+    final frame = widget.user.avatarFrame?.trim();
+    equippedAdminFrameNotifier.value =
+        (frame != null && frame.isNotEmpty && frame != 'none')
+            ? frame
+            : 'none';
     setState(() {
       _posts = [];
       _promotions = [];
@@ -277,9 +284,10 @@ class _HomeScreenState extends State<HomeScreen>
           _currentUser = fresh;
         });
         final frame = fresh.avatarFrame?.trim();
-        if (frame != null && frame.isNotEmpty) {
-          equippedAdminFrameNotifier.value = frame;
-        }
+        equippedAdminFrameNotifier.value =
+            (frame != null && frame.isNotEmpty && frame != 'none')
+                ? frame
+                : 'none';
       }
     } catch (_) {}
   }
@@ -486,9 +494,10 @@ class _HomeScreenState extends State<HomeScreen>
         _currentUser = event.user!;
       });
       final newFrame = event.user!.avatarFrame?.trim();
-      if (newFrame != null && newFrame.isNotEmpty) {
-        equippedAdminFrameNotifier.value = newFrame;
-      }
+      equippedAdminFrameNotifier.value =
+          (newFrame != null && newFrame.isNotEmpty && newFrame != 'none')
+              ? newFrame
+              : 'none';
     }
 
     List<Post>? nextPosts;
@@ -1789,8 +1798,10 @@ class _OwnStoryAvatar extends StatelessWidget {
       builder: (context, liveFrame, _) {
         final cleanLive = liveFrame.trim();
         final String? effectiveFrame;
-        if (cleanLive.isNotEmpty) {
-          effectiveFrame = cleanLive == 'none' ? null : cleanLive;
+        if (cleanLive.isNotEmpty && cleanLive != 'none') {
+          effectiveFrame = cleanLive;
+        } else if (cleanLive == 'none') {
+          effectiveFrame = null;
         } else {
           final uFrame = user.avatarFrame?.trim();
           effectiveFrame = (uFrame == null || uFrame.isEmpty || uFrame == 'none') ? null : uFrame;
