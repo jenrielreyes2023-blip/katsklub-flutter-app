@@ -47,6 +47,7 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
   bool _isSaving = false;
   bool _showGuidelines = true;
   bool _hasInitializedTransform = false;
+  double _currentZoom = 1.0;
 
   double _canvasWidth = 0.0;
   double _canvasHeight = 0.0;
@@ -54,7 +55,18 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
   @override
   void initState() {
     super.initState();
+    _transformController.addListener(_onTransformChanged);
     _decodeImage();
+  }
+
+  void _onTransformChanged() {
+    final scale = _transformController.value.getMaxScaleOnAxis();
+    final clamped = scale.clamp(1.0, 4.0);
+    if ((_currentZoom - clamped).abs() > 0.03) {
+      setState(() {
+        _currentZoom = clamped;
+      });
+    }
   }
 
   Future<void> _decodeImage() async {
@@ -85,12 +97,13 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
     final imgWidth = _decodedImage!.width.toDouble();
     final imgHeight = _decodedImage!.height.toDouble();
     final scale = math.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
-    final scaledWidth = imgWidth * scale;
-    final scaledHeight = imgHeight * scale;
+    final scaledWidth = math.max(canvasWidth, imgWidth * scale);
+    final scaledHeight = math.max(canvasHeight, imgHeight * scale);
 
     final dx = -(scaledWidth - canvasWidth) / 2.0;
     final dy = -(scaledHeight - canvasHeight) / 2.0;
     _transformController.value = Matrix4.translationValues(dx, dy, 0.0);
+    _currentZoom = 1.0;
   }
 
   void _resetTransform() {
@@ -99,6 +112,26 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
         _centerTransform(_canvasWidth, _canvasHeight);
       });
     }
+  }
+
+  void _onZoomSliderChanged(double newScale) {
+    if (_canvasWidth <= 0 || _canvasHeight <= 0 || _decodedImage == null) return;
+    final currentMatrix = _transformController.value;
+    final currentScale = currentMatrix.getMaxScaleOnAxis();
+    if (currentScale <= 0) return;
+
+    final factor = newScale / currentScale;
+    final focal = Offset(_canvasWidth / 2.0, _canvasHeight / 2.0);
+
+    final newMatrix = Matrix4.translationValues(focal.dx, focal.dy, 0.0)
+      ..multiply(Matrix4.diagonal3Values(factor, factor, 1.0))
+      ..multiply(Matrix4.translationValues(-focal.dx, -focal.dy, 0.0))
+      ..multiply(currentMatrix);
+
+    setState(() {
+      _transformController.value = newMatrix;
+      _currentZoom = newScale;
+    });
   }
 
   Future<void> _saveCover() async {
@@ -180,6 +213,7 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
 
   @override
   void dispose() {
+    _transformController.removeListener(_onTransformChanged);
     _transformController.dispose();
     super.dispose();
   }
@@ -208,13 +242,13 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
     final double imgWidth = _decodedImage?.width.toDouble() ?? 1200.0;
     final double imgHeight = _decodedImage?.height.toDouble() ?? 600.0;
 
-    // Calculate scale to guarantee coverage of the viewport
+    // Natural aspect-ratio preserving dimensions that strictly cover or exceed the banner
     final scale = math.max(
       canvasWidth / imgWidth,
       canvasHeight / imgHeight,
     );
-    final scaledWidth = imgWidth * scale;
-    final scaledHeight = imgHeight * scale;
+    final scaledWidth = math.max(canvasWidth, imgWidth * scale);
+    final scaledHeight = math.max(canvasHeight, imgHeight * scale);
 
     return Scaffold(
       backgroundColor:
@@ -291,12 +325,12 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(height: 12.h),
+            SizedBox(height: 10.h),
 
             // Instructional tip
             Container(
               margin: EdgeInsets.symmetric(horizontal: 16.w),
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E20) : Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -349,7 +383,7 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
                         ),
                         SizedBox(height: 1.h),
                         Text(
-                          'Pinch to zoom in or out to fit the frame.',
+                          'Pinch or use the slider below to zoom in/out.',
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             fontSize: 11.5.sp,
@@ -366,7 +400,7 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
               ),
             ),
 
-            SizedBox(height: 20.h),
+            SizedBox(height: 18.h),
 
             // Interactive Editor Box
             Center(
@@ -376,41 +410,51 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // Canvas boundary captured upon Save
+                    // Canvas boundary captured upon Save (uses ClipRect + constrained: false so aspect ratio is 100% preserved)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(14.r),
                       child: RepaintBoundary(
                         key: _canvasKey,
-                        child: Container(
-                          width: canvasWidth,
-                          height: canvasHeight,
-                          color: isDark
-                              ? const Color(0xFF1E1E20)
-                              : const Color(0xFFE5E7EB),
-                          child: _isLoadingImage
-                              ? const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFFFF7A45),
+                        child: ClipRect(
+                          child: SizedBox(
+                            width: canvasWidth,
+                            height: canvasHeight,
+                            child: Container(
+                              color: isDark
+                                  ? const Color(0xFF1E1E20)
+                                  : const Color(0xFFE5E7EB),
+                              child: _isLoadingImage
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Color(0xFFFF7A45),
+                                        ),
+                                      ),
+                                    )
+                                  : InteractiveViewer(
+                                      transformationController:
+                                          _transformController,
+                                      constrained: false, // CRITICAL: Allows natural child dimensions without squishing!
+                                      minScale: 1.0,
+                                      maxScale: 4.0,
+                                      panAxis: PanAxis.free,
+                                      boundaryMargin: EdgeInsets.zero,
+                                      clipBehavior: Clip.none,
+                                      child: SizedBox(
+                                        width: scaledWidth,
+                                        height: scaledHeight,
+                                        child: Image.memory(
+                                          widget.imageBytes,
+                                          width: scaledWidth,
+                                          height: scaledHeight,
+                                          fit: BoxFit.cover, // Never distort natural aspect ratio
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                )
-                              : InteractiveViewer(
-                                  transformationController:
-                                      _transformController,
-                                  minScale: 1.0,
-                                  maxScale: 4.0,
-                                  panAxis: PanAxis.free,
-                                  boundaryMargin: EdgeInsets.zero,
-                                  clipBehavior: Clip.hardEdge,
-                                  child: Image.memory(
-                                    widget.imageBytes,
-                                    width: scaledWidth,
-                                    height: scaledHeight,
-                                    fit: BoxFit.fill,
-                                  ),
-                                ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -557,9 +601,88 @@ class _CoverPhotoEditorScreenState extends State<CoverPhotoEditorScreen> {
               ),
             ),
 
-            SizedBox(height: 28.h),
+            SizedBox(height: 24.h),
 
-            // Helper actions
+            // Zoom Slider control
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF2C2C2E)
+                      : const Color(0xFFE5E5EA),
+                  width: 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.zoom_out_rounded,
+                    size: 18.r,
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
+                  ),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: const Color(0xFFFF7A45),
+                        inactiveTrackColor: isDark
+                            ? const Color(0xFF2C2C2E)
+                            : const Color(0xFFE5E5EA),
+                        thumbColor: const Color(0xFFFF7A45),
+                        overlayColor:
+                            const Color(0xFFFF7A45).withValues(alpha: 0.16),
+                        trackHeight: 3.2.h,
+                        thumbShape:
+                            RoundSliderThumbShape(enabledThumbRadius: 6.5.r),
+                      ),
+                      child: Slider(
+                        value: _currentZoom,
+                        min: 1.0,
+                        max: 4.0,
+                        onChanged: _isLoadingImage ? null : _onZoomSliderChanged,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.zoom_in_rounded,
+                    size: 18.r,
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
+                  ),
+                  SizedBox(width: 6.w),
+                  SizedBox(
+                    width: 38.w,
+                    child: Text(
+                      '${(_currentZoom * 100).round()}%',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 11.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF111827),
+                      ),
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 18.h),
+
+            // Helper actions: Guide toggle
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Row(
