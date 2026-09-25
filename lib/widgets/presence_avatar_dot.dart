@@ -10,12 +10,16 @@ class PresenceAvatarDot extends StatelessWidget {
     required this.userId,
     this.size = 12,
     this.borderColor = Colors.white,
+    this.bottom,
+    this.right,
   });
 
   final Widget child;
   final String? userId;
   final double size;
   final Color borderColor;
+  final double? bottom;
+  final double? right;
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +39,8 @@ class PresenceAvatarDot extends StatelessWidget {
             child,
             if (isOnline)
               Positioned(
-                right: -1,
-                bottom: -1,
+                right: right ?? -1,
+                bottom: bottom ?? -1,
                 child: Container(
                   width: size,
                   height: size,

@@ -516,7 +516,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         onViewCover: _handleViewCoverPhoto,
                         isUpdatingCover: _isUpdatingCover,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 7),
                       _ProfileBio(
                         user: _profileUser,
                         isOwnProfile: isOwnProfile,
@@ -2097,9 +2097,11 @@ class _ProfileHeader extends StatelessWidget {
     final hasCover = coverUrl.isNotEmpty;
 
     // Dynamic cover & header heights
+    final double avatarSize = 80.0.r;
     final double coverHeight = hasCover ? 160.h : (isOwnProfile ? 125.h : 90.h);
-    final double overlap = 42.h;
-    final double headerHeight = coverHeight + overlap;
+    final double overlap = 40.h;
+    final double avatarTop = coverHeight - overlap;
+    final double headerHeight = avatarTop + avatarSize;
 
     return SizedBox(
       height: headerHeight,
@@ -2373,7 +2375,7 @@ class _ProfileHeader extends StatelessWidget {
           // 4. Overlapping Avatar (positioned at the fade horizon)
           Positioned(
             left: 16.w,
-            top: coverHeight - overlap,
+            top: avatarTop,
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -2559,14 +2561,19 @@ class _ProfileAvatar extends StatelessWidget {
       initials: user.initials,
       radius: 40.0,
       framePath: activeFrame,
-      preserveLayoutFootprint: false,
+      preserveLayoutFootprint: true,
     );
+
+    final surfaceColor = Theme.of(context).colorScheme.surface;
 
     return GestureDetector(
       onTap: hasStories ? onTapStory : null,
       child: PresenceAvatarDot(
         userId: user.id,
-        size: 18,
+        size: 16.5,
+        borderColor: surfaceColor,
+        right: 2.5,
+        bottom: 2.5,
         child: avatar,
       ),
     );
