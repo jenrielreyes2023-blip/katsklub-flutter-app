@@ -54,6 +54,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Uint8List? _avatarPreviewBytes;
   String? _avatarDataUrl;
   String? _avatarUrl;
+  Uint8List? _coverPreviewBytes;
+  String? _coverDataUrl;
+  String? _coverUrl;
+  bool _removeCover = false;
   String? _selectedDefaultAvatarPath;
   final List<String> _defaultAvatars = const [
     'assets/images/default_avatar_cat.jpg',
@@ -108,6 +112,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _fullNameController.text = widget.user.fullName ?? '';
     _bioController.text = widget.user.bio ?? '';
     _avatarUrl = widget.user.avatarUrl;
+    _coverUrl = widget.user.coverUrl;
 
     // Parse location
     final loc = widget.user.location ?? '';
@@ -478,6 +483,104 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _pickCoverPhoto() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasExistingCover = (_coverUrl != null &&
+            _coverUrl!.trim().isNotEmpty &&
+            !_removeCover) ||
+        _coverPreviewBytes != null;
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.52),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36.w,
+                height: 3.5.h,
+                margin: EdgeInsets.only(bottom: 10.h),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF38383A)
+                      : const Color(0xFFD1D1D6),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined,
+                    color: Color(0xFFFF7A45)),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.of(sheetContext).pop('gallery'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined,
+                    color: Color(0xFFFF7A45)),
+                title: const Text('Take Photo'),
+                onTap: () => Navigator.of(sheetContext).pop('camera'),
+              ),
+              if (hasExistingCover)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.redAccent),
+                  title: const Text('Remove Cover Photo',
+                      style: TextStyle(color: Colors.redAccent)),
+                  onTap: () => Navigator.of(sheetContext).pop('remove'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (action == null || !mounted) return;
+
+    if (action == 'remove') {
+      setState(() {
+        _coverPreviewBytes = null;
+        _coverDataUrl = null;
+        _removeCover = true;
+      });
+      return;
+    }
+
+    final source =
+        action == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        imageQuality: 88,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      if (picked == null || !mounted) return;
+
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+
+      final mimeType = picked.path.toLowerCase().endsWith('.png')
+          ? 'image/png'
+          : 'image/jpeg';
+      setState(() {
+        _coverPreviewBytes = bytes;
+        _coverDataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
+        _removeCover = false;
+      });
+    } catch (e) {
+      debugPrint('Error picking cover: $e');
+    }
+  }
+
   Future<void> _selectDefaultAvatar(String assetPath) async {
     if (_isSaving) return;
     setState(() {
@@ -608,6 +711,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       birthday: birthdayStr,
       location: finalLocation,
       avatarImageDataUrl: _avatarDataUrl,
+      coverImageDataUrl: _coverDataUrl,
+      coverUrl: _removeCover ? '' : null,
       profileLinks: finalLinks,
     );
 
@@ -723,50 +828,193 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 SizedBox(height: 16.h),
               ],
 
-              // Avatar section
-              Center(
+              // Cover Photo & Avatar Header
+              Container(
+                margin: EdgeInsets.only(bottom: 8.h),
+                height: 175.h,
                 child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    GestureDetector(
-                      onTap: _isSaving ? null : _pickAvatar,
-                      child: CircleAvatar(
-                        radius: 46.r,
-                        backgroundColor: isDark ? const Color(0xFF1E1E20) : Colors.blue.shade50,
-                        backgroundImage: _avatarPreviewBytes != null
-                            ? MemoryImage(_avatarPreviewBytes!)
-                            : (_avatarUrl != null && _avatarUrl!.trim().isNotEmpty
-                                ? CachedNetworkImageProvider(ApiConfig.assetUrl(_avatarUrl!)) as ImageProvider
-                                : null),
-                        child: !hasAvatar
-                            ? Text(
-                                initials,
-                                style: TextStyle(
-                                  fontFamily: 'SF Pro Rounded',
-                                  fontSize: 30.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? const Color(0xFFFF7A45) : Colors.blue.shade700,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
+                    // Cover Preview with Bottom Fade
                     Positioned(
-                      bottom: 0,
+                      top: 0,
+                      left: 0,
                       right: 0,
+                      height: 125.h,
                       child: GestureDetector(
-                        onTap: _isSaving ? null : _pickAvatar,
-                        child: Container(
-                          padding: EdgeInsets.all(6.r),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFF7A45),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.camera_alt_rounded,
-                            size: 16.r,
-                            color: Colors.white,
+                        onTap: _isSaving ? null : _pickCoverPhoto,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16.r),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (_coverPreviewBytes != null)
+                                Image.memory(
+                                  _coverPreviewBytes!,
+                                  fit: BoxFit.cover,
+                                )
+                              else if (_coverUrl != null &&
+                                  _coverUrl!.trim().isNotEmpty &&
+                                  !_removeCover)
+                                CachedNetworkImage(
+                                  imageUrl: ApiConfig.assetUrl(_coverUrl!),
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Container(
+                                    color: isDark
+                                        ? const Color(0xFF1E1F28)
+                                        : const Color(0xFFE5E7EB),
+                                  ),
+                                  errorWidget: (_, __, ___) => Container(
+                                    color: isDark
+                                        ? const Color(0xFF1E1F28)
+                                        : const Color(0xFFE5E7EB),
+                                    child: const Icon(Icons.image_not_supported_outlined),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: isDark
+                                          ? [const Color(0xFF262734), const Color(0xFF1D1E27)]
+                                          : [const Color(0xFFE2E6EC), const Color(0xFFEDF0F5)],
+                                    ),
+                                  ),
+                                ),
+
+                              // Bottom fade gradient
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    stops: const [0.0, 0.40, 0.85, 1.0],
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.transparent,
+                                      (isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7))
+                                          .withValues(alpha: 0.65),
+                                      isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Edit Cover badge
+                              Positioned(
+                                right: 10.w,
+                                bottom: 10.h,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.5.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.55),
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt_rounded,
+                                        size: 13.sp,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        (_coverPreviewBytes != null ||
+                                                (_coverUrl != null &&
+                                                    _coverUrl!.trim().isNotEmpty &&
+                                                    !_removeCover))
+                                            ? 'Change Cover'
+                                            : 'Add Cover',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                    ),
+
+                    // Avatar overlapping the cover photo
+                    Positioned(
+                      left: 16.w,
+                      bottom: 0,
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: _isSaving ? null : _pickAvatar,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+                                  width: 3.5.r,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 42.r,
+                                backgroundColor: isDark ? const Color(0xFF1E1E20) : Colors.blue.shade50,
+                                backgroundImage: _avatarPreviewBytes != null
+                                    ? MemoryImage(_avatarPreviewBytes!)
+                                    : (_avatarUrl != null && _avatarUrl!.trim().isNotEmpty
+                                        ? CachedNetworkImageProvider(ApiConfig.assetUrl(_avatarUrl!))
+                                            as ImageProvider
+                                        : null),
+                                child: !hasAvatar
+                                    ? Text(
+                                        initials,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 26.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? const Color(0xFFFF7A45) : Colors.blue.shade700,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 2.r,
+                            right: 2.r,
+                            child: GestureDetector(
+                              onTap: _isSaving ? null : _pickAvatar,
+                              child: Container(
+                                padding: EdgeInsets.all(5.5.r),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFF7A45),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 14.r,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

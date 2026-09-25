@@ -7,6 +7,7 @@ class User {
     this.phone,
     this.roleTitle,
     this.avatarUrl,
+    this.coverUrl,
     this.bio,
     this.gender,
     this.birthday,
@@ -52,6 +53,7 @@ class User {
   final String? phone;
   final String? roleTitle;
   final String? avatarUrl;
+  final String? coverUrl;
   final String? bio;
   final String? gender;
   final String? birthday;
@@ -98,6 +100,7 @@ class User {
       phone: _readString(json['phone']),
       roleTitle: _readString(json['roleTitle'] ?? json['role_title']),
       avatarUrl: _readString(json['avatarUrl'] ?? json['avatar_url']),
+      coverUrl: _readString(json['coverUrl'] ?? json['cover_url']),
       bio: _readString(json['bio']),
       gender: _readString(json['gender']),
       birthday: _readString(json['birthday']),
@@ -272,6 +275,7 @@ class User {
     String? postcardTheme,
     String? bubbleTheme,
     String? avatarFrame,
+    String? coverUrl,
     List<String>? achievements,
     List<ProfileLink>? profileLinks,
     List<FeaturedPhoto>? featuredPhotos,
@@ -305,6 +309,7 @@ class User {
     final nextPostcardTheme = postcardTheme ?? this.postcardTheme;
     final nextBubbleTheme = bubbleTheme ?? this.bubbleTheme;
     final nextAvatarFrame = avatarFrame ?? this.avatarFrame;
+    final nextCoverUrl = coverUrl ?? this.coverUrl;
     final nextAchievements = achievements ?? this.achievements;
     final nextProfileLinks = profileLinks ?? this.profileLinks;
     final nextFeaturedPhotos = featuredPhotos ?? this.featuredPhotos;
@@ -332,6 +337,8 @@ class User {
       ..['bubbleTheme'] = nextBubbleTheme
       ..['avatarFrame'] = nextAvatarFrame
       ..['avatar_frame'] = nextAvatarFrame
+      ..['coverUrl'] = nextCoverUrl
+      ..['cover_url'] = nextCoverUrl
       ..['achievements'] = nextAchievements
       ..['profileLinks'] = nextProfileLinks.map((l) => l.toJson()).toList()
       ..['featuredPhotos'] = nextFeaturedPhotos.map((p) => p.toJson()).toList()
@@ -348,6 +355,7 @@ class User {
       phone: phone,
       roleTitle: roleTitle,
       avatarUrl: avatarUrl,
+      coverUrl: nextCoverUrl,
       bio: bio,
       gender: gender,
       birthday: birthday,

@@ -48,6 +48,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'edit_profile_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -80,6 +81,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final FeedService _feedService = FeedService();
+  final AuthService _authService = AuthService();
+  bool _isUpdatingCover = false;
   bool get isOwnProfile => widget.onLogout != null;
   late TabController _tabController;
   List<Post> _profilePosts = [];
@@ -508,6 +511,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         isOwnProfile: isOwnProfile,
                         onTapStory: () => _openUserStories(_profileUser.username ?? ''),
                         equippedAdminFrame: _equippedAdminFrame,
+                        onChangeCover: isOwnProfile ? _handleChangeCoverPhoto : null,
+                        onViewCover: _handleViewCoverPhoto,
+                        isUpdatingCover: _isUpdatingCover,
                       ),
                       const SizedBox(height: 12),
                       _ProfileBio(
@@ -1318,6 +1324,284 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  void _handleViewCoverPhoto() {
+    final cover = _profileUser.coverUrl?.trim();
+    if (cover == null || cover.isEmpty) return;
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ImageViewerScreen(
+          imageUrls: [ApiConfig.assetUrl(cover)],
+          initialIndex: 0,
+          currentUser: isOwnProfile ? _profileUser : null,
+          uploaderName: _profileUser.displayName,
+          privacyLabel: 'Public',
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
+  void _handleChangeCoverPhoto() {
+    final hasCover = _profileUser.coverUrl != null &&
+        _profileUser.coverUrl!.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(sheetContext).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.only(
+            top: 12.h,
+            bottom: MediaQuery.of(sheetContext).padding.bottom + 16.h,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF4E4F50)
+                          : const Color(0xFFCED0D4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 4.h),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Cover Photo',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 16, thickness: 0.5),
+                if (hasCover)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.fullscreen_rounded,
+                      color: Color(0xFFFF7A45),
+                    ),
+                    title: Text(
+                      'View Cover Photo',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 14.5.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _handleViewCoverPhoto();
+                    },
+                  ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library_outlined,
+                    color: Color(0xFFFF7A45),
+                  ),
+                  title: Text(
+                    'Choose from Gallery',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 14.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickCoverImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: Color(0xFFFF7A45),
+                  ),
+                  title: Text(
+                    'Take Photo',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 14.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickCoverImage(ImageSource.camera);
+                  },
+                ),
+                if (hasCover)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.redAccent,
+                    ),
+                    title: Text(
+                      'Remove Cover Photo',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 14.5.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _removeCoverPhoto();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickCoverImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        imageQuality: 88,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      if (picked == null || !mounted) return;
+
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+
+      setState(() => _isUpdatingCover = true);
+
+      final mimeType = picked.path.toLowerCase().endsWith('.png')
+          ? 'image/png'
+          : 'image/jpeg';
+      final dataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
+
+      final result =
+          await _authService.updateCoverPhoto(coverImageDataUrl: dataUrl);
+      if (!mounted) return;
+
+      if (result.ok && result.user != null) {
+        setState(() {
+          _profileUser = result.user!;
+          _isUpdatingCover = false;
+        });
+        widget.onUserUpdated?.call(result.user!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cover photo updated successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        setState(() => _isUpdatingCover = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Failed to update cover photo.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUpdatingCover = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error choosing cover photo: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _removeCoverPhoto() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Cover Photo'),
+        content: const Text(
+          'Are you sure you want to remove your cover photo?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUpdatingCover = true);
+    try {
+      final result = await _authService.updateCoverPhoto(remove: true);
+      if (!mounted) return;
+      if (result.ok && result.user != null) {
+        setState(() {
+          _profileUser = result.user!;
+          _isUpdatingCover = false;
+        });
+        widget.onUserUpdated?.call(result.user!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cover photo removed.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        setState(() => _isUpdatingCover = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Failed to remove cover photo.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUpdatingCover = false);
+    }
+  }
+
   void _showMenu(BuildContext context) {
     final onLogout = widget.onLogout;
     if (onLogout == null) {
@@ -1839,6 +2123,9 @@ class _ProfileHeader extends StatelessWidget {
     required this.isOwnProfile,
     required this.onTapStory,
     this.equippedAdminFrame,
+    this.onChangeCover,
+    this.onViewCover,
+    this.isUpdatingCover = false,
   });
 
   final User user;
@@ -1846,20 +2133,317 @@ class _ProfileHeader extends StatelessWidget {
   final bool isOwnProfile;
   final VoidCallback onTapStory;
   final String? equippedAdminFrame;
+  final VoidCallback? onChangeCover;
+  final VoidCallback? onViewCover;
+  final bool isUpdatingCover;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: _ProfileAvatar(
-          user: user,
-          stories: stories,
-          isOwnProfile: isOwnProfile,
-          onTapStory: onTapStory,
-          equippedAdminFrame: equippedAdminFrame,
-        ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final coverUrl = user.coverUrl?.trim() ?? '';
+    final hasCover = coverUrl.isNotEmpty;
+
+    // Dynamic cover & header heights
+    final double coverHeight = hasCover ? 160.h : (isOwnProfile ? 125.h : 90.h);
+    final double overlap = 42.h;
+    final double headerHeight = coverHeight + overlap;
+
+    return SizedBox(
+      height: headerHeight,
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 1. Cover Photo Area with Seamless Bottom Fade-Out (No hard edge)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: coverHeight,
+            child: GestureDetector(
+              onTap: hasCover
+                  ? onViewCover
+                  : (isOwnProfile ? onChangeCover : null),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasCover) ...[
+                    // Base Image with alpha fade to 0.0 at the bottom
+                    ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.35, 0.65, 0.88, 1.0],
+                          colors: [
+                            Colors.white,
+                            Colors.white,
+                            Color(0xB3FFFFFF), // 70% opacity
+                            Color(0x33FFFFFF), // 20% opacity
+                            Colors.transparent, // Completely fades out to 0!
+                          ],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: CachedNetworkImage(
+                        imageUrl: ApiConfig.assetUrl(coverUrl),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: coverHeight,
+                        placeholder: (context, url) => Container(
+                          color: isDark
+                              ? const Color(0xFF1E1F28)
+                              : const Color(0xFFE5E7EB),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFFF7A45),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: isDark
+                              ? const Color(0xFF1E1F28)
+                              : const Color(0xFFE5E7EB),
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: isDark ? Colors.white24 : Colors.black26,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Multi-stop surface color gradient overlay for flawless dissolving into page
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.25, 0.60, 0.85, 1.0],
+                          colors: [
+                            Colors.black.withValues(alpha: 0.12),
+                            Colors.transparent,
+                            surfaceColor.withValues(alpha: 0.30),
+                            surfaceColor.withValues(alpha: 0.80),
+                            surfaceColor, // 100% surface color at bottom
+                          ],
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    // Ambient placeholder gradient that also dissolves into surfaceColor
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.40, 0.75, 1.0],
+                          colors: isDark
+                              ? [
+                                  const Color(0xFF262734),
+                                  const Color(0xFF1D1E27),
+                                  surfaceColor.withValues(alpha: 0.70),
+                                  surfaceColor,
+                                ]
+                              : [
+                                  const Color(0xFFE2E6EC),
+                                  const Color(0xFFEDF0F5),
+                                  surfaceColor.withValues(alpha: 0.70),
+                                  surfaceColor,
+                                ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          // 2. Action Button (Edit Cover / Add Cover) for isOwnProfile
+          if (isOwnProfile && onChangeCover != null)
+            Positioned(
+              right: 14.w,
+              top: coverHeight - 40.h,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isUpdatingCover ? null : onChangeCover,
+                  borderRadius: BorderRadius.circular(20.r),
+                  child: hasCover
+                      ? Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 5.5.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 0.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.camera_alt_rounded,
+                                size: 13.5.sp,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 4.5.w),
+                              Text(
+                                'Edit Cover',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 11.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF7A45)
+                                .withValues(alpha: isDark ? 0.22 : 0.15),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.45),
+                              width: 1.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF7A45).withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_rounded,
+                                size: 14.sp,
+                                color: const Color(0xFFFF7A45),
+                              ),
+                              SizedBox(width: 4.5.w),
+                              Text(
+                                'Add Cover',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFFF7A45),
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+              ),
+            ),
+
+          // 3. Updating Cover Loading Overlay
+          if (isUpdatingCover)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: coverHeight,
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16.r,
+                          height: 16.r,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFF7A45),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Uploading cover...',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 4. Overlapping Avatar (positioned at the fade horizon)
+          Positioned(
+            left: 16.w,
+            top: coverHeight - overlap,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: _ProfileAvatar(
+                user: user,
+                stories: stories,
+                isOwnProfile: isOwnProfile,
+                onTapStory: onTapStory,
+                equippedAdminFrame: equippedAdminFrame,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

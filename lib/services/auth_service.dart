@@ -1166,6 +1166,8 @@ class AuthService {
     required String birthday,
     required String location,
     String? avatarImageDataUrl,
+    String? coverImageDataUrl,
+    String? coverUrl,
     required List<Map<String, dynamic>> profileLinks,
   }) async {
     try {
@@ -1188,6 +1190,11 @@ class AuthService {
 
       if (avatarImageDataUrl != null) {
         payload['avatarImageDataUrl'] = avatarImageDataUrl;
+      }
+      if (coverImageDataUrl != null) {
+        payload['coverImageDataUrl'] = coverImageDataUrl;
+      } else if (coverUrl != null) {
+        payload['coverUrl'] = coverUrl;
       }
 
       final response = await _client.patch(
@@ -1213,6 +1220,64 @@ class AuthService {
         return const AuthResult(
           ok: false,
           error: 'Profile updated but no user was returned.',
+        );
+      }
+
+      await _saveUser(user);
+      return AuthResult(ok: true, user: user);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
+  Future<AuthResult> updateCoverPhoto({
+    String? coverImageDataUrl,
+    String? coverUrl,
+    bool remove = false,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) {
+        return const AuthResult(ok: false, error: 'Not authenticated.');
+      }
+
+      final payload = <String, dynamic>{};
+      if (remove) {
+        payload['coverUrl'] = 'remove';
+      } else if (coverImageDataUrl != null && coverImageDataUrl.isNotEmpty) {
+        payload['coverImageDataUrl'] = coverImageDataUrl;
+      } else if (coverUrl != null) {
+        payload['coverUrl'] = coverUrl.trim();
+      } else {
+        return const AuthResult(ok: false, error: 'No cover photo provided.');
+      }
+
+      final response = await _client.patch(
+        ApiConfig.uri('/api/me/cover'),
+        headers: _buildAuthHeaders(
+          token: token,
+          includeJsonContentType: true,
+        ),
+        body: jsonEncode(payload),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to update cover photo.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final user = _readUser(data);
+      if (user == null) {
+        return const AuthResult(
+          ok: false,
+          error: 'Cover photo updated but no user was returned.',
         );
       }
 
