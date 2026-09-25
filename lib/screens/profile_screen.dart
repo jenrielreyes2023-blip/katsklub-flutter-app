@@ -1348,142 +1348,31 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _handleChangeCoverPhoto() {
     final hasCover = _profileUser.coverUrl != null &&
         _profileUser.coverUrl!.trim().isNotEmpty;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.52),
       isScrollControlled: true,
       builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(sheetContext).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.only(
-            top: 12.h,
-            bottom: MediaQuery.of(sheetContext).padding.bottom + 16.h,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF4E4F50)
-                          : const Color(0xFFCED0D4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 4.h),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Cover Photo',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Rounded',
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 16, thickness: 0.5),
-                if (hasCover)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.fullscreen_rounded,
-                      color: Color(0xFFFF7A45),
-                    ),
-                    title: Text(
-                      'View Cover Photo',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Rounded',
-                        fontSize: 14.5.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _handleViewCoverPhoto();
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library_outlined,
-                    color: Color(0xFFFF7A45),
-                  ),
-                  title: Text(
-                    'Choose from Gallery',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Rounded',
-                      fontSize: 14.5.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickCoverImage(ImageSource.gallery);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt_outlined,
-                    color: Color(0xFFFF7A45),
-                  ),
-                  title: Text(
-                    'Take Photo',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Rounded',
-                      fontSize: 14.5.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickCoverImage(ImageSource.camera);
-                  },
-                ),
-                if (hasCover)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    title: Text(
-                      'Remove Cover Photo',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Rounded',
-                        fontSize: 14.5.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _removeCoverPhoto();
-                    },
-                  ),
-              ],
-            ),
-          ),
+        return _CoverPhotoOptionsSheet(
+          hasCover: hasCover,
+          onViewCover: () {
+            Navigator.of(sheetContext).pop();
+            _handleViewCoverPhoto();
+          },
+          onTakePhoto: () {
+            Navigator.of(sheetContext).pop();
+            _pickCoverImage(ImageSource.camera);
+          },
+          onPickGallery: () {
+            Navigator.of(sheetContext).pop();
+            _pickCoverImage(ImageSource.gallery);
+          },
+          onRemoveCover: () {
+            Navigator.of(sheetContext).pop();
+            _removeCoverPhoto();
+          },
         );
       },
     );
@@ -5515,24 +5404,33 @@ class _MoreOptionsRow extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.textColor,
+    this.iconColor,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final Color? textColor;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final rowBg = isDark ? const Color(0xFF1E1E20) : Colors.white;
-    final itemColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
+    final defaultItemColor =
+        isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
+    final effectiveTextColor = textColor ?? defaultItemColor;
+    final effectiveIconColor = iconColor ?? defaultItemColor;
 
     return Material(
       color: rowBg,
       child: InkWell(
         onTap: onTap,
-        splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
-        highlightColor: isDark ? const Color(0xFF242426) : const Color(0xFFF3F4F6),
+        splashColor:
+            isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+        highlightColor:
+            isDark ? const Color(0xFF242426) : const Color(0xFFF3F4F6),
         child: Container(
           constraints: BoxConstraints(minHeight: 42.h),
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
@@ -5544,7 +5442,7 @@ class _MoreOptionsRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontFamily: 'SF Pro Rounded',
-                    color: itemColor,
+                    color: effectiveTextColor,
                     fontSize: 13.5.sp,
                     fontWeight: FontWeight.w500,
                     letterSpacing: -0.1,
@@ -5553,11 +5451,96 @@ class _MoreOptionsRow extends StatelessWidget {
               ),
               Icon(
                 icon,
-                color: itemColor,
+                color: effectiveIconColor,
                 size: 18.5.r,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoverPhotoOptionsSheet extends StatelessWidget {
+  const _CoverPhotoOptionsSheet({
+    required this.hasCover,
+    required this.onViewCover,
+    required this.onPickGallery,
+    required this.onTakePhoto,
+    required this.onRemoveCover,
+  });
+
+  final bool hasCover;
+  final VoidCallback onViewCover;
+  final VoidCallback onPickGallery;
+  final VoidCallback onTakePhoto;
+  final VoidCallback onRemoveCover;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const destructiveColor = Color(0xFFEF4444);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF101012) : const Color(0xFFF2F2F7),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h + bottomPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36.w,
+              height: 3.5.h,
+              margin: EdgeInsets.only(bottom: 10.h),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6),
+                borderRadius: BorderRadius.circular(999.r),
+              ),
+            ),
+            _MoreOptionsCard(
+              children: [
+                if (hasCover) ...[
+                  _MoreOptionsRow(
+                    label: 'View cover photo',
+                    icon: Icons.fullscreen_rounded,
+                    onTap: onViewCover,
+                  ),
+                  const _MoreOptionsDivider(),
+                ],
+                _MoreOptionsRow(
+                  label: 'Take photo',
+                  icon: Icons.photo_camera_outlined,
+                  onTap: onTakePhoto,
+                ),
+                const _MoreOptionsDivider(),
+                _MoreOptionsRow(
+                  label: 'Choose from gallery',
+                  icon: Icons.photo_library_outlined,
+                  onTap: onPickGallery,
+                ),
+              ],
+            ),
+            if (hasCover) ...[
+              SizedBox(height: 7.h),
+              _MoreOptionsCard(
+                children: [
+                  _MoreOptionsRow(
+                    label: 'Remove cover photo',
+                    icon: Icons.delete_outline_rounded,
+                    textColor: destructiveColor,
+                    iconColor: destructiveColor,
+                    onTap: onRemoveCover,
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );

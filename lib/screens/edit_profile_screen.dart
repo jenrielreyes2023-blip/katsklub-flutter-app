@@ -516,26 +516,127 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined,
-                    color: Color(0xFFFF7A45)),
-                title: const Text('Choose from Gallery'),
-                onTap: () => Navigator.of(sheetContext).pop('gallery'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined,
-                    color: Color(0xFFFF7A45)),
-                title: const Text('Take Photo'),
-                onTap: () => Navigator.of(sheetContext).pop('camera'),
-              ),
-              if (hasExistingCover)
-                ListTile(
-                  leading: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.redAccent),
-                  title: const Text('Remove Cover Photo',
-                      style: TextStyle(color: Colors.redAccent)),
-                  onTap: () => Navigator.of(sheetContext).pop('remove'),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14.r),
+                child: ColoredBox(
+                  color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                  child: Column(
+                    children: <Widget>[
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop('camera'),
+                          splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 42.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Take photo',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.photo_camera_outlined,
+                                  size: 18.5.r,
+                                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Divider(
+                        height: 0.5,
+                        thickness: 0.5,
+                        indent: 14.w,
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop('gallery'),
+                          splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 42.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Choose from gallery',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.photo_library_outlined,
+                                  size: 18.5.r,
+                                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              if (hasExistingCover) ...[
+                SizedBox(height: 7.h),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14.r),
+                  child: ColoredBox(
+                    color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => Navigator.of(sheetContext).pop('remove'),
+                        splashColor: isDark ? const Color(0xFF28282B) : const Color(0xFFE5E7EB),
+                        child: Container(
+                          constraints: BoxConstraints(minHeight: 42.h),
+                          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.5.h),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Remove cover photo',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 13.5.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFFEF4444),
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18.5.r,
+                                color: const Color(0xFFEF4444),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
