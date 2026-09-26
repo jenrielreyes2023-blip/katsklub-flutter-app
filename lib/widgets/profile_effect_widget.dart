@@ -85,7 +85,9 @@ class ProfileEffectWidget extends StatefulWidget {
 class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   ProfileEffectConfig? _config;
   bool _showingIntro = true;
+  bool _introUnmounted = false;
   Timer? _introTimer;
+  Timer? _unmountTimer;
 
   @override
   void initState() {
@@ -103,24 +105,36 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
 
   void _initEffect() {
     _introTimer?.cancel();
+    _unmountTimer?.cancel();
     _config = ProfileEffectConfig.resolve(widget.effect);
 
     if (_config == null) {
       _showingIntro = false;
+      _introUnmounted = true;
       return;
     }
 
     if (_config!.introDuration > Duration.zero) {
       _showingIntro = true;
+      _introUnmounted = false;
       _introTimer = Timer(_config!.introDuration, () {
         if (mounted) {
           setState(() {
             _showingIntro = false;
           });
+          // After crossfade finishes (250ms), unmount intro to release texture memory immediately
+          _unmountTimer = Timer(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              setState(() {
+                _introUnmounted = true;
+              });
+            }
+          });
         }
       });
     } else {
       _showingIntro = false;
+      _introUnmounted = true;
     }
   }
 
@@ -136,6 +150,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   @override
   void dispose() {
     _introTimer?.cancel();
+    _unmountTimer?.cancel();
     super.dispose();
   }
 
@@ -148,32 +163,45 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
 
     final double effectiveHeight = widget.height ?? 420.h;
 
-    Widget effectContent = SizedBox(
-      width: double.infinity,
-      height: effectiveHeight,
-      child: AnimatedCrossFade(
-        duration: const Duration(milliseconds: 250),
-        crossFadeState: _showingIntro
-            ? CrossFadeState.showFirst
-            : CrossFadeState.showSecond,
-        firstChild: Image.network(
-          config.introUrl,
-          width: double.infinity,
-          height: effectiveHeight,
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    Widget effectContent;
+    if (_introUnmounted) {
+      // Intro is fully unmounted and discarded from memory; only the lightweight 537KB loop is active
+      effectContent = Image.network(
+        config.loopUrl,
+        width: double.infinity,
+        height: effectiveHeight,
+        fit: BoxFit.fitWidth,
+        alignment: Alignment.topCenter,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      );
+    } else {
+      effectContent = SizedBox(
+        width: double.infinity,
+        height: effectiveHeight,
+        child: AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          crossFadeState: _showingIntro
+              ? CrossFadeState.showFirst
+              : CrossFadeState.showSecond,
+          firstChild: Image.network(
+            config.introUrl,
+            width: double.infinity,
+            height: effectiveHeight,
+            fit: BoxFit.fitWidth,
+            alignment: Alignment.topCenter,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+          secondChild: Image.network(
+            config.loopUrl,
+            width: double.infinity,
+            height: effectiveHeight,
+            fit: BoxFit.fitWidth,
+            alignment: Alignment.topCenter,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
         ),
-        secondChild: Image.network(
-          config.loopUrl,
-          width: double.infinity,
-          height: effectiveHeight,
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        ),
-      ),
-    );
+      );
+    }
 
     if (widget.applyBottomFade) {
       effectContent = ShaderMask(
