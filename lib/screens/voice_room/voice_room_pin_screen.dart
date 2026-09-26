@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../models/user.dart';
 import '../../models/voice_room.dart';
 import '../../services/voice_room_controller.dart';
+import '../../widgets/user_avatar_with_frame.dart';
 import 'voice_room_screen.dart';
 
 /// Full-Page PIN Verification Screen for Locked Voice Rooms
@@ -212,15 +212,16 @@ class _VoiceRoomPinScreenState extends State<VoiceRoomPinScreen> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          CircleAvatar(
+                          UserAvatarWithFrame(
+                            avatarUrl: widget.room.host.avatarUrl,
+                            avatarFrame: widget.room.host.avatarFrame,
                             radius: 36.r,
-                            backgroundColor: const Color(0xFF17181F),
-                            backgroundImage: widget.room.host.avatarUrl.isNotEmpty
-                                ? CachedNetworkImageProvider(widget.room.host.avatarUrl)
-                                : null,
-                            child: widget.room.host.avatarUrl.isEmpty
-                                ? const Icon(Icons.person, color: Colors.white54, size: 36)
-                                : null,
+                            preserveLayoutFootprint: true,
+                            initials: widget.room.host.fullName.isNotEmpty
+                                ? widget.room.host.fullName[0].toUpperCase()
+                                : (widget.room.host.username.isNotEmpty
+                                    ? widget.room.host.username[0].toUpperCase()
+                                    : '?'),
                           ),
                           Positioned(
                             bottom: -2,

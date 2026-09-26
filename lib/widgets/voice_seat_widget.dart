@@ -1,8 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/voice_room.dart';
+import '../services/auth_service.dart';
 import 'custom_icons.dart';
+import 'user_avatar_with_frame.dart';
 
 /// Compact, interactive microphone seat widget with SVG badges and ambient speaking ring
 class VoiceSeatWidget extends StatelessWidget {
@@ -22,10 +23,19 @@ class VoiceSeatWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = seat.user;
+    final currentUser = AuthService().currentUser;
+    final isMe = currentUser != null && currentUser.id.toString() == user?.id.toString();
+    final effectiveAvatarFrame = (user?.avatarFrame != null && user!.avatarFrame!.isNotEmpty)
+        ? user.avatarFrame
+        : (isMe ? currentUser.avatarFrame : null);
+    final hasFrame = effectiveAvatarFrame != null && effectiveAvatarFrame.isNotEmpty;
+
     final isSpeaking = (isAway != true) && !seat.isMuted && seat.soundLevel > 6.0;
 
     final avatarSize = isHost ? 50.w : 40.w;
-    final rippleSize = isHost ? 58.w : 48.w;
+    final rippleSize = isHost
+        ? (hasFrame ? 66.w : 58.w)
+        : (hasFrame ? 52.w : 48.w);
 
     return GestureDetector(
       onTap: onTap,
@@ -62,73 +72,62 @@ class VoiceSeatWidget extends StatelessWidget {
 
               // Main Avatar or Empty Seat
               if (user != null)
-                Container(
-                  width: avatarSize,
-                  height: avatarSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isHost
-                          ? (isAway
-                              ? Colors.white.withValues(alpha: 0.15)
-                              : const Color(0xFFFFB800))
-                          : (isSpeaking
-                              ? const Color(0xFF10B981)
-                              : Colors.white.withValues(alpha: 0.2)),
-                      width: isHost ? (isAway ? 1.2 : 2.0) : 1.5,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Opacity(
-                          opacity: isHost && isAway ? 0.35 : 1.0,
-                          child: user.avatarUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: user.avatarUrl,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: const Color(0xFF232428),
-                                    child: const Icon(Icons.person, color: Colors.white38, size: 20),
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: const Color(0xFF232428),
-                                    child: const Icon(Icons.person, color: Colors.white38, size: 20),
-                                  ),
-                                )
-                              : Container(
-                                  color: const Color(0xFF232428),
-                                  child: const Icon(Icons.person, color: Colors.white38, size: 20),
-                                ),
+                Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Opacity(
+                      opacity: isHost && isAway ? 0.35 : 1.0,
+                      child: UserAvatarWithFrame(
+                        avatarUrl: user.avatarUrl,
+                        avatarFrame: effectiveAvatarFrame,
+                        radius: avatarSize / 2,
+                        preserveLayoutFootprint: true,
+                        border: Border.all(
+                          color: isHost
+                              ? (isAway
+                                  ? Colors.white.withValues(alpha: 0.15)
+                                  : const Color(0xFFFFB800))
+                              : (isSpeaking
+                                  ? const Color(0xFF10B981)
+                                  : Colors.white.withValues(alpha: 0.2)),
+                          width: isHost ? (isAway ? 1.2 : 2.0) : 1.5,
                         ),
-                        if (isHost && isAway) ...[
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.58),
-                          ),
-                          Center(
-                            child: Text(
-                              'OUT',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Rounded',
-                                color: Colors.white.withValues(alpha: 0.95),
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.2,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black,
-                                    blurRadius: 6,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                        initials: user.fullName.isNotEmpty
+                            ? user.fullName[0].toUpperCase()
+                            : (user.username.isNotEmpty
+                                ? user.username[0].toUpperCase()
+                                : '?'),
+                      ),
                     ),
-                  ),
+                    if (isHost && isAway)
+                      Container(
+                        width: avatarSize,
+                        height: avatarSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.58),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'OUT',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black,
+                                blurRadius: 6,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 )
               else if (seat.isLocked)
                 Container(

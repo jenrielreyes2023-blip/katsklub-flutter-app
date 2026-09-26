@@ -3,6 +3,7 @@ class VoiceRoomUser {
   final String username;
   final String fullName;
   final String avatarUrl;
+  final String? avatarFrame;
   final int charmPoints;
 
   VoiceRoomUser({
@@ -10,15 +11,18 @@ class VoiceRoomUser {
     required this.username,
     required this.fullName,
     required this.avatarUrl,
+    this.avatarFrame,
     this.charmPoints = 0,
   });
 
   factory VoiceRoomUser.fromJson(Map<String, dynamic> json) {
+    final rawFrame = json['avatarFrame'] ?? json['avatar_frame'] ?? json['author_avatar_frame'];
     return VoiceRoomUser(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '') ?? 0,
       username: json['username']?.toString() ?? '',
       fullName: json['fullName']?.toString() ?? json['full_name']?.toString() ?? json['username']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? json['avatar_url']?.toString() ?? '',
+      avatarFrame: rawFrame?.toString(),
       charmPoints: json['charmPoints'] is int
           ? json['charmPoints']
           : int.tryParse(json['charm_points']?.toString() ?? '') ?? 0,
@@ -30,6 +34,7 @@ class VoiceRoomUser {
         'username': username,
         'fullName': fullName,
         'avatarUrl': avatarUrl,
+        'avatarFrame': avatarFrame,
         'charmPoints': charmPoints,
       };
 }

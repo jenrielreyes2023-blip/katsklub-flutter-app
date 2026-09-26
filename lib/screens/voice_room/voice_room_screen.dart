@@ -10,6 +10,7 @@ import '../../models/voice_room.dart';
 import '../../services/voice_room_controller.dart';
 import '../../services/zego_voice_service.dart';
 import '../../widgets/custom_icons.dart';
+import '../../widgets/user_avatar_with_frame.dart';
 import '../../widgets/voice_room_gift_sheet.dart';
 import '../../widgets/voice_room_set_pin_sheet.dart';
 import '../../widgets/voice_seat_widget.dart';
@@ -1398,15 +1399,14 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Sender Avatar
-                            CircleAvatar(
+                            UserAvatarWithFrame(
+                              avatarUrl: controller.activeGiftSender?.avatarUrl ?? '',
+                              avatarFrame: controller.activeGiftSender?.avatarFrame,
                               radius: 13.r,
-                              backgroundColor: Colors.white24,
-                              backgroundImage: (controller.activeGiftSender?.avatarUrl.isNotEmpty ?? false)
-                                  ? CachedNetworkImageProvider(controller.activeGiftSender!.avatarUrl)
-                                  : null,
-                              child: (controller.activeGiftSender?.avatarUrl.isEmpty ?? true)
-                                  ? const Icon(Icons.person, size: 14, color: Colors.white)
-                                  : null,
+                              preserveLayoutFootprint: true,
+                              initials: (controller.activeGiftSender?.fullName.isNotEmpty ?? false)
+                                  ? controller.activeGiftSender!.fullName[0].toUpperCase()
+                                  : '?',
                             ),
                             SizedBox(width: 8.w),
                             // Details

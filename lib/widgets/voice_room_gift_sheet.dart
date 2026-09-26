@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/voice_room.dart';
 import '../services/voice_room_controller.dart';
 import '../services/wallet_service.dart';
 import 'custom_icons.dart';
+import 'user_avatar_with_frame.dart';
 
 /// Cute WePlay-style Virtual Gift Tray Drawer
 class VoiceRoomGiftSheet extends StatefulWidget {
@@ -218,15 +218,14 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                     ),
                     child: Row(
                       children: [
-                        CircleAvatar(
+                        UserAvatarWithFrame(
+                          avatarUrl: r.avatarUrl,
+                          avatarFrame: r.avatarFrame,
                           radius: 12.r,
-                          backgroundColor: Colors.white10,
-                          backgroundImage: r.avatarUrl.isNotEmpty
-                              ? CachedNetworkImageProvider(r.avatarUrl)
-                              : null,
-                          child: r.avatarUrl.isEmpty
-                              ? const Icon(Icons.person, size: 12, color: Colors.white70)
-                              : null,
+                          preserveLayoutFootprint: true,
+                          initials: r.fullName.isNotEmpty
+                              ? r.fullName[0].toUpperCase()
+                              : (r.username.isNotEmpty ? r.username[0].toUpperCase() : '?'),
                         ),
                         SizedBox(width: 6.w),
                         Row(

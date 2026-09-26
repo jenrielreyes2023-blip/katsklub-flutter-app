@@ -24,6 +24,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     this.onTap,
     this.preserveLayoutFootprint = true,
     this.storyRingGradient,
+    this.border,
   });
 
   final String avatarUrl;
@@ -35,13 +36,17 @@ class UserAvatarWithFrame extends StatelessWidget {
   final VoidCallback? onTap;
   final bool preserveLayoutFootprint;
   final Gradient? storyRingGradient;
+  final Border? border;
 
   @override
   Widget build(BuildContext context) {
     final cleanUrl = avatarUrl.trim();
     final size = radius * 2;
     final hasStoryRing = storyRingGradient != null;
-    final innerRadius = hasStoryRing ? math.max(1.0, radius - 3.5.r) : radius;
+    final borderWidth = border != null ? border!.top.width : 0.0;
+    final innerRadius = hasStoryRing
+        ? math.max(1.0, radius - 3.5.r)
+        : (border != null ? math.max(1.0, radius - borderWidth) : radius);
 
     Widget avatarChild;
     if (cleanUrl.isEmpty) {
@@ -196,6 +201,19 @@ class UserAvatarWithFrame extends StatelessWidget {
               child: ClipOval(
                 child: avatarChild,
               ),
+            ),
+          );
+        } else if (border != null) {
+          effectiveAvatar = Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: border,
+            ),
+            alignment: Alignment.center,
+            child: ClipOval(
+              child: avatarChild,
             ),
           );
         }

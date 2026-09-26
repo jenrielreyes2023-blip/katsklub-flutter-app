@@ -381,6 +381,7 @@ class VoiceRoomController extends ChangeNotifier {
           'username': user.username,
           'fullName': user.fullName ?? user.username,
           'avatarUrl': user.avatarUrl ?? '',
+          'avatarFrame': user.avatarFrame,
         },
       });
     }
@@ -768,6 +769,7 @@ class VoiceRoomController extends ChangeNotifier {
           'username': _currentUser!.username,
           'fullName': _currentUser!.fullName ?? _currentUser!.username,
           'avatarUrl': _currentUser!.avatarUrl ?? '',
+          'avatarFrame': _currentUser!.avatarFrame,
           'charmPoints': _currentUser!.charmPoints,
         },
       });
