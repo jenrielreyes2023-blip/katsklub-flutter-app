@@ -42,33 +42,42 @@ class VoiceSeatWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Avatar or Empty Slot with sound wave ripple
-          Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              // Speaking ripple glow animation (subtle ambient ring)
-              if (isSpeaking)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: rippleSize,
-                  height: rippleSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
-                        blurRadius: 8,
-                        spreadRadius: 2,
+          // Avatar or Empty Slot with sound wave ripple (Fixed footprint prevents layout shift)
+          SizedBox(
+            width: avatarSize,
+            height: avatarSize,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                // Speaking ripple glow animation (Positioned so it doesn't push the seat or row downward)
+                if (isSpeaking)
+                  Positioned(
+                    left: (avatarSize - rippleSize) / 2,
+                    top: (avatarSize - rippleSize) / 2,
+                    width: rippleSize,
+                    height: rippleSize,
+                    child: IgnorePointer(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                            BoxShadow(
+                              color: const Color(0xFF34D399).withValues(alpha: 0.3),
+                              blurRadius: 14,
+                              spreadRadius: 3,
+                            ),
+                          ],
+                        ),
                       ),
-                      BoxShadow(
-                        color: const Color(0xFF34D399).withValues(alpha: 0.3),
-                        blurRadius: 14,
-                        spreadRadius: 3,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
 
               // Main Avatar or Empty Seat
               if (user != null)
@@ -238,13 +247,15 @@ class VoiceSeatWidget extends StatelessWidget {
                 ),
             ],
           ),
+        ),
 
-          SizedBox(height: 4.h),
+        SizedBox(height: 4.h),
 
-          // User Name or Seat Number with Mute Sign
-          SizedBox(
-            width: 62.w,
-            child: Row(
+        // User Name or Seat Number with Mute Sign (Fixed height prevents text row vertical shifts)
+        SizedBox(
+          width: 64.w,
+          height: 16.h,
+          child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
