@@ -637,6 +637,26 @@ class _ShopScreenState extends State<ShopScreen> {
               List<String>.from(data['ownedKeys'] ?? []);
           final String equipped = data['equippedKey']?.toString() ?? 'none';
 
+          for (final e in effectsList) {
+            final key = e['key']?.toString();
+            final name = e['name']?.toString() ?? 'Profile Effect';
+            final introUrl = e['introUrl']?.toString();
+            final loopUrl = e['loopUrl']?.toString();
+            if (key != null && introUrl != null && loopUrl != null) {
+              if (ProfileEffectConfig.resolve(key) == null) {
+                ProfileEffectConfig.register(
+                  ProfileEffectConfig(
+                    id: key,
+                    name: name,
+                    introUrl: introUrl,
+                    loopUrl: loopUrl,
+                    introDuration: const Duration(milliseconds: 5000),
+                  ),
+                );
+              }
+            }
+          }
+
           setState(() {
             _profileEffects = effectsList;
             _ownedEffectKeys = owned.toSet();
@@ -2865,20 +2885,44 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Option: Zombie Slime Profile Effect
-        _buildProfileEffectCard(
-          title: 'Zombie Slime',
-          description: 'Animated glowing toxic slime dripping over profile with bubbling green toxic particles.',
-          effectKey: 'zombie_slime',
-          previewUrl: 'https://media.katsklub.top/effects/zombie-slime/loop.webp',
-          badgeText: 'ZOMBIE SLIME',
-          badgeGradient: const [Color(0xFF22C55E), Color(0xFF10B981)],
-          isEquipped: _equippedProfileEffect == 'zombie_slime' ||
-              _currentUser?.profileEffect == 'zombie_slime' ||
-              _currentUser?.profileEffect == 'zombie-slime',
-          onEquip: () => _toggleEquipEffect('zombie_slime', 'Zombie Slime'),
-          onUnequip: () => _toggleEquipEffect('none', 'Zombie Slime'),
-        ),
+        // Profile Effects in Inventory
+        if (_profileEffects.isNotEmpty) ...[
+          for (final effect in _profileEffects)
+            if (_ownedEffectKeys.contains(effect['key']) ||
+                _currentUser?.username == 'jayriel' ||
+                _currentUser?.id == '2' ||
+                (_currentUser?.isAdmin ?? false) ||
+                effect['key'] == 'zombie_slime')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildProfileEffectCard(
+                  title: effect['name']?.toString() ?? 'Profile Effect',
+                  description: effect['description']?.toString() ?? '',
+                  effectKey: effect['key']?.toString() ?? '',
+                  previewUrl: effect['loopUrl']?.toString() ?? '',
+                  badgeText: effect['name']?.toString().toUpperCase() ?? 'EFFECT',
+                  badgeGradient: _getEffectBadgeGradient(effect['key']?.toString() ?? ''),
+                  isEquipped: _equippedProfileEffect == effect['key'] ||
+                      _currentUser?.profileEffect == effect['key'],
+                  onEquip: () => _toggleEquipEffect(effect['key']?.toString() ?? '', effect['name']?.toString() ?? 'Profile Effect'),
+                  onUnequip: () => _toggleEquipEffect('none', effect['name']?.toString() ?? 'Profile Effect'),
+                ),
+              ),
+        ] else ...[
+          _buildProfileEffectCard(
+            title: 'Zombie Slime',
+            description: 'Animated glowing toxic slime dripping over profile with bubbling green toxic particles.',
+            effectKey: 'zombie_slime',
+            previewUrl: 'https://media.katsklub.top/effects/zombie-slime/loop_v2.webp',
+            badgeText: 'ZOMBIE SLIME',
+            badgeGradient: const [Color(0xFF22C55E), Color(0xFF10B981)],
+            isEquipped: _equippedProfileEffect == 'zombie_slime' ||
+                _currentUser?.profileEffect == 'zombie_slime' ||
+                _currentUser?.profileEffect == 'zombie-slime',
+            onEquip: () => _toggleEquipEffect('zombie_slime', 'Zombie Slime'),
+            onUnequip: () => _toggleEquipEffect('none', 'Zombie Slime'),
+          ),
+        ],
         const SizedBox(height: 16),
       ],
     );
@@ -2909,8 +2953,8 @@ class _ShopScreenState extends State<ShopScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF22C55E), Color(0xFF10B981)],
+                        gradient: LinearGradient(
+                          colors: _getEffectBadgeGradient(_selectedEffect!['key']?.toString() ?? ''),
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -3018,8 +3062,55 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  List<Color> _getEffectBackdropColors(String effectKey) {
+    final k = effectKey.toLowerCase().replaceAll('-', '_');
+    switch (k) {
+      case 'cloud_nine':
+        return const [Color(0xFF1E1B4B), Color(0xFF311042), Color(0xFF4C0519)];
+      case 'falling_stars':
+        return const [Color(0xFF0B0F19), Color(0xFF0C1938), Color(0xFF1E1B4B)];
+      case 'la_llorona':
+        return const [Color(0xFF0F0F1A), Color(0xFF1C1335), Color(0xFF2E1065)];
+      case 'zombie_slime':
+      default:
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF022C22)];
+    }
+  }
+
+  Color _getEffectAccentColor(String effectKey) {
+    final k = effectKey.toLowerCase().replaceAll('-', '_');
+    switch (k) {
+      case 'cloud_nine':
+        return const Color(0xFFEC4899);
+      case 'falling_stars':
+        return const Color(0xFF38BDF8);
+      case 'la_llorona':
+        return const Color(0xFFA855F7);
+      case 'zombie_slime':
+      default:
+        return const Color(0xFF22C55E);
+    }
+  }
+
+  List<Color> _getEffectBadgeGradient(String effectKey) {
+    final k = effectKey.toLowerCase().replaceAll('-', '_');
+    switch (k) {
+      case 'cloud_nine':
+        return const [Color(0xFFEC4899), Color(0xFFA855F7)];
+      case 'falling_stars':
+        return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
+      case 'la_llorona':
+        return const [Color(0xFFA855F7), Color(0xFF6366F1)];
+      case 'zombie_slime':
+      default:
+        return const [Color(0xFF22C55E), Color(0xFF10B981)];
+    }
+  }
+
   Widget _buildLiveEffectPreviewCard(Map<String, dynamic>? effect) {
     final effectKey = effect?['key']?.toString() ?? 'zombie_slime';
+    final accentColor = _getEffectAccentColor(effectKey);
+    final backdropColors = _getEffectBackdropColors(effectKey);
     final avatarUrl = _currentUser?.avatarUrl ?? '';
     final fullName = _currentUser?.fullName?.isNotEmpty == true
         ? _currentUser!.fullName!
@@ -3033,12 +3124,12 @@ class _ShopScreenState extends State<ShopScreen> {
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF22C55E).withOpacity(0.5),
+          color: accentColor.withOpacity(0.5),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF22C55E).withOpacity(0.18),
+            color: accentColor.withOpacity(0.18),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -3051,13 +3142,9 @@ class _ShopScreenState extends State<ShopScreen> {
             // Dark elegant backdrop gradient
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF0F172A),
-                      Color(0xFF1E293B),
-                      Color(0xFF022C22),
-                    ],
+                    colors: backdropColors,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -3118,17 +3205,17 @@ class _ShopScreenState extends State<ShopScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E).withOpacity(0.2),
+                            color: accentColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: const Color(0xFF22C55E).withOpacity(0.4),
+                              color: accentColor.withOpacity(0.4),
                               width: 0.8,
                             ),
                           ),
                           child: Text(
-                            'Active Preview: ${effect?['name'] ?? 'Zombie Slime'}',
-                            style: const TextStyle(
-                              color: Color(0xFF4ADE80),
+                            'Active Preview: ${effect?['name'] ?? 'Effect'}',
+                            style: TextStyle(
+                              color: accentColor,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -4314,14 +4401,43 @@ class _EffectListItem extends StatelessWidget {
   final bool isOwned;
   final VoidCallback onTap;
 
+  Color get _accentColor {
+    final k = (effect['key']?.toString() ?? '').toLowerCase().replaceAll('-', '_');
+    switch (k) {
+      case 'cloud_nine':
+        return const Color(0xFFEC4899);
+      case 'falling_stars':
+        return const Color(0xFF38BDF8);
+      case 'la_llorona':
+        return const Color(0xFFA855F7);
+      case 'zombie_slime':
+      default:
+        return const Color(0xFF22C55E);
+    }
+  }
+
+  List<Color> get _badgeGradient {
+    final k = (effect['key']?.toString() ?? '').toLowerCase().replaceAll('-', '_');
+    switch (k) {
+      case 'cloud_nine':
+        return const [Color(0xFFEC4899), Color(0xFFA855F7)];
+      case 'falling_stars':
+        return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
+      case 'la_llorona':
+        return const [Color(0xFFA855F7), Color(0xFF6366F1)];
+      case 'zombie_slime':
+      default:
+        return const [Color(0xFF22C55E), Color(0xFF10B981)];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = effect['name']?.toString() ?? 'Profile Effect';
     final desc = effect['description']?.toString() ?? '';
     final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
     final isVip = effect['isVip'] == true;
-    final loopUrl = effect['loopUrl']?.toString() ??
-        'https://media.katsklub.top/effects/zombie-slime/loop_v2.webp';
+    final loopUrl = effect['loopUrl']?.toString() ?? '';
 
     return GestureDetector(
       onTap: onTap,
@@ -4335,14 +4451,14 @@ class _EffectListItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF22C55E)
+                ? _accentColor
                 : Colors.white.withOpacity(0.6),
             width: isSelected ? 2 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? const Color(0xFF22C55E).withOpacity(0.18)
+                  ? _accentColor.withOpacity(0.18)
                   : Colors.black.withOpacity(0.03),
               blurRadius: isSelected ? 12 : 6,
               offset: isSelected ? const Offset(0, 4) : const Offset(0, 2),
@@ -4361,7 +4477,7 @@ class _EffectListItem extends StatelessWidget {
                   color: const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF22C55E).withOpacity(0.4),
+                    color: _accentColor.withOpacity(0.4),
                     width: 1,
                   ),
                 ),
@@ -4380,9 +4496,9 @@ class _EffectListItem extends StatelessWidget {
                         fit: BoxFit.cover,
                         width: 70,
                         height: 70,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, __, ___) => Icon(
                           Icons.auto_awesome,
-                          color: Color(0xFF22C55E),
+                          color: _accentColor,
                           size: 28,
                         ),
                       ),
@@ -4416,8 +4532,8 @@ class _EffectListItem extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF22C55E), Color(0xFF10B981)],
+                              gradient: LinearGradient(
+                                colors: _badgeGradient,
                               ),
                               borderRadius: BorderRadius.circular(6),
                             ),

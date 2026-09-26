@@ -36,7 +36,61 @@ class ProfileEffectConfig {
       loopUrl: 'https://media.katsklub.top/effects/zombie-slime/loop_v2.webp',
       introDuration: Duration(milliseconds: 2880),
     ),
+    'cloud_nine': ProfileEffectConfig(
+      id: 'cloud_nine',
+      name: 'Cloud Nine',
+      introUrl: 'https://media.katsklub.top/effects/cloud-nine/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/cloud-nine/loop_v2.webp',
+      introDuration: Duration(milliseconds: 5000),
+    ),
+    'cloud-nine': ProfileEffectConfig(
+      id: 'cloud-nine',
+      name: 'Cloud Nine',
+      introUrl: 'https://media.katsklub.top/effects/cloud-nine/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/cloud-nine/loop_v2.webp',
+      introDuration: Duration(milliseconds: 5000),
+    ),
+    'falling_stars': ProfileEffectConfig(
+      id: 'falling_stars',
+      name: 'Falling Stars',
+      introUrl: 'https://media.katsklub.top/effects/falling-stars/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/falling-stars/loop_v2.webp',
+      introDuration: Duration(milliseconds: 4920),
+    ),
+    'falling-stars': ProfileEffectConfig(
+      id: 'falling-stars',
+      name: 'Falling Stars',
+      introUrl: 'https://media.katsklub.top/effects/falling-stars/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/falling-stars/loop_v2.webp',
+      introDuration: Duration(milliseconds: 4920),
+    ),
+    'la_llorona': ProfileEffectConfig(
+      id: 'la_llorona',
+      name: 'La Llorona',
+      introUrl: 'https://media.katsklub.top/effects/la-llorona/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v2.webp',
+      introDuration: Duration(milliseconds: 5000),
+    ),
+    'la-llorona': ProfileEffectConfig(
+      id: 'la-llorona',
+      name: 'La Llorona',
+      introUrl: 'https://media.katsklub.top/effects/la-llorona/intro_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v2.webp',
+      introDuration: Duration(milliseconds: 5000),
+    ),
   };
+
+  static final Map<String, ProfileEffectConfig> _dynamicRegistry = {};
+
+  /// Dynamically register or override an effect configuration (e.g. from backend API).
+  static void register(ProfileEffectConfig config) {
+    final key = config.id.toLowerCase();
+    _dynamicRegistry[key] = config;
+    final hyphenated = key.replaceAll('_', '-');
+    _dynamicRegistry[hyphenated] = config;
+    final underscored = key.replaceAll('-', '_');
+    _dynamicRegistry[underscored] = config;
+  }
 
   /// Resolves an effect key or URL to a ProfileEffectConfig
   static ProfileEffectConfig? resolve(String? effectKey) {
@@ -44,8 +98,25 @@ class ProfileEffectConfig {
       return null;
     }
     final key = effectKey.trim().toLowerCase();
+    if (_dynamicRegistry.containsKey(key)) {
+      return _dynamicRegistry[key];
+    }
     if (registry.containsKey(key)) {
       return registry[key];
+    }
+    final underscoreKey = key.replaceAll('-', '_');
+    if (_dynamicRegistry.containsKey(underscoreKey)) {
+      return _dynamicRegistry[underscoreKey];
+    }
+    if (registry.containsKey(underscoreKey)) {
+      return registry[underscoreKey];
+    }
+    final hyphenKey = key.replaceAll('_', '-');
+    if (_dynamicRegistry.containsKey(hyphenKey)) {
+      return _dynamicRegistry[hyphenKey];
+    }
+    if (registry.containsKey(hyphenKey)) {
+      return registry[hyphenKey];
     }
     // If it's a direct URL to a WebP
     if (effectKey.startsWith('http://') || effectKey.startsWith('https://')) {
