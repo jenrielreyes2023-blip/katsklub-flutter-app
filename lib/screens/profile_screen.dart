@@ -100,6 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _hasMore = true;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<bool> _headerEffectActiveNotifier = ValueNotifier<bool>(true);
   late final MediaPostSnapCoordinator _mediaSnapCoordinator;
   StreamSubscription<String>? _postDeletedSubscription;
   StreamSubscription<String>? _postHiddenSubscription;
@@ -214,6 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _tabController.dispose();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
+    _headerEffectActiveNotifier.dispose();
     _postDeletedSubscription?.cancel();
     _postHiddenSubscription?.cancel();
     _postCreatedSubscription?.cancel();
@@ -369,6 +371,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
+    final isEffectActive = _scrollController.offset < 480;
+    if (_headerEffectActiveNotifier.value != isEffectActive) {
+      _headerEffectActiveNotifier.value = isEffectActive;
+    }
+
     if (_isLoadingProfilePosts || _isLoadingMore || !_hasMore) {
       return;
     }
@@ -416,7 +423,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           child: CustomScrollView(
             controller: _scrollController,
-            cacheExtent: 1500,
+            cacheExtent: 500,
             physics: const FeedMomentumScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
@@ -508,11 +515,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ],
               ),
               SliverToBoxAdapter(
-                child: RepaintBoundary(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    RepaintBoundary(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _ProfileHeader(
@@ -571,21 +578,28 @@ class _ProfileScreenState extends State<ProfileScreen>
                           const SizedBox(height: 12),
                         ],
                       ),
-                      if (_profileUser.profileEffect != null &&
-                          _profileUser.profileEffect!.trim().isNotEmpty &&
-                          _profileUser.profileEffect!.trim() != 'none')
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ProfileEffectWidget(
-                            key: ValueKey(
-                                'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}'),
-                            effect: _profileUser.profileEffect!,
-                          ),
+                    ),
+                    if (_profileUser.profileEffect != null &&
+                        _profileUser.profileEffect!.trim().isNotEmpty &&
+                        _profileUser.profileEffect!.trim() != 'none')
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: _headerEffectActiveNotifier,
+                          builder: (context, isEffectActive, _) {
+                            return ProfileEffectWidget(
+                              key: ValueKey(
+                                  'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}'),
+                              effect: _profileUser.profileEffect!,
+                              isActive: isEffectActive,
+                              applyBottomFade: false,
+                            );
+                          },
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
               SliverPersistentHeader(

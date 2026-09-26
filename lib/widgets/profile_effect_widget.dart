@@ -69,19 +69,22 @@ class ProfileEffectConfig {
 ///   guaranteeing the user always experiences the full intro animation.
 /// - Seamless cross-fade transition from intro to ambient idle loop.
 /// - Automatically unmounts intro image after fade-out to free GPU texture memory.
-/// - Smooth bottom edge shader mask fade into profile content.
+/// - Zero-jank performance: Pauses completely when scrolled offscreen ([isActive] = false).
+/// - No heavy GPU [ShaderMask] `saveLayer` calls; maintains 60/120 FPS buttery-smooth scrolling.
 /// - Wrapped in [IgnorePointer] so all profile buttons, avatar, cover, and links remain 100% interactive.
 class ProfileEffectWidget extends StatefulWidget {
   const ProfileEffectWidget({
     required this.effect,
     this.height,
-    this.applyBottomFade = true,
+    this.applyBottomFade = false,
+    this.isActive = true,
     super.key,
   });
 
   final String effect;
   final double? height;
   final bool applyBottomFade;
+  final bool isActive;
 
   @override
   State<ProfileEffectWidget> createState() => _ProfileEffectWidgetState();
@@ -110,6 +113,9 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (oldWidget.effect != widget.effect) {
       _cleanupTimers();
       _setupEffect();
+    } else if (!oldWidget.isActive && widget.isActive) {
+      // Resumed from offscreen: ensure providers are warm
+      _warmProviders();
     }
   }
 
@@ -118,6 +124,15 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     _introTimer = null;
     _safetyTimeout?.cancel();
     _safetyTimeout = null;
+  }
+
+  void _warmProviders() {
+    final config = _config;
+    if (config == null) return;
+    _loopProvider ??= CachedNetworkImageProvider(config.loopUrl);
+    if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl && !_introDone) {
+      _introProvider ??= CachedNetworkImageProvider(config.introUrl);
+    }
   }
 
   void _setupEffect() {
@@ -192,6 +207,11 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // When scrolled offscreen, unmount images completely to pause decode loop and eliminate GPU raster load
+    if (!widget.isActive) {
+      return const SizedBox.shrink();
+    }
+
     final config = _config;
     if (config == null) {
       return const SizedBox.shrink();
@@ -200,7 +220,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     final double effectiveHeight = widget.height ?? 460.h;
     final bool hasIntro = !_introDone && _introProvider != null;
 
-    Widget effectContent = SizedBox(
+    final Widget effectContent = SizedBox(
       width: double.infinity,
       height: effectiveHeight,
       child: Stack(
@@ -267,26 +287,6 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
         ],
       ),
     );
-
-    if (widget.applyBottomFade) {
-      effectContent = ShaderMask(
-        shaderCallback: (Rect bounds) {
-          return const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: [0.0, 0.70, 0.90, 1.0],
-            colors: [
-              Colors.white,
-              Colors.white,
-              Color(0x88FFFFFF),
-              Colors.transparent,
-            ],
-          ).createShader(bounds);
-        },
-        blendMode: BlendMode.dstIn,
-        child: effectContent,
-      );
-    }
 
     return IgnorePointer(
       child: RepaintBoundary(
