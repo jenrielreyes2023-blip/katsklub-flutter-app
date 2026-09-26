@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -46,7 +47,7 @@ class ProfileEffectConfig {
     if (registry.containsKey(key)) {
       return registry[key];
     }
-    // If it's a direct URL to a WebP or APNG
+    // If it's a direct URL to a WebP
     if (effectKey.startsWith('http://') || effectKey.startsWith('https://')) {
       return ProfileEffectConfig(
         id: effectKey,
@@ -63,9 +64,13 @@ class ProfileEffectConfig {
 /// A high-performance, non-intrusive animated profile effect overlay.
 ///
 /// Features:
-/// - Plays entrance [intro] animation once, then seamlessly transitions to infinite [loop].
-/// - Bottom edge uses smooth shader mask fading into the background.
-/// - Completely wrapped in [IgnorePointer] so profile buttons, avatar, cover, and links remain 100% interactive.
+/// - First-frame detection via [ImageStreamListener]: Intro countdown starts ONLY when the
+///   animation is actually rendered on screen, ensuring the user always sees the full intro.
+/// - Stable base layer for the loop animation: Never re-created or hitch-reset.
+/// - Smooth [AnimatedOpacity] transition from intro to ambient loop.
+/// - Unmounts intro after fade-out to immediately free GPU texture memory.
+/// - Smooth bottom edge shader mask fade into profile content.
+/// - Wrapped in [IgnorePointer] so all profile buttons, avatar, cover, and links remain 100% interactive.
 class ProfileEffectWidget extends StatefulWidget {
   const ProfileEffectWidget({
     required this.effect,
@@ -84,73 +89,117 @@ class ProfileEffectWidget extends StatefulWidget {
 
 class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   ProfileEffectConfig? _config;
-  bool _showingIntro = true;
-  bool _introUnmounted = false;
+  bool _introFirstFrameReady = false;
+  bool _introFadeOut = false;
+  bool _introDone = false;
+
   Timer? _introTimer;
-  Timer? _unmountTimer;
+  ImageStream? _introStream;
+  ImageStreamListener? _streamListener;
+  CachedNetworkImageProvider? _introProvider;
+  CachedNetworkImageProvider? _loopProvider;
 
   @override
   void initState() {
     super.initState();
-    _initEffect();
+    _setupEffect();
   }
 
   @override
   void didUpdateWidget(ProfileEffectWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.effect != widget.effect) {
-      _initEffect();
+      _cleanUpStream();
+      _setupEffect();
     }
   }
 
-  void _initEffect() {
-    _introTimer?.cancel();
-    _unmountTimer?.cancel();
+  void _setupEffect() {
+    _cleanUpStream();
     _config = ProfileEffectConfig.resolve(widget.effect);
 
     if (_config == null) {
-      _showingIntro = false;
-      _introUnmounted = true;
+      _introDone = true;
       return;
     }
 
-    if (_config!.introDuration > Duration.zero) {
-      _showingIntro = true;
-      _introUnmounted = false;
-      _introTimer = Timer(_config!.introDuration, () {
-        if (mounted) {
+    _introDone = false;
+    _introFadeOut = false;
+    _introFirstFrameReady = false;
+
+    final config = _config!;
+    _loopProvider = CachedNetworkImageProvider(config.loopUrl);
+
+    if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl) {
+      _introProvider = CachedNetworkImageProvider(config.introUrl);
+      _listenForIntroFirstFrame(_introProvider!, config);
+    } else {
+      _introDone = true;
+    }
+  }
+
+  void _listenForIntroFirstFrame(
+    ImageProvider provider,
+    ProfileEffectConfig config,
+  ) {
+    final stream = provider.resolve(ImageConfiguration.empty);
+    _introStream = stream;
+
+    _streamListener = ImageStreamListener(
+      (ImageInfo info, bool synchronousCall) {
+        if (!mounted) return;
+        if (!_introFirstFrameReady) {
           setState(() {
-            _showingIntro = false;
+            _introFirstFrameReady = true;
           });
-          // After crossfade finishes (250ms), unmount intro to release texture memory immediately
-          _unmountTimer = Timer(const Duration(milliseconds: 300), () {
-            if (mounted) {
-              setState(() {
-                _introUnmounted = true;
-              });
-            }
+
+          // Start the intro timer ONLY when the first frame has successfully decoded and displayed!
+          _introTimer?.cancel();
+          _introTimer = Timer(config.introDuration, () {
+            if (!mounted) return;
+            setState(() {
+              _introFadeOut = true;
+            });
           });
         }
-      });
-    } else {
-      _showingIntro = false;
-      _introUnmounted = true;
+      },
+      onError: (dynamic error, StackTrace? stackTrace) {
+        debugPrint('ProfileEffect intro load error: $error');
+        if (!mounted) return;
+        setState(() {
+          _introDone = true;
+        });
+      },
+    );
+
+    stream.addListener(_streamListener!);
+  }
+
+  void _cleanUpStream() {
+    _introTimer?.cancel();
+    _introTimer = null;
+    if (_introStream != null && _streamListener != null) {
+      _introStream!.removeListener(_streamListener!);
     }
+    _introStream = null;
+    _streamListener = null;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Pre-cache the loop animation so the crossfade to loop is instantaneous
-    if (_config != null && _config!.loopUrl.isNotEmpty) {
-      precacheImage(NetworkImage(_config!.loopUrl), context);
+    // Precache both loop and intro into memory
+    if (_loopProvider != null) {
+      precacheImage(_loopProvider!, context).catchError((_) {});
+    }
+    if (_introProvider != null) {
+      precacheImage(_introProvider!, context).catchError((_) {});
     }
   }
 
   @override
   void dispose() {
-    _introTimer?.cancel();
-    _unmountTimer?.cancel();
+    _cleanUpStream();
     super.dispose();
   }
 
@@ -163,45 +212,49 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
 
     final double effectiveHeight = widget.height ?? 420.h;
 
-    Widget effectContent;
-    if (_introUnmounted) {
-      // Intro is fully unmounted and discarded from memory; only the lightweight 537KB loop is active
-      effectContent = Image.network(
-        config.loopUrl,
-        width: double.infinity,
-        height: effectiveHeight,
-        fit: BoxFit.fitWidth,
-        alignment: Alignment.topCenter,
-        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-      );
-    } else {
-      effectContent = SizedBox(
-        width: double.infinity,
-        height: effectiveHeight,
-        child: AnimatedCrossFade(
-          duration: const Duration(milliseconds: 250),
-          crossFadeState: _showingIntro
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
-          firstChild: Image.network(
-            config.introUrl,
+    Widget effectContent = SizedBox(
+      width: double.infinity,
+      height: effectiveHeight,
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          // Layer 1: Ambient Loop (25 FPS, always active and stable, zero hitching)
+          Image(
+            image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
             width: double.infinity,
             height: effectiveHeight,
             fit: BoxFit.fitWidth,
             alignment: Alignment.topCenter,
+            filterQuality: FilterQuality.medium,
             errorBuilder: (_, __, ___) => const SizedBox.shrink(),
           ),
-          secondChild: Image.network(
-            config.loopUrl,
-            width: double.infinity,
-            height: effectiveHeight,
-            fit: BoxFit.fitWidth,
-            alignment: Alignment.topCenter,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-        ),
-      );
-    }
+
+          // Layer 2: Intro Animation (Plays on top, then fades out smoothly to reveal loop)
+          if (!_introDone && _introProvider != null)
+            AnimatedOpacity(
+              opacity: (_introFirstFrameReady && !_introFadeOut) ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOut,
+              onEnd: () {
+                if (_introFadeOut && mounted) {
+                  setState(() {
+                    _introDone = true;
+                  });
+                }
+              },
+              child: Image(
+                image: _introProvider!,
+                width: double.infinity,
+                height: effectiveHeight,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.topCenter,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+        ],
+      ),
+    );
 
     if (widget.applyBottomFade) {
       effectContent = ShaderMask(

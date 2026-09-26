@@ -579,6 +579,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                           left: 0,
                           right: 0,
                           child: ProfileEffectWidget(
+                            key: ValueKey(
+                                'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}'),
                             effect: _profileUser.profileEffect!,
                           ),
                         ),
