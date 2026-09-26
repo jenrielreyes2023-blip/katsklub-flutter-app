@@ -2750,9 +2750,14 @@ class FeedService {
     );
   }
 
-  Future<List<Map<String, dynamic>>> loadNotifications() async {
+  Future<List<Map<String, dynamic>>> loadNotifications({
+    String? status,
+    int limit = 60,
+  }) async {
+    final statusQuery =
+        status != null && status.isNotEmpty ? '&status=$status' : '';
     final data =
-        await _authenticatedGet('/api/notifications?status=unread&limit=50');
+        await _authenticatedGet('/api/notifications?limit=$limit$statusQuery');
     final notifications = data['notifications'];
     if (notifications is! List) {
       return [];
@@ -2760,7 +2765,8 @@ class FeedService {
 
     final list = notifications.whereType<Map<String, dynamic>>().toList();
     notificationsNotifier.value = List<Map<String, dynamic>>.unmodifiable(list);
-    unreadNotificationsNotifier.value = list.length;
+    final unreadCount = list.where((n) => n['isRead'] != true).length;
+    unreadNotificationsNotifier.value = unreadCount;
     return list;
   }
 
@@ -2804,14 +2810,29 @@ class FeedService {
       },
     );
 
+    // Keep all notifications in memory, mark isRead = true for read items
     notificationsNotifier.value = List<Map<String, dynamic>>.unmodifiable(
-      notificationsNotifier.value
-          .where((notification) =>
-              !cleanIds.contains(notification['id']?.toString()))
-          .toList(),
+      notificationsNotifier.value.map((notification) {
+        if (cleanIds.contains(notification['id']?.toString())) {
+          return <String, dynamic>{
+            ...notification,
+            'isRead': true,
+          };
+        }
+        return notification;
+      }).toList(),
     );
-    final nextCount = unreadNotificationsNotifier.value - cleanIds.length;
-    unreadNotificationsNotifier.value = nextCount < 0 ? 0 : nextCount;
+
+    final unreadLeft = notificationsNotifier.value
+        .where((notification) => notification['isRead'] != true)
+        .length;
+    unreadNotificationsNotifier.value = unreadLeft < 0 ? 0 : unreadLeft;
+  }
+
+  Future<void> clearAllNotifications() async {
+    await _authenticatedDelete('/api/notifications');
+    notificationsNotifier.value = const <Map<String, dynamic>>[];
+    unreadNotificationsNotifier.value = 0;
   }
 
   Future<HomeFeedData> _loadHomeData() async {

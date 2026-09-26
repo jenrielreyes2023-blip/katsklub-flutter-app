@@ -22,9 +22,10 @@ class NotificationsScreen extends StatefulWidget {
 
 enum _NotificationFilter {
   all('All'),
-  tagsMentions('Tags & Mentions'),
+  unread('Unread'),
   replies('Replies'),
-  follows('Follows');
+  follows('Follows'),
+  tagsMentions('Tags & Mentions');
 
   const _NotificationFilter(this.label);
 
@@ -146,9 +147,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _notifications.where(_matchesFilter).toList(growable: false);
     final groupedNotifications = _groupNotifications(filteredNotifications);
 
-    final firstVisibleSection =
-        groupedNotifications.isEmpty ? null : groupedNotifications.keys.first;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -162,6 +160,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          if (_notifications.any(_isUnread))
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: _markAllAsRead,
+                icon: const Icon(
+                  Icons.done_all_rounded,
+                  size: 16,
+                  color: Color(0xFFFF7A45),
+                ),
+                label: const Text(
+                  'Mark read',
+                  style: TextStyle(
+                    color: Color(0xFFFF7A45),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -200,9 +220,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          _notifications.isEmpty
-                              ? 'No new activity right now.'
-                              : 'No notifications match this filter.',
+                          _activeFilter == _NotificationFilter.unread
+                              ? 'You have caught up! No unread notifications.'
+                              : (_notifications.isEmpty
+                                  ? 'No activity yet. When people interact with you, they will appear here.'
+                                  : 'No notifications match this filter.'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Color(0xFF6B7280),
@@ -219,26 +241,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ...groupedNotifications.entries.map(
                 (entry) => _NotificationSectionSliver(
                   title: entry.key.label,
-                  trailing: ((entry.key == _NotificationSection.today) ||
-                              (_groupNotifications(filteredNotifications)[
-                                          _NotificationSection.today] ==
-                                      null &&
-                                  entry.key == firstVisibleSection)) &&
-                          entry.value.isNotEmpty
+                  trailing: entry.value.any(_isUnread)
                       ? TextButton(
-                          onPressed: _clearTodayNotifications,
+                          onPressed: () => _markSectionAsRead(entry.value),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 0),
+                                horizontal: 6, vertical: 2),
                             minimumSize: const Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            foregroundColor: const Color(0xFF2563EB),
+                            foregroundColor: const Color(0xFFFF7A45),
                           ),
                           child: const Text(
-                            'Clear all',
+                            'Mark read',
                             style: TextStyle(
-                              color: Color(0xFF2563EB),
-                              fontSize: 13,
+                              color: Color(0xFFFF7A45),
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -424,6 +441,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     switch (_activeFilter) {
+      case _NotificationFilter.unread:
+        return _isUnread(notification);
       case _NotificationFilter.tagsMentions:
         return containsAny(['tag', 'mention', '@']);
       case _NotificationFilter.replies:
@@ -585,17 +604,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await _feedService.markNotificationRead(id);
   }
 
-  Future<void> _clearTodayNotifications() async {
-    final filteredNotifications =
-        _notifications.where(_matchesFilter).toList(growable: false);
-    final grouped = _groupNotifications(filteredNotifications);
-    final todayNotifications = grouped[_NotificationSection.today] ??
-        (grouped.isEmpty ? null : grouped[grouped.keys.first]);
-    if (todayNotifications == null || todayNotifications.isEmpty) {
+  Future<void> _markAllAsRead() async {
+    final unreadIds = _notifications
+        .where(_isUnread)
+        .map((notification) => _readString(notification['id']))
+        .whereType<String>()
+        .toList(growable: false);
+    if (unreadIds.isEmpty) {
       return;
     }
 
-    final ids = todayNotifications
+    await _feedService.markNotificationsRead(unreadIds);
+    if (!mounted) {
+      return;
+    }
+    _showMessage('All notifications marked as read.');
+  }
+
+  Future<void> _markSectionAsRead(
+      List<Map<String, dynamic>> sectionNotifications) async {
+    final ids = sectionNotifications
+        .where(_isUnread)
         .map((notification) => _readString(notification['id']))
         .whereType<String>()
         .toList(growable: false);
@@ -607,7 +636,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) {
       return;
     }
-    _showMessage('Today notifications cleared.');
+    _showMessage('Marked as read.');
   }
 
   _FollowAction? _followActionForNotification(
