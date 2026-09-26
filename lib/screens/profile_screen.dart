@@ -32,6 +32,7 @@ import '../widgets/featured_photos_section.dart';
 import '../widgets/feed_momentum_scroll_physics.dart';
 import '../widgets/media_post_snap_coordinator.dart';
 import '../widgets/special_name_text.dart';
+import '../widgets/profile_effect_widget.dart';
 import 'image_viewer_screen.dart';
 import 'post_detail_screen.dart';
 import 'repost_post_screen.dart';
@@ -508,63 +509,79 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               SliverToBoxAdapter(
                 child: RepaintBoundary(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      _ProfileHeader(
-                        user: _profileUser,
-                        stories: _stories,
-                        isOwnProfile: isOwnProfile,
-                        onTapStory: () => _openUserStories(_profileUser.username ?? ''),
-                        equippedAdminFrame: _equippedAdminFrame,
-                        onChangeCover: isOwnProfile ? _handleChangeCoverPhoto : null,
-                        onViewCover: _handleViewCoverPhoto,
-                        isUpdatingCover: _isUpdatingCover,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _ProfileHeader(
+                            user: _profileUser,
+                            stories: _stories,
+                            isOwnProfile: isOwnProfile,
+                            onTapStory: () => _openUserStories(_profileUser.username ?? ''),
+                            equippedAdminFrame: _equippedAdminFrame,
+                            onChangeCover: isOwnProfile ? _handleChangeCoverPhoto : null,
+                            onViewCover: _handleViewCoverPhoto,
+                            isUpdatingCover: _isUpdatingCover,
+                          ),
+                          const SizedBox(height: 7),
+                          _ProfileBio(
+                            user: _profileUser,
+                            isOwnProfile: isOwnProfile,
+                            activeVoiceRoom: _activeVoiceRoom,
+                            onOpenVoiceRoom: _activeVoiceRoom == null
+                                ? null
+                                : () => _openVoiceRoom(_activeVoiceRoom!),
+                          ),
+                          const SizedBox(height: 10),
+                          _ProfileMetadataRow(user: _profileUser),
+                          const SizedBox(height: 10),
+                          _ProfileInlineCounters(
+                            user: _profileUser,
+                            postCount: displayedPostCount,
+                            onTapFollowing: () => _openUserList(false),
+                            onTapFollowers: () => _openUserList(true),
+                            isOwnProfile: isOwnProfile,
+                          ),
+                          const SizedBox(height: 14),
+                          _ProfileActionRow(
+                            user: _profileUser,
+                            isOwnProfile: isOwnProfile,
+                            isUpdatingFollow: _isUpdatingFollow,
+                            onToggleFollow: _toggleFollow,
+                            isOpeningMessage: _isOpeningMessage,
+                            onMessage: _openMessage,
+                          ),
+                          const SizedBox(height: 20),
+                          FeaturedPhotosSection(
+                            key: ValueKey(
+                                'featured_photos_${_profileUser.username}_$_featuredPhotosVersion'),
+                            user: _profileUser,
+                            isOwnProfile: isOwnProfile,
+                            onUpdated: (updatedUser) {
+                              if (!mounted) return;
+                              setState(() {
+                                _profileUser = updatedUser;
+                                _featuredPhotosVersion++;
+                              });
+                              widget.onUserUpdated?.call(updatedUser);
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       ),
-                      const SizedBox(height: 7),
-                      _ProfileBio(
-                        user: _profileUser,
-                        isOwnProfile: isOwnProfile,
-                        activeVoiceRoom: _activeVoiceRoom,
-                        onOpenVoiceRoom: _activeVoiceRoom == null
-                            ? null
-                            : () => _openVoiceRoom(_activeVoiceRoom!),
-                      ),
-                      const SizedBox(height: 10),
-                      _ProfileMetadataRow(user: _profileUser),
-                      const SizedBox(height: 10),
-                      _ProfileInlineCounters(
-                        user: _profileUser,
-                        postCount: displayedPostCount,
-                        onTapFollowing: () => _openUserList(false),
-                        onTapFollowers: () => _openUserList(true),
-                        isOwnProfile: isOwnProfile,
-                      ),
-                      const SizedBox(height: 14),
-                      _ProfileActionRow(
-                        user: _profileUser,
-                        isOwnProfile: isOwnProfile,
-                        isUpdatingFollow: _isUpdatingFollow,
-                        onToggleFollow: _toggleFollow,
-                        isOpeningMessage: _isOpeningMessage,
-                        onMessage: _openMessage,
-                      ),
-                      const SizedBox(height: 20),
-                      FeaturedPhotosSection(
-                        key: ValueKey(
-                            'featured_photos_${_profileUser.username}_$_featuredPhotosVersion'),
-                        user: _profileUser,
-                        isOwnProfile: isOwnProfile,
-                        onUpdated: (updatedUser) {
-                          if (!mounted) return;
-                          setState(() {
-                            _profileUser = updatedUser;
-                            _featuredPhotosVersion++;
-                          });
-                          widget.onUserUpdated?.call(updatedUser);
-                        },
-                      ),
-                      const SizedBox(height: 12),
+                      if (_profileUser.profileEffect != null &&
+                          _profileUser.profileEffect!.trim().isNotEmpty &&
+                          _profileUser.profileEffect!.trim() != 'none')
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ProfileEffectWidget(
+                            effect: _profileUser.profileEffect!,
+                          ),
+                        ),
                     ],
                   ),
                 ),

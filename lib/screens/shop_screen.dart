@@ -618,6 +618,34 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
+  Future<void> _equipProfileEffect(String effectKey, String effectName) async {
+    final cleanKey = effectKey == 'none' ? 'none' : effectKey;
+    final isRemoved = cleanKey == 'none';
+    final msg = isRemoved
+        ? 'Profile effect removed from your profile!'
+        : '$effectName equipped successfully!';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isRemoved ? const Color(0xFF4B5563) : const Color(0xFF16A34A),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      final updatedUser = await _feedService.updateCurrentUserProfileEffect(cleanKey);
+      if (mounted) {
+        setState(() {
+          _currentUser = updatedUser;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error syncing profile effect with server: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1827,6 +1855,203 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Widget _buildProfileEffectCard({
+    required String title,
+    required String description,
+    required String effectKey,
+    required String previewUrl,
+    required String badgeText,
+    required List<Color> badgeGradient,
+    required bool isEquipped,
+    required VoidCallback onEquip,
+    required VoidCallback onUnequip,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEquipped ? const Color(0xFF86EFAC) : const Color(0xFFE5E7EB),
+          width: isEquipped ? 1.8 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isEquipped
+                ? const Color(0xFF22C55E).withOpacity(0.18)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isEquipped ? 16 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF334155), width: 1.5),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.person_rounded,
+                  size: 32,
+                  color: Colors.white24,
+                ),
+                Image.network(
+                  previewUrl,
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFF22C55E),
+                    size: 28,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: badgeGradient),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (isEquipped) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 13),
+                            SizedBox(width: 4),
+                            Text(
+                              'Equipped',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: onUnequip,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Unequip',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      InkWell(
+                        onTap: onEquip,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF16A34A).withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Equip Effect',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOwnedItemsTab() {
     final isAdmin = _currentUser?.isAdmin ?? false;
     final avatarUrl = _currentUser?.avatarUrl ?? '';
@@ -2199,6 +2424,52 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ],
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Profile Effects',
+              style: TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'NEW FEATURE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF15803D),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Option: Zombie Slime Profile Effect
+        _buildProfileEffectCard(
+          title: 'Zombie Slime',
+          description: 'Animated glowing toxic slime dripping over profile with bubbling green toxic particles.',
+          effectKey: 'zombie_slime',
+          previewUrl: 'https://media.katsklub.top/effects/zombie-slime/loop.webp',
+          badgeText: 'ZOMBIE SLIME',
+          badgeGradient: const [Color(0xFF22C55E), Color(0xFF10B981)],
+          isEquipped: _currentUser?.profileEffect == 'zombie_slime' ||
+              _currentUser?.profileEffect == 'zombie-slime',
+          onEquip: () => _equipProfileEffect('zombie_slime', 'Zombie Slime'),
+          onUnequip: () => _equipProfileEffect('none', 'Zombie Slime'),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }

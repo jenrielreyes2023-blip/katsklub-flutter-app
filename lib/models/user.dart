@@ -35,6 +35,7 @@ class User {
     this.profileBorder,
     this.postcardTheme,
     this.bubbleTheme,
+    this.profileEffect,
     this.avatarFrame,
     this.achievements = const [],
     this.profileLinks = const [],
@@ -81,6 +82,7 @@ class User {
   final String? profileBorder;
   final String? postcardTheme;
   final String? bubbleTheme;
+  final String? profileEffect;
   final String? avatarFrame;
   final List<String> achievements;
   final List<ProfileLink> profileLinks;
@@ -160,6 +162,9 @@ class User {
       ),
       bubbleTheme: _readString(
         json['bubbleTheme'] ?? json['bubble_theme'],
+      ),
+      profileEffect: _readString(
+        json['profileEffect'] ?? json['profile_effect'],
       ),
       avatarFrame: _readString(
         json['avatarFrame'] ?? json['avatar_frame'],
@@ -274,6 +279,7 @@ class User {
     String? profileBorder,
     String? postcardTheme,
     String? bubbleTheme,
+    String? profileEffect,
     String? avatarFrame,
     String? coverUrl,
     List<String>? achievements,
@@ -308,6 +314,7 @@ class User {
     final nextProfileBorder = profileBorder ?? this.profileBorder;
     final nextPostcardTheme = postcardTheme ?? this.postcardTheme;
     final nextBubbleTheme = bubbleTheme ?? this.bubbleTheme;
+    final nextProfileEffect = profileEffect ?? this.profileEffect;
     final nextAvatarFrame = avatarFrame ?? this.avatarFrame;
     final nextCoverUrl = coverUrl ?? this.coverUrl;
     final nextAchievements = achievements ?? this.achievements;
@@ -335,6 +342,8 @@ class User {
       ..['profileBorder'] = nextProfileBorder
       ..['postcardTheme'] = nextPostcardTheme
       ..['bubbleTheme'] = nextBubbleTheme
+      ..['profileEffect'] = nextProfileEffect
+      ..['profile_effect'] = nextProfileEffect
       ..['avatarFrame'] = nextAvatarFrame
       ..['avatar_frame'] = nextAvatarFrame
       ..['coverUrl'] = nextCoverUrl
@@ -383,6 +392,7 @@ class User {
       profileBorder: nextProfileBorder,
       postcardTheme: nextPostcardTheme,
       bubbleTheme: nextBubbleTheme,
+      profileEffect: nextProfileEffect,
       avatarFrame: nextAvatarFrame,
       achievements: nextAchievements,
       profileLinks: nextProfileLinks,

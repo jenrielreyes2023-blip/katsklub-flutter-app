@@ -1982,6 +1982,30 @@ class FeedService {
     return updatedUser;
   }
 
+  Future<User> updateCurrentUserProfileEffect(String profileEffect) async {
+    final normalizedEffect = profileEffect.trim();
+    final data = await _authenticatedPatch(
+      '/api/me/profile-effect',
+      body: {'profileEffect': normalizedEffect},
+    );
+    final user = data['user'];
+    if (data['ok'] != true || user is! Map<String, dynamic>) {
+      throw StateError(
+        _readErrorMessage(data) ?? 'Failed to update profile effect.',
+      );
+    }
+
+    final updatedUser = User.fromJson(user);
+    await _authService.saveCurrentUser(updatedUser);
+
+    final username = updatedUser.username?.trim().toLowerCase() ?? '';
+    if (username.isNotEmpty) {
+      notifyProfileStatsChanged(username: username, user: updatedUser);
+    }
+
+    return updatedUser;
+  }
+
   Future<User?> followUser(String username) async {
     final cleanUsername = username.trim().replaceFirst(RegExp(r'^@'), '');
     if (cleanUsername.isEmpty) {
