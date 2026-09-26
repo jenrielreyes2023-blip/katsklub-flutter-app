@@ -52,16 +52,9 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       if (_currentRoom == null) return false;
       if (isHost == true) return true;
-      for (final seat in _currentRoom!.seats) {
-        if (seat.user != null &&
-            seat.user!.id.toString() == _currentRoom!.host.id.toString()) {
-          return true;
-        }
-      }
-      final inRoom = (_currentRoom as dynamic).isHostInRoom;
-      return inRoom == true;
+      return _currentRoom!.isHostInRoom == true;
     } catch (_) {
-      return true;
+      return false;
     }
   }
   List<VoiceRoomMessage> get messages => List.unmodifiable(_messages);
@@ -303,6 +296,62 @@ class VoiceRoomController extends ChangeNotifier {
     return false;
   }
 
+  /// Refreshes room details (seats, admins, host presence) directly from the API
+  Future<void> refreshRoomDetails([int? targetRoomId]) async {
+    final roomId = targetRoomId ?? _currentRoom?.id;
+    if (roomId == null) return;
+
+    try {
+      final token = await AuthService().getToken();
+      final res = await http.get(
+        ApiConfig.uri('/api/voice-rooms/$roomId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['room'] is Map && _currentRoom != null && _currentRoom!.id == roomId) {
+          final refreshedRoom = VoiceRoom.fromJson(Map<String, dynamic>.from(data['room']));
+          _currentRoom = refreshedRoom;
+
+          // Re-sync local seat state
+          final myId = _currentUser?.id?.toString();
+          if (isHost) {
+            _mySeatIndex = 99;
+          } else if (myId != null) {
+            int? foundSeat;
+            bool foundMuted = false;
+            for (final s in refreshedRoom.seats) {
+              if (s.user?.id.toString() == myId) {
+                foundSeat = s.seatIndex;
+                foundMuted = s.isMuted;
+                break;
+              }
+            }
+            if (foundSeat != _mySeatIndex) {
+              _mySeatIndex = foundSeat;
+              if (foundSeat != null) {
+                _isMuted = foundMuted;
+                await ZegoVoiceService().startSpeaking(
+                  userId: myId,
+                  seatIndex: foundSeat,
+                );
+              } else {
+                await ZegoVoiceService().stopSpeaking();
+              }
+            }
+          }
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('[VoiceRoomController] refreshRoomDetails error: $e');
+    }
+  }
+
   /// Joins a voice room, connects Zego audio, and registers socket listeners
   Future<bool> enterRoom(VoiceRoom room, User user) async {
     // If already in the same room, just un-minimize
@@ -370,6 +419,9 @@ class VoiceRoomController extends ChangeNotifier {
 
     // Setup Socket.io listeners
     _setupSocketListeners();
+
+    // Fetch latest fresh room details (seats, presence, admins) in background
+    unawaited(refreshRoomDetails(room.id));
 
     // Emit join
     final socket = FeedService.getSocket();
@@ -487,6 +539,8 @@ class VoiceRoomController extends ChangeNotifier {
     final socket = FeedService.getSocket();
     if (socket == null) return;
 
+    socket.off('voice_room:sync_state');
+    socket.off('voice_room:host_presence');
     socket.off('voice_room:seat_updated');
     socket.off('voice_room:seat_mute_changed');
     socket.off('voice_room:seat_lock_changed');
@@ -499,6 +553,93 @@ class VoiceRoomController extends ChangeNotifier {
     socket.off('voice_room:user_joined');
     socket.off('voice_room:user_left');
     socket.off('voice_room:info_updated');
+    socket.off('voice_room:admins_updated');
+
+    // On socket reconnect: re-emit voice_room:join and refresh room details
+    socket.on('connect', (_) {
+      if (_currentRoom != null && _currentUser != null) {
+        socket.emit('voice_room:join', {
+          'roomId': _currentRoom!.id,
+          'user': {
+            'id': _currentUser!.id,
+            'username': _currentUser!.username,
+            'fullName': _currentUser!.fullName ?? _currentUser!.username,
+            'avatarUrl': _currentUser!.avatarUrl ?? '',
+            'avatarFrame': _currentUser!.avatarFrame,
+          },
+        });
+        unawaited(refreshRoomDetails(_currentRoom!.id));
+      }
+    });
+
+    // Complete snapshot of occupied seats and host status received from server
+    socket.on('voice_room:sync_state', (data) {
+      if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
+      final rawSeats = data['seats'];
+      if (rawSeats is List) {
+        final syncedSeats = rawSeats
+            .map((s) => VoiceSeat.fromJson(Map<String, dynamic>.from(s)))
+            .toList();
+
+        // Host never occupies guest seats
+        if (isHost) {
+          for (int i = 0; i < syncedSeats.length; i++) {
+            if (syncedSeats[i].user?.id.toString() == _currentUser?.id?.toString()) {
+              syncedSeats[i] = syncedSeats[i].copyWith(clearUser: true, user: null);
+            }
+          }
+        }
+
+        final hostPresent = data['isHostInRoom'] == true;
+        _currentRoom = _currentRoom!.copyWith(
+          seats: syncedSeats,
+          isHostInRoom: hostPresent,
+          audienceCount: data['audienceCount'] is int ? data['audienceCount'] : _currentRoom!.audienceCount,
+        );
+
+        // Sync local mic seat state if guest
+        if (!isHost && _currentUser != null) {
+          final myId = _currentUser!.id.toString();
+          int? mySeat;
+          bool myMuted = false;
+          for (final s in syncedSeats) {
+            if (s.user?.id.toString() == myId) {
+              mySeat = s.seatIndex;
+              myMuted = s.isMuted;
+              break;
+            }
+          }
+          if (mySeat != _mySeatIndex) {
+            _mySeatIndex = mySeat;
+            if (mySeat != null) {
+              _isMuted = myMuted;
+              ZegoVoiceService().startSpeaking(
+                userId: myId,
+                seatIndex: mySeat,
+              );
+            } else {
+              ZegoVoiceService().stopSpeaking();
+            }
+          }
+        }
+
+        notifyListeners();
+      }
+    });
+
+    // Real-time host presence changes (entered, left, disconnected)
+    socket.on('voice_room:host_presence', (data) {
+      if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
+      final isHostIn = data['isHostInRoom'] == true;
+      _currentRoom = _currentRoom!.copyWith(isHostInRoom: isHostIn);
+      notifyListeners();
+    });
 
     socket.on('voice_room:info_updated', (data) {
       if (data is! Map || _currentRoom == null) return;
@@ -506,11 +647,15 @@ class VoiceRoomController extends ChangeNotifier {
       if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
       final newTitle = data['title']?.toString();
+      final coverUrl = data['coverUrl']?.toString();
+      final description = data['description']?.toString();
       final isLocked = data['isLocked'] == true;
       final hasPin = data['hasPin'] == true;
 
       _currentRoom = _currentRoom!.copyWith(
         title: newTitle ?? _currentRoom!.title,
+        coverUrl: coverUrl ?? _currentRoom!.coverUrl,
+        description: description ?? _currentRoom!.description,
         isLocked: data['isLocked'] != null ? isLocked : _currentRoom!.isLocked,
         hasPin: data['hasPin'] != null ? hasPin : _currentRoom!.hasPin,
       );
@@ -533,7 +678,7 @@ class VoiceRoomController extends ChangeNotifier {
     socket.on('voice_room:seat_updated', (data) {
       if (data is! Map || _currentRoom == null) return;
       final roomId = data['roomId'];
-      if (roomId != _currentRoom!.id) return;
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
       final seatIndex = data['seatIndex'] as int?;
       if (seatIndex == null || seatIndex >= _currentRoom!.seats.length) return;
@@ -596,13 +741,18 @@ class VoiceRoomController extends ChangeNotifier {
       final isLocked = data['isLocked'] == true;
 
       if (seatIndex != null && seatIndex < _currentRoom!.seats.length) {
-        _currentRoom!.seats[seatIndex].isLocked = isLocked;
+        _currentRoom!.seats[seatIndex] = _currentRoom!.seats[seatIndex].copyWith(
+          isLocked: isLocked,
+        );
         notifyListeners();
       }
     });
 
     socket.on('voice_room:audience_updated', (data) {
       if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
       final count = data['audienceCount'] as int?;
       if (count != null) {
         _currentRoom!.audienceCount = count;
@@ -670,6 +820,9 @@ class VoiceRoomController extends ChangeNotifier {
 
     socket.on('voice_room:user_joined', (data) {
       if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
       final userMap = data['user'] is Map ? Map<String, dynamic>.from(data['user']) : null;
       if (userMap != null) {
         final user = VoiceRoomUser.fromJson(userMap);
@@ -691,32 +844,15 @@ class VoiceRoomController extends ChangeNotifier {
 
     socket.on('voice_room:user_left', (data) {
       if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
       final userMap = data['user'] is Map ? Map<String, dynamic>.from(data['user']) : null;
       if (userMap != null) {
         final user = VoiceRoomUser.fromJson(userMap);
         if (user.id.toString() == _currentRoom!.host.id.toString()) {
           _currentRoom = _currentRoom!.copyWith(isHostInRoom: false);
         }
-        notifyListeners();
-      }
-    });
-
-    socket.on('voice_room:info_updated', (data) {
-      if (data is! Map || _currentRoom == null) return;
-      final roomId = data['roomId'] as int?;
-      if (roomId != null && roomId == _currentRoom!.id) {
-        final title = data['title'] as String?;
-        final coverUrl = data['coverUrl'] as String?;
-        final isLocked = data['isLocked'] as bool?;
-        final hasPin = data['hasPin'] as bool?;
-        final description = data['description'] as String?;
-        _currentRoom = _currentRoom!.copyWith(
-          title: title ?? _currentRoom!.title,
-          coverUrl: coverUrl ?? _currentRoom!.coverUrl,
-          isLocked: isLocked ?? _currentRoom!.isLocked,
-          hasPin: hasPin ?? _currentRoom!.hasPin,
-          description: description ?? _currentRoom!.description,
-        );
         notifyListeners();
       }
     });
