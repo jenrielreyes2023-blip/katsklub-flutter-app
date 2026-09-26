@@ -251,40 +251,28 @@ class VoiceSeatWidget extends StatelessWidget {
 
         SizedBox(height: 4.h),
 
-        // User Name or Seat Number with Mute Sign (Fixed height prevents text row vertical shifts)
+        // User Name or Seat Number (Mute badge is cleanly shown only on avatar frame)
         SizedBox(
           width: 64.w,
           height: 16.h,
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (seat.isMuted && user != null) ...[
-                  CustomIcons.micOffParty(color: const Color(0xFFEF4444), size: 10.r),
-                  SizedBox(width: 2.w),
-                ],
-                Flexible(
-                  child: Text(
-                    user != null
-                        ? (user.fullName.isNotEmpty ? user.fullName : user.username)
-                        : (seat.isLocked ? 'Locked' : 'Seat ${seat.seatIndex + 1}'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: user != null ? FontWeight.w600 : FontWeight.w400,
-                      color: user != null
-                          ? (isHost && isAway
-                              ? Colors.white38
-                              : (seat.isMuted ? const Color(0xFFFFA4A4) : Colors.white.withValues(alpha: 0.9)))
-                          : Colors.white.withValues(alpha: 0.4),
-                    ),
-                  ),
-                ),
-              ],
+          child: Text(
+            user != null
+                ? (user.fullName.isNotEmpty ? user.fullName : user.username)
+                : (seat.isLocked ? 'Locked' : 'Seat ${seat.seatIndex + 1}'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: user != null ? FontWeight.w600 : FontWeight.w400,
+              color: user != null
+                  ? (isHost && isAway
+                      ? Colors.white38
+                      : Colors.white.withValues(alpha: 0.95))
+                  : Colors.white.withValues(alpha: 0.4),
             ),
           ),
+        ),
         ],
       ),
     );
