@@ -188,6 +188,27 @@ class ProfileEffectConfig {
     _dynamicRegistry[hyphenated] = config;
     final underscored = key.replaceAll('-', '_');
     _dynamicRegistry[underscored] = config;
+    final noSep = key.replaceAll('_', '').replaceAll('-', '');
+    _dynamicRegistry[noSep] = config;
+  }
+
+  /// Registers an effect directly from an API map
+  static void registerFromMap(Map<String, dynamic> data) {
+    final key = data['key']?.toString().trim();
+    if (key == null || key.isEmpty) return;
+    final introUrl = data['introUrl']?.toString() ?? data['intro_url']?.toString();
+    final loopUrl = data['loopUrl']?.toString() ?? data['loop_url']?.toString();
+    if (introUrl == null || loopUrl == null) return;
+
+    register(ProfileEffectConfig(
+      id: key,
+      name: data['name']?.toString() ?? key,
+      introUrl: introUrl,
+      loopUrl: loopUrl,
+      introDuration: Duration(
+        milliseconds: (data['introDurationMs'] as num?)?.toInt() ?? 2880,
+      ),
+    ));
   }
 
   /// Resolves an effect key or URL to a ProfileEffectConfig
@@ -322,8 +343,8 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
       _introFadeOut = false;
       _introTimerStarted = false;
 
-      // Safety timeout: If intro fails to render first frame within 3.5s, fall back to loop directly
-      _safetyTimeout = Timer(const Duration(milliseconds: 3500), () {
+      // Safety timeout: If intro fails to render first frame within 12s, fall back to loop directly
+      _safetyTimeout = Timer(const Duration(milliseconds: 12000), () {
         if (!mounted) return;
         if (!_introTimerStarted && !_introDone) {
           setState(() {
