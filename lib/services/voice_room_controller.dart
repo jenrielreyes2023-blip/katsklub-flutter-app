@@ -593,6 +593,20 @@ class VoiceRoomController extends ChangeNotifier {
           }
         }
 
+        // Deduplicate seats: each user can only occupy one seat
+        final seenUserIds = <String>{};
+        for (int i = 0; i < syncedSeats.length; i++) {
+          final u = syncedSeats[i].user;
+          if (u != null) {
+            final uid = u.id.toString();
+            if (seenUserIds.contains(uid)) {
+              syncedSeats[i] = syncedSeats[i].copyWith(clearUser: true, user: null);
+            } else {
+              seenUserIds.add(uid);
+            }
+          }
+        }
+
         final hostPresent = data['isHostInRoom'] == true;
         _currentRoom = _currentRoom!.copyWith(
           seats: syncedSeats,
@@ -691,6 +705,22 @@ class VoiceRoomController extends ChangeNotifier {
       // The room host stays exclusively on the main stage, never in guest seats (0..7)
       if (newUser != null && newUser.id.toString() == _currentRoom!.host.id.toString()) {
         return;
+      }
+
+      // Defense-in-depth: A user can only occupy ONE seat at a time!
+      // If newUser is taking seatIndex, clear newUser from any other seat in the room
+      if (newUser != null) {
+        final newUserId = newUser.id.toString();
+        for (int i = 0; i < _currentRoom!.seats.length; i++) {
+          if (i != seatIndex &&
+              _currentRoom!.seats[i].user != null &&
+              _currentRoom!.seats[i].user!.id.toString() == newUserId) {
+            _currentRoom!.seats[i] = _currentRoom!.seats[i].copyWith(
+              clearUser: true,
+              user: null,
+            );
+          }
+        }
       }
 
       _currentRoom!.seats[seatIndex] = _currentRoom!.seats[seatIndex].copyWith(
