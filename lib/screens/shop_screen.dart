@@ -13,6 +13,9 @@ import '../widgets/user_avatar_with_frame.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_config.dart';
+import '../widgets/profile_effect_widget.dart';
+import '../services/wallet_service.dart';
+import 'wallet_screen.dart';
 
 enum ThemeProductType {
   sunrise,
@@ -552,6 +555,16 @@ class _ShopScreenState extends State<ShopScreen> {
   String _selectedFrameCategory = 'All';
   bool _isLoadingFrames = false;
 
+  // Profile Effects & KatsCoins State
+  double _coinsBalance = 0.0;
+  List<Map<String, dynamic>> _profileEffects = [];
+  Set<String> _ownedEffectKeys = {};
+  String _equippedProfileEffect = 'none';
+  Map<String, dynamic>? _selectedEffect;
+  bool _isLoadingEffects = false;
+  bool _isPurchasingEffect = false;
+  int _previewIntroSeed = 0;
+
   Future<void> _fetchDynamicFrames() async {
     setState(() => _isLoadingFrames = true);
     try {
@@ -572,6 +585,412 @@ class _ShopScreenState extends State<ShopScreen> {
     } finally {
       if (mounted) setState(() => _isLoadingFrames = false);
     }
+  }
+
+  Future<void> _fetchWalletBalance() async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return;
+      final res = await http.get(
+        ApiConfig.uri('/api/wallet'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 6));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) {
+          setState(() {
+            _coinsBalance = (data['coins_balance'] as num?)?.toDouble() ??
+                ((data['balanceCents'] as num?)?.toDouble() ?? 0.0) / 100.0;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching wallet balance: $e');
+    }
+  }
+
+  Future<void> _fetchProfileEffects() async {
+    setState(() => _isLoadingEffects = true);
+    try {
+      final token = await _authService.getToken();
+      final headers = <String, String>{
+        'Accept': 'application/json',
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final res = await http.get(
+        Uri.parse('${ApiConfig.apiBaseUrl}${ApiConfig.effectsPath}'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 8));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && mounted) {
+          final List<Map<String, dynamic>> effectsList =
+              List<Map<String, dynamic>>.from(data['effects'] ?? []);
+          final List<String> owned =
+              List<String>.from(data['ownedKeys'] ?? []);
+          final String equipped = data['equippedKey']?.toString() ?? 'none';
+
+          setState(() {
+            _profileEffects = effectsList;
+            _ownedEffectKeys = owned.toSet();
+            if (equipped != 'none' && equipped.isNotEmpty) {
+              _equippedProfileEffect = equipped;
+            }
+
+            if (_selectedEffect == null && effectsList.isNotEmpty) {
+              _selectedEffect = effectsList.firstWhere(
+                (e) => e['key'] == _equippedProfileEffect,
+                orElse: () => effectsList.first,
+              );
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching profile effects: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingEffects = false);
+    }
+  }
+
+  Future<void> _buyProfileEffect(Map<String, dynamic> effect) async {
+    final effectKey = effect['key']?.toString() ?? '';
+    final effectName = effect['name']?.toString() ?? 'Profile Effect';
+    final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
+
+    if (_coinsBalance < price) {
+      _showInsufficientCoinsDialog(price, _coinsBalance);
+      return;
+    }
+
+    final confirmed = await _showBuyConfirmationDialog(effect);
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isPurchasingEffect = true);
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Please sign in to make a purchase.');
+      }
+
+      final res = await http.post(
+        Uri.parse('${ApiConfig.apiBaseUrl}${ApiConfig.effectsPath}/buy'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'effectKey': effectKey}),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['ok'] == true) {
+        final newBal = (data['newBalance'] as num?)?.toDouble() ??
+            (_coinsBalance - price);
+
+        setState(() {
+          _coinsBalance = newBal;
+          _ownedEffectKeys.add(effectKey);
+          _equippedProfileEffect = effectKey;
+          if (data['user'] is Map<String, dynamic>) {
+            _currentUser = User.fromJson(data['user']);
+          }
+        });
+
+        if (_currentUser != null) {
+          await _authService.saveCurrentUser(_currentUser!);
+          final username = _currentUser!.username?.trim().toLowerCase() ?? '';
+          if (username.isNotEmpty) {
+            FeedService.notifyProfileStatsChanged(username: username, user: _currentUser);
+          }
+        }
+
+        if (mounted) {
+          _showEffectPurchaseSuccessDialog(effect);
+        }
+      } else {
+        final err = data['error'] ?? 'Purchase failed. Please try again.';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err.toString()),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error purchasing effect: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPurchasingEffect = false);
+    }
+  }
+
+  Future<void> _toggleEquipEffect(String effectKey, String effectName) async {
+    final isAlreadyEquipped = _equippedProfileEffect == effectKey;
+    final targetKey = isAlreadyEquipped ? 'none' : effectKey;
+
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return;
+
+      final res = await http.post(
+        Uri.parse('${ApiConfig.apiBaseUrl}${ApiConfig.effectsPath}/equip'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'effectKey': targetKey}),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['ok'] == true) {
+        setState(() {
+          _equippedProfileEffect = targetKey;
+          if (data['user'] is Map<String, dynamic>) {
+            _currentUser = User.fromJson(data['user']);
+          }
+        });
+
+        if (_currentUser != null) {
+          await _authService.saveCurrentUser(_currentUser!);
+          final username = _currentUser!.username?.trim().toLowerCase() ?? '';
+          if (username.isNotEmpty) {
+            FeedService.notifyProfileStatsChanged(username: username, user: _currentUser);
+          }
+        }
+
+        final msg = isAlreadyEquipped
+            ? 'Profile effect unequipped.'
+            : '$effectName equipped to your profile!';
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: isAlreadyEquipped
+                  ? const Color(0xFF4B5563)
+                  : const Color(0xFF16A34A),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        final err = data['error'] ?? 'Failed to update profile effect.';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err.toString()),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error toggling profile effect: $e');
+    }
+  }
+
+  void _showInsufficientCoinsDialog(double required, double current) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Text('🪙', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text(
+              'Not Enough Coins',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This effect costs ${required.toStringAsFixed(0)} KC, but your current balance is ${current.toStringAsFixed(0)} KC.',
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Color(0xFFB45309), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'You need ${(required - current).toStringAsFixed(0)} more KatsCoins to unlock this effect.',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF59E0B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final user = _currentUser ?? User(id: '0', username: _currentUsername, raw: const {});
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => WalletScreen(user: user)),
+              ).then((_) => _fetchWalletBalance());
+            },
+            child: const Text('Top Up Coins', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showBuyConfirmationDialog(Map<String, dynamic> effect) {
+    final name = effect['name']?.toString() ?? 'Profile Effect';
+    final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.shopping_bag_rounded, color: Color(0xFF22C55E)),
+            SizedBox(width: 8),
+            Text(
+              'Unlock Effect',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Would you like to unlock "$name" for ${price.toStringAsFixed(0)} KatsCoins?',
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Once unlocked, it will be added to your account permanently and equipped to your profile.',
+              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Unlock (${price.toStringAsFixed(0)} KC)', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEffectPurchaseSuccessDialog(Map<String, dynamic> effect) {
+    final name = effect['name']?.toString() ?? 'Profile Effect';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDCFCE7),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF16A34A),
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '$name Unlocked!',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF111827),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Awesome! This profile effect is now active on your profile and stored in your inventory.',
+              style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600, height: 1.4),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Awesome!', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _equipAdminFrame(String framePath, String frameName) async {
@@ -619,31 +1038,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _equipProfileEffect(String effectKey, String effectName) async {
-    final cleanKey = effectKey == 'none' ? 'none' : effectKey;
-    final isRemoved = cleanKey == 'none';
-    final msg = isRemoved
-        ? 'Profile effect removed from your profile!'
-        : '$effectName equipped successfully!';
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isRemoved ? const Color(0xFF4B5563) : const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    try {
-      final updatedUser = await _feedService.updateCurrentUserProfileEffect(cleanKey);
-      if (mounted) {
-        setState(() {
-          _currentUser = updatedUser;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error syncing profile effect with server: $e');
-    }
+    await _toggleEquipEffect(effectKey, effectName);
   }
 
   @override
@@ -651,6 +1046,8 @@ class _ShopScreenState extends State<ShopScreen> {
     super.initState();
     _loadThemeState();
     _fetchDynamicFrames();
+    _fetchWalletBalance();
+    _fetchProfileEffects();
   }
 
   void _switchTab(int index) {
@@ -671,6 +1068,13 @@ class _ShopScreenState extends State<ShopScreen> {
               orElse: () => _visibleProducts.first,
             );
       } else if (index == 1) {
+        if (_profileEffects.isNotEmpty && _selectedEffect == null) {
+          _selectedEffect = _profileEffects.firstWhere(
+            (e) => e['key'] == _equippedProfileEffect,
+            orElse: () => _profileEffects.first,
+          );
+        }
+      } else if (index == 2) {
         ThemeProductData? selected;
         for (final p in _visibleProducts) {
           if (_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedBubbleTheme) {
@@ -812,6 +1216,11 @@ class _ShopScreenState extends State<ShopScreen> {
       } else {
         _equippedAdminFrame = 'none';
         equippedAdminFrameNotifier.value = 'none';
+      }
+
+      final currentEffect = user?.profileEffect?.trim();
+      if (currentEffect != null && currentEffect.isNotEmpty && currentEffect != 'none') {
+        _equippedProfileEffect = currentEffect;
       }
 
       // Initialize selected theme for live preview
@@ -2464,13 +2873,543 @@ class _ShopScreenState extends State<ShopScreen> {
           previewUrl: 'https://media.katsklub.top/effects/zombie-slime/loop.webp',
           badgeText: 'ZOMBIE SLIME',
           badgeGradient: const [Color(0xFF22C55E), Color(0xFF10B981)],
-          isEquipped: _currentUser?.profileEffect == 'zombie_slime' ||
+          isEquipped: _equippedProfileEffect == 'zombie_slime' ||
+              _currentUser?.profileEffect == 'zombie_slime' ||
               _currentUser?.profileEffect == 'zombie-slime',
-          onEquip: () => _equipProfileEffect('zombie_slime', 'Zombie Slime'),
-          onUnequip: () => _equipProfileEffect('none', 'Zombie Slime'),
+          onEquip: () => _toggleEquipEffect('zombie_slime', 'Zombie Slime'),
+          onUnequip: () => _toggleEquipEffect('none', 'Zombie Slime'),
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  Widget _buildEffectsTab() {
+    return Column(
+      children: [
+        // Live Effect Preview Section
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Live Profile Preview',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  if (_selectedEffect != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF22C55E), Color(0xFF10B981)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _selectedEffect!['isVip'] == true ? 'VIP EFFECT' : 'ANIMATED',
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildLiveEffectPreviewCard(_selectedEffect),
+            ],
+          ),
+        ),
+
+        // Available Effects List Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Text(
+                'Available Effects',
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_profileEffects.length} effects',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Effects List
+        Expanded(
+          child: _isLoadingEffects
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF22C55E),
+                  ),
+                )
+              : _profileEffects.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No profile effects available yet.',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: _profileEffects.length,
+                      itemBuilder: (context, index) {
+                        final effect = _profileEffects[index];
+                        final effectKey = effect['key']?.toString() ?? '';
+                        final isSelected = _selectedEffect?['key'] == effectKey;
+                        final isEquipped = _equippedProfileEffect == effectKey;
+                        final isOwned = _ownedEffectKeys.contains(effectKey);
+
+                        return _EffectListItem(
+                          effect: effect,
+                          isSelected: isSelected,
+                          isEquipped: isEquipped,
+                          isOwned: isOwned,
+                          onTap: () {
+                            setState(() {
+                              _selectedEffect = effect;
+                              _previewIntroSeed = DateTime.now().millisecondsSinceEpoch;
+                            });
+                          },
+                        );
+                      },
+                    ),
+        ),
+
+        // Bottom Action Bar
+        if (_selectedEffect != null)
+          _buildEffectBottomActionBar(context, _selectedEffect!),
+      ],
+    );
+  }
+
+  Widget _buildLiveEffectPreviewCard(Map<String, dynamic>? effect) {
+    final effectKey = effect?['key']?.toString() ?? 'zombie_slime';
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final fullName = _currentUser?.fullName?.isNotEmpty == true
+        ? _currentUser!.fullName!
+        : (_currentUsername.isNotEmpty ? _currentUsername : 'User');
+    final username = _currentUsername.isNotEmpty ? _currentUsername : 'user';
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF22C55E).withOpacity(0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF22C55E).withOpacity(0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Stack(
+          children: [
+            // Dark elegant backdrop gradient
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0F172A),
+                      Color(0xFF1E293B),
+                      Color(0xFF022C22),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+
+            // Profile Info Mockup
+            Positioned(
+              left: 20,
+              bottom: 20,
+              right: 20,
+              child: Row(
+                children: [
+                  UserAvatarWithFrame(
+                    avatarUrl: avatarUrl,
+                    framePath: _equippedAdminFrame != 'none' ? _equippedAdminFrame : null,
+                    radius: 30,
+                    initials: fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                fullName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.verified,
+                              color: Color(0xFF38BDF8),
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '@$username',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: const Color(0xFF22C55E).withOpacity(0.4),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            'Active Preview: ${effect?['name'] ?? 'Zombie Slime'}',
+                            style: const TextStyle(
+                              color: Color(0xFF4ADE80),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Animated Profile Effect Widget Overlay
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ProfileEffectWidget(
+                  key: ValueKey('${effectKey}_$_previewIntroSeed'),
+                  effect: effectKey,
+                  height: 200,
+                  isActive: true,
+                ),
+              ),
+            ),
+
+            // Top-Right Floating "Replay Intro" button
+            Positioned(
+              top: 12,
+              right: 12,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _previewIntroSeed = DateTime.now().millisecondsSinceEpoch;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.replay_rounded, color: Colors.white, size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        'Replay Intro',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEffectBottomActionBar(BuildContext context, Map<String, dynamic> effect) {
+    final effectKey = effect['key']?.toString() ?? '';
+    final effectName = effect['name']?.toString() ?? 'Profile Effect';
+    final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
+    final isEquipped = _equippedProfileEffect == effectKey;
+    final isOwned = _ownedEffectKeys.contains(effectKey);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isOwned) ...[
+                    Row(
+                      children: [
+                        const Text('🪙', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${price.toStringAsFixed(0)} KC',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Your Balance: ${_coinsBalance.toStringAsFixed(0)} KC',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: _coinsBalance < price ? const Color(0xFFEF4444) : Colors.grey.shade600,
+                        fontWeight: _coinsBalance < price ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ] else if (isEquipped) ...[
+                    Row(
+                      children: const [
+                        Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Equipped',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF16A34A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Active on your profile',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                  ] else ...[
+                    Row(
+                      children: const [
+                        Icon(Icons.inventory_2_rounded, color: Color(0xFFA855F7), size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Owned',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFA855F7),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ready to equip',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (!isOwned)
+              GestureDetector(
+                onTap: _isPurchasingEffect ? null : () => _buyProfileEffect(effect),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF22C55E).withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: _isPurchasingEffect
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.2,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Buy for ${price.toStringAsFixed(0)} KC',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              )
+            else if (isEquipped)
+              GestureDetector(
+                onTap: () => _toggleEquipEffect(effectKey, effectName),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFFCA5A5), width: 1.2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'Unequip',
+                        style: TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () => _toggleEquipEffect(effectKey, effectName),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFA855F7), Color(0xFF7E22CE)],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA855F7).withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.check_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Equip Effect',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2506,6 +3445,62 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: Center(
+              child: GestureDetector(
+                onTap: () async {
+                  final user = _currentUser ?? User(id: '0', username: _currentUsername, raw: const {});
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => WalletScreen(user: user)),
+                  );
+                  _fetchWalletBalance();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0xFFFBBF24).withOpacity(0.9),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🪙', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_coinsBalance.toStringAsFixed(0)} KC',
+                        style: const TextStyle(
+                          color: Color(0xFFB45309),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.add_circle_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 15,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -2522,7 +3517,7 @@ class _ShopScreenState extends State<ShopScreen> {
           bottom: false,
           child: Column(
             children: [
-              // Segmented Tab Selector (3 Tabs)
+              // Segmented Tab Selector (4 Tabs)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Container(
@@ -2554,14 +3549,14 @@ class _ShopScreenState extends State<ShopScreen> {
                                 color: _activeTabIndex == 0
                                     ? Colors.white
                                     : const Color(0xFF4B5563),
-                                fontSize: 12.5,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      // Tab 1: Chat Bubbles
+                      // Tab 1: Profile Effects (NEW)
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _switchTab(1),
@@ -2578,34 +3573,34 @@ class _ShopScreenState extends State<ShopScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Chat Bubbles',
+                                  'Effects',
                                   style: TextStyle(
                                     color: _activeTabIndex == 1
                                         ? Colors.white
                                         : const Color(0xFF4B5563),
-                                    fontSize: 12.5,
+                                    fontSize: 11.5,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 3),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1.5,
+                                    horizontal: 4,
+                                    vertical: 1,
                                   ),
                                   decoration: BoxDecoration(
                                     color: _activeTabIndex == 1
                                         ? Colors.white.withOpacity(0.3)
-                                        : const Color(0xFFE5E7EB),
-                                    borderRadius: BorderRadius.circular(8),
+                                        : const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'VIP',
+                                    'NEW',
                                     style: TextStyle(
                                       color: _activeTabIndex == 1
                                           ? Colors.white
-                                          : const Color(0xFFD97706),
-                                      fontSize: 9.5,
+                                          : const Color(0xFF15803D),
+                                      fontSize: 8.5,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -2615,7 +3610,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ),
                       ),
-                      // Tab 2: Owned Items
+                      // Tab 2: Chat Bubbles
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _switchTab(2),
@@ -2628,13 +3623,67 @@ class _ShopScreenState extends State<ShopScreen> {
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Bubbles',
+                                  style: TextStyle(
+                                    color: _activeTabIndex == 2
+                                        ? Colors.white
+                                        : const Color(0xFF4B5563),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _activeTabIndex == 2
+                                        ? Colors.white.withOpacity(0.3)
+                                        : const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'VIP',
+                                    style: TextStyle(
+                                      color: _activeTabIndex == 2
+                                          ? Colors.white
+                                          : const Color(0xFFD97706),
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Tab 3: Owned Items
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _switchTab(3),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 3
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
                             child: Text(
                               'Owned',
                               style: TextStyle(
-                                color: _activeTabIndex == 2
+                                color: _activeTabIndex == 3
                                     ? Colors.white
                                     : const Color(0xFF4B5563),
-                                fontSize: 12.5,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -2742,7 +3791,12 @@ class _ShopScreenState extends State<ShopScreen> {
                 if (_selectedTheme != null && !_isBubbleProduct(_selectedTheme!.type))
                   _buildBottomActionBar(context, _selectedTheme!),
               ] else if (_activeTabIndex == 1) ...[
-                // Tab 1: Chat Bubbles
+                // Tab 1: Profile Effects
+                Expanded(
+                  child: _buildEffectsTab(),
+                ),
+              ] else if (_activeTabIndex == 2) ...[
+                // Tab 2: Chat Bubbles
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Column(
@@ -3239,6 +4293,236 @@ class _PurchaseProcessDialogState extends State<_PurchaseProcessDialog> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EffectListItem extends StatelessWidget {
+  const _EffectListItem({
+    required this.effect,
+    required this.isSelected,
+    required this.isEquipped,
+    required this.isOwned,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> effect;
+  final bool isSelected;
+  final bool isEquipped;
+  final bool isOwned;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = effect['name']?.toString() ?? 'Profile Effect';
+    final desc = effect['description']?.toString() ?? '';
+    final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
+    final isVip = effect['isVip'] == true;
+    final loopUrl = effect['loopUrl']?.toString() ??
+        'https://media.katsklub.top/effects/zombie-slime/loop_v2.webp';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.white.withOpacity(0.92)
+              : Colors.white.withOpacity(0.65),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF22C55E)
+                : Colors.white.withOpacity(0.6),
+            width: isSelected ? 2 : 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFF22C55E).withOpacity(0.18)
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: isSelected ? 12 : 6,
+              offset: isSelected ? const Offset(0, 4) : const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Effect animated thumbnail preview
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF22C55E).withOpacity(0.4),
+                    width: 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(
+                        Icons.person_rounded,
+                        size: 36,
+                        color: Colors.white24,
+                      ),
+                      Image.network(
+                        loopUrl,
+                        fit: BoxFit.cover,
+                        width: 70,
+                        height: 70,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.auto_awesome,
+                          color: Color(0xFF22C55E),
+                          size: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Title, description & badges
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              color: Color(0xFF111827),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isVip) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF22C55E), Color(0xFF10B981)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'VIP',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      desc,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Status Pill
+                    if (isEquipped)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'EQUIPPED',
+                              style: TextStyle(
+                                color: Color(0xFF15803D),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (isOwned)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFD8B4FE)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.inventory_2_rounded, color: Color(0xFFA855F7), size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'OWNED',
+                              style: TextStyle(
+                                color: Color(0xFF7E22CE),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFCD34D)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🪙', style: TextStyle(fontSize: 10)),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${price.toStringAsFixed(0)} KC',
+                              style: const TextStyle(
+                                color: Color(0xFFB45309),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

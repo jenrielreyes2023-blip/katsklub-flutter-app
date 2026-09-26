@@ -6,6 +6,7 @@ class ApiConfig {
 
   static String get baseUrl => apiBaseUrl;
   static const String framesPath = '/api/frames';
+  static const String effectsPath = '/api/effects';
 
   static const String loginPath = '/api/auth/login';
   static const String logoutPath = '/api/auth/logout';
