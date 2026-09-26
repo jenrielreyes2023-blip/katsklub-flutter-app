@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/voice_room/voice_rooms_lobby_screen.dart';
+import '../services/feed_service.dart';
 import 'custom_icons.dart';
 
 const String _topOutstandingSvg =
@@ -179,9 +180,14 @@ class KatsTopBar extends StatelessWidget {
             tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
           ),
           const SizedBox(width: 2),
-          NotificationBellButton(
-            unreadNotifications: unreadNotifications,
-            onPressed: onNotificationsTap,
+          ValueListenableBuilder<int>(
+            valueListenable: FeedService.unreadNotificationsNotifier,
+            builder: (context, count, _) {
+              return NotificationBellButton(
+                unreadNotifications: count,
+                onPressed: onNotificationsTap,
+              );
+            },
           ),
         ],
       ),
@@ -224,50 +230,57 @@ class NotificationBellButton extends StatelessWidget {
                 ),
               ),
             ),
-            if (unreadNotifications > 0)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE11D48),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x14000000),
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 15,
-                      minHeight: 15,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 3,
-                        vertical: 0.5,
-                      ),
-                      child: Center(
-                        child: Text(
-                          badgeLabel,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            inherit: false,
-                            color: Colors.white,
-                            fontSize: 8.5.sp,
-                            fontWeight: FontWeight.w700,
-                            height: 1.1,
+            Positioned(
+              right: 2,
+              top: 2,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
+                child: unreadNotifications > 0
+                    ? DecoratedBox(
+                        key: ValueKey<int>(unreadNotifications),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE11D48),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: 15,
+                            minHeight: 15,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 3,
+                              vertical: 0.5,
+                            ),
+                            child: Center(
+                              child: Text(
+                                badgeLabel,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  inherit: false,
+                                  color: Colors.white,
+                                  fontSize: 8.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey<int>(0)),
               ),
+            ),
           ],
         ),
       ),

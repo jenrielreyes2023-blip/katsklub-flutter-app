@@ -484,9 +484,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   ),
-                  NotificationBellButton(
-                    unreadNotifications: _unreadNotifications,
-                    onPressed: _openNotifications,
+                  ValueListenableBuilder<int>(
+                    valueListenable: FeedService.unreadNotificationsNotifier,
+                    builder: (context, count, _) {
+                      return NotificationBellButton(
+                        unreadNotifications: count,
+                        onPressed: _openNotifications,
+                      );
+                    },
                   ),
                   if (widget.extraHeaderAction != null)
                     widget.extraHeaderAction!,

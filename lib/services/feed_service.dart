@@ -705,6 +705,9 @@ class FeedService {
       StreamController<DirectMessageEditedEvent>.broadcast();
   static final StreamController<void> _notesUpdatedController =
       StreamController<void>.broadcast();
+  static final StreamController<Map<String, dynamic>>
+      _notificationReceivedController =
+      StreamController<Map<String, dynamic>>.broadcast();
   static final ValueNotifier<int> unreadNotificationsNotifier =
       ValueNotifier<int>(0);
   static final ValueNotifier<int> unreadMessagesNotifier =
@@ -761,6 +764,8 @@ class FeedService {
   Stream<DirectMessageEditedEvent> get onDmMessageEdited =>
       _dmEditedController.stream;
   static Stream<void> get notesUpdatedStream => _notesUpdatedController.stream;
+  static Stream<Map<String, dynamic>> get notificationReceivedStream =>
+      _notificationReceivedController.stream;
 
   static void notifyPostcardThemesReset() {
     _postcardThemesResetController.add(null);
@@ -870,19 +875,35 @@ class FeedService {
     // Pre-load message ping sounds so the first message doesn't miss the cue.
     MessageSoundService.ensureInitialized();
 
+    final socketOptions = io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .enableForceNew()
+        .enableWithCredentials()
+        .setAuth({'token': token})
+        .setQuery({'token': token})
+        .setExtraHeaders({'Authorization': 'Bearer $token'})
+        .setTransportOptions({
+          'websocket': {
+            'extraHeaders': {'Authorization': 'Bearer $token'},
+          },
+        })
+        .build();
+
     final socket = io.io(
       ApiConfig.apiBaseUrl,
-      <String, dynamic>{
-        'transports': ['websocket'],
-        'autoConnect': false,
-        'forceNew': true,
-        'extraHeaders': {
-          'Authorization': 'Bearer $token',
-        },
-      },
+      socketOptions,
     );
 
     socket.onConnect((_) async {
+      try {
+        final currentUser = await service._authService.getSavedUser();
+        socket.emit('auth', {
+          'token': token,
+          'userId': currentUser?.id,
+        });
+      } catch (_) {}
+
       for (final cb in List.of(_onSocketConnectedCallbacks)) {
         try {
           cb(socket);
@@ -911,6 +932,7 @@ class FeedService {
         unreadNotificationsNotifier.value =
             unreadNotificationsNotifier.value + 1;
         MessageSoundService.playNotification();
+        _notificationReceivedController.add(notification);
       }
     });
 
@@ -919,7 +941,7 @@ class FeedService {
         return;
       }
 
-      final count = _readStaticInt(payload['unreadCount']);
+      final count = _readStaticInt(payload['unreadCount'] ?? payload['count']);
       unreadNotificationsNotifier.value = count < 0 ? 0 : count;
     });
 
@@ -2832,7 +2854,8 @@ class FeedService {
 
     final storiesData = secondaryResults[0];
     final unreadData = secondaryResults[1];
-    final unreadCount = _readInt(unreadData['unreadCount']);
+    final unreadCount =
+        _readInt(unreadData['unreadCount'] ?? unreadData['count']);
 
     unreadNotificationsNotifier.value = unreadCount;
 
@@ -2854,7 +2877,7 @@ class FeedService {
   Future<int> refreshUnreadNotificationsCount() async {
     final data =
         await _authenticatedGet(ApiConfig.notificationsUnreadCountPath);
-    final unreadCount = _readInt(data['unreadCount']);
+    final unreadCount = _readInt(data['unreadCount'] ?? data['count']);
     unreadNotificationsNotifier.value = unreadCount < 0 ? 0 : unreadCount;
     return unreadNotificationsNotifier.value;
   }

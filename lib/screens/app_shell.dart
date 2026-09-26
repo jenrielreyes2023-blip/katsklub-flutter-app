@@ -24,6 +24,7 @@ import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import '../services/push_notification_service.dart';
 import '../services/trtc_call_service.dart';
+import '../widgets/in_app_notification_banner.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -57,6 +58,7 @@ class _AppShellState extends State<AppShell> {
   int _previousIndex = 0;
   int _feedRefreshToken = 0;
   StreamSubscription<Map<String, dynamic>>? _notificationClickSubscription;
+  StreamSubscription<Map<String, dynamic>>? _liveNotificationSubscription;
 
   @override
   void initState() {
@@ -70,6 +72,8 @@ class _AppShellState extends State<AppShell> {
     PushNotificationService().initialize();
     _notificationClickSubscription =
         PushNotificationService().clickStream.listen(_handleNotificationClick);
+    _liveNotificationSubscription =
+        FeedService.notificationReceivedStream.listen(_showInAppNotificationBanner);
     TRTCCallService().initSocketListeners();
   }
 
@@ -93,6 +97,8 @@ class _AppShellState extends State<AppShell> {
     _normalVideoOverlayHistoryEntry?.remove();
     _normalVideoOverlayHistoryEntry = null;
     _notificationClickSubscription?.cancel();
+    _liveNotificationSubscription?.cancel();
+    InAppNotificationOverlay.dismiss();
     super.dispose();
   }
 
@@ -115,10 +121,22 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  void _showInAppNotificationBanner(Map<String, dynamic> notification) {
+    if (!mounted) return;
+    InAppNotificationOverlay.show(
+      context: context,
+      notification: notification,
+      onTap: () => _handleNotificationClick(notification),
+    );
+  }
+
   void _handleNotificationClick(Map<String, dynamic> data) async {
     debugPrint('[DM-DBG] notif tap data=$data');
     unawaited(FeedService.ensureRealtimeSync());
-    final type = data['type']?.toString();
+    final innerData = data['data'] is Map
+        ? Map<String, dynamic>.from(data['data'] as Map)
+        : const <String, dynamic>{};
+    final type = (data['type'] ?? innerData['type'])?.toString().toLowerCase();
     if (type == null) {
       _openNotifications();
       return;
@@ -164,7 +182,7 @@ class _AppShellState extends State<AppShell> {
         break;
 
       case 'message':
-        final threadIdStr = data['threadId']?.toString();
+        final threadIdStr = data['threadId']?.toString() ?? innerData['threadId']?.toString();
         if (threadIdStr != null) {
           final threadId = int.tryParse(threadIdStr);
           if (threadId != null && mounted) {
@@ -182,16 +200,23 @@ class _AppShellState extends State<AppShell> {
         _selectTab(3);
         break;
 
+      case 'like':
       case 'post_like':
+      case 'comment':
       case 'post_comment':
       case 'comment_reply':
       case 'mention':
+      case 'tag':
         final postId = data['postId']?.toString() ??
             data['targetPostId']?.toString() ??
-            data['entityId']?.toString();
+            data['entityId']?.toString() ??
+            innerData['postId']?.toString() ??
+            innerData['targetPostId']?.toString();
         if (postId != null && postId.isNotEmpty) {
           final commentIdRaw = data['commentId']?.toString() ??
-              data['targetCommentId']?.toString();
+              data['targetCommentId']?.toString() ??
+              innerData['commentId']?.toString() ??
+              innerData['targetCommentId']?.toString();
           final targetCommentId =
               commentIdRaw == null ? null : int.tryParse(commentIdRaw);
           Navigator.of(context).push(
@@ -211,7 +236,9 @@ class _AppShellState extends State<AppShell> {
         break;
 
       case 'follow':
-        final username = data['username']?.toString();
+        final username = data['username']?.toString() ??
+            data['actorUsername']?.toString() ??
+            innerData['username']?.toString();
         if (username != null && username.isNotEmpty) {
           _openUserProfile(username);
           return;
