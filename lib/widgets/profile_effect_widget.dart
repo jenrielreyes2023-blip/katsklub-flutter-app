@@ -417,20 +417,22 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
         fit: StackFit.passthrough,
         children: [
           // Layer 1: Ambient Idle Loop (fades in as intro fades out, or immediately active if no intro)
-          AnimatedOpacity(
-            opacity: (!hasIntro || _introFadeOut) ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeInOut,
-            child: Image(
-              image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
-              width: double.infinity,
-              height: effectiveHeight,
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
-              filterQuality: FilterQuality.medium,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          if (!hasIntro || _introFadeOut)
+            AnimatedOpacity(
+              opacity: (!hasIntro || _introFadeOut) ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOut,
+              child: Image(
+                image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
+                width: double.infinity,
+                height: effectiveHeight,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.topCenter,
+                filterQuality: FilterQuality.medium,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
-          ),
 
           // Layer 2: Intro Animation (Starts at 100% opacity, plays from frame 1, then cross-fades out)
           if (hasIntro)
@@ -452,6 +454,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 fit: BoxFit.fitWidth,
                 alignment: Alignment.topCenter,
                 filterQuality: FilterQuality.medium,
+                gaplessPlayback: true,
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                   if (frame != null && !_introTimerStarted) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
