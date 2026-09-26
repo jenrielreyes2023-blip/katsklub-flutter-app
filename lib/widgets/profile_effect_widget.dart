@@ -68,14 +68,14 @@ class ProfileEffectConfig {
       id: 'la_llorona',
       name: 'La Llorona',
       introUrl: 'https://media.katsklub.top/effects/la-llorona/intro_v2.webp',
-      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v3.webp',
       introDuration: Duration(milliseconds: 5000),
     ),
     'la-llorona': ProfileEffectConfig(
       id: 'la-llorona',
       name: 'La Llorona',
       introUrl: 'https://media.katsklub.top/effects/la-llorona/intro_v2.webp',
-      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v2.webp',
+      loopUrl: 'https://media.katsklub.top/effects/la-llorona/loop_v3.webp',
       introDuration: Duration(milliseconds: 5000),
     ),
   };
