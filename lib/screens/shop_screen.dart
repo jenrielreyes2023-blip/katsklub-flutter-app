@@ -3071,6 +3071,22 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFF0B0F19), Color(0xFF0C1938), Color(0xFF1E1B4B)];
       case 'la_llorona':
         return const [Color(0xFF0F0F1A), Color(0xFF1C1335), Color(0xFF2E1065)];
+      case 'boost_relic':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
+      case 'cyberspace':
+        return const [Color(0xFF030712), Color(0xFF042F2E), Color(0xFF083344)];
+      case 'hydro_blast':
+        return const [Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF0369A1)];
+      case 'shatter':
+        return const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF2E1065)];
+      case 'magic_hearts':
+        return const [Color(0xFF1E1B4B), Color(0xFF4C0519), Color(0xFF701A75)];
+      case 'sakura_dreams':
+        return const [Color(0xFF1F1D2B), Color(0xFF3B1E32), Color(0xFF501934)];
+      case 'power_surge':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF422006)];
+      case 'shuriken_strike':
+        return const [Color(0xFF0A0A0A), Color(0xFF1C1917), Color(0xFF450A0A)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF022C22)];
@@ -3086,6 +3102,22 @@ class _ShopScreenState extends State<ShopScreen> {
         return const Color(0xFF38BDF8);
       case 'la_llorona':
         return const Color(0xFFA855F7);
+      case 'boost_relic':
+        return const Color(0xFFF59E0B);
+      case 'cyberspace':
+        return const Color(0xFF06B6D4);
+      case 'hydro_blast':
+        return const Color(0xFF0EA5E9);
+      case 'shatter':
+        return const Color(0xFF818CF8);
+      case 'magic_hearts':
+        return const Color(0xFFF43F5E);
+      case 'sakura_dreams':
+        return const Color(0xFFF472B6);
+      case 'power_surge':
+        return const Color(0xFFEAB308);
+      case 'shuriken_strike':
+        return const Color(0xFFEF4444);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -3101,6 +3133,22 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
       case 'la_llorona':
         return const [Color(0xFFA855F7), Color(0xFF6366F1)];
+      case 'boost_relic':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'cyberspace':
+        return const [Color(0xFF22D3EE), Color(0xFF0284C7)];
+      case 'hydro_blast':
+        return const [Color(0xFF38BDF8), Color(0xFF0284C7)];
+      case 'shatter':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'magic_hearts':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'sakura_dreams':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'power_surge':
+        return const [Color(0xFFFACC15), Color(0xFFCA8A04)];
+      case 'shuriken_strike':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
