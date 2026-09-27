@@ -1232,6 +1232,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         (post != null && post.isDiscussion) ? 124.0 : 76.0;
     final postcardTheme =
         (post?.authorPostcardTheme ?? '').trim().toLowerCase();
+    final showStarlightWhales = postcardTheme == 'starlight_whales' ||
+        postcardTheme == 'starlightwhales';
     final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
@@ -2457,6 +2459,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 const SizedBox(height: 10),
                               ],
                             ),
+                            if (showStarlightWhales)
+                              Positioned(
+                                right: 16,
+                                top: 6,
+                                height: 26,
+                                child: IgnorePointer(
+                                  child: RepaintBoundary(
+                                    child: CachedNetworkImage(
+                                      imageUrl:
+                                          'https://media.katsklub.top/postcard/starlight-whales.webp',
+                                      fit: BoxFit.contain,
+                                      fadeInDuration: Duration.zero,
+                                      fadeOutDuration: Duration.zero,
+                                      placeholder: (_, __) => const SizedBox(),
+                                      errorWidget: (_, __, ___) => const SizedBox(),
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),

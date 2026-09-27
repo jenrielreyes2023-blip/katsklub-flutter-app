@@ -17,6 +17,7 @@ import '../widgets/profile_effect_widget.dart';
 import 'wallet_screen.dart';
 
 enum ThemeProductType {
+  starlightWhales,
   sunrise,
   ocean,
   bees,
@@ -42,7 +43,29 @@ enum ThemeProductType {
 }
 
 const List<ThemeProductData> themeProducts = [
-  // Old postcard designs removed. Ready for new designs.
+  ThemeProductData(
+    type: ThemeProductType.starlightWhales,
+    title: 'Starlight Whales',
+    description:
+        'Majestic cosmic whales gliding gracefully across starry celestial skies inline with your postcard header.',
+    successMessage:
+        'The Starlight Whales postcard theme is now active on your account! Your posts now feature the animated starlight whales.',
+    previewLabel: 'you',
+    previewInitial: '🐋',
+    assetPath: 'https://media.katsklub.top/postcard/starlight-whales.webp',
+    previewGradient: [
+      Color(0xFF0F172A),
+      Color(0xFF1E293B),
+      Color(0xFF334155),
+      Colors.white,
+    ],
+    badgeText: 'ANIMATED',
+    badgeGradient: [Color(0xFF06B6D4), Color(0xFF3B82F6)],
+    buttonGradient: [Color(0xFF06B6D4), Color(0xFF2563EB)],
+    previewAvatarColor: Color(0xFFE0F2FE),
+    previewInitialColor: Color(0xFF0284C7),
+    price: 399.0,
+  ),
   ThemeProductData(
     type: ThemeProductType.bubbleDream,
     title: 'Chat Bubble - Bubble Dream Skin',
@@ -686,6 +709,8 @@ class _ShopScreenState extends State<ShopScreen> {
 
   String _themeKeyFor(ThemeProductType type) {
     switch (type) {
+      case ThemeProductType.starlightWhales:
+        return 'starlight_whales';
       case ThemeProductType.sunrise:
         return 'sunrise';
       case ThemeProductType.ocean:
@@ -1012,6 +1037,11 @@ class _ShopScreenState extends State<ShopScreen> {
       return;
     }
 
+    if (theme.price > 0 && _coinsBalance < theme.price) {
+      _showInsufficientCoinsDialog(theme.price, _coinsBalance);
+      return;
+    }
+
     _handleApplyTheme(context, theme);
   }
 
@@ -1094,7 +1124,26 @@ class _ShopScreenState extends State<ShopScreen> {
                     const Positioned.fill(
                       child: _CuteHeartPreviewArt(),
                     )
-                  else
+                  else if (selected.type == ThemeProductType.starlightWhales)
+                    Positioned(
+                      right: 16,
+                      top: 14,
+                      height: 26,
+                      child: IgnorePointer(
+                        child: RepaintBoundary(
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                'https://media.katsklub.top/postcard/starlight-whales.webp',
+                            fit: BoxFit.contain,
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholder: (_, __) => const SizedBox(),
+                            errorWidget: (_, __, ___) => const SizedBox(),
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (selected.assetPath.isNotEmpty)
                     Positioned.fill(
                       child: ShaderMask(
                         shaderCallback: (rect) {
@@ -1115,14 +1164,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           placeholder: (context, url) => const SizedBox(),
                           errorWidget: (context, url, error) => Image.asset(selected.assetPath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox()),
                           fit: BoxFit.cover,
-                           alignment: selected.type == ThemeProductType.xmasSnowy ||
-                                  selected.type == ThemeProductType.bees ||
-                                  selected.type == ThemeProductType.bunny ||
-                                  selected.type == ThemeProductType.ghost ||
-                                  selected.type == ThemeProductType.prince ||
-                                  selected.type == ThemeProductType.elsa
-                              ? Alignment.centerRight
-                              : Alignment.center,
+                          alignment: Alignment.center,
                         ),
                       ),
                     ),
@@ -1640,7 +1682,9 @@ class _ShopScreenState extends State<ShopScreen> {
                         ? 'Locked'
                         : isLoading
                             ? 'Loading...'
-                            : 'Apply Theme',
+                            : (selected.price > 0
+                                ? 'Unlock (${selected.price.toStringAsFixed(0)} KC)'
+                                : 'Apply Theme'),
                 style: TextStyle(
                   color: isApplied
                       ? const Color(0xFF991B1B)
@@ -3752,7 +3796,22 @@ class _ThemeListItem extends StatelessWidget {
                         ),
                       ),
                       // Sticker
-                      if (showCuteHeart)
+                      if (theme.type == ThemeProductType.starlightWhales)
+                        Positioned.fill(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    'https://media.katsklub.top/postcard/starlight-whales.webp',
+                                fit: BoxFit.contain,
+                                placeholder: (_, __) => const SizedBox(),
+                                errorWidget: (_, __, ___) => const SizedBox(),
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (showCuteHeart)
                         Positioned.fill(
                           child: Center(
                             child: Icon(
@@ -3800,6 +3859,31 @@ class _ThemeListItem extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (theme.price > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFFDE68A),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              '${theme.price.toStringAsFixed(0)} KC',
+                              style: const TextStyle(
+                                color: Color(0xFFB45309),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (isApplied) ...[
                           const SizedBox(width: 6),
                           Container(
@@ -3991,6 +4075,7 @@ class ThemeProductData {
     required this.buttonGradient,
     required this.previewAvatarColor,
     required this.previewInitialColor,
+    this.price = 0.0,
   });
 
   final ThemeProductType type;
@@ -4006,6 +4091,7 @@ class ThemeProductData {
   final List<Color> buttonGradient;
   final Color previewAvatarColor;
   final Color previewInitialColor;
+  final double price;
 }
 
 class _PurchaseProcessDialog extends StatefulWidget {

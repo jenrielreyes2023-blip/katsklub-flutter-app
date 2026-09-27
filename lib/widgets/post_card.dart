@@ -1168,6 +1168,8 @@ class _PostCardState extends State<PostCard> {
         : const Alignment(1.0, -0.18);
     final postcardTheme =
         (_post.authorPostcardTheme ?? '').trim().toLowerCase();
+    final showStarlightWhales = postcardTheme == 'starlight_whales' ||
+        postcardTheme == 'starlightwhales';
     final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
@@ -2524,6 +2526,25 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
+              if (showStarlightWhales)
+                Positioned(
+                  right: 48.w,
+                  top: _post.isDiscussion ? 8.h : 6.h,
+                  height: 26.h,
+                  child: IgnorePointer(
+                    child: RepaintBoundary(
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://media.katsklub.top/postcard/starlight-whales.webp',
+                        fit: BoxFit.contain,
+                        fadeInDuration: Duration.zero,
+                        fadeOutDuration: Duration.zero,
+                        placeholder: (context, url) => const SizedBox(),
+                        errorWidget: (context, url, error) => const SizedBox(),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

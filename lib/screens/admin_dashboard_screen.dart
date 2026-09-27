@@ -3076,6 +3076,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   String _themeKeyForPublic(ThemeProductType type) {
     switch (type) {
+      case ThemeProductType.starlightWhales:
+        return 'starlight_whales';
       case ThemeProductType.sunrise:
         return 'sunrise';
       case ThemeProductType.ocean:
