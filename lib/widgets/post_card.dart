@@ -1192,7 +1192,7 @@ class _PostCardState extends State<PostCard> {
         isGemini && postcardTheme == 'gemini_roger_hunter';
     final showGeminiRogerWolf =
         isGemini && postcardTheme == 'gemini_roger_wolf';
-    final isPostCardDark = showOcean || (isGlobalDark && postcardTheme.isEmpty);
+    final isPostCardDark = isGlobalDark || showOcean;
     final showThemeBackdrop = showGeminiRogerHunter ||
         showGeminiRogerWolf ||
         showSunrise ||

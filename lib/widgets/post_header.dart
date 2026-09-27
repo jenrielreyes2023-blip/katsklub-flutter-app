@@ -37,7 +37,7 @@ class PostHeader extends StatelessWidget {
 
     // Determine if the applied theme is a dark background theme.
     final isDarkTheme = themeKey == 'ocean' ||
-        (Theme.of(context).brightness == Brightness.dark && themeKey.isEmpty);
+        Theme.of(context).brightness == Brightness.dark;
 
     // Text and icon colors
     final nameColor = isDarkTheme ? Colors.white : const Color(0xFF1C1E21);

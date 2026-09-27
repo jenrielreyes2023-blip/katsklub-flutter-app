@@ -15,9 +15,8 @@ class KatsText {
 
   // Ocean theme aware for PostHeader (isDarkTheme)
   static bool _isDarkTheme(BuildContext c, {String themeKey = ''}) {
-    if (themeKey.isNotEmpty) {
-      return themeKey == 'ocean' ||
-          (Theme.of(c).brightness == Brightness.dark && themeKey.isEmpty);
+    if (themeKey == 'ocean') {
+      return true;
     }
     return Theme.of(c).brightness == Brightness.dark;
   }
