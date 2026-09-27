@@ -3087,6 +3087,20 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF422006)];
       case 'shuriken_strike':
         return const [Color(0xFF0A0A0A), Color(0xFF1C1917), Color(0xFF450A0A)];
+      case 'mystic_vines':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF065F46)];
+      case 'pixie_dust':
+        return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF78350F)];
+      case 'discord_os':
+        return const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF312E81)];
+      case 'breakfast_plate':
+        return const [Color(0xFF1C1917), Color(0xFF431407), Color(0xFF7C2D12)];
+      case 'ghoulish_graffiti':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF3B0764)];
+      case 'dark_omens':
+        return const [Color(0xFF09090B), Color(0xFF1C1917), Color(0xFF450A0A)];
+      case 'fall_foliage':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF022C22)];
@@ -3118,6 +3132,20 @@ class _ShopScreenState extends State<ShopScreen> {
         return const Color(0xFFEAB308);
       case 'shuriken_strike':
         return const Color(0xFFEF4444);
+      case 'mystic_vines':
+        return const Color(0xFF10B981);
+      case 'pixie_dust':
+        return const Color(0xFFFBBF24);
+      case 'discord_os':
+        return const Color(0xFF6366F1);
+      case 'breakfast_plate':
+        return const Color(0xFFF97316);
+      case 'ghoulish_graffiti':
+        return const Color(0xFFA855F7);
+      case 'dark_omens':
+        return const Color(0xFFDC2626);
+      case 'fall_foliage':
+        return const Color(0xFFD97706);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -3149,6 +3177,20 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFFFACC15), Color(0xFFCA8A04)];
       case 'shuriken_strike':
         return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'mystic_vines':
+        return const [Color(0xFF10B981), Color(0xFF059669)];
+      case 'pixie_dust':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'discord_os':
+        return const [Color(0xFF818CF8), Color(0xFF4F46E5)];
+      case 'breakfast_plate':
+        return const [Color(0xFFFB923C), Color(0xFFEA580C)];
+      case 'ghoulish_graffiti':
+        return const [Color(0xFFC084FC), Color(0xFF9333EA)];
+      case 'dark_omens':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'fall_foliage':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
@@ -4458,6 +4500,36 @@ class _EffectListItem extends StatelessWidget {
         return const Color(0xFF38BDF8);
       case 'la_llorona':
         return const Color(0xFFA855F7);
+      case 'boost_relic':
+        return const Color(0xFFF59E0B);
+      case 'cyberspace':
+        return const Color(0xFF06B6D4);
+      case 'hydro_blast':
+        return const Color(0xFF0EA5E9);
+      case 'shatter':
+        return const Color(0xFF818CF8);
+      case 'magic_hearts':
+        return const Color(0xFFF43F5E);
+      case 'sakura_dreams':
+        return const Color(0xFFF472B6);
+      case 'power_surge':
+        return const Color(0xFFEAB308);
+      case 'shuriken_strike':
+        return const Color(0xFFEF4444);
+      case 'mystic_vines':
+        return const Color(0xFF10B981);
+      case 'pixie_dust':
+        return const Color(0xFFFBBF24);
+      case 'discord_os':
+        return const Color(0xFF6366F1);
+      case 'breakfast_plate':
+        return const Color(0xFFF97316);
+      case 'ghoulish_graffiti':
+        return const Color(0xFFA855F7);
+      case 'dark_omens':
+        return const Color(0xFFDC2626);
+      case 'fall_foliage':
+        return const Color(0xFFD97706);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -4473,6 +4545,36 @@ class _EffectListItem extends StatelessWidget {
         return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
       case 'la_llorona':
         return const [Color(0xFFA855F7), Color(0xFF6366F1)];
+      case 'boost_relic':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'cyberspace':
+        return const [Color(0xFF22D3EE), Color(0xFF0284C7)];
+      case 'hydro_blast':
+        return const [Color(0xFF38BDF8), Color(0xFF0284C7)];
+      case 'shatter':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'magic_hearts':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'sakura_dreams':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'power_surge':
+        return const [Color(0xFFFACC15), Color(0xFFCA8A04)];
+      case 'shuriken_strike':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'mystic_vines':
+        return const [Color(0xFF10B981), Color(0xFF059669)];
+      case 'pixie_dust':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'discord_os':
+        return const [Color(0xFF818CF8), Color(0xFF4F46E5)];
+      case 'breakfast_plate':
+        return const [Color(0xFFFB923C), Color(0xFFEA580C)];
+      case 'ghoulish_graffiti':
+        return const [Color(0xFFC084FC), Color(0xFF9333EA)];
+      case 'dark_omens':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'fall_foliage':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
