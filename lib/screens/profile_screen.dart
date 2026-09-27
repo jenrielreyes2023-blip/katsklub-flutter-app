@@ -2195,11 +2195,12 @@ class _ProfileHeader extends StatelessWidget {
             left: 0,
             right: 0,
             height: coverHeight,
-            child: GestureDetector(
-              onTap: hasCover
-                  ? onViewCover
-                  : (isOwnProfile ? onChangeCover : null),
-              child: Stack(
+            child: RepaintBoundary(
+              child: GestureDetector(
+                onTap: hasCover
+                    ? onViewCover
+                    : (isOwnProfile ? onChangeCover : null),
+                child: Stack(
                 fit: StackFit.expand,
                 children: [
                   if (hasCover) ...[
@@ -2300,6 +2301,7 @@ class _ProfileHeader extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
             ),
           ),
 
@@ -2456,24 +2458,26 @@ class _ProfileHeader extends StatelessWidget {
           Positioned(
             left: 16.w,
             top: avatarTop,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
-                    blurRadius: 10,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: _ProfileAvatar(
-                user: user,
-                stories: stories,
-                isOwnProfile: isOwnProfile,
-                onTapStory: onTapStory,
-                equippedAdminFrame: equippedAdminFrame,
+            child: RepaintBoundary(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _ProfileAvatar(
+                  user: user,
+                  stories: stories,
+                  isOwnProfile: isOwnProfile,
+                  onTapStory: onTapStory,
+                  equippedAdminFrame: equippedAdminFrame,
+                ),
               ),
             ),
           ),

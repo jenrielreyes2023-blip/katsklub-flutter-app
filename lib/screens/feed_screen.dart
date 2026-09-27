@@ -29,6 +29,7 @@ class FeedScreen extends StatefulWidget {
   const FeedScreen({
     required this.user,
     required this.refreshToken,
+    this.isTabActive = true,
     this.onOpenCurrentUserProfile,
     this.onOpenUserProfile,
     super.key,
@@ -36,6 +37,7 @@ class FeedScreen extends StatefulWidget {
 
   final User user;
   final int refreshToken;
+  final bool isTabActive;
   final VoidCallback? onOpenCurrentUserProfile;
   final ValueChanged<String>? onOpenUserProfile;
 
@@ -624,6 +626,7 @@ class _FeedScreenState extends State<FeedScreen>
             'feed-reels-rail-${_railReels.map((reel) => reel.id).join('-')}',
           ),
           reels: _railReels,
+          isTabActive: widget.isTabActive,
           onReelTap: _openRailReel,
         ),
       );
@@ -1500,10 +1503,12 @@ class _ReelsRail extends StatefulWidget {
     super.key,
     required this.reels,
     required this.onReelTap,
+    this.isTabActive = true,
   });
 
   final List<Post> reels;
   final Function(Post reel, int index) onReelTap;
+  final bool isTabActive;
 
   @override
   State<_ReelsRail> createState() => _ReelsRailState();
@@ -1567,7 +1572,7 @@ class _ReelsRailState extends State<_ReelsRail>
                   reel: reel,
                   width: cardWidth,
                   height: cardHeight,
-                  isFirstCard: index == 0,
+                  isFirstCard: index == 0 && widget.isTabActive,
                   onTap: () => widget.onReelTap(reel, index),
                 ),
               );

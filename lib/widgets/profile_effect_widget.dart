@@ -420,11 +420,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (config == null) return;
     _loopProvider ??= CachedNetworkImageProvider(config.loopUrl);
     if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl && !_introDone) {
-      if (_introProvider == null) {
-        final introProvider = CachedNetworkImageProvider(config.introUrl);
-        introProvider.evict();
-        _introProvider = introProvider;
-      }
+      _introProvider ??= CachedNetworkImageProvider(config.introUrl);
     }
   }
 
@@ -441,9 +437,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     _loopProvider = CachedNetworkImageProvider(config.loopUrl);
 
     if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl) {
-      final introProvider = CachedNetworkImageProvider(config.introUrl);
-      introProvider.evict();
-      _introProvider = introProvider;
+      _introProvider = CachedNetworkImageProvider(config.introUrl);
       _introDone = false;
       _introFadeOut = false;
       _introTimerStarted = false;
@@ -534,10 +528,21 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          // Layer 1: Ambient Idle Loop (fades in as intro fades out, or immediately active if no intro)
-          if (!hasIntro || _introFadeOut)
+          // Layer 1: Ambient Idle Loop (direct zero-overhead Image once intro is done; smooth fade-in if cross-fading)
+          if (!hasIntro)
+            Image(
+              image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
+              width: double.infinity,
+              height: effectiveHeight,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+              filterQuality: FilterQuality.low,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            )
+          else if (_introFadeOut)
             AnimatedOpacity(
-              opacity: (!hasIntro || _introFadeOut) ? 1.0 : 0.0,
+              opacity: 1.0,
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeInOut,
               child: Image(
@@ -546,7 +551,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 height: effectiveHeight,
                 fit: BoxFit.fitWidth,
                 alignment: Alignment.topCenter,
-                filterQuality: FilterQuality.medium,
+                filterQuality: FilterQuality.low,
                 gaplessPlayback: true,
                 errorBuilder: (_, __, ___) => const SizedBox.shrink(),
               ),
@@ -572,7 +577,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 height: effectiveHeight,
                 fit: BoxFit.fitWidth,
                 alignment: Alignment.topCenter,
-                filterQuality: FilterQuality.medium,
+                filterQuality: FilterQuality.low,
                 gaplessPlayback: false,
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                   if (frame != null && !_introTimerStarted) {

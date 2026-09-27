@@ -430,6 +430,7 @@ class _AppShellState extends State<AppShell> {
         key: const PageStorageKey<String>('feed-tab'),
         user: _currentUser,
         refreshToken: _feedRefreshToken,
+        isTabActive: _selectedIndex == 1,
         onOpenCurrentUserProfile: _openProfileTab,
         onOpenUserProfile: _openUserProfile,
       ),
@@ -545,20 +546,19 @@ class _AppShellState extends State<AppShell> {
                 child: IndexedStack(
                   index: _selectedIndex,
                   children: [
-                    HeroMode(
-                      enabled: _selectedIndex == 0,
-                      child: RepaintBoundary(
-                        child: screens[0],
-                      ),
-                    ),
-                    for (int i = 1; i < screens.length; i++)
-                      HeroMode(
+                    for (int i = 0; i < screens.length; i++)
+                      TickerMode(
                         enabled: i == _selectedIndex,
-                        child: RepaintBoundary(
-                          child: SafeArea(
-                            top: true,
-                            bottom: false,
-                            child: screens[i],
+                        child: HeroMode(
+                          enabled: i == _selectedIndex,
+                          child: RepaintBoundary(
+                            child: (i == 0 || i == 4)
+                                ? screens[i]
+                                : SafeArea(
+                                    top: true,
+                                    bottom: false,
+                                    child: screens[i],
+                                  ),
                           ),
                         ),
                       ),
