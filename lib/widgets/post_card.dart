@@ -13,6 +13,7 @@ import '../screens/edit_post_screen.dart';
 import '../screens/youtube_player_screen.dart';
 import '../screens/messages_screen.dart';
 import '../screens/shop_screen.dart';
+import '../config/postcard_nameplates_data.dart';
 import '../services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/feed_service.dart';
@@ -1168,8 +1169,7 @@ class _PostCardState extends State<PostCard> {
         : const Alignment(1.0, -0.18);
     final postcardTheme =
         (_post.authorPostcardTheme ?? '').trim().toLowerCase();
-    final showStarlightWhales = postcardTheme == 'starlight_whales' ||
-        postcardTheme == 'starlightwhales';
+    final animatedPostcardUrl = PostcardThemeConfig.resolveUrl(postcardTheme);
     final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
@@ -2526,7 +2526,7 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
-              if (showStarlightWhales)
+              if (animatedPostcardUrl != null)
                 Positioned(
                   right: 0,
                   top: _post.isDiscussion ? 8.h : 6.h,
@@ -2534,8 +2534,7 @@ class _PostCardState extends State<PostCard> {
                   child: IgnorePointer(
                     child: RepaintBoundary(
                       child: CachedNetworkImage(
-                        imageUrl:
-                            'https://media.katsklub.top/postcard/starlight-whales.webp',
+                        imageUrl: animatedPostcardUrl,
                         fit: BoxFit.contain,
                         alignment: Alignment.centerRight,
                         fadeInDuration: Duration.zero,

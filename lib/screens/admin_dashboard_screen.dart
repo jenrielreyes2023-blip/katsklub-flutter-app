@@ -141,6 +141,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   // Enabled themes config
   final Map<String, bool> _enabledThemes = {};
+  String _themeSearchQuery = '';
+  final TextEditingController _themeSearchController = TextEditingController();
 
   @override
   void initState() {
@@ -170,6 +172,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _postSearchController.dispose();
     _frameSearchController.dispose();
     _effectSearchController.dispose();
+    _themeSearchController.dispose();
     super.dispose();
   }
 
@@ -3052,7 +3055,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         setState(() {
           _enabledThemes.clear();
           for (final theme in themeProducts) {
-            final themeKey = _themeKeyForPublic(theme.type);
+            final themeKey = _themeKeyForPublic(theme.type, theme);
             _enabledThemes[themeKey] = !disabledSet.contains(themeKey.toLowerCase());
           }
         });
@@ -3074,55 +3077,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     setState(() => _isLoadingPromotions = false);
   }
 
-  String _themeKeyForPublic(ThemeProductType type) {
-    switch (type) {
-      case ThemeProductType.starlightWhales:
-        return 'starlight_whales';
-      case ThemeProductType.sunrise:
-        return 'sunrise';
-      case ThemeProductType.ocean:
-        return 'ocean';
-      case ThemeProductType.bees:
-        return 'bee';
-      case ThemeProductType.eagle:
-        return 'eagle';
-      case ThemeProductType.pinkswan:
-        return 'pinkswan';
-      case ThemeProductType.dandelion:
-        return 'dandelion';
-      case ThemeProductType.gtaPastel:
-        return 'gta_pastel';
-      case ThemeProductType.sharinganEyes:
-        return 'sharingan_eyes';
-      case ThemeProductType.pastel:
-        return 'pastel';
-      case ThemeProductType.lavender:
-        return 'lavender';
-      case ThemeProductType.phFlag:
-        return 'ph_flag';
-      case ThemeProductType.xmasCozy:
-        return 'xmas_cozy';
-      case ThemeProductType.xmasSnowy:
-        return 'xmas_snowy';
-      case ThemeProductType.geminiRogerHunter:
-        return 'gemini_roger_hunter';
-      case ThemeProductType.geminiRogerWolf:
-        return 'gemini_roger_wolf';
-      case ThemeProductType.bunny:
-        return 'bunny';
-      case ThemeProductType.ghost:
-        return 'ghost';
-      case ThemeProductType.prince:
-        return 'prince';
-      case ThemeProductType.cuteHeart:
-        return 'cute_heart';
-      case ThemeProductType.elsa:
-        return 'elsa';
-      case ThemeProductType.bubbleDream:
-        return 'bubble_dream';
-      case ThemeProductType.sagittariusBubble:
-        return 'sagittarius';
-    }
+  String _themeKeyForPublic(ThemeProductType type, [ThemeProductData? theme]) {
+    if (theme != null) return theme.key;
+    return ThemeProductData.defaultKeyForType(type);
   }
 
   Future<void> _toggleThemePublicStatus(String themeKey, bool value) async {
@@ -3990,13 +3947,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       );
     }
 
-    return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: postcardThemes.length,
-            itemBuilder: (context, index) {
-              final theme = postcardThemes[index];
-              final themeKey = _themeKeyForPublic(theme.type);
-              final isEnabled = _enabledThemes[themeKey] ?? true;
+    final filteredThemes = _themeSearchQuery.trim().isEmpty
+        ? postcardThemes
+        : postcardThemes.where((t) {
+            final query = _themeSearchQuery.trim().toLowerCase();
+            return t.title.toLowerCase().contains(query) ||
+                t.key.toLowerCase().contains(query);
+          }).toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: _buildSearchField(
+            controller: _themeSearchController,
+            hint: 'Search 250+ postcard themes...',
+            onChanged: (val) {
+              setState(() {
+                _themeSearchQuery = val;
+              });
+            },
+            onClear: () {
+              setState(() {
+                _themeSearchQuery = '';
+                _themeSearchController.clear();
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: filteredThemes.isEmpty
+              ? Center(
+                  child: Text(
+                    'No themes matching "$_themeSearchQuery"',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredThemes.length,
+                  itemBuilder: (context, index) {
+                    final theme = filteredThemes[index];
+                    final themeKey = _themeKeyForPublic(theme.type, theme);
+                    final isEnabled = _enabledThemes[themeKey] ?? true;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -4022,29 +4015,53 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       ),
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
                         children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: theme.previewAvatarColor,
-                            child: Text(
-                              theme.previewInitial,
-                              style: TextStyle(
-                                color: theme.previewInitialColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: theme.previewAvatarColor,
+                                child: Text(
+                                  theme.previewInitial,
+                                  style: TextStyle(
+                                    color: theme.previewInitialColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                theme.previewLabel,
+                                style: const TextStyle(
+                                  color: Color(0xFF111827),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (theme.type == ThemeProductType.starlightWhales || theme.isAnimatedPostcard)
+                            Positioned(
+                              right: 0,
+                              top: 16,
+                              height: 28,
+                              child: IgnorePointer(
+                                child: RepaintBoundary(
+                                  child: CachedNetworkImage(
+                                    imageUrl: theme.assetPath,
+                                    fit: BoxFit.contain,
+                                    alignment: Alignment.centerRight,
+                                    fadeInDuration: Duration.zero,
+                                    fadeOutDuration: Duration.zero,
+                                    placeholder: (_, __) => const SizedBox(),
+                                    errorWidget: (_, __, ___) => const SizedBox(),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            theme.previewLabel,
-                            style: const TextStyle(
-                              color: Color(0xFF111827),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -4134,7 +4151,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 ),
               );
             },
-          );
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildPromotionsTab() {

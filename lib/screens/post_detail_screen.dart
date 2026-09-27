@@ -23,6 +23,7 @@ import '../widgets/expandable_post_text.dart';
 import '../widgets/hashtag_text.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/mention_autocomplete.dart';
+import '../config/postcard_nameplates_data.dart';
 import '../widgets/normal_video_overlay_host.dart';
 import '../widgets/post_image_grid.dart';
 import '../widgets/post_card.dart';
@@ -1232,8 +1233,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         (post != null && post.isDiscussion) ? 124.0 : 76.0;
     final postcardTheme =
         (post?.authorPostcardTheme ?? '').trim().toLowerCase();
-    final showStarlightWhales = postcardTheme == 'starlight_whales' ||
-        postcardTheme == 'starlightwhales';
+    final animatedPostcardUrl = PostcardThemeConfig.resolveUrl(postcardTheme);
     final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
@@ -2459,7 +2459,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 const SizedBox(height: 10),
                               ],
                             ),
-                            if (showStarlightWhales)
+                            if (animatedPostcardUrl != null)
                               Positioned(
                                 right: 0,
                                 top: 6,
@@ -2467,8 +2467,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 child: IgnorePointer(
                                   child: RepaintBoundary(
                                     child: CachedNetworkImage(
-                                      imageUrl:
-                                          'https://media.katsklub.top/postcard/starlight-whales.webp',
+                                      imageUrl: animatedPostcardUrl,
                                       fit: BoxFit.contain,
                                       alignment: Alignment.centerRight,
                                       fadeInDuration: Duration.zero,

@@ -16,31 +16,9 @@ import '../config/api_config.dart';
 import '../widgets/profile_effect_widget.dart';
 import 'wallet_screen.dart';
 
-enum ThemeProductType {
-  starlightWhales,
-  sunrise,
-  ocean,
-  bees,
-  eagle,
-  pinkswan,
-  dandelion,
-  gtaPastel,
-  sharinganEyes,
-  pastel,
-  lavender,
-  phFlag,
-  xmasCozy,
-  xmasSnowy,
-  geminiRogerHunter,
-  geminiRogerWolf,
-  bunny,
-  ghost,
-  prince,
-  cuteHeart,
-  elsa,
-  bubbleDream,
-  sagittariusBubble,
-}
+export '../models/theme_product.dart';
+import '../models/theme_product.dart';
+import '../config/postcard_nameplates_data.dart';
 
 const List<ThemeProductData> themeProducts = [
   ThemeProductData(
@@ -65,7 +43,9 @@ const List<ThemeProductData> themeProducts = [
     previewAvatarColor: Color(0xFFE0F2FE),
     previewInitialColor: Color(0xFF0284C7),
     price: 399.0,
+    isAnimatedPostcard: true,
   ),
+  ...discordNameplateThemes,
   ThemeProductData(
     type: ThemeProductType.bubbleDream,
     title: 'Chat Bubble - Bubble Dream Skin',
@@ -691,7 +671,8 @@ class _ShopScreenState extends State<ShopScreen> {
         type == ThemeProductType.geminiRogerWolf;
   }
 
-  bool _canApplyTheme(ThemeProductType type) {
+  bool _canApplyTheme(dynamic item) {
+    final type = item is ThemeProductData ? item.type : item as ThemeProductType;
     final isJayrielOrAdmin = _currentUsername == 'jayriel' ||
         _currentUser?.id == '2' ||
         (_currentUser?.isAdmin ?? false);
@@ -707,55 +688,10 @@ class _ShopScreenState extends State<ShopScreen> {
     return true;
   }
 
-  String _themeKeyFor(ThemeProductType type) {
-    switch (type) {
-      case ThemeProductType.starlightWhales:
-        return 'starlight_whales';
-      case ThemeProductType.sunrise:
-        return 'sunrise';
-      case ThemeProductType.ocean:
-        return 'ocean';
-      case ThemeProductType.bees:
-        return 'bee';
-      case ThemeProductType.eagle:
-        return 'eagle';
-      case ThemeProductType.pinkswan:
-        return 'pinkswan';
-      case ThemeProductType.dandelion:
-        return 'dandelion';
-      case ThemeProductType.gtaPastel:
-        return 'gta_pastel';
-      case ThemeProductType.sharinganEyes:
-        return 'sharingan_eyes';
-      case ThemeProductType.pastel:
-        return 'pastel';
-      case ThemeProductType.lavender:
-        return 'lavender';
-      case ThemeProductType.phFlag:
-        return 'ph_flag';
-      case ThemeProductType.xmasCozy:
-        return 'xmas_cozy';
-      case ThemeProductType.xmasSnowy:
-        return 'xmas_snowy';
-      case ThemeProductType.geminiRogerHunter:
-        return 'gemini_roger_hunter';
-      case ThemeProductType.geminiRogerWolf:
-        return 'gemini_roger_wolf';
-      case ThemeProductType.bunny:
-        return 'bunny';
-      case ThemeProductType.ghost:
-        return 'ghost';
-      case ThemeProductType.prince:
-        return 'prince';
-      case ThemeProductType.cuteHeart:
-        return 'cute_heart';
-      case ThemeProductType.elsa:
-        return 'elsa';
-      case ThemeProductType.bubbleDream:
-        return 'bubble_dream';
-      case ThemeProductType.sagittariusBubble:
-        return 'sagittarius';
-    }
+  String _themeKeyFor(dynamic item) {
+    if (item is ThemeProductData) return item.key;
+    if (item is ThemeProductType) return ThemeProductData.defaultKeyForType(item);
+    return item.toString();
   }
 
   bool _isBubbleProduct(ThemeProductType type) {
@@ -763,11 +699,15 @@ class _ShopScreenState extends State<ShopScreen> {
         type == ThemeProductType.sagittariusBubble;
   }
 
-  bool _isApplied(ThemeProductType type) {
-    if (_isBubbleProduct(type)) {
-      return _appliedBubbleTheme == _themeKeyFor(type);
+  bool _isApplied(dynamic item) {
+    final key = item is ThemeProductData ? item.key : _themeKeyFor(item);
+    final isBubble = item is ThemeProductData
+        ? _isBubbleProduct(item.type)
+        : (item is ThemeProductType ? _isBubbleProduct(item) : false);
+    if (isBubble) {
+      return _appliedBubbleTheme == key;
     }
-    return _appliedPostcardTheme == _themeKeyFor(type);
+    return _appliedPostcardTheme == key;
   }
 
   Future<void> _loadThemeState() async {
@@ -844,9 +784,13 @@ class _ShopScreenState extends State<ShopScreen> {
     });
   }
 
-  Future<void> _setApplied(ThemeProductType type, bool applied) async {
-    if (_isBubbleProduct(type)) {
-      final themeVal = applied ? _themeKeyFor(type) : '';
+  Future<void> _setApplied(dynamic target, bool applied) async {
+    final key = target is ThemeProductData ? target.key : _themeKeyFor(target);
+    final isBubble = target is ThemeProductData
+        ? _isBubbleProduct(target.type)
+        : (target is ThemeProductType ? _isBubbleProduct(target) : false);
+    if (isBubble) {
+      final themeVal = applied ? key : '';
       final updatedUser = await _feedService.updateCurrentUserBubbleTheme(themeVal);
       await ConversationThemeStore.setGlobalBubbleTheme(themeVal);
       if (!mounted) return;
@@ -855,7 +799,7 @@ class _ShopScreenState extends State<ShopScreen> {
         _isThemeStateLoading = false;
       });
     } else {
-      final themeVal = applied ? _themeKeyFor(type) : '';
+      final themeVal = applied ? key : '';
       final updatedUser = await _feedService.updateCurrentUserPostcardTheme(themeVal);
       if (!mounted) return;
       setState(() {
@@ -1124,7 +1068,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     const Positioned.fill(
                       child: _CuteHeartPreviewArt(),
                     )
-                  else if (selected.type == ThemeProductType.starlightWhales)
+                  else if (selected.type == ThemeProductType.starlightWhales || selected.isAnimatedPostcard)
                     Positioned(
                       right: 0,
                       top: 14,
@@ -1132,8 +1076,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: IgnorePointer(
                         child: RepaintBoundary(
                           child: CachedNetworkImage(
-                            imageUrl:
-                                'https://media.katsklub.top/postcard/starlight-whales.webp',
+                            imageUrl: selected.assetPath,
                             fit: BoxFit.contain,
                             alignment: Alignment.centerRight,
                             fadeInDuration: Duration.zero,
@@ -3588,12 +3531,12 @@ class _ShopScreenState extends State<ShopScreen> {
                               itemBuilder: (context, index) {
                                 final theme = postcards[index];
                                 final isSelected =
-                                    _selectedTheme?.type == theme.type;
+                                    _selectedTheme?.key == theme.key;
                                 return _ThemeListItem(
                                   theme: theme,
                                   isSelected: isSelected,
-                                  isApplied: _isApplied(theme.type),
-                                  isLocked: !_canApplyTheme(theme.type),
+                                  isApplied: _isApplied(theme),
+                                  isLocked: !_canApplyTheme(theme),
                                   onTap: () => _onSelectTheme(theme),
                                 );
                               },
@@ -3689,12 +3632,12 @@ class _ShopScreenState extends State<ShopScreen> {
                               itemBuilder: (context, index) {
                                 final theme = bubbles[index];
                                 final isSelected =
-                                    _selectedTheme?.type == theme.type;
+                                    _selectedTheme?.key == theme.key;
                                 return _ThemeListItem(
                                   theme: theme,
                                   isSelected: isSelected,
-                                  isApplied: _isApplied(theme.type),
-                                  isLocked: !_canApplyTheme(theme.type),
+                                  isApplied: _isApplied(theme),
+                                  isLocked: !_canApplyTheme(theme),
                                   onTap: () => _onSelectTheme(theme),
                                 );
                               },
@@ -3797,14 +3740,13 @@ class _ThemeListItem extends StatelessWidget {
                         ),
                       ),
                       // Sticker
-                      if (theme.type == ThemeProductType.starlightWhales)
+                      if (theme.type == ThemeProductType.starlightWhales || theme.isAnimatedPostcard)
                         Positioned.fill(
                           child: Center(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4),
                               child: CachedNetworkImage(
-                                imageUrl:
-                                    'https://media.katsklub.top/postcard/starlight-whales.webp',
+                                imageUrl: theme.assetPath,
                                 fit: BoxFit.contain,
                                 placeholder: (_, __) => const SizedBox(),
                                 errorWidget: (_, __, ___) => const SizedBox(),
@@ -4059,40 +4001,6 @@ class _CuteHeartPreviewArt extends StatelessWidget {
       ],
     );
   }
-}
-
-class ThemeProductData {
-  const ThemeProductData({
-    required this.type,
-    required this.title,
-    required this.description,
-    required this.successMessage,
-    required this.previewLabel,
-    required this.previewInitial,
-    required this.assetPath,
-    required this.previewGradient,
-    required this.badgeText,
-    required this.badgeGradient,
-    required this.buttonGradient,
-    required this.previewAvatarColor,
-    required this.previewInitialColor,
-    this.price = 0.0,
-  });
-
-  final ThemeProductType type;
-  final String title;
-  final String description;
-  final String successMessage;
-  final String previewLabel;
-  final String previewInitial;
-  final String assetPath;
-  final List<Color> previewGradient;
-  final String badgeText;
-  final List<Color> badgeGradient;
-  final List<Color> buttonGradient;
-  final Color previewAvatarColor;
-  final Color previewInitialColor;
-  final double price;
 }
 
 class _PurchaseProcessDialog extends StatefulWidget {
