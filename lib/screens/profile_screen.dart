@@ -623,17 +623,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                         top: 0,
                         left: 0,
                         right: 0,
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: _headerEffectActiveNotifier,
-                          builder: (context, isEffectActive, _) {
-                            return ProfileEffectWidget(
-                              key: ValueKey(
-                                  'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
-                              effect: _profileUser.profileEffect!,
-                              isActive: isEffectActive,
-                              applyBottomFade: false,
-                            );
-                          },
+                        child: RepaintBoundary(
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _headerEffectActiveNotifier,
+                            builder: (context, isEffectActive, _) {
+                              return ProfileEffectWidget(
+                                key: ValueKey(
+                                    'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
+                                effect: _profileUser.profileEffect!,
+                                isActive: isEffectActive,
+                                applyBottomFade: false,
+                              );
+                            },
+                          ),
                         ),
                       ),
                   ],

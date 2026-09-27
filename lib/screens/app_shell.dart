@@ -453,9 +453,13 @@ class _AppShellState extends State<AppShell> {
         onOpenUserProfile: _openUserProfile,
         onOpenNotifications: _openNotifications,
         onUserUpdated: (updatedUser) {
-          setState(() {
-            _currentUser = updatedUser;
-          });
+          final navNeedsRebuild = _currentUser.avatarUrl != updatedUser.avatarUrl ||
+              _currentUser.username != updatedUser.username ||
+              _currentUser.displayName != updatedUser.displayName;
+          _currentUser = updatedUser;
+          if (navNeedsRebuild && mounted) {
+            setState(() {});
+          }
         },
       ),
     ];
@@ -543,15 +547,19 @@ class _AppShellState extends State<AppShell> {
                   children: [
                     HeroMode(
                       enabled: _selectedIndex == 0,
-                      child: screens[0],
+                      child: RepaintBoundary(
+                        child: screens[0],
+                      ),
                     ),
                     for (int i = 1; i < screens.length; i++)
                       HeroMode(
                         enabled: i == _selectedIndex,
-                        child: SafeArea(
-                          top: true,
-                          bottom: false,
-                          child: screens[i],
+                        child: RepaintBoundary(
+                          child: SafeArea(
+                            top: true,
+                            bottom: false,
+                            child: screens[i],
+                          ),
                         ),
                       ),
                   ],
@@ -564,7 +572,8 @@ class _AppShellState extends State<AppShell> {
           bottomNavigationBar:
               (isCurrentRoute && normalVideoOverlayController.isOpen)
                   ? null
-                  : BottomNavigationBar(
+                  : RepaintBoundary(
+                      child: BottomNavigationBar(
                       currentIndex: _selectedIndex,
                       onTap: _selectTab,
                       type: BottomNavigationBarType.fixed,
@@ -607,6 +616,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                       ],
                     ),
+                  ),
         ),
       ),
     );
