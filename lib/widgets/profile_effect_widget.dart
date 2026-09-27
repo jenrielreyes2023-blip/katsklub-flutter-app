@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Configuration definition for a profile effect.
 class ProfileEffectConfig {
@@ -321,7 +322,11 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (config == null) return;
     _loopProvider ??= CachedNetworkImageProvider(config.loopUrl);
     if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl && !_introDone) {
-      _introProvider ??= CachedNetworkImageProvider(config.introUrl);
+      if (_introProvider == null) {
+        final introProvider = CachedNetworkImageProvider(config.introUrl);
+        introProvider.evict();
+        _introProvider = introProvider;
+      }
     }
   }
 
@@ -338,7 +343,9 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     _loopProvider = CachedNetworkImageProvider(config.loopUrl);
 
     if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl) {
-      _introProvider = CachedNetworkImageProvider(config.introUrl);
+      final introProvider = CachedNetworkImageProvider(config.introUrl);
+      introProvider.evict();
+      _introProvider = introProvider;
       _introDone = false;
       _introFadeOut = false;
       _introTimerStarted = false;
@@ -380,18 +387,31 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Precache both loop and intro into image cache
+    // Precache loop into Flutter's image cache
     if (_loopProvider != null) {
       precacheImage(_loopProvider!, context).catchError((_) {});
     }
-    if (_introProvider != null && !_introDone) {
-      precacheImage(_introProvider!, context).catchError((_) {});
+    // Pre-fetch raw intro file to disk cache WITHOUT starting the animation stream ticker.
+    // NOTE: Do NOT use precacheImage on the animated intro; precacheImage attaches a stream listener
+    // which immediately starts advancing animation frames in the background before the widget paints,
+    // causing it to skip frame 0!
+    final config = _config;
+    if (config != null &&
+        config.introDuration > Duration.zero &&
+        config.introUrl != config.loopUrl &&
+        !_introDone) {
+      unawaited(
+        DefaultCacheManager()
+            .getSingleFile(config.introUrl)
+            .then((_) {}, onError: (_) {}),
+      );
     }
   }
 
   @override
   void dispose() {
     _cleanupTimers();
+    _introProvider?.evict();
     super.dispose();
   }
 
@@ -442,6 +462,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
               curve: Curves.easeInOut,
               onEnd: () {
                 if (_introFadeOut && mounted) {
+                  _introProvider?.evict();
                   setState(() {
                     _introDone = true;
                   });
@@ -454,7 +475,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 fit: BoxFit.fitWidth,
                 alignment: Alignment.topCenter,
                 filterQuality: FilterQuality.medium,
-                gaplessPlayback: true,
+                gaplessPlayback: false,
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                   if (frame != null && !_introTimerStarted) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
