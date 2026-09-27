@@ -634,9 +634,9 @@ class _ShopScreenState extends State<ShopScreen> {
       _activeTabIndex = index;
       if (index == 0) {
         ThemeProductData? selected;
-        final postcards = _visibleProducts.where((p) => !_isBubbleProduct(p.type)).toList();
+        final postcards = _visibleProducts.where((p) => !_isBubbleProduct(p)).toList();
         for (final p in postcards) {
-          if (_themeKeyFor(p.type) == _appliedPostcardTheme) {
+          if (_themeKeyFor(p) == _appliedPostcardTheme) {
             selected = p;
             break;
           }
@@ -652,14 +652,14 @@ class _ShopScreenState extends State<ShopScreen> {
       } else if (index == 2) {
         ThemeProductData? selected;
         for (final p in _visibleProducts) {
-          if (_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedBubbleTheme) {
+          if (_isBubbleProduct(p) && _themeKeyFor(p) == _appliedBubbleTheme) {
             selected = p;
             break;
           }
         }
         _selectedTheme = selected ??
             _visibleProducts.firstWhere(
-              (p) => _isBubbleProduct(p.type),
+              (p) => _isBubbleProduct(p),
               orElse: () => _visibleProducts.first,
             );
       }
@@ -694,7 +694,8 @@ class _ShopScreenState extends State<ShopScreen> {
     return item.toString();
   }
 
-  bool _isBubbleProduct(ThemeProductType type) {
+  bool _isBubbleProduct(dynamic item) {
+    final type = item is ThemeProductData ? item.type : item as ThemeProductType;
     return type == ThemeProductType.bubbleDream ||
         type == ThemeProductType.sagittariusBubble;
   }
@@ -728,7 +729,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
     final visible = <ThemeProductData>[];
     for (final product in themeProducts) {
-      final themeKey = _themeKeyFor(product.type).trim().toLowerCase();
+      final themeKey = _themeKeyFor(product).trim().toLowerCase();
       final isPublic = !disabledSet.contains(themeKey);
       if (isPublic) {
         visible.add(product);
@@ -764,7 +765,7 @@ class _ShopScreenState extends State<ShopScreen> {
       ThemeProductData? selected;
       if (_appliedPostcardTheme.isNotEmpty) {
         for (final p in visible) {
-          if (!_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedPostcardTheme) {
+          if (!_isBubbleProduct(p) && _themeKeyFor(p) == _appliedPostcardTheme) {
             selected = p;
             break;
           }
@@ -772,7 +773,7 @@ class _ShopScreenState extends State<ShopScreen> {
       }
       if (selected == null && _appliedBubbleTheme.isNotEmpty) {
         for (final p in visible) {
-          if (_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedBubbleTheme) {
+          if (_isBubbleProduct(p) && _themeKeyFor(p) == _appliedBubbleTheme) {
             selected = p;
             break;
           }
@@ -821,7 +822,7 @@ class _ShopScreenState extends State<ShopScreen> {
           accentColor: theme.buttonGradient.last,
           onComplete: () async {
             try {
-              await _setApplied(theme.type, true);
+              await _setApplied(theme, true);
               if (!context.mounted) {
                 return;
               }
@@ -945,7 +946,7 @@ class _ShopScreenState extends State<ShopScreen> {
       return;
     }
 
-    if (!_canApplyTheme(theme.type)) {
+    if (!_canApplyTheme(theme)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('This postcard theme is Gemini-only.'),
@@ -955,10 +956,10 @@ class _ShopScreenState extends State<ShopScreen> {
       return;
     }
 
-    final isApplied = _isApplied(theme.type);
+    final isApplied = _isApplied(theme);
     if (isApplied) {
       try {
-        await _setApplied(theme.type, false);
+        await _setApplied(theme, false);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1505,8 +1506,8 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildBottomActionBar(BuildContext context, ThemeProductData selected) {
-    final isApplied = _isApplied(selected.type);
-    final isLocked = !_canApplyTheme(selected.type);
+    final isApplied = _isApplied(selected);
+    final isLocked = !_canApplyTheme(selected);
     final isLoading = _isThemeStateLoading;
 
     return Container(

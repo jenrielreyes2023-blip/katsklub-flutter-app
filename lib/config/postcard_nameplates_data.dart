@@ -270,7 +270,20 @@ class PostcardThemeConfig {
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
       return clean;
     }
-    return _urlMap[clean];
+    final direct = _urlMap[clean];
+    if (direct != null) return direct;
+
+    final underscoreKey = clean.replaceAll('-', '_');
+    if (_urlMap.containsKey(underscoreKey)) {
+      return _urlMap[underscoreKey];
+    }
+
+    final hyphenKey = clean.replaceAll('_', '-');
+    if (_urlMap.containsKey(hyphenKey)) {
+      return _urlMap[hyphenKey];
+    }
+
+    return null;
   }
 
   static bool isAnimatedTheme(String? raw) {
