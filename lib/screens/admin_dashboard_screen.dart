@@ -3399,7 +3399,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 const SizedBox(width: 8),
                 _buildShopSegmentButton(
                   2,
-                  'Postcard Themes (${themeProducts.length})',
+                  'Postcard Themes (${themeProducts.where((t) => t.type != ThemeProductType.bubbleDream && t.type != ThemeProductType.sagittariusBubble).length})',
                   Icons.palette_outlined,
                 ),
               ],
@@ -3935,13 +3935,64 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildAdminThemesTab() {
-    return _isShopStateLoading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView.builder(
+    if (_isShopStateLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final postcardThemes = themeProducts
+        .where((t) =>
+            t.type != ThemeProductType.bubbleDream &&
+            t.type != ThemeProductType.sagittariusBubble)
+        .toList();
+
+    if (postcardThemes.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3F4F6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.palette_outlined,
+                  size: 48,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Postcard Themes',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'All legacy postcard designs have been deleted.\nNew designs added in the future will appear here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: themeProducts.length,
+            itemCount: postcardThemes.length,
             itemBuilder: (context, index) {
-              final theme = themeProducts[index];
+              final theme = postcardThemes[index];
               final themeKey = _themeKeyForPublic(theme.type);
               final isEnabled = _enabledThemes[themeKey] ?? true;
 

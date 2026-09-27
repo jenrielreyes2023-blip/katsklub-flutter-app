@@ -1149,7 +1149,6 @@ class _PostCardState extends State<PostCard> {
     final showPostText =
         !(_post.isPoll && _post.text.trim() == _post.pollQuestion.trim());
     final isGemini = _post.authorUsername.toLowerCase() == 'gemini';
-    final isDaisy = _post.authorUsername.toLowerCase() == 'daisy';
     final double gradientHeight = _post.isDiscussion ? 140.0 : 75.0;
     final double daisyStickerHeight = _post.isDiscussion ? 140.0 : 75.0;
     final double daisyStickerTop = 0.0;
@@ -1169,8 +1168,7 @@ class _PostCardState extends State<PostCard> {
         : const Alignment(1.0, -0.18);
     final postcardTheme =
         (_post.authorPostcardTheme ?? '').trim().toLowerCase();
-    final showSunrise =
-        postcardTheme == 'sunrise' || (postcardTheme.isEmpty && isDaisy);
+    final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
     final showEagle = postcardTheme == 'eagle';

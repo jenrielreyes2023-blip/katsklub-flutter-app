@@ -1221,8 +1221,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final isGemini =
         post != null && post.authorUsername.toLowerCase() == 'gemini';
-    final isDaisy =
-        post != null && post.authorUsername.toLowerCase() == 'daisy';
     final double gradientHeight =
         (post != null && post.isDiscussion) ? 140.0 : 75.0;
     final double daisyStickerHeight =
@@ -1234,8 +1232,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         (post != null && post.isDiscussion) ? 124.0 : 76.0;
     final postcardTheme =
         (post?.authorPostcardTheme ?? '').trim().toLowerCase();
-    final showSunrise =
-        postcardTheme == 'sunrise' || (postcardTheme.isEmpty && isDaisy);
+    final showSunrise = postcardTheme == 'sunrise';
     final showOcean = postcardTheme == 'ocean';
     final showBee = postcardTheme == 'bee';
     final showEagle = postcardTheme == 'eagle';

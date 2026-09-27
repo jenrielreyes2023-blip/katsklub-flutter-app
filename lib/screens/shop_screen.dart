@@ -14,7 +14,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_config.dart';
 import '../widgets/profile_effect_widget.dart';
-import '../services/wallet_service.dart';
 import 'wallet_screen.dart';
 
 enum ThemeProductType {
@@ -43,446 +42,7 @@ enum ThemeProductType {
 }
 
 const List<ThemeProductData> themeProducts = [
-  ThemeProductData(
-    type: ThemeProductType.sunrise,
-    title: 'Postcard Premium - Sunrise Theme',
-    description:
-        'Personalize your feed posts with a gorgeous sunrise header backdrop. Features a central glowing sun, flying birds silhouettes, and soft pink clouds fading smoothly into your card layout.',
-    successMessage:
-        'The Sunrise Postcard Theme is now active on your account! Your posts will now feature the gorgeous sunrise header.',
-    previewLabel: 'daisy',
-    previewInitial: 'D',
-    assetPath: 'assets/images/sunrise_sticker.png',
-    previewGradient: [
-      Color(0xFFB3E5FC),
-      Color(0xFFFFE082),
-      Color(0xFFFFF9C4),
-      Colors.white,
-    ],
-    badgeText: 'BEST SELLER',
-    badgeGradient: [Color(0xFFEC4899), Color(0xFFF43F5E)],
-    buttonGradient: [Color(0xFFEC4899), Color(0xFFF43F5E)],
-    previewAvatarColor: Color(0xFFFBCFE8),
-    previewInitialColor: Color(0xFFDB2777),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.ocean,
-    title: 'Postcard Premium - Ocean Theme',
-    description:
-        'Give your posts a calm ocean horizon with cool blue layers, soft seafoam highlights, and a clean banner fade that blends naturally into the card.',
-    successMessage:
-        'The Ocean Postcard Theme is now active on your account! Your posts will now feature the refreshing ocean header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/ocean_sticker_v3.png',
-    previewGradient: [
-      Color(0xFF0F3D6E),
-      Color(0xFF1D6FA5),
-      Color(0xFF86D6E7),
-      Colors.white,
-    ],
-    badgeText: 'NEW',
-    badgeGradient: [Color(0xFF0F766E), Color(0xFF06B6D4)],
-    buttonGradient: [Color(0xFF0F766E), Color(0xFF0891B2)],
-    previewAvatarColor: Color(0xFFBFDBFE),
-    previewInitialColor: Color(0xFF1D4ED8),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.bees,
-    title: 'Postcard Premium - Bee Garden Theme',
-    description:
-        'Add a warm honey-garden banner with a bright readable left side, graceful bee accents, and rich golden detail concentrated on the right.',
-    successMessage:
-        'The Bee Garden Postcard Theme is now active on your account! Your posts will now feature the warm bee-garden header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/bee_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFCF0),
-      Color(0xFFFFF7D6),
-      Color(0xFFFDE68A),
-      Color(0xFFF59E0B),
-    ],
-    badgeText: 'FRESH DROP',
-    badgeGradient: [Color(0xFFD97706), Color(0xFFF59E0B)],
-    buttonGradient: [Color(0xFFD97706), Color(0xFFFBBF24)],
-    previewAvatarColor: Color(0xFFFEF3C7),
-    previewInitialColor: Color(0xFFB45309),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.eagle,
-    title: 'Postcard Premium - Eagle Horizon Theme',
-    description:
-        'Give your posts a refined eagle postcard banner with a bright readable left side, graceful feather motion, and rich golden-bronze detail focused on the right.',
-    successMessage:
-        'The Eagle Horizon Postcard Theme is now active on your account! Your posts will now feature the elegant eagle header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/eagle_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFCF6),
-      Color(0xFFF6E9D1),
-      Color(0xFFE8C089),
-      Color(0xFFC08A42),
-    ],
-    badgeText: 'NEW DROP',
-    badgeGradient: [Color(0xFF8C6239), Color(0xFFC08A42)],
-    buttonGradient: [Color(0xFF9A6B3B), Color(0xFFD4A55A)],
-    previewAvatarColor: Color(0xFFFAE9CC),
-    previewInitialColor: Color(0xFF8A5A2B),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.pinkswan,
-    title: 'Postcard Premium - Pink Swan Theme',
-    description:
-        'Give your posts a graceful swan postcard banner with a bright readable left side, soft feather flow, and elegant rosy detail focused on the right.',
-    successMessage:
-        'The Pink Swan Postcard Theme is now active on your account! Your posts will now feature the elegant swan header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/pinkswan_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFCFD),
-      Color(0xFFFCE7F3),
-      Color(0xFFF9A8D4),
-      Color(0xFFF472B6),
-    ],
-    badgeText: 'PINK SWAN',
-    badgeGradient: [Color(0xFFDB2777), Color(0xFFF472B6)],
-    buttonGradient: [Color(0xFFEC4899), Color(0xFFF9A8D4)],
-    previewAvatarColor: Color(0xFFFCE7F3),
-    previewInitialColor: Color(0xFFBE185D),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.dandelion,
-    title: 'Postcard Premium - Dandelion Theme',
-    description:
-        'Give your posts a dreamy dandelion postcard banner with a bright readable left side, gentle floating seeds, and fresh spring detail focused on the right.',
-    successMessage:
-        'The Dandelion Postcard Theme is now active on your account! Your posts will now feature the airy dandelion header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/dandelion_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFDF7),
-      Color(0xFFFEF9C3),
-      Color(0xFFD9F99D),
-      Color(0xFFA3E635),
-    ],
-    badgeText: 'SPRING AIR',
-    badgeGradient: [Color(0xFF65A30D), Color(0xFFFACC15)],
-    buttonGradient: [Color(0xFF84CC16), Color(0xFFFDE047)],
-    previewAvatarColor: Color(0xFFFEF9C3),
-    previewInitialColor: Color(0xFF4D7C0F),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.gtaPastel,
-    title: 'Postcard Premium - GTA Pastel Theme',
-    description:
-        'Give your posts a polished pastel neon skyline banner with a bright readable left side, soft sunset glow, and stylish retro city energy on the right.',
-    successMessage:
-        'The GTA Pastel Postcard Theme is now active on your account! Your posts will now feature the pastel neon city header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/gta_pastel_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFCF8),
-      Color(0xFFFBCFE8),
-      Color(0xFF99F6E4),
-      Color(0xFFFB923C),
-    ],
-    badgeText: 'PASTEL CITY',
-    badgeGradient: [Color(0xFFEC4899), Color(0xFF22D3EE)],
-    buttonGradient: [Color(0xFFF97316), Color(0xFF67E8F9)],
-    previewAvatarColor: Color(0xFFFCE7F3),
-    previewInitialColor: Color(0xFFDB2777),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.sharinganEyes,
-    title: 'Postcard Premium - Sharingan Eyes Theme',
-    description:
-        'Give your posts a dramatic mystical eye-energy banner with a bright readable left side, soft crimson glow, and premium anime-inspired detail on the right.',
-    successMessage:
-        'The Sharingan Eyes Postcard Theme is now active on your account! Your posts will now feature the crimson eye-energy header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/sharingan_eyes_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFCFD),
-      Color(0xFFFDE2E8),
-      Color(0xFFFCA5A5),
-      Color(0xFFB91C1C),
-    ],
-    badgeText: 'CRIMSON EYES',
-    badgeGradient: [Color(0xFF991B1B), Color(0xFFEF4444)],
-    buttonGradient: [Color(0xFFDC2626), Color(0xFFFCA5A5)],
-    previewAvatarColor: Color(0xFFFEE2E2),
-    previewInitialColor: Color(0xFF991B1B),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.pastel,
-    title: 'Postcard Premium - Pastel Bloom Theme',
-    description:
-        'Give your posts a dreamy pastel bloom banner with an airy readable left side and soft floral-cloud color concentrated on the right.',
-    successMessage:
-        'The Pastel Bloom Postcard Theme is now active on your account! Your posts will now feature the dreamy pastel header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/pastel_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFBF8),
-      Color(0xFFF8E8F7),
-      Color(0xFFE1F4EE),
-      Color(0xFFC7D2FE),
-    ],
-    badgeText: 'SOFT DROP',
-    badgeGradient: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
-    buttonGradient: [Color(0xFFF472B6), Color(0xFF818CF8)],
-    previewAvatarColor: Color(0xFFFCE7F3),
-    previewInitialColor: Color(0xFFBE185D),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.lavender,
-    title: 'Postcard Premium - Lavender Theme',
-    description:
-        'Give your posts a soothing lavender pastel banner with an airy readable left side and beautiful purple watercolor flowers on the right.',
-    successMessage:
-        'The Lavender Postcard Theme is now active on your account! Your posts will now feature the beautiful lavender header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/lavender_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFAF8FF),
-      Color(0xFFF1E9FF),
-      Color(0xFFE3D3FF),
-      Colors.white,
-    ],
-    badgeText: 'LAVENDER',
-    badgeGradient: [Color(0xFF7C3AED), Color(0xFFC084FC)],
-    buttonGradient: [Color(0xFF8B5CF6), Color(0xFFC084FC)],
-    previewAvatarColor: Color(0xFFEDE9FE),
-    previewInitialColor: Color(0xFF6D28D9),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.phFlag,
-    title: 'Postcard Premium - Pinoy Pride Theme',
-    description:
-        'Show your Pinoy Pride with a beautiful wavy Philippine flag banner on the right, golden stars, and a soft, readable blue-red-yellow mist on the left.',
-    successMessage:
-        'The Pinoy Pride Postcard Theme is now active on your account! Your posts will now feature the wavy flag header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/ph_flag_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFF0F9FF),
-      Color(0xFFFEF2F2),
-      Color(0xFFFFFBEB),
-      Colors.white,
-    ],
-    badgeText: 'PINOY PRIDE',
-    badgeGradient: [Color(0xFF1E3A8A), Color(0xFFDC2626)],
-    buttonGradient: [Color(0xFF2563EB), Color(0xFFEF4444)],
-    previewAvatarColor: Color(0xFFDBEAFE),
-    previewInitialColor: Color(0xFF1E40AF),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.xmasCozy,
-    title: 'Postcard Premium - Cozy Christmas Theme',
-    description:
-        'Bring holiday warmth to your posts with pine branches, red berries, gold ornaments, and a cozy cream-to-red gradient backdrop.',
-    successMessage:
-        'The Cozy Christmas Postcard Theme is now active on your account! Your posts will now feature the cozy holiday header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/xmas_cozy_sticker.png',
-    previewGradient: [
-      Color(0xFFFFFDF9),
-      Color(0xFFFEE2E2),
-      Color(0xFFFEF08A),
-      Colors.white,
-    ],
-    badgeText: 'COZY XMAS',
-    badgeGradient: [Color(0xFFB91C1C), Color(0xFFD97706)],
-    buttonGradient: [Color(0xFFDC2626), Color(0xFFF59E0B)],
-    previewAvatarColor: Color(0xFFFEE2E2),
-    previewInitialColor: Color(0xFF991B1B),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.xmasSnowy,
-    title: 'Postcard Premium - Snowy Christmas Theme',
-    description:
-        'Turn your posts into a winter wonderland with frosted pine trees, delicate blue-silver snowflakes, and a cool frosty gradient backdrop.',
-    successMessage:
-        'The Snowy Christmas Postcard Theme is now active on your account! Your posts will now feature the frosty winter header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/xmas_snowy_sticker.png',
-    previewGradient: [
-      Color(0xFFF0F9FF),
-      Color(0xFFE0F2FE),
-      Color(0xFFBAE6FD),
-      Colors.white,
-    ],
-    badgeText: 'SNOWY XMAS',
-    badgeGradient: [Color(0xFF0369A1), Color(0xFF38BDF8)],
-    buttonGradient: [Color(0xFF0284C7), Color(0xFF0EA5E9)],
-    previewAvatarColor: Color(0xFFE0F2FE),
-    previewInitialColor: Color(0xFF0369A1),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.geminiRogerHunter,
-    title: 'Gemini Exclusive - Roger Hunter',
-    description:
-        'A Gemini-only Roger inspired hunter postcard theme with a bright left reading zone and moonlit hunter detail concentrated on the right.',
-    successMessage:
-        'The Gemini-exclusive Roger Hunter theme is now active. Gemini posts will use the new hunter postcard header.',
-    previewLabel: 'gemini',
-    previewInitial: 'G',
-    assetPath: 'assets/images/gemini_roger_hunter_v1.png',
-    previewGradient: [
-      Color(0xFFF8FAFC),
-      Color(0xFFE2E8F0),
-      Color(0xFF94A3B8),
-      Color(0xFF334155),
-    ],
-    badgeText: 'GEMINI ONLY',
-    badgeGradient: [Color(0xFF475569), Color(0xFF1E293B)],
-    buttonGradient: [Color(0xFF64748B), Color(0xFF1E293B)],
-    previewAvatarColor: Color(0xFFE2E8F0),
-    previewInitialColor: Color(0xFF334155),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.geminiRogerWolf,
-    title: 'Gemini Exclusive - Roger Wolf',
-    description:
-        'A Gemini-only Roger inspired wolf postcard theme with a bright left reading zone and powerful moonlit wolf energy on the right.',
-    successMessage:
-        'The Gemini-exclusive Roger Wolf theme is now active. Gemini posts will use the new wolf postcard header.',
-    previewLabel: 'gemini',
-    previewInitial: 'G',
-    assetPath: 'assets/images/gemini_roger_wolf_v1.png',
-    previewGradient: [
-      Color(0xFFF8FAFC),
-      Color(0xFFDBEAFE),
-      Color(0xFF60A5FA),
-      Color(0xFF1D4ED8),
-    ],
-    badgeText: 'GEMINI ONLY',
-    badgeGradient: [Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
-    buttonGradient: [Color(0xFF2563EB), Color(0xFF1E3A8A)],
-    previewAvatarColor: Color(0xFFDBEAFE),
-    previewInitialColor: Color(0xFF1D4ED8),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.bunny,
-    title: 'Postcard Premium - Bunny Meadow Theme',
-    description:
-        'Add a whimsical watercolor bunny meadow banner to your posts, featuring soft pastel flowers, green clover, and a cute watercolor bunny on the right.',
-    successMessage:
-        'The Bunny Meadow Postcard Theme is now active on your account! Your posts will now feature the cute bunny meadow header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/bunny_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFFFDFB),
-      Color(0xFFFFF5F7),
-      Color(0xFFFCE7F3),
-      Color(0xFFFBCFE8),
-    ],
-    badgeText: 'BUNNY',
-    badgeGradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
-    buttonGradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
-    previewAvatarColor: Color(0xFFFCE7F3),
-    previewInitialColor: Color(0xFFDB2777),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.ghost,
-    title: 'Postcard Premium - Spooky Ghost Theme',
-    description:
-        'Give your posts a cozy spooky aesthetic with a watercolor ghost banner, featuring soft purple mist, cute little friendly ghosts, and warm candlelit glows on the right.',
-    successMessage:
-        'The Spooky Ghost Postcard Theme is now active on your account! Your posts will now feature the cozy ghost header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/ghost_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFFAF9FD),
-      Color(0xFFF3F0FA),
-      Color(0xFFE9E3F8),
-      Color(0xFFDCD3F5),
-    ],
-    badgeText: 'SPOOKY CUTE',
-    badgeGradient: [Color(0xFF6B21A8), Color(0xFF8B5CF6)],
-    buttonGradient: [Color(0xFF7C3AED), Color(0xFFA78BFA)],
-    previewAvatarColor: Color(0xFFF3E8FF),
-    previewInitialColor: Color(0xFF7E22CE),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.prince,
-    title: 'Postcard Premium - Little Prince Theme',
-    description:
-        'Add a majestic celestial theme to your posts inspired by the Little Prince, featuring starry night gradients, soft clouds, and a golden prince silhouette on the right.',
-    successMessage:
-        'The Little Prince Postcard Theme is now active on your account! Your posts will now feature the celestial prince header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/prince_sticker_v1.png',
-    previewGradient: [
-      Color(0xFFF0F7FF),
-      Color(0xFFE0EFFF),
-      Color(0xFFBAE0FF),
-      Color(0xFF7DD3FC),
-    ],
-    badgeText: 'ROYAL STAR',
-    badgeGradient: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-    buttonGradient: [Color(0xFF2563EB), Color(0xFF60A5FA)],
-    previewAvatarColor: Color(0xFFDBEAFE),
-    previewInitialColor: Color(0xFF1E3A8A),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.cuteHeart,
-    title: 'Postcard Premium - Cute Heart Theme',
-    description:
-        'Give your posts a super clean postcard header with a flat soft background and one cute pink heart on the right for a light, smooth look.',
-    successMessage:
-        'The Cute Heart Postcard Theme is now active on your account! Your posts will now feature the lightweight heart header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: '',
-    previewGradient: [
-      Color(0xFFFFFCFE),
-      Color(0xFFFFFCFE),
-      Color(0xFFFFFCFE),
-      Color(0xFFFFFCFE),
-    ],
-    badgeText: 'SMOOTH',
-    badgeGradient: [Color(0xFFF472B6), Color(0xFFF9A8D4)],
-    buttonGradient: [Color(0xFFF472B6), Color(0xFFF472B6)],
-    previewAvatarColor: Color(0xFFFCE7F3),
-    previewInitialColor: Color(0xFFBE185D),
-  ),
-  ThemeProductData(
-    type: ThemeProductType.elsa,
-    title: 'Postcard Premium - Cozy Cat Theme',
-    description:
-        'Add a cozy, peaceful pastel winter theme to your posts featuring soft ice-blue and lavender gradients, and a cute watercolor sleeping cat on the right.',
-    successMessage:
-        'The Cozy Cat Postcard Theme is now active on your account! Your posts will now feature the cute sleeping cat header.',
-    previewLabel: 'you',
-    previewInitial: 'Y',
-    assetPath: 'assets/images/elsa_sticker.png',
-    previewGradient: [
-      Color(0xFFE0F2FE),
-      Color(0xFFBAE6FD),
-      Color(0xFFF3E8FF),
-      Color(0xFFE9D5FF),
-    ],
-    badgeText: 'CAT',
-    badgeGradient: [Color(0xFF0EA5E9), Color(0xFFA855F7)],
-    buttonGradient: [Color(0xFF0EA5E9), Color(0xFFA855F7)],
-    previewAvatarColor: Color(0xFFE0F2FE),
-    previewInitialColor: Color(0xFF0369A1),
-  ),
+  // Old postcard designs removed. Ready for new designs.
   ThemeProductData(
     type: ThemeProductType.bubbleDream,
     title: 'Chat Bubble - Bubble Dream Skin',
@@ -682,7 +242,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _buyProfileEffect(Map<String, dynamic> effect) async {
     final effectKey = effect['key']?.toString() ?? '';
-    final effectName = effect['name']?.toString() ?? 'Profile Effect';
     final price = (effect['price'] as num?)?.toDouble() ?? 0.0;
 
     if (_coinsBalance < price) {
@@ -1057,10 +616,6 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-  Future<void> _equipProfileEffect(String effectKey, String effectName) async {
-    await _toggleEquipEffect(effectKey, effectName);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -1076,17 +631,14 @@ class _ShopScreenState extends State<ShopScreen> {
       _activeTabIndex = index;
       if (index == 0) {
         ThemeProductData? selected;
-        for (final p in _visibleProducts) {
-          if (!_isBubbleProduct(p.type) && _themeKeyFor(p.type) == _appliedPostcardTheme) {
+        final postcards = _visibleProducts.where((p) => !_isBubbleProduct(p.type)).toList();
+        for (final p in postcards) {
+          if (_themeKeyFor(p.type) == _appliedPostcardTheme) {
             selected = p;
             break;
           }
         }
-        _selectedTheme = selected ??
-            _visibleProducts.firstWhere(
-              (p) => !_isBubbleProduct(p.type),
-              orElse: () => _visibleProducts.first,
-            );
+        _selectedTheme = selected ?? (postcards.isNotEmpty ? postcards.first : null);
       } else if (index == 1) {
         if (_profileEffects.isNotEmpty && _selectedEffect == null) {
           _selectedEffect = _profileEffects.firstWhere(
@@ -1261,13 +813,7 @@ class _ShopScreenState extends State<ShopScreen> {
           }
         }
       }
-      _selectedTheme = selected ??
-          (visible.isNotEmpty
-              ? visible.firstWhere(
-                  (p) => p.type == ThemeProductType.bunny,
-                  orElse: () => visible.first,
-                )
-              : null);
+      _selectedTheme = selected ?? (visible.isNotEmpty ? visible.first : null);
 
       _isThemeStateLoading = false;
     });
@@ -3874,76 +3420,123 @@ class _ShopScreenState extends State<ShopScreen> {
 
               // Tab 0: Postcards
               if (_activeTabIndex == 0) ...[
-                // Live Preview Section
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Live Postcard Preview',
-                        style: TextStyle(
-                          color: Color(0xFF111827),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildLivePreviewCard(_selectedTheme),
-                    ],
-                  ),
-                ),
-
-                // Postcards List Header
                 Builder(
                   builder: (context) {
                     final postcards = _visibleProducts
                         .where((p) => !_isBubbleProduct(p.type))
                         .toList();
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Available Postcards',
-                            style: TextStyle(
-                              color: Color(0xFF111827),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${postcards.length} postcards',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
 
-                // Postcards List
-                Expanded(
-                  child: _isThemeStateLoading
-                      ? const Center(
+                    if (_isThemeStateLoading) {
+                      return const Expanded(
+                        child: Center(
                           child: CircularProgressIndicator(
                             color: Color(0xFFA855F7),
                           ),
-                        )
-                      : Builder(
-                          builder: (context) {
-                            final postcards = _visibleProducts
-                                .where((p) => !_isBubbleProduct(p.type))
-                                .toList();
-                            return ListView.builder(
+                        ),
+                      );
+                    }
+
+                    if (postcards.isEmpty) {
+                      return Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3E8FF),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.style_outlined,
+                                    size: 36,
+                                    color: Color(0xFF9333EA),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'No Postcard Designs Available',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF111827),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'All old designs have been removed.\nNew postcard designs will be added soon!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6B7280),
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Live Preview Section
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Live Postcard Preview',
+                                  style: TextStyle(
+                                    color: Color(0xFF111827),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildLivePreviewCard(_selectedTheme),
+                              ],
+                            ),
+                          ),
+                          // Postcards List Header
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Available Postcards',
+                                  style: TextStyle(
+                                    color: Color(0xFF111827),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '${postcards.length} postcards',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Postcards List
+                          Expanded(
+                            child: ListView.builder(
                               physics: const BouncingScrollPhysics(),
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                               itemCount: postcards.length,
@@ -3959,14 +3552,16 @@ class _ShopScreenState extends State<ShopScreen> {
                                   onTap: () => _onSelectTheme(theme),
                                 );
                               },
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                          // Bottom Action Bar
+                          if (_selectedTheme != null && !_isBubbleProduct(_selectedTheme!.type))
+                            _buildBottomActionBar(context, _selectedTheme!),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-
-                // Bottom Action Bar
-                if (_selectedTheme != null && !_isBubbleProduct(_selectedTheme!.type))
-                  _buildBottomActionBar(context, _selectedTheme!),
               ] else if (_activeTabIndex == 1) ...[
                 // Tab 1: Profile Effects
                 Expanded(
