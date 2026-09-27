@@ -1126,15 +1126,16 @@ class _ShopScreenState extends State<ShopScreen> {
                     )
                   else if (selected.type == ThemeProductType.starlightWhales)
                     Positioned(
-                      right: 16,
+                      right: 0,
                       top: 14,
-                      height: 26,
+                      height: 28,
                       child: IgnorePointer(
                         child: RepaintBoundary(
                           child: CachedNetworkImage(
                             imageUrl:
                                 'https://media.katsklub.top/postcard/starlight-whales.webp',
                             fit: BoxFit.contain,
+                            alignment: Alignment.centerRight,
                             fadeInDuration: Duration.zero,
                             fadeOutDuration: Duration.zero,
                             placeholder: (_, __) => const SizedBox(),

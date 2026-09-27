@@ -2461,15 +2461,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             ),
                             if (showStarlightWhales)
                               Positioned(
-                                right: 16,
+                                right: 0,
                                 top: 6,
-                                height: 26,
+                                height: 28,
                                 child: IgnorePointer(
                                   child: RepaintBoundary(
                                     child: CachedNetworkImage(
                                       imageUrl:
                                           'https://media.katsklub.top/postcard/starlight-whales.webp',
                                       fit: BoxFit.contain,
+                                      alignment: Alignment.centerRight,
                                       fadeInDuration: Duration.zero,
                                       fadeOutDuration: Duration.zero,
                                       placeholder: (_, __) => const SizedBox(),

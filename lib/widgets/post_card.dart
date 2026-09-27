@@ -2528,15 +2528,16 @@ class _PostCardState extends State<PostCard> {
               ),
               if (showStarlightWhales)
                 Positioned(
-                  right: 48.w,
+                  right: 0,
                   top: _post.isDiscussion ? 8.h : 6.h,
-                  height: 26.h,
+                  height: 28.h,
                   child: IgnorePointer(
                     child: RepaintBoundary(
                       child: CachedNetworkImage(
                         imageUrl:
                             'https://media.katsklub.top/postcard/starlight-whales.webp',
                         fit: BoxFit.contain,
+                        alignment: Alignment.centerRight,
                         fadeInDuration: Duration.zero,
                         fadeOutDuration: Duration.zero,
                         placeholder: (context, url) => const SizedBox(),
