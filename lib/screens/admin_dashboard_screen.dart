@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -121,6 +120,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   // Flag Tab Inner Segment
   int _flagSegmentIndex = 0; // 0 = Posts, 1 = Stories
 
+  // Shop Tab Segments & Items
+  int _shopSegmentIndex = 0; // 0 = Avatar Frames, 1 = Profile Effects, 2 = Postcard Themes
+
+  // Admin Avatar Frames
+  List<dynamic> _adminFrames = [];
+  bool _isLoadingAdminFrames = false;
+  String _frameSearchQuery = '';
+  final TextEditingController _frameSearchController = TextEditingController();
+  String _selectedFrameCategory = 'All';
+  List<String> _frameCategories = ['All'];
+  Map<String, dynamic> _frameStats = {'total': 0, 'active': 0, 'inactive': 0};
+
+  // Admin Profile Effects
+  List<dynamic> _adminEffects = [];
+  bool _isLoadingAdminEffects = false;
+  String _effectSearchQuery = '';
+  final TextEditingController _effectSearchController = TextEditingController();
+  Map<String, dynamic> _effectStats = {'total': 0, 'active': 0, 'inactive': 0};
+
   // Enabled themes config
   final Map<String, bool> _enabledThemes = {};
 
@@ -140,6 +158,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _fetchR2Status();
     _fetchAWSStatus();
     _loadAdminShopSettings();
+    _fetchAdminFrames();
+    _fetchAdminEffects();
     _fetchPromotions();
   }
 
@@ -148,6 +168,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _tabController.dispose();
     _userSearchController.dispose();
     _postSearchController.dispose();
+    _frameSearchController.dispose();
+    _effectSearchController.dispose();
     super.dispose();
   }
 
@@ -1639,6 +1661,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               _fetchR2Status();
               _fetchAWSStatus();
               _loadAdminShopSettings();
+              _fetchAdminFrames();
+              _fetchAdminEffects();
               _fetchPromotions();
               _showSuccessSnackBar('Data reloaded.');
             },
@@ -3132,7 +3156,785 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
+  // Admin Frames API
+  Future<void> _fetchAdminFrames() async {
+    setState(() => _isLoadingAdminFrames = true);
+    try {
+      final token = await _getToken();
+      if (token == null) return;
+
+      final queryParams = <String, String>{};
+      if (_frameSearchQuery.isNotEmpty) {
+        queryParams['search'] = _frameSearchQuery;
+      }
+      if (_selectedFrameCategory != 'All') {
+        queryParams['category'] = _selectedFrameCategory;
+      }
+
+      final uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/frames')
+          .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final res = await http.get(uri, headers: _headers(token));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true) {
+          setState(() {
+            _adminFrames = data['frames'] ?? [];
+            _frameStats = Map<String, dynamic>.from(data['stats'] ?? {});
+            final cats = (data['categories'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                ['All'];
+            _frameCategories = cats;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching admin frames: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingAdminFrames = false);
+      }
+    }
+  }
+
+  Future<void> _toggleFrameStatus(int frameId, bool currentStatus) async {
+    final token = await _getToken();
+    if (token == null) return;
+
+    final newStatus = !currentStatus;
+
+    // Optimistic update
+    setState(() {
+      final idx = _adminFrames.indexWhere((f) => f['id'] == frameId);
+      if (idx != -1) {
+        _adminFrames[idx]['isActive'] = newStatus;
+      }
+      final curActive = (_frameStats['active'] as num?)?.toInt() ?? 0;
+      final curInactive = (_frameStats['inactive'] as num?)?.toInt() ?? 0;
+      _frameStats['active'] =
+          newStatus ? curActive + 1 : (curActive > 0 ? curActive - 1 : 0);
+      _frameStats['inactive'] =
+          newStatus ? (curInactive > 0 ? curInactive - 1 : 0) : curInactive + 1;
+    });
+
+    try {
+      final url =
+          Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/frames/$frameId/toggle');
+      final res = await http.patch(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'isActive': newStatus}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['stats'] != null) {
+          setState(() {
+            _frameStats = Map<String, dynamic>.from(data['stats']);
+          });
+        }
+      } else {
+        _showErrorSnackBar('Failed to update frame status.');
+        _fetchAdminFrames();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Network error updating frame.');
+      _fetchAdminFrames();
+    }
+  }
+
+  Future<void> _batchUpdateFrames(String action) async {
+    final isDeactivate = action == 'deactivate_all';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isDeactivate ? 'Deactivate All Frames?' : 'Activate All Frames?'),
+        content: Text(isDeactivate
+            ? 'This will hide all avatar frames from KatShop. Users will not see any frames until you toggle them back on.'
+            : 'This will make all 313 avatar frames available and visible in KatShop.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDeactivate ? Colors.red : const Color(0xFF2563EB),
+            ),
+            child: Text(isDeactivate ? 'Deactivate All' : 'Activate All',
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final token = await _getToken();
+    if (token == null) return;
+
+    setState(() => _isLoadingAdminFrames = true);
+    try {
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/frames/batch');
+      final res = await http.post(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'action': action}),
+      );
+      if (res.statusCode == 200) {
+        _showSuccessSnackBar(isDeactivate
+            ? 'All frames deactivated from KatShop.'
+            : 'All frames activated in KatShop.');
+        await _fetchAdminFrames();
+      } else {
+        _showErrorSnackBar('Failed to perform batch update.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Network error in batch update.');
+    } finally {
+      if (mounted) setState(() => _isLoadingAdminFrames = false);
+    }
+  }
+
+  // Admin Effects API
+  Future<void> _fetchAdminEffects() async {
+    setState(() => _isLoadingAdminEffects = true);
+    try {
+      final token = await _getToken();
+      if (token == null) return;
+
+      final queryParams = <String, String>{};
+      if (_effectSearchQuery.isNotEmpty) {
+        queryParams['search'] = _effectSearchQuery;
+      }
+
+      final uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/effects')
+          .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final res = await http.get(uri, headers: _headers(token));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true) {
+          setState(() {
+            _adminEffects = data['effects'] ?? [];
+            _effectStats = Map<String, dynamic>.from(data['stats'] ?? {});
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching admin effects: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingAdminEffects = false);
+      }
+    }
+  }
+
+  Future<void> _toggleEffectStatus(int effectId, bool currentStatus) async {
+    final token = await _getToken();
+    if (token == null) return;
+
+    final newStatus = !currentStatus;
+
+    // Optimistic update
+    setState(() {
+      final idx = _adminEffects.indexWhere((e) => e['id'] == effectId);
+      if (idx != -1) {
+        _adminEffects[idx]['isActive'] = newStatus;
+      }
+      final curActive = (_effectStats['active'] as num?)?.toInt() ?? 0;
+      final curInactive = (_effectStats['inactive'] as num?)?.toInt() ?? 0;
+      _effectStats['active'] =
+          newStatus ? curActive + 1 : (curActive > 0 ? curActive - 1 : 0);
+      _effectStats['inactive'] =
+          newStatus ? (curInactive > 0 ? curInactive - 1 : 0) : curInactive + 1;
+    });
+
+    try {
+      final url =
+          Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/effects/$effectId/toggle');
+      final res = await http.patch(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'isActive': newStatus}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['stats'] != null) {
+          setState(() {
+            _effectStats = Map<String, dynamic>.from(data['stats']);
+          });
+        }
+      } else {
+        _showErrorSnackBar('Failed to update effect status.');
+        _fetchAdminEffects();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Network error updating effect.');
+      _fetchAdminEffects();
+    }
+  }
+
   Widget _buildShopTab() {
+    return Column(
+      children: [
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildShopSegmentButton(
+                  0,
+                  'Avatar Frames (${_frameStats['active'] ?? 0}/${_frameStats['total'] ?? 0})',
+                  Icons.account_box_outlined,
+                ),
+                const SizedBox(width: 8),
+                _buildShopSegmentButton(
+                  1,
+                  'Profile Effects (${_effectStats['active'] ?? 0}/${_effectStats['total'] ?? 0})',
+                  Icons.auto_awesome_outlined,
+                ),
+                const SizedBox(width: 8),
+                _buildShopSegmentButton(
+                  2,
+                  'Postcard Themes (${themeProducts.length})',
+                  Icons.palette_outlined,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: _shopSegmentIndex == 0
+              ? _buildAdminFramesTab()
+              : _shopSegmentIndex == 1
+                  ? _buildAdminEffectsTab()
+                  : _buildAdminThemesTab(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShopSegmentButton(int index, String label, IconData icon) {
+    final isSelected = _shopSegmentIndex == index;
+    return TextButton.icon(
+      onPressed: () {
+        setState(() {
+          _shopSegmentIndex = index;
+        });
+      },
+      icon: Icon(
+        icon,
+        size: 16,
+        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor:
+            isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF9FAFB),
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF93C5FD) : const Color(0xFFE5E7EB),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      ),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF4B5563),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminFramesTab() {
+    return Column(
+      children: [
+        _buildSearchField(
+          controller: _frameSearchController,
+          hint: 'Search 300+ avatar frames...',
+          onChanged: (val) {
+            setState(() {
+              _frameSearchQuery = val;
+            });
+            _fetchAdminFrames();
+          },
+          onClear: () {
+            setState(() {
+              _frameSearchQuery = '';
+              _frameSearchController.clear();
+            });
+            _fetchAdminFrames();
+          },
+        ),
+        if (_frameCategories.length > 1)
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _frameCategories.map((cat) {
+                  final isCatSelected = _selectedFrameCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      selected: isCatSelected,
+                      label: Text(
+                        cat,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              isCatSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isCatSelected
+                              ? const Color(0xFF1D4ED8)
+                              : const Color(0xFF4B5563),
+                        ),
+                      ),
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      selectedColor: const Color(0xFFDBEAFE),
+                      checkmarkColor: const Color(0xFF1D4ED8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: isCatSelected
+                              ? const Color(0xFF93C5FD)
+                              : Colors.transparent,
+                        ),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedFrameCategory = cat;
+                        });
+                        _fetchAdminFrames();
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: const BoxDecoration(
+            color: Color(0xFFF9FAFB),
+            border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_frameStats['active'] ?? 0} active / ${_frameStats['total'] ?? 0} total frames',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFF4B5563)),
+                tooltip: 'Bulk Actions',
+                onSelected: (val) {
+                  if (val == 'activate_all' || val == 'deactivate_all') {
+                    _batchUpdateFrames(val);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'deactivate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_off_outlined,
+                            color: Colors.red, size: 18),
+                        SizedBox(width: 8),
+                        Text('Deactivate All Frames'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'activate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_outlined,
+                            color: Colors.green, size: 18),
+                        SizedBox(width: 8),
+                        Text('Activate All Frames'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoadingAdminFrames
+              ? const Center(child: CircularProgressIndicator())
+              : _adminFrames.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.account_box_outlined,
+                              size: 48, color: Colors.grey),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'No avatar frames found.',
+                            style: TextStyle(color: Color(0xFF6B7280)),
+                          ),
+                          if (_frameSearchQuery.isNotEmpty ||
+                              _selectedFrameCategory != 'All')
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _frameSearchQuery = '';
+                                  _frameSearchController.clear();
+                                  _selectedFrameCategory = 'All';
+                                });
+                                _fetchAdminFrames();
+                              },
+                              child: const Text('Reset filters'),
+                            ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _adminFrames.length,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemBuilder: (context, index) {
+                        final frame = _adminFrames[index];
+                        final frameId = (frame['id'] as num?)?.toInt() ?? 0;
+                        final frameName = frame['name'] ?? 'Frame #$frameId';
+                        final frameUrl =
+                            frame['frameUrl'] ?? frame['previewUrl'] ?? '';
+                        final category = frame['category'] ?? 'General';
+                        final isVip = frame['isVip'] == true;
+                        final isActive = frame['isActive'] == true;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isActive
+                                  ? const Color(0xFFBFDBFE)
+                                  : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(26),
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      const CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: Color(0xFFE5E7EB),
+                                        child: Icon(Icons.person,
+                                            size: 20, color: Color(0xFF9CA3AF)),
+                                      ),
+                                      if (frameUrl.isNotEmpty)
+                                        CachedNetworkImage(
+                                          imageUrl: frameUrl,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.contain,
+                                          errorWidget: (_, __, ___) =>
+                                              const SizedBox.shrink(),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        frameName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF111827),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF3F4F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              category,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFF4B5563),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                          if (isVip) ...[
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEF3C7),
+                                                borderRadius:
+                                                  BorderRadius.circular(4),
+                                              ),
+                                              child: const Text(
+                                                'VIP',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Color(0xFFD97706),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isActive
+                                                  ? const Color(0xFFDCFCE7)
+                                                  : const Color(0xFFF3F4F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              isActive ? 'In KatShop' : 'Hidden',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: isActive
+                                                    ? const Color(0xFF16A34A)
+                                                    : const Color(0xFF6B7280),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: isActive,
+                                  activeThumbColor: const Color(0xFF2563EB),
+                                  onChanged: (val) {
+                                    _toggleFrameStatus(frameId, isActive);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdminEffectsTab() {
+    return Column(
+      children: [
+        _buildSearchField(
+          controller: _effectSearchController,
+          hint: 'Search profile effects by name...',
+          onChanged: (val) {
+            setState(() {
+              _effectSearchQuery = val;
+            });
+            _fetchAdminEffects();
+          },
+          onClear: () {
+            setState(() {
+              _effectSearchQuery = '';
+              _effectSearchController.clear();
+            });
+            _fetchAdminEffects();
+          },
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: const BoxDecoration(
+            color: Color(0xFFF9FAFB),
+            border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_effectStats['active'] ?? 0} active / ${_effectStats['total'] ?? 0} total profile effects',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoadingAdminEffects
+              ? const Center(child: CircularProgressIndicator())
+              : _adminEffects.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No profile effects found.',
+                        style: TextStyle(color: Color(0xFF6B7280)),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _adminEffects.length,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemBuilder: (context, index) {
+                        final eff = _adminEffects[index];
+                        final effId = (eff['id'] as num?)?.toInt() ?? 0;
+                        final name = eff['name'] ?? 'Effect #$effId';
+                        final category = eff['category'] ?? 'Animated Effects';
+                        final price = eff['price'] ?? 150.0;
+                        final isActive = eff['isActive'] == true;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isActive
+                                  ? const Color(0xFFBFDBFE)
+                                  : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E1B4B),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.auto_awesome,
+                                    color: Color(0xFFA5B4FC),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF111827),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            category,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '🪙 $price',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFFD97706),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isActive
+                                                  ? const Color(0xFFDCFCE7)
+                                                  : const Color(0xFFF3F4F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              isActive ? 'In KatShop' : 'Hidden',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: isActive
+                                                    ? const Color(0xFF16A34A)
+                                                    : const Color(0xFF6B7280),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: isActive,
+                                  activeThumbColor: const Color(0xFF2563EB),
+                                  onChanged: (val) {
+                                    _toggleEffectStatus(effId, isActive);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdminThemesTab() {
     return _isShopStateLoading
         ? const Center(child: CircularProgressIndicator())
         : ListView.builder(
@@ -3154,7 +3956,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header preview gradient
                     Container(
                       height: 60,
                       decoration: BoxDecoration(
@@ -3163,7 +3964,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(16)),
                       ),
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -3233,15 +4035,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: isEnabled ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+                                  color: isEnabled
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFF3F4F6),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   isEnabled ? 'Visible in Shop' : 'Hidden from Shop',
                                   style: TextStyle(
-                                    color: isEnabled ? const Color(0xFF16A34A) : const Color(0xFF4B5563),
+                                    color: isEnabled
+                                        ? const Color(0xFF16A34A)
+                                        : const Color(0xFF4B5563),
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -3250,7 +4057,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               const SizedBox(width: 8),
                               if (theme.badgeText.isNotEmpty)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(6),
@@ -3373,7 +4181,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                     ),
                                     Switch(
                                       value: promo.isEnabled,
-                                      activeColor: const Color(0xFF2563EB),
+                                      activeThumbColor: const Color(0xFF2563EB),
                                       onChanged: (val) async {
                                         final list = List<Promotion>.from(_promotionsList);
                                         list[index] = Promotion(
