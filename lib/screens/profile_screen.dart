@@ -56,6 +56,7 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     required this.user,
     required this.refreshToken,
+    this.isTabActive = true,
     this.onLogout,
     this.onOpenCurrentUserProfile,
     this.onOpenUserProfile,
@@ -68,6 +69,7 @@ class ProfileScreen extends StatefulWidget {
 
   final User user;
   final int refreshToken;
+  final bool isTabActive;
   final Future<void> Function()? onLogout;
   final VoidCallback? onOpenCurrentUserProfile;
   final ValueChanged<String>? onOpenUserProfile;
@@ -85,7 +87,25 @@ class _ProfileScreenState extends State<ProfileScreen>
   final FeedService _feedService = FeedService();
   final AuthService _authService = AuthService();
   bool _isUpdatingCover = false;
-  bool get isOwnProfile => widget.onLogout != null;
+  bool get isOwnProfile {
+    if (widget.onLogout != null) return true;
+    final currentMemUser = AuthService.currentMemoryUser ?? _authService.currentUser;
+    final currentUsername = currentMemUser?.username?.trim().toLowerCase();
+    final profileUsername = (_profileUser.username ?? widget.user.username)?.trim().toLowerCase();
+    if (currentUsername != null &&
+        currentUsername.isNotEmpty &&
+        profileUsername != null &&
+        profileUsername.isNotEmpty &&
+        currentUsername == profileUsername) {
+      return true;
+    }
+    final currentId = AuthService.currentUserIdSync;
+    final profileId = _profileUser.id ?? widget.user.id;
+    if (currentId.isNotEmpty && profileId != null && currentId == profileId.toString()) {
+      return true;
+    }
+    return false;
+  }
   late TabController _tabController;
   List<Post> _profilePosts = [];
   List<Story> _stories = [];
@@ -110,6 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   StreamSubscription<ProfileStatsChange>? _profileStatsSubscription;
   StreamSubscription<void>? _postcardThemesResetSubscription;
   int _featuredPhotosVersion = 0;
+  int _effectVersion = 0;
   List<User> _followSuggestions = [];
   final Set<String> _loadingSuggestedUsernames = {};
   List<Post> _reelsSuggestions = [];
@@ -177,6 +198,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       topInsetBuilder: () => 72,
     );
     _unreadNotifications = FeedService.unreadNotificationsNotifier.value;
+    _headerEffectActiveNotifier.value = widget.isTabActive;
+    if (AuthService.currentMemoryUser == null) {
+      _authService.getSavedUser().then((saved) {
+        if (saved != null && mounted) {
+          setState(() {});
+        }
+      });
+    }
     _bindFeedEvents();
     _reloadUserProfile();
     _loadProfilePosts();
@@ -190,6 +219,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void didUpdateWidget(ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isTabActive && widget.isTabActive) {
+      _effectVersion++;
+      _headerEffectActiveNotifier.value =
+          _scrollController.hasClients ? _scrollController.offset < 480 : true;
+    } else if (oldWidget.isTabActive && !widget.isTabActive) {
+      _headerEffectActiveNotifier.value = false;
+    }
+
     if (oldWidget.refreshToken != widget.refreshToken ||
         oldWidget.user.username != widget.user.username) {
       _profileUser = widget.user;
@@ -371,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
-    final isEffectActive = _scrollController.offset < 480;
+    final isEffectActive = widget.isTabActive && _scrollController.offset < 480;
     if (_headerEffectActiveNotifier.value != isEffectActive) {
       _headerEffectActiveNotifier.value = isEffectActive;
     }
@@ -387,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isOwnProfile = widget.onLogout != null;
+    final isOwnProfile = this.isOwnProfile;
     final profilePosts = _profilePosts
         .where((post) => !post.isReel && !post.isDiscussion)
         .toList();
@@ -501,9 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       );
                     },
                   ),
-                  if (widget.extraHeaderAction != null)
-                    widget.extraHeaderAction!,
-                  if (widget.onLogout != null)
+                  if (isOwnProfile)
                     IconButton(
                       icon: const Icon(
                         Icons.more_horiz,
@@ -511,7 +546,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         size: 24,
                       ),
                       onPressed: () => _showMenu(context),
-                    ),
+                    )
+                  else if (widget.extraHeaderAction != null)
+                    widget.extraHeaderAction!,
                 ],
               ),
               SliverToBoxAdapter(
@@ -591,7 +628,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           builder: (context, isEffectActive, _) {
                             return ProfileEffectWidget(
                               key: ValueKey(
-                                  'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}'),
+                                  'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
                               effect: _profileUser.profileEffect!,
                               isActive: isEffectActive,
                               applyBottomFade: false,
@@ -636,7 +673,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     required List<Post> profileReels,
     required List<Post> discussionPosts,
   }) {
-    final isOwnProfile = widget.onLogout != null;
+    final isOwnProfile = this.isOwnProfile;
     final isLockedPrivate =
         _profileUser.isPrivate && !isOwnProfile && !_profileUser.isFollowing;
     if (isLockedPrivate) {
@@ -661,7 +698,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         return SliverToBoxAdapter(
           child: ProfileMusicPanel(
             username: _profileUser.username?.trim() ?? '',
-            canManagePlaylists: widget.onLogout != null,
+            canManagePlaylists: isOwnProfile,
           ),
         );
       case 3:
@@ -1201,7 +1238,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         builder: (_) => PostDetailScreen(
           postId: post.id,
           initialPost: post,
-          currentUser: widget.onLogout == null ? null : _profileUser,
+          currentUser: isOwnProfile ? _profileUser : (AuthService.currentMemoryUser ?? _authService.currentUser),
           onOpenCurrentUserProfile: widget.onOpenCurrentUserProfile,
           onOpenUserProfile: widget.onOpenUserProfile,
         ),
@@ -1236,7 +1273,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             imageUrls: post.imageUrls,
             initialIndex: index,
             post: post,
-            currentUser: widget.onLogout == null ? null : _profileUser,
+            currentUser: isOwnProfile ? _profileUser : (AuthService.currentMemoryUser ?? _authService.currentUser),
             postId: post.id,
             uploaderName: post.authorFullName,
             createdAt: post.createdAt,
@@ -1266,7 +1303,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           imageUrls: post.imageUrls,
           initialIndex: index,
           post: post,
-          currentUser: widget.onLogout == null ? null : _profileUser,
+          currentUser: isOwnProfile ? _profileUser : (AuthService.currentMemoryUser ?? _authService.currentUser),
           postId: post.id,
           uploaderName: post.authorFullName,
           createdAt: post.createdAt,
@@ -1314,13 +1351,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   bool _isCurrentUser(String username) {
-    if (widget.onLogout == null) {
-      return false;
-    }
-
-    final currentUsername = _profileUser.username?.trim().toLowerCase() ?? '';
-    return currentUsername.isNotEmpty &&
-        username.trim().toLowerCase() == currentUsername;
+    final cleanUsername = username.trim().toLowerCase();
+    if (cleanUsername.isEmpty) return false;
+    final currentUsername = AuthService.currentMemoryUser?.username?.trim().toLowerCase() ??
+        _authService.currentUser?.username?.trim().toLowerCase() ??
+        (isOwnProfile ? _profileUser.username?.trim().toLowerCase() : null);
+    return currentUsername != null &&
+        currentUsername.isNotEmpty &&
+        cleanUsername == currentUsername;
   }
 
   void _showSharePlaceholder(Post post) async {
@@ -1593,10 +1631,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showMenu(BuildContext context) {
-    final onLogout = widget.onLogout;
-    if (onLogout == null) {
-      return;
-    }
+    final onLogout = widget.onLogout ?? () async {
+      await AuthService().logout();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    };
 
     showModalBottomSheet<String>(
       context: context,
@@ -1696,7 +1736,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _toggleFollow() async {
     final username = _profileUser.username?.trim() ?? '';
-    if (username.isEmpty || _isUpdatingFollow || widget.onLogout != null) {
+    if (username.isEmpty || _isUpdatingFollow || isOwnProfile) {
       return;
     }
 
@@ -1731,7 +1771,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _openMessage() async {
     final username = _profileUser.username?.trim() ?? '';
-    if (username.isEmpty || widget.onLogout != null || _isOpeningMessage) {
+    if (username.isEmpty || isOwnProfile || _isOpeningMessage) {
       return;
     }
 
@@ -1766,7 +1806,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
-    final isOwnProfile = widget.onLogout != null;
+    final isOwnProfile = this.isOwnProfile;
 
     if (!mounted) return;
 

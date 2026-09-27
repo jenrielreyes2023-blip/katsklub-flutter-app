@@ -447,6 +447,7 @@ class _AppShellState extends State<AppShell> {
       ProfileScreen(
         user: _currentUser,
         refreshToken: _feedRefreshToken,
+        isTabActive: _selectedIndex == 4,
         onLogout: widget.onLogout,
         onOpenCurrentUserProfile: _openProfileTab,
         onOpenUserProfile: _openUserProfile,
