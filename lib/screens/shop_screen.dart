@@ -3110,6 +3110,133 @@ case 'akuma_s_wrath':
         return const Color(0xFFD97706);
       case 'yoru_dimensional_rip':
         return const Color(0xFF38BDF8);
+      case 'bearly_afloat':
+        return const Color(0xFFFBBF24);
+      case 'capyccino':
+        return const Color(0xFFFBBF24);
+      case 'close_combat':
+        return const Color(0xFFF59E0B);
+      case 'cluster':
+        return const Color(0xFF38BDF8);
+      case 'darth_vader_arrives':
+        return const Color(0xFF818CF8);
+      case 'deep_dive':
+        return const Color(0xFF38BDF8);
+      case 'dreamy_blue':
+        return const Color(0xFF38BDF8);
+      case 'dreamy_green':
+        return const Color(0xFF34D399);
+      case 'dreamy_pink':
+        return const Color(0xFFF472B6);
+      case 'dreamy_yellow':
+        return const Color(0xFF38BDF8);
+      case 'entering_hyperspace':
+        return const Color(0xFF818CF8);
+      case 'f_in_chat_black':
+        return const Color(0xFF38BDF8);
+      case 'f_in_chat_white':
+        return const Color(0xFF38BDF8);
+      case 'farming_town':
+        return const Color(0xFF34D399);
+      case 'fishing_village':
+        return const Color(0xFF38BDF8);
+      case 'full_cowling':
+        return const Color(0xFFF59E0B);
+      case 'giselle':
+        return const Color(0xFFC084FC);
+      case 'heartstring_theory_blue':
+        return const Color(0xFF38BDF8);
+      case 'heartstring_theory_red':
+        return const Color(0xFFF87171);
+      case 'karina':
+        return const Color(0xFFC084FC);
+      case 'keyboard_cats':
+        return const Color(0xFFFBBF24);
+      case 'ki_detonate_blue':
+        return const Color(0xFF38BDF8);
+      case 'ki_detonate_green':
+        return const Color(0xFF34D399);
+      case 'ki_detonate_red':
+        return const Color(0xFFF87171);
+      case 'ki_detonate_yellow':
+        return const Color(0xFFF59E0B);
+      case 'lava_lamp':
+        return const Color(0xFFF87171);
+      case 'lava_lamp_blue':
+        return const Color(0xFFF87171);
+      case 'lava_lamp_pink':
+        return const Color(0xFFF87171);
+      case 'lava_lamp_slime':
+        return const Color(0xFFF87171);
+      case 'lazy_loaf':
+        return const Color(0xFFFBBF24);
+      case 'league_of_villains':
+        return const Color(0xFFF59E0B);
+      case 'lightsaber_mastery_blue':
+        return const Color(0xFF818CF8);
+      case 'lightsaber_mastery_green':
+        return const Color(0xFF818CF8);
+      case 'magic_hearts_blue':
+        return const Color(0xFF38BDF8);
+      case 'magic_hearts_gold':
+        return const Color(0xFFF87171);
+      case 'magic_mists':
+        return const Color(0xFF38BDF8);
+      case 'magical_girl_energy':
+        return const Color(0xFFF472B6);
+      case 'nature_is_healing':
+        return const Color(0xFF34D399);
+      case 'ningning':
+        return const Color(0xFFC084FC);
+      case 'nom_kitty_crunch':
+        return const Color(0xFFFBBF24);
+      case 'pancake_pals':
+        return const Color(0xFFFBBF24);
+      case 'power_surge_fuchsia':
+        return const Color(0xFF38BDF8);
+      case 'power_surge_green':
+        return const Color(0xFF34D399);
+      case 'roses_galore_blue':
+        return const Color(0xFF38BDF8);
+      case 'roses_galore_red':
+        return const Color(0xFFF87171);
+      case 'ruby_photo_card':
+        return const Color(0xFFF87171);
+      case 'science_victory':
+        return const Color(0xFF38BDF8);
+      case 'shatter_blue':
+        return const Color(0xFF38BDF8);
+      case 'shatter_purple':
+        return const Color(0xFFF59E0B);
+      case 'shuriken_strike_blue':
+        return const Color(0xFF38BDF8);
+      case 'shuriken_strike_yellow':
+        return const Color(0xFFF59E0B);
+      case 'starfall_tides':
+        return const Color(0xFF818CF8);
+      case 'starfall_tides_nightshade':
+        return const Color(0xFF818CF8);
+      case 'starfall_tides_rose':
+        return const Color(0xFF818CF8);
+      case 'starfall_tides_void':
+        return const Color(0xFF818CF8);
+      case 'sushi_mania_blue':
+        return const Color(0xFF38BDF8);
+      case 'sushi_mania_green':
+        return const Color(0xFF34D399);
+      case 'sushi_mania_pink':
+        return const Color(0xFFF472B6);
+      case 'sushi_mania_yellow':
+        return const Color(0xFFFB923C);
+      case 'sweet_copium':
+        return const Color(0xFFF472B6);
+      case 'tumbleweeds':
+        return const Color(0xFF38BDF8);
+      case 'winter':
+        return const Color(0xFFC084FC);
+      case 'wishful_beginnings':
+        return const Color(0xFF38BDF8);
+
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -3377,6 +3504,133 @@ case 'akuma_s_wrath':
         return const [Color(0xFFF59E0B), Color(0xFF9A3412)];
       case 'yoru_dimensional_rip':
         return const [Color(0xFF60A5FA), Color(0xFF1D4ED8)];
+      case 'bearly_afloat':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'capyccino':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'close_combat':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'cluster':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'darth_vader_arrives':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'deep_dive':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'dreamy_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'dreamy_green':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'dreamy_pink':
+        return const [Color(0xFF290A1E), Color(0xFF4A1237), Color(0xFF6E1B51)];
+      case 'dreamy_yellow':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'entering_hyperspace':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'f_in_chat_black':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'f_in_chat_white':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'farming_town':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'fishing_village':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'full_cowling':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'giselle':
+        return const [Color(0xFF1A102E), Color(0xFF2D1B4D), Color(0xFF462778)];
+      case 'heartstring_theory_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'heartstring_theory_red':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'karina':
+        return const [Color(0xFF1A102E), Color(0xFF2D1B4D), Color(0xFF462778)];
+      case 'keyboard_cats':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'ki_detonate_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'ki_detonate_green':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'ki_detonate_red':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'ki_detonate_yellow':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'lava_lamp':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'lava_lamp_blue':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'lava_lamp_pink':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'lava_lamp_slime':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'lazy_loaf':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'league_of_villains':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'lightsaber_mastery_blue':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'lightsaber_mastery_green':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'magic_hearts_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'magic_hearts_gold':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'magic_mists':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'magical_girl_energy':
+        return const [Color(0xFF290A1E), Color(0xFF4A1237), Color(0xFF6E1B51)];
+      case 'nature_is_healing':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'ningning':
+        return const [Color(0xFF1A102E), Color(0xFF2D1B4D), Color(0xFF462778)];
+      case 'nom_kitty_crunch':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'pancake_pals':
+        return const [Color(0xFF261410), Color(0xFF42221B), Color(0xFF613327)];
+      case 'power_surge_fuchsia':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'power_surge_green':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'roses_galore_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'roses_galore_red':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'ruby_photo_card':
+        return const [Color(0xFF240A0A), Color(0xFF451010), Color(0xFF6B1414)];
+      case 'science_victory':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'shatter_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'shatter_purple':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'shuriken_strike_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'shuriken_strike_yellow':
+        return const [Color(0xFF1C1008), Color(0xFF381E0C), Color(0xFF572E10)];
+      case 'starfall_tides':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'starfall_tides_nightshade':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'starfall_tides_rose':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'starfall_tides_void':
+        return const [Color(0xFF0A0A1A), Color(0xFF12122E), Color(0xFF1C1C45)];
+      case 'sushi_mania_blue':
+        return const [Color(0xFF051829), Color(0xFF082845), Color(0xFF0E3D69)];
+      case 'sushi_mania_green':
+        return const [Color(0xFF052414), Color(0xFF0A3D23), Color(0xFF0F5732)];
+      case 'sushi_mania_pink':
+        return const [Color(0xFF290A1E), Color(0xFF4A1237), Color(0xFF6E1B51)];
+      case 'sushi_mania_yellow':
+        return const [Color(0xFF1E1610), Color(0xFF38271C), Color(0xFF543B2A)];
+      case 'sweet_copium':
+        return const [Color(0xFF290A1E), Color(0xFF4A1237), Color(0xFF6E1B51)];
+      case 'tumbleweeds':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'winter':
+        return const [Color(0xFF1A102E), Color(0xFF2D1B4D), Color(0xFF462778)];
+      case 'wishful_beginnings':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
