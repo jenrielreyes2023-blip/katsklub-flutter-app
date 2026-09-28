@@ -1922,6 +1922,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
 
   Timer? _introTimer;
   Timer? _safetyTimeout;
+  Key _introKey = UniqueKey();
   CachedNetworkImageProvider? _introProvider;
   CachedNetworkImageProvider? _loopProvider;
 
@@ -1972,7 +1973,12 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     _loopProvider = CachedNetworkImageProvider(config.loopUrl);
 
     if (config.introDuration > Duration.zero && config.introUrl != config.loopUrl) {
-      _introProvider = CachedNetworkImageProvider(config.introUrl);
+      final provider = CachedNetworkImageProvider(config.introUrl);
+      // Evict any completed/stale MultiFrameImageStreamCompleter from Flutter's imageCache
+      // so the intro animation ALWAYS plays fresh from frame 0 instead of showing the last frame.
+      PaintingBinding.instance.imageCache.evict(provider);
+      _introProvider = provider;
+      _introKey = UniqueKey();
       _introDone = false;
       _introFadeOut = false;
       _introTimerStarted = false;
@@ -2002,8 +2008,17 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     final config = _config;
     if (config == null) return;
 
+    // Cross-fade timing: Start fading out 350ms BEFORE the intro finishes.
+    // This guarantees the intro is still in active, fluid motion while dissolving
+    // into the idle loop, completely eliminating any freeze/halt on the last frame!
+    const fadeDuration = Duration(milliseconds: 350);
+    final totalDuration = config.introDuration;
+    final fadeStartDelay = totalDuration > fadeDuration
+        ? totalDuration - fadeDuration
+        : Duration.zero;
+
     _introTimer?.cancel();
-    _introTimer = Timer(config.introDuration, () {
+    _introTimer = Timer(fadeStartDelay, () {
       if (!mounted) return;
       setState(() {
         _introFadeOut = true;
@@ -2063,7 +2078,11 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          // Layer 1: Ambient Idle Loop (direct zero-overhead Image once intro is done; smooth fade-in if cross-fading)
+          // Layer 1: Ambient Idle Loop
+          // CRITICAL FIX: ALWAYS mounted underneath in the Stack so its WebP frames are pre-decoded
+          // and warm in GPU texture memory. While the intro is playing, its opacity is 0.0.
+          // When the intro begins its crossfade, the loop dissolves in from 0.0 to 1.0 with ZERO
+          // cold-decode raster hitch/jank!
           if (!hasIntro)
             Image(
               image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
@@ -2075,9 +2094,9 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
               gaplessPlayback: true,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             )
-          else if (_introFadeOut)
+          else
             AnimatedOpacity(
-              opacity: 1.0,
+              opacity: _introFadeOut ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeInOut,
               child: Image(
@@ -2092,7 +2111,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
               ),
             ),
 
-          // Layer 2: Intro Animation (Starts at 100% opacity, plays from frame 1, then cross-fades out)
+          // Layer 2: Intro Animation (Starts at 100% opacity, plays from frame 0, then cross-fades out in active motion)
           if (hasIntro)
             AnimatedOpacity(
               opacity: _introFadeOut ? 0.0 : 1.0,
@@ -2107,6 +2126,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 }
               },
               child: Image(
+                key: _introKey,
                 image: _introProvider!,
                 width: double.infinity,
                 height: effectiveHeight,
