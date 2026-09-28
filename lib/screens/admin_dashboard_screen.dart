@@ -3203,13 +3203,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   Future<void> _batchUpdateFrames(String action) async {
     final isDeactivate = action == 'deactivate_all';
+    final total = _frameStats['total'] ?? 313;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(isDeactivate ? 'Deactivate All Frames?' : 'Activate All Frames?'),
         content: Text(isDeactivate
             ? 'This will hide all avatar frames from KatShop. Users will not see any frames until you toggle them back on.'
-            : 'This will make all 313 avatar frames available and visible in KatShop.'),
+            : 'This will make all $total avatar frames available and visible in KatShop.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -3252,6 +3253,134 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       _showErrorSnackBar('Network error in batch update.');
     } finally {
       if (mounted) setState(() => _isLoadingAdminFrames = false);
+    }
+  }
+
+  Future<void> _batchUpdateEffects(String action) async {
+    final isDeactivate = action == 'deactivate_all';
+    final total = _effectStats['total'] ?? 360;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isDeactivate ? 'Deactivate All Effects?' : 'Activate All Effects?'),
+        content: Text(isDeactivate
+            ? 'This will hide all profile effects from KatShop. Users will not see any effects in the shop until you toggle them back on.'
+            : 'This will make all $total profile effects available and visible in KatShop.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDeactivate ? Colors.red : const Color(0xFF2563EB),
+            ),
+            child: Text(isDeactivate ? 'Deactivate All' : 'Activate All',
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final token = await _getToken();
+    if (token == null) return;
+
+    setState(() => _isLoadingAdminEffects = true);
+    try {
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/effects/batch');
+      final res = await http.post(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'action': action}),
+      );
+      if (res.statusCode == 200) {
+        _showSuccessSnackBar(isDeactivate
+            ? 'All profile effects deactivated from KatShop.'
+            : 'All profile effects activated in KatShop.');
+        await _fetchAdminEffects();
+      } else {
+        _showErrorSnackBar('Failed to perform batch update on effects.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Network error in batch effect update.');
+    } finally {
+      if (mounted) setState(() => _isLoadingAdminEffects = false);
+    }
+  }
+
+  Future<void> _batchUpdateThemes(bool enableAll) async {
+    final postcardThemes = themeProducts
+        .where((t) =>
+            t.type != ThemeProductType.bubbleDream &&
+            t.type != ThemeProductType.sagittariusBubble)
+        .toList();
+    final total = postcardThemes.length;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(enableAll ? 'Activate All Postcard Themes?' : 'Deactivate All Postcard Themes?'),
+        content: Text(enableAll
+            ? 'This will make all $total postcard themes available and visible in KatShop.'
+            : 'This will hide all $total postcard themes from KatShop. Users will not see any postcard designs in the shop until you toggle them back on.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: enableAll ? const Color(0xFF2563EB) : Colors.red,
+            ),
+            child: Text(enableAll ? 'Activate All' : 'Deactivate All',
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final token = await _getToken();
+    if (token == null) return;
+
+    setState(() => _isShopStateLoading = true);
+    try {
+      final disabledList = <String>[];
+      if (!enableAll) {
+        for (final t in postcardThemes) {
+          disabledList.add(_themeKeyForPublic(t.type, t).toLowerCase());
+        }
+      }
+
+      final url = Uri.parse('${ApiConfig.apiBaseUrl}/api/admin/shop/themes');
+      final res = await http.post(
+        url,
+        headers: _headers(token),
+        body: jsonEncode({'disabledThemes': disabledList}),
+      );
+
+      if (res.statusCode == 200) {
+        setState(() {
+          for (final t in postcardThemes) {
+            final key = _themeKeyForPublic(t.type, t);
+            _enabledThemes[key] = enableAll;
+          }
+        });
+        _showSuccessSnackBar(enableAll
+            ? 'All postcard themes activated in KatShop.'
+            : 'All postcard themes deactivated from KatShop.');
+      } else {
+        _showErrorSnackBar('Failed to update postcard themes status.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Network error updating postcard themes.');
+    } finally {
+      if (mounted) setState(() => _isShopStateLoading = false);
     }
   }
 
@@ -3334,6 +3463,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildShopTab() {
+    final postcardThemes = themeProducts
+        .where((t) =>
+            t.type != ThemeProductType.bubbleDream &&
+            t.type != ThemeProductType.sagittariusBubble)
+        .toList();
+    final activePostcardsCount = postcardThemes
+        .where((t) => (_enabledThemes[_themeKeyForPublic(t.type, t)] ?? true))
+        .length;
+
     return Column(
       children: [
         Container(
@@ -3358,7 +3496,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 const SizedBox(width: 8),
                 _buildShopSegmentButton(
                   2,
-                  'Postcard Themes (${themeProducts.where((t) => t.type != ThemeProductType.bubbleDream && t.type != ThemeProductType.sagittariusBubble).length})',
+                  'Postcard Themes ($activePostcardsCount/${postcardThemes.length})',
                   Icons.palette_outlined,
                 ),
               ],
@@ -3410,6 +3548,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildAdminFramesTab() {
+    final curActive = (_frameStats['active'] as num?)?.toInt() ?? 0;
+    final curTotal = (_frameStats['total'] as num?)?.toInt() ?? 0;
+    final isFramesCategoryActive = curActive > 0;
+
     return Column(
       children: [
         _buildSearchField(
@@ -3477,25 +3619,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             ),
           ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: const BoxDecoration(
-            color: Color(0xFFF9FAFB),
-            border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isFramesCategoryActive
+                ? const Color(0xFFF0FDF4)
+                : const Color(0xFFFEF2F2),
+            border: Border(
+              bottom: BorderSide(
+                color: isFramesCategoryActive
+                    ? const Color(0xFFBBF7D0)
+                    : const Color(0xFFFECACA),
+              ),
+            ),
           ),
           child: Row(
             children: [
+              Icon(
+                isFramesCategoryActive
+                    ? Icons.check_circle_outline
+                    : Icons.block_outlined,
+                size: 20,
+                color: isFramesCategoryActive
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  '${_frameStats['active'] ?? 0} active / ${_frameStats['total'] ?? 0} total frames',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF374151),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isFramesCategoryActive
+                          ? 'Avatar Frames Active'
+                          : 'Avatar Frames Disabled',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isFramesCategoryActive
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFB91C1C),
+                      ),
+                    ),
+                    Text(
+                      '$curActive active / $curTotal total in KatShop',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isFramesCategoryActive
+                            ? const Color(0xFF166534)
+                            : const Color(0xFF991B1B),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              Text(
+                isFramesCategoryActive ? 'Enabled' : 'Disabled',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isFramesCategoryActive
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFFB91C1C),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: isFramesCategoryActive,
+                activeThumbColor: const Color(0xFF16A34A),
+                activeTrackColor: const Color(0xFFBBF7D0),
+                inactiveThumbColor: const Color(0xFFDC2626),
+                inactiveTrackColor: const Color(0xFFFECACA),
+                onChanged: (val) {
+                  _batchUpdateFrames(val ? 'activate_all' : 'deactivate_all');
+                },
+              ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFF4B5563)),
+                icon: const Icon(Icons.more_vert,
+                    size: 20, color: Color(0xFF4B5563)),
                 tooltip: 'Bulk Actions',
                 onSelected: (val) {
                   if (val == 'activate_all' || val == 'deactivate_all') {
@@ -3722,6 +3923,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Widget _buildAdminEffectsTab() {
+    final curActive = (_effectStats['active'] as num?)?.toInt() ?? 0;
+    final curTotal = (_effectStats['total'] as num?)?.toInt() ?? 0;
+    final isEffectsCategoryActive = curActive > 0;
+
     return Column(
       children: [
         _buildSearchField(
@@ -3742,22 +3947,114 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           },
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: const BoxDecoration(
-            color: Color(0xFFF9FAFB),
-            border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isEffectsCategoryActive
+                ? const Color(0xFFF0FDF4)
+                : const Color(0xFFFEF2F2),
+            border: Border(
+              bottom: BorderSide(
+                color: isEffectsCategoryActive
+                    ? const Color(0xFFBBF7D0)
+                    : const Color(0xFFFECACA),
+              ),
+            ),
           ),
           child: Row(
             children: [
+              Icon(
+                isEffectsCategoryActive
+                    ? Icons.check_circle_outline
+                    : Icons.block_outlined,
+                size: 20,
+                color: isEffectsCategoryActive
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  '${_effectStats['active'] ?? 0} active / ${_effectStats['total'] ?? 0} total profile effects',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF374151),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isEffectsCategoryActive
+                          ? 'Profile Effects Active'
+                          : 'Profile Effects Disabled',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isEffectsCategoryActive
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFB91C1C),
+                      ),
+                    ),
+                    Text(
+                      '$curActive active / $curTotal total in KatShop',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isEffectsCategoryActive
+                            ? const Color(0xFF166534)
+                            : const Color(0xFF991B1B),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              Text(
+                isEffectsCategoryActive ? 'Enabled' : 'Disabled',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isEffectsCategoryActive
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFFB91C1C),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: isEffectsCategoryActive,
+                activeThumbColor: const Color(0xFF16A34A),
+                activeTrackColor: const Color(0xFFBBF7D0),
+                inactiveThumbColor: const Color(0xFFDC2626),
+                inactiveTrackColor: const Color(0xFFFECACA),
+                onChanged: (val) {
+                  _batchUpdateEffects(val ? 'activate_all' : 'deactivate_all');
+                },
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert,
+                    size: 20, color: Color(0xFF4B5563)),
+                tooltip: 'Bulk Actions',
+                onSelected: (val) {
+                  if (val == 'activate_all' || val == 'deactivate_all') {
+                    _batchUpdateEffects(val);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'deactivate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_off_outlined,
+                            color: Colors.red, size: 18),
+                        SizedBox(width: 8),
+                        Text('Deactivate All Effects'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'activate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_outlined,
+                            color: Colors.green, size: 18),
+                        SizedBox(width: 8),
+                        Text('Activate All Effects'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -3947,6 +4244,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       );
     }
 
+    final totalPostcards = postcardThemes.length;
+    final activePostcardsCount = postcardThemes
+        .where((t) => (_enabledThemes[_themeKeyForPublic(t.type, t)] ?? true))
+        .length;
+    final isThemesCategoryActive = activePostcardsCount > 0;
+
     final filteredThemes = _themeSearchQuery.trim().isEmpty
         ? postcardThemes
         : postcardThemes.where((t) {
@@ -3973,6 +4276,121 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 _themeSearchController.clear();
               });
             },
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isThemesCategoryActive
+                ? const Color(0xFFF0FDF4)
+                : const Color(0xFFFEF2F2),
+            border: Border(
+              bottom: BorderSide(
+                color: isThemesCategoryActive
+                    ? const Color(0xFFBBF7D0)
+                    : const Color(0xFFFECACA),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isThemesCategoryActive
+                    ? Icons.check_circle_outline
+                    : Icons.block_outlined,
+                size: 20,
+                color: isThemesCategoryActive
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isThemesCategoryActive
+                          ? 'Postcard Themes Active'
+                          : 'Postcard Themes Disabled',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isThemesCategoryActive
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFB91C1C),
+                      ),
+                    ),
+                    Text(
+                      '$activePostcardsCount active / $totalPostcards total in KatShop',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isThemesCategoryActive
+                            ? const Color(0xFF166534)
+                            : const Color(0xFF991B1B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                isThemesCategoryActive ? 'Enabled' : 'Disabled',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isThemesCategoryActive
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFFB91C1C),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: isThemesCategoryActive,
+                activeThumbColor: const Color(0xFF16A34A),
+                activeTrackColor: const Color(0xFFBBF7D0),
+                inactiveThumbColor: const Color(0xFFDC2626),
+                inactiveTrackColor: const Color(0xFFFECACA),
+                onChanged: (val) {
+                  _batchUpdateThemes(val);
+                },
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert,
+                    size: 20, color: Color(0xFF4B5563)),
+                tooltip: 'Bulk Actions',
+                onSelected: (val) {
+                  if (val == 'activate_all') {
+                    _batchUpdateThemes(true);
+                  } else if (val == 'deactivate_all') {
+                    _batchUpdateThemes(false);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'deactivate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_off_outlined,
+                            color: Colors.red, size: 18),
+                        SizedBox(width: 8),
+                        Text('Deactivate All Themes'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'activate_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_outlined,
+                            color: Colors.green, size: 18),
+                        SizedBox(width: 8),
+                        Text('Activate All Themes'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         Expanded(
