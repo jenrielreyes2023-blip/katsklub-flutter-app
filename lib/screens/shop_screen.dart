@@ -2732,6 +2732,132 @@ case 'all_nighter':
         return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF0C4A6E)];
       case 'watercolors':
         return const [Color(0xFF0F172A), Color(0xFF0C4A6E), Color(0xFF4A044E)];
+case 'akuma_s_wrath':
+        return const [Color(0xFF1C0A0A), Color(0xFF380808), Color(0xFF5A0808)];
+      case 'arcane_epiphany':
+        return const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF2E1065)];
+      case 'aurora_dreams':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF1E1B4B)];
+      case 'autumn_equinox':
+        return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF78350F)];
+      case 'beholder':
+        return const [Color(0xFF180A2E), Color(0xFF2E0854), Color(0xFF4C0842)];
+      case 'blazing_ghoulish_graffiti':
+        return const [Color(0xFF1C0A00), Color(0xFF431407), Color(0xFF7C2D12)];
+      case 'bubble_tea_bliss':
+        return const [Color(0xFF1C140D), Color(0xFF382314), Color(0xFF54341B)];
+      case 'bubblegum_zombie_slime':
+        return const [Color(0xFF1F0B18), Color(0xFF3D1030), Color(0xFF5E1449)];
+      case 'chocolate_discord_os':
+        return const [Color(0xFF1C1410), Color(0xFF331E15), Color(0xFF4D2B1C)];
+      case 'classic_street_fighter':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'clockwork_butterflies':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
+      case 'cloud_zeppelin':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF3B0764)];
+      case 'deck_the_halls_aurora':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF14532D)];
+      case 'deck_the_halls_dusk':
+        return const [Color(0xFF1E1035), Color(0xFF2E1065), Color(0xFF4C1D95)];
+      case 'deck_the_halls_ember':
+        return const [Color(0xFF1C0A00), Color(0xFF431407), Color(0xFF78350F)];
+      case 'deck_the_halls_mix':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF1E293B)];
+      case 'ekko_s_aeroglider_stunts':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF0F172A)];
+      case 'enchanted_forest':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF065F46)];
+      case 'flutter_and_frolic':
+        return const [Color(0xFF1E1B4B), Color(0xFF2E1065), Color(0xFF4A044E)];
+      case 'fog_of_war':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF27272A)];
+      case 'heartzilla_purple':
+        return const [Color(0xFF1E1035), Color(0xFF2E1065), Color(0xFF4A044E)];
+      case 'infernal_dark_omens':
+        return const [Color(0xFF1C0A00), Color(0xFF3B0B0B), Color(0xFF5A0808)];
+      case 'innovator_s_masterwork':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'jinx_and_pow_pow':
+        return const [Color(0xFF1E0B1F), Color(0xFF3B0764), Color(0xFF0F172A)];
+      case 'kawaii_mode':
+        return const [Color(0xFF2E0820), Color(0xFF4A0835), Color(0xFF701A75)];
+      case 'koi_garden':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF0F172A)];
+      case 'lofi_cat_zoomies_festive':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF14532D)];
+      case 'lofi_girl_snow_angel':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'lofi_girl_study_break':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
+      case 'm_bison_s_return':
+        return const [Color(0xFF1A0A1C), Color(0xFF380838), Color(0xFF5A0838)];
+      case 'mermaid_whisperer':
+        return const [Color(0xFF041F38), Color(0xFF063A5E), Color(0xFF0E567A)];
+      case 'midnight_dark_omens':
+        return const [Color(0xFF05050A), Color(0xFF0D0D1A), Color(0xFF17172E)];
+      case 'midnight_zombie_slime':
+        return const [Color(0xFF061524), Color(0xFF0B253D), Color(0xFF103657)];
+      case 'mimic':
+        return const [Color(0xFF1A0E08), Color(0xFF381D10), Color(0xFF522A16)];
+      case 'mooncap_forest_blue':
+        return const [Color(0xFF07142E), Color(0xFF0C244F), Color(0xFF133670)];
+      case 'mooncap_forest_pink':
+        return const [Color(0xFF240A1F), Color(0xFF421037), Color(0xFF61144E)];
+      case 'neon_ghoulish_graffiti':
+        return const [Color(0xFF0D1824), Color(0xFF152A3D), Color(0xFF1B3C54)];
+      case 'ocean_flowers':
+        return const [Color(0xFF05242E), Color(0xFF0A3C4D), Color(0xFF10546B)];
+      case 'of_ink_and_steel':
+        return const [Color(0xFF121214), Color(0xFF1F1F24), Color(0xFF2E2E36)];
+      case 'oni_s_curse':
+        return const [Color(0xFF071426), Color(0xFF0C2442), Color(0xFF11355C)];
+      case 'paint_the_town_blue':
+        return const [Color(0xFF081C30), Color(0xFF0D3052), Color(0xFF124370)];
+      case 'penguins_on_ice':
+        return const [Color(0xFF0A1826), Color(0xFF10283D), Color(0xFF173854)];
+      case 'plankton_splat':
+        return const [Color(0xFF0A1C0E), Color(0xFF123319), Color(0xFF1A4724)];
+      case 'plushie_party':
+        return const [Color(0xFF261021), Color(0xFF421C39), Color(0xFF5E2752)];
+      case 'portal_beyond_blue':
+        return const [Color(0xFF07142E), Color(0xFF0B2452), Color(0xFF103473)];
+      case 'portal_beyond_purple':
+        return const [Color(0xFF160A26), Color(0xFF271042), Color(0xFF3A1761)];
+      case 'red_dragon':
+        return const [Color(0xFF210808), Color(0xFF3D0E0E), Color(0xFF591414)];
+      case 'sakura_katana':
+        return const [Color(0xFF240A18), Color(0xFF3E122B), Color(0xFF57183D)];
+      case 'scarlet_fall_foliage':
+        return const [Color(0xFF210808), Color(0xFF3B0E0E), Color(0xFF541414)];
+      case 'snowy_shenanigans_giddy':
+        return const [Color(0xFF0C1724), Color(0xFF14273B), Color(0xFF1C3652)];
+      case 'snowy_shenanigans_jolly':
+        return const [Color(0xFF0C1724), Color(0xFF14273B), Color(0xFF1C3652)];
+      case 'snowy_shenanigans_smooch':
+        return const [Color(0xFF1A0E21), Color(0xFF2E173B), Color(0xFF421E52)];
+      case 'snowy_shenanigans_suave':
+        return const [Color(0xFF0C1724), Color(0xFF14273B), Color(0xFF1C3652)];
+      case 'spirit_of_the_kitsune':
+        return const [Color(0xFF081C26), Color(0xFF0E3042), Color(0xFF14435C)];
+      case 'street_fighter_6':
+        return const [Color(0xFF1A1208), Color(0xFF33230F), Color(0xFF4A3215)];
+      case 'sun_and_moon':
+        return const [Color(0xFF141026), Color(0xFF241C42), Color(0xFF34285E)];
+      case 'sunrise_grove':
+        return const [Color(0xFF1F1208), Color(0xFF3D230E), Color(0xFF593314)];
+      case 'twilight_grove':
+        return const [Color(0xFF160A24), Color(0xFF281140), Color(0xFF3B185C)];
+      case 'twist_of_luck':
+        return const [Color(0xFF1A1506), Color(0xFF33290A), Color(0xFF4D3D0E)];
+      case 'vct_supernova':
+        return const [Color(0xFF1F1608), Color(0xFF3D2B0F), Color(0xFF573E15)];
+      case 'wonder_construction':
+        return const [Color(0xFF1C1408), Color(0xFF38270E), Color(0xFF523913)];
+      case 'woodland_fall_foliage':
+        return const [Color(0xFF1A1408), Color(0xFF33260F), Color(0xFF4A3715)];
+      case 'yoru_dimensional_rip':
+        return const [Color(0xFF081024), Color(0xFF0E1D40), Color(0xFF142959)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF022C22)];
@@ -2873,6 +2999,132 @@ case 'all_nighter':
         return const Color(0xFFF59E0B);
       case 'watercolors':
         return const Color(0xFFEC4899);
+case 'akuma_s_wrath':
+        return const Color(0xFFEF4444);
+      case 'arcane_epiphany':
+        return const Color(0xFF818CF8);
+      case 'aurora_dreams':
+        return const Color(0xFF34D399);
+      case 'autumn_equinox':
+        return const Color(0xFFF97316);
+      case 'beholder':
+        return const Color(0xFFA855F7);
+      case 'blazing_ghoulish_graffiti':
+        return const Color(0xFFF97316);
+      case 'bubble_tea_bliss':
+        return const Color(0xFFD97706);
+      case 'bubblegum_zombie_slime':
+        return const Color(0xFFF43F5E);
+      case 'chocolate_discord_os':
+        return const Color(0xFFB45309);
+      case 'classic_street_fighter':
+        return const Color(0xFFFACC15);
+      case 'clockwork_butterflies':
+        return const Color(0xFFF59E0B);
+      case 'cloud_zeppelin':
+        return const Color(0xFF38BDF8);
+      case 'deck_the_halls_aurora':
+        return const Color(0xFF10B981);
+      case 'deck_the_halls_dusk':
+        return const Color(0xFFA855F7);
+      case 'deck_the_halls_ember':
+        return const Color(0xFFEA580C);
+      case 'deck_the_halls_mix':
+        return const Color(0xFFEC4899);
+      case 'ekko_s_aeroglider_stunts':
+        return const Color(0xFF2DD4BF);
+      case 'enchanted_forest':
+        return const Color(0xFF34D399);
+      case 'flutter_and_frolic':
+        return const Color(0xFFF472B6);
+      case 'fog_of_war':
+        return const Color(0xFF94A3B8);
+      case 'heartzilla_purple':
+        return const Color(0xFFC084FC);
+      case 'infernal_dark_omens':
+        return const Color(0xFFEF4444);
+      case 'innovator_s_masterwork':
+        return const Color(0xFFF59E0B);
+      case 'jinx_and_pow_pow':
+        return const Color(0xFF06B6D4);
+      case 'kawaii_mode':
+        return const Color(0xFFF472B6);
+      case 'koi_garden':
+        return const Color(0xFFF97316);
+      case 'lofi_cat_zoomies_festive':
+        return const Color(0xFF22C55E);
+      case 'lofi_girl_snow_angel':
+        return const Color(0xFF38BDF8);
+      case 'lofi_girl_study_break':
+        return const Color(0xFFF59E0B);
+      case 'm_bison_s_return':
+        return const Color(0xFFE11D48);
+      case 'mermaid_whisperer':
+        return const Color(0xFF22D3EE);
+      case 'midnight_dark_omens':
+        return const Color(0xFF818CF8);
+      case 'midnight_zombie_slime':
+        return const Color(0xFF38BDF8);
+      case 'mimic':
+        return const Color(0xFFD97706);
+      case 'mooncap_forest_blue':
+        return const Color(0xFF60A5FA);
+      case 'mooncap_forest_pink':
+        return const Color(0xFFF472B6);
+      case 'neon_ghoulish_graffiti':
+        return const Color(0xFF22D3EE);
+      case 'ocean_flowers':
+        return const Color(0xFF2DD4BF);
+      case 'of_ink_and_steel':
+        return const Color(0xFFE2E8F0);
+      case 'oni_s_curse':
+        return const Color(0xFF38BDF8);
+      case 'paint_the_town_blue':
+        return const Color(0xFF38BDF8);
+      case 'penguins_on_ice':
+        return const Color(0xFF38BDF8);
+      case 'plankton_splat':
+        return const Color(0xFF4ADE80);
+      case 'plushie_party':
+        return const Color(0xFFF472B6);
+      case 'portal_beyond_blue':
+        return const Color(0xFF60A5FA);
+      case 'portal_beyond_purple':
+        return const Color(0xFFA855F7);
+      case 'red_dragon':
+        return const Color(0xFFEF4444);
+      case 'sakura_katana':
+        return const Color(0xFFF472B6);
+      case 'scarlet_fall_foliage':
+        return const Color(0xFFF87171);
+      case 'snowy_shenanigans_giddy':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans_jolly':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans_smooch':
+        return const Color(0xFFF472B6);
+      case 'snowy_shenanigans_suave':
+        return const Color(0xFF38BDF8);
+      case 'spirit_of_the_kitsune':
+        return const Color(0xFF22D3EE);
+      case 'street_fighter_6':
+        return const Color(0xFFF59E0B);
+      case 'sun_and_moon':
+        return const Color(0xFFFACC15);
+      case 'sunrise_grove':
+        return const Color(0xFFF97316);
+      case 'twilight_grove':
+        return const Color(0xFFA855F7);
+      case 'twist_of_luck':
+        return const Color(0xFFFACC15);
+      case 'vct_supernova':
+        return const Color(0xFFFACC15);
+      case 'wonder_construction':
+        return const Color(0xFFF59E0B);
+      case 'woodland_fall_foliage':
+        return const Color(0xFFD97706);
+      case 'yoru_dimensional_rip':
+        return const Color(0xFF38BDF8);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -3014,6 +3266,132 @@ case 'all_nighter':
         return const [Color(0xFFFBBF24), Color(0xFF38BDF8)];
       case 'watercolors':
         return const [Color(0xFFF472B6), Color(0xFF06B6D4)];
+case 'akuma_s_wrath':
+        return const [Color(0xFFDC2626), Color(0xFF7F1D1D)];
+      case 'arcane_epiphany':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'aurora_dreams':
+        return const [Color(0xFF6EE7B7), Color(0xFF8B5CF6)];
+      case 'autumn_equinox':
+        return const [Color(0xFFFB923C), Color(0xFFD97706)];
+      case 'beholder':
+        return const [Color(0xFFC084FC), Color(0xFF7E22CE)];
+      case 'blazing_ghoulish_graffiti':
+        return const [Color(0xFFFB923C), Color(0xFFDC2626)];
+      case 'bubble_tea_bliss':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'bubblegum_zombie_slime':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'chocolate_discord_os':
+        return const [Color(0xFFD97706), Color(0xFF78350F)];
+      case 'classic_street_fighter':
+        return const [Color(0xFFEF4444), Color(0xFFF59E0B)];
+      case 'clockwork_butterflies':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'cloud_zeppelin':
+        return const [Color(0xFF7DD3FC), Color(0xFFF59E0B)];
+      case 'deck_the_halls_aurora':
+        return const [Color(0xFF34D399), Color(0xFF059669)];
+      case 'deck_the_halls_dusk':
+        return const [Color(0xFFC084FC), Color(0xFF7C3AED)];
+      case 'deck_the_halls_ember':
+        return const [Color(0xFFF97316), Color(0xFFC2410C)];
+      case 'deck_the_halls_mix':
+        return const [Color(0xFFF43F5E), Color(0xFF3B82F6)];
+      case 'ekko_s_aeroglider_stunts':
+        return const [Color(0xFF22D3EE), Color(0xFF10B981)];
+      case 'enchanted_forest':
+        return const [Color(0xFF6EE7B7), Color(0xFF047857)];
+      case 'flutter_and_frolic':
+        return const [Color(0xFFF9A8D4), Color(0xFF8B5CF6)];
+      case 'fog_of_war':
+        return const [Color(0xFF64748B), Color(0xFF334155)];
+      case 'heartzilla_purple':
+        return const [Color(0xFFE879F9), Color(0xFF9333EA)];
+      case 'infernal_dark_omens':
+        return const [Color(0xFFF97316), Color(0xFFDC2626)];
+      case 'innovator_s_masterwork':
+        return const [Color(0xFF38BDF8), Color(0xFFD97706)];
+      case 'jinx_and_pow_pow':
+        return const [Color(0xFFF43F5E), Color(0xFF06B6D4)];
+      case 'kawaii_mode':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'koi_garden':
+        return const [Color(0xFFFB923C), Color(0xFF10B981)];
+      case 'lofi_cat_zoomies_festive':
+        return const [Color(0xFF4ADE80), Color(0xFFEF4444)];
+      case 'lofi_girl_snow_angel':
+        return const [Color(0xFF7DD3FC), Color(0xFF6366F1)];
+      case 'lofi_girl_study_break':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'm_bison_s_return':
+        return const [Color(0xFFF43F5E), Color(0xFF881337)];
+      case 'mermaid_whisperer':
+        return const [Color(0xFF67E8F9), Color(0xFF0284C7)];
+      case 'midnight_dark_omens':
+        return const [Color(0xFFA5B4FC), Color(0xFF4338CA)];
+      case 'midnight_zombie_slime':
+        return const [Color(0xFF0284C7), Color(0xFF0EA5E9)];
+      case 'mimic':
+        return const [Color(0xFFF59E0B), Color(0xFF9A3412)];
+      case 'mooncap_forest_blue':
+        return const [Color(0xFF93C5FD), Color(0xFF2563EB)];
+      case 'mooncap_forest_pink':
+        return const [Color(0xFFF9A8D4), Color(0xFFDB2777)];
+      case 'neon_ghoulish_graffiti':
+        return const [Color(0xFF38BDF8), Color(0xFF0891B2)];
+      case 'ocean_flowers':
+        return const [Color(0xFF5EEAD4), Color(0xFF0D9488)];
+      case 'of_ink_and_steel':
+        return const [Color(0xFFCBD5E1), Color(0xFF64748B)];
+      case 'oni_s_curse':
+        return const [Color(0xFF60A5FA), Color(0xFF1D4ED8)];
+      case 'paint_the_town_blue':
+        return const [Color(0xFF60A5FA), Color(0xFF0284C7)];
+      case 'penguins_on_ice':
+        return const [Color(0xFF93C5FD), Color(0xFF0284C7)];
+      case 'plankton_splat':
+        return const [Color(0xFF86EFAC), Color(0xFF16A34A)];
+      case 'plushie_party':
+        return const [Color(0xFFF9A8D4), Color(0xFFDB2777)];
+      case 'portal_beyond_blue':
+        return const [Color(0xFF93C5FD), Color(0xFF2563EB)];
+      case 'portal_beyond_purple':
+        return const [Color(0xFFC084FC), Color(0xFF7E22CE)];
+      case 'red_dragon':
+        return const [Color(0xFFF87171), Color(0xFFB91C1C)];
+      case 'sakura_katana':
+        return const [Color(0xFFF9A8D4), Color(0xFFBE185D)];
+      case 'scarlet_fall_foliage':
+        return const [Color(0xFFEF4444), Color(0xFF991B1B)];
+      case 'snowy_shenanigans_giddy':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'snowy_shenanigans_jolly':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'snowy_shenanigans_smooch':
+        return const [Color(0xFFF9A8D4), Color(0xFFA855F7)];
+      case 'snowy_shenanigans_suave':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'spirit_of_the_kitsune':
+        return const [Color(0xFF67E8F9), Color(0xFF0891B2)];
+      case 'street_fighter_6':
+        return const [Color(0xFFFBBF24), Color(0xFFDC2626)];
+      case 'sun_and_moon':
+        return const [Color(0xFFFDE047), Color(0xFF818CF8)];
+      case 'sunrise_grove':
+        return const [Color(0xFFFB923C), Color(0xFFF59E0B)];
+      case 'twilight_grove':
+        return const [Color(0xFFC084FC), Color(0xFF6B21A8)];
+      case 'twist_of_luck':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'vct_supernova':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'wonder_construction':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'woodland_fall_foliage':
+        return const [Color(0xFFF59E0B), Color(0xFF9A3412)];
+      case 'yoru_dimensional_rip':
+        return const [Color(0xFF60A5FA), Color(0xFF1D4ED8)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
@@ -4505,6 +4883,132 @@ case 'all_nighter':
         return const Color(0xFFF59E0B);
       case 'watercolors':
         return const Color(0xFFEC4899);
+case 'akuma_s_wrath':
+        return const Color(0xFFEF4444);
+      case 'arcane_epiphany':
+        return const Color(0xFF818CF8);
+      case 'aurora_dreams':
+        return const Color(0xFF34D399);
+      case 'autumn_equinox':
+        return const Color(0xFFF97316);
+      case 'beholder':
+        return const Color(0xFFA855F7);
+      case 'blazing_ghoulish_graffiti':
+        return const Color(0xFFF97316);
+      case 'bubble_tea_bliss':
+        return const Color(0xFFD97706);
+      case 'bubblegum_zombie_slime':
+        return const Color(0xFFF43F5E);
+      case 'chocolate_discord_os':
+        return const Color(0xFFB45309);
+      case 'classic_street_fighter':
+        return const Color(0xFFFACC15);
+      case 'clockwork_butterflies':
+        return const Color(0xFFF59E0B);
+      case 'cloud_zeppelin':
+        return const Color(0xFF38BDF8);
+      case 'deck_the_halls_aurora':
+        return const Color(0xFF10B981);
+      case 'deck_the_halls_dusk':
+        return const Color(0xFFA855F7);
+      case 'deck_the_halls_ember':
+        return const Color(0xFFEA580C);
+      case 'deck_the_halls_mix':
+        return const Color(0xFFEC4899);
+      case 'ekko_s_aeroglider_stunts':
+        return const Color(0xFF2DD4BF);
+      case 'enchanted_forest':
+        return const Color(0xFF34D399);
+      case 'flutter_and_frolic':
+        return const Color(0xFFF472B6);
+      case 'fog_of_war':
+        return const Color(0xFF94A3B8);
+      case 'heartzilla_purple':
+        return const Color(0xFFC084FC);
+      case 'infernal_dark_omens':
+        return const Color(0xFFEF4444);
+      case 'innovator_s_masterwork':
+        return const Color(0xFFF59E0B);
+      case 'jinx_and_pow_pow':
+        return const Color(0xFF06B6D4);
+      case 'kawaii_mode':
+        return const Color(0xFFF472B6);
+      case 'koi_garden':
+        return const Color(0xFFF97316);
+      case 'lofi_cat_zoomies_festive':
+        return const Color(0xFF22C55E);
+      case 'lofi_girl_snow_angel':
+        return const Color(0xFF38BDF8);
+      case 'lofi_girl_study_break':
+        return const Color(0xFFF59E0B);
+      case 'm_bison_s_return':
+        return const Color(0xFFE11D48);
+      case 'mermaid_whisperer':
+        return const Color(0xFF22D3EE);
+      case 'midnight_dark_omens':
+        return const Color(0xFF818CF8);
+      case 'midnight_zombie_slime':
+        return const Color(0xFF38BDF8);
+      case 'mimic':
+        return const Color(0xFFD97706);
+      case 'mooncap_forest_blue':
+        return const Color(0xFF60A5FA);
+      case 'mooncap_forest_pink':
+        return const Color(0xFFF472B6);
+      case 'neon_ghoulish_graffiti':
+        return const Color(0xFF22D3EE);
+      case 'ocean_flowers':
+        return const Color(0xFF2DD4BF);
+      case 'of_ink_and_steel':
+        return const Color(0xFFE2E8F0);
+      case 'oni_s_curse':
+        return const Color(0xFF38BDF8);
+      case 'paint_the_town_blue':
+        return const Color(0xFF38BDF8);
+      case 'penguins_on_ice':
+        return const Color(0xFF38BDF8);
+      case 'plankton_splat':
+        return const Color(0xFF4ADE80);
+      case 'plushie_party':
+        return const Color(0xFFF472B6);
+      case 'portal_beyond_blue':
+        return const Color(0xFF60A5FA);
+      case 'portal_beyond_purple':
+        return const Color(0xFFA855F7);
+      case 'red_dragon':
+        return const Color(0xFFEF4444);
+      case 'sakura_katana':
+        return const Color(0xFFF472B6);
+      case 'scarlet_fall_foliage':
+        return const Color(0xFFF87171);
+      case 'snowy_shenanigans_giddy':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans_jolly':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans_smooch':
+        return const Color(0xFFF472B6);
+      case 'snowy_shenanigans_suave':
+        return const Color(0xFF38BDF8);
+      case 'spirit_of_the_kitsune':
+        return const Color(0xFF22D3EE);
+      case 'street_fighter_6':
+        return const Color(0xFFF59E0B);
+      case 'sun_and_moon':
+        return const Color(0xFFFACC15);
+      case 'sunrise_grove':
+        return const Color(0xFFF97316);
+      case 'twilight_grove':
+        return const Color(0xFFA855F7);
+      case 'twist_of_luck':
+        return const Color(0xFFFACC15);
+      case 'vct_supernova':
+        return const Color(0xFFFACC15);
+      case 'wonder_construction':
+        return const Color(0xFFF59E0B);
+      case 'woodland_fall_foliage':
+        return const Color(0xFFD97706);
+      case 'yoru_dimensional_rip':
+        return const Color(0xFF38BDF8);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -4646,6 +5150,132 @@ case 'all_nighter':
         return const [Color(0xFFFBBF24), Color(0xFF38BDF8)];
       case 'watercolors':
         return const [Color(0xFFF472B6), Color(0xFF06B6D4)];
+case 'akuma_s_wrath':
+        return const [Color(0xFFDC2626), Color(0xFF7F1D1D)];
+      case 'arcane_epiphany':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'aurora_dreams':
+        return const [Color(0xFF6EE7B7), Color(0xFF8B5CF6)];
+      case 'autumn_equinox':
+        return const [Color(0xFFFB923C), Color(0xFFD97706)];
+      case 'beholder':
+        return const [Color(0xFFC084FC), Color(0xFF7E22CE)];
+      case 'blazing_ghoulish_graffiti':
+        return const [Color(0xFFFB923C), Color(0xFFDC2626)];
+      case 'bubble_tea_bliss':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'bubblegum_zombie_slime':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'chocolate_discord_os':
+        return const [Color(0xFFD97706), Color(0xFF78350F)];
+      case 'classic_street_fighter':
+        return const [Color(0xFFEF4444), Color(0xFFF59E0B)];
+      case 'clockwork_butterflies':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'cloud_zeppelin':
+        return const [Color(0xFF7DD3FC), Color(0xFFF59E0B)];
+      case 'deck_the_halls_aurora':
+        return const [Color(0xFF34D399), Color(0xFF059669)];
+      case 'deck_the_halls_dusk':
+        return const [Color(0xFFC084FC), Color(0xFF7C3AED)];
+      case 'deck_the_halls_ember':
+        return const [Color(0xFFF97316), Color(0xFFC2410C)];
+      case 'deck_the_halls_mix':
+        return const [Color(0xFFF43F5E), Color(0xFF3B82F6)];
+      case 'ekko_s_aeroglider_stunts':
+        return const [Color(0xFF22D3EE), Color(0xFF10B981)];
+      case 'enchanted_forest':
+        return const [Color(0xFF6EE7B7), Color(0xFF047857)];
+      case 'flutter_and_frolic':
+        return const [Color(0xFFF9A8D4), Color(0xFF8B5CF6)];
+      case 'fog_of_war':
+        return const [Color(0xFF64748B), Color(0xFF334155)];
+      case 'heartzilla_purple':
+        return const [Color(0xFFE879F9), Color(0xFF9333EA)];
+      case 'infernal_dark_omens':
+        return const [Color(0xFFF97316), Color(0xFFDC2626)];
+      case 'innovator_s_masterwork':
+        return const [Color(0xFF38BDF8), Color(0xFFD97706)];
+      case 'jinx_and_pow_pow':
+        return const [Color(0xFFF43F5E), Color(0xFF06B6D4)];
+      case 'kawaii_mode':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'koi_garden':
+        return const [Color(0xFFFB923C), Color(0xFF10B981)];
+      case 'lofi_cat_zoomies_festive':
+        return const [Color(0xFF4ADE80), Color(0xFFEF4444)];
+      case 'lofi_girl_snow_angel':
+        return const [Color(0xFF7DD3FC), Color(0xFF6366F1)];
+      case 'lofi_girl_study_break':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'm_bison_s_return':
+        return const [Color(0xFFF43F5E), Color(0xFF881337)];
+      case 'mermaid_whisperer':
+        return const [Color(0xFF67E8F9), Color(0xFF0284C7)];
+      case 'midnight_dark_omens':
+        return const [Color(0xFFA5B4FC), Color(0xFF4338CA)];
+      case 'midnight_zombie_slime':
+        return const [Color(0xFF0284C7), Color(0xFF0EA5E9)];
+      case 'mimic':
+        return const [Color(0xFFF59E0B), Color(0xFF9A3412)];
+      case 'mooncap_forest_blue':
+        return const [Color(0xFF93C5FD), Color(0xFF2563EB)];
+      case 'mooncap_forest_pink':
+        return const [Color(0xFFF9A8D4), Color(0xFFDB2777)];
+      case 'neon_ghoulish_graffiti':
+        return const [Color(0xFF38BDF8), Color(0xFF0891B2)];
+      case 'ocean_flowers':
+        return const [Color(0xFF5EEAD4), Color(0xFF0D9488)];
+      case 'of_ink_and_steel':
+        return const [Color(0xFFCBD5E1), Color(0xFF64748B)];
+      case 'oni_s_curse':
+        return const [Color(0xFF60A5FA), Color(0xFF1D4ED8)];
+      case 'paint_the_town_blue':
+        return const [Color(0xFF60A5FA), Color(0xFF0284C7)];
+      case 'penguins_on_ice':
+        return const [Color(0xFF93C5FD), Color(0xFF0284C7)];
+      case 'plankton_splat':
+        return const [Color(0xFF86EFAC), Color(0xFF16A34A)];
+      case 'plushie_party':
+        return const [Color(0xFFF9A8D4), Color(0xFFDB2777)];
+      case 'portal_beyond_blue':
+        return const [Color(0xFF93C5FD), Color(0xFF2563EB)];
+      case 'portal_beyond_purple':
+        return const [Color(0xFFC084FC), Color(0xFF7E22CE)];
+      case 'red_dragon':
+        return const [Color(0xFFF87171), Color(0xFFB91C1C)];
+      case 'sakura_katana':
+        return const [Color(0xFFF9A8D4), Color(0xFFBE185D)];
+      case 'scarlet_fall_foliage':
+        return const [Color(0xFFEF4444), Color(0xFF991B1B)];
+      case 'snowy_shenanigans_giddy':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'snowy_shenanigans_jolly':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'snowy_shenanigans_smooch':
+        return const [Color(0xFFF9A8D4), Color(0xFFA855F7)];
+      case 'snowy_shenanigans_suave':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'spirit_of_the_kitsune':
+        return const [Color(0xFF67E8F9), Color(0xFF0891B2)];
+      case 'street_fighter_6':
+        return const [Color(0xFFFBBF24), Color(0xFFDC2626)];
+      case 'sun_and_moon':
+        return const [Color(0xFFFDE047), Color(0xFF818CF8)];
+      case 'sunrise_grove':
+        return const [Color(0xFFFB923C), Color(0xFFF59E0B)];
+      case 'twilight_grove':
+        return const [Color(0xFFC084FC), Color(0xFF6B21A8)];
+      case 'twist_of_luck':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'vct_supernova':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'wonder_construction':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'woodland_fall_foliage':
+        return const [Color(0xFFF59E0B), Color(0xFF9A3412)];
+      case 'yoru_dimensional_rip':
+        return const [Color(0xFF60A5FA), Color(0xFF1D4ED8)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
