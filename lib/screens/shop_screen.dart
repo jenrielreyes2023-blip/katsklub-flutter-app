@@ -2636,6 +2636,102 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFF09090B), Color(0xFF1C1917), Color(0xFF450A0A)];
       case 'fall_foliage':
         return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
+case 'all_nighter':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF451A03)];
+      case 'arcane_summons':
+        return const [Color(0xFF0F0B1E), Color(0xFF1E1035), Color(0xFF3B0764)];
+      case 'clove_s_ruse':
+        return const [Color(0xFF160D27), Color(0xFF28114B), Color(0xFF4C1D95)];
+      case 'deck_the_halls':
+        return const [Color(0xFF052E16), Color(0xFF14532D), Color(0xFF7F1D1D)];
+      case 'doodlebob_takeover':
+        return const [Color(0xFF18181B), Color(0xFF27272A), Color(0xFF3F3F46)];
+      case 'dragon_dance':
+        return const [Color(0xFF450A0A), Color(0xFF7F1D1D), Color(0xFF9A3412)];
+      case 'dreamy':
+        return const [Color(0xFF1E1B4B), Color(0xFF2E1065), Color(0xFF4A044E)];
+      case 'feelin_90s':
+        return const [Color(0xFF172554), Color(0xFF3B0764), Color(0xFF701A75)];
+      case 'feelin_mischievous':
+        return const [Color(0xFF0A0A0A), Color(0xFF18181B), Color(0xFF14532D)];
+      case 'feelin_pizzazz':
+        return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF78350F)];
+      case 'fellowship_of_the_spring':
+        return const [Color(0xFF052E16), Color(0xFF064E3B), Color(0xFF065F46)];
+      case 'forgotten_treasure':
+        return const [Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF451A03)];
+      case 'fortune_flurry':
+        return const [Color(0xFF450A0A), Color(0xFF7F1D1D), Color(0xFF78350F)];
+      case 'goozilla':
+        return const [Color(0xFF052E16), Color(0xFF064E3B), Color(0xFF14532D)];
+      case 'handsome_squidward':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'haunted_man_o_war':
+        return const [Color(0xFF064E3B), Color(0xFF0F172A), Color(0xFF022C22)];
+      case 'heartzilla':
+        return const [Color(0xFF4C0519), Color(0xFF701A75), Color(0xFF831843)];
+      case 'jolly_roger':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF27272A)];
+      case 'ki_detonate':
+        return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF78350F)];
+      case 'lilypad_life':
+        return const [Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF065F46)];
+      case 'mastery':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF78350F)];
+      case 'midnight_celebration':
+        return const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF3B0764)];
+      case 'midnight_lilypad_life':
+        return const [Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF022C22)];
+      case 'monster_pop':
+        return const [Color(0xFF4A044E), Color(0xFF701A75), Color(0xFF1E1B4B)];
+      case 'muddy_lilypad_life':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF14532D)];
+      case 'nice_profile':
+        return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)];
+      case 'nightrunner':
+        return const [Color(0xFF0F172A), Color(0xFF3B0764), Color(0xFF701A75)];
+      case 'petal_serenade':
+        return const [Color(0xFF4A044E), Color(0xFF701A75), Color(0xFF831843)];
+      case 'rock_slide':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF44403C)];
+      case 'saya':
+        return const [Color(0xFF3B0764), Color(0xFF4A044E), Color(0xFF831843)];
+      case 'shooting_stars':
+        return const [Color(0xFF0B0F19), Color(0xFF111827), Color(0xFF1E1B4B)];
+      case 'snowy_shenanigans':
+        return const [Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF1E293B)];
+      case 'space_evader':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF052E16)];
+      case 'spirit_flame':
+        return const [Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF1E1B4B)];
+      case 'spring_bloom':
+        return const [Color(0xFF052E16), Color(0xFF064E3B), Color(0xFF1E1B4B)];
+      case 'study_spot':
+        return const [Color(0xFF1C1917), Color(0xFF292524), Color(0xFF1E293B)];
+      case 'supernova':
+        return const [Color(0xFF450A0A), Color(0xFF7F1D1D), Color(0xFF3B0764)];
+      case 'sushi_mania':
+        return const [Color(0xFF1C1917), Color(0xFF431407), Color(0xFF052E16)];
+      case 'the_immortal_clove':
+        return const [Color(0xFF1E1B4B), Color(0xFF2E1065), Color(0xFF4C1D95)];
+      case 'tocotoco':
+        return const [Color(0xFF4A044E), Color(0xFF701A75), Color(0xFF082F49)];
+      case 'turbo_drive':
+        return const [Color(0xFF09090B), Color(0xFF1C1917), Color(0xFF450A0A)];
+      case 'twilight':
+        return const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF2E1065)];
+      case 'twinkle_trails':
+        return const [Color(0xFF1C1917), Color(0xFF2E1065), Color(0xFF4C1D95)];
+      case 'uplink_error':
+        return const [Color(0xFF09090B), Color(0xFF18181B), Color(0xFF082F49)];
+      case 'vengeance':
+        return const [Color(0xFF09090B), Color(0xFF1C1917), Color(0xFF450A0A)];
+      case 'vortex':
+        return const [Color(0xFF09090B), Color(0xFF1E1035), Color(0xFF2E1065)];
+      case 'wake_up':
+        return const [Color(0xFF1C1917), Color(0xFF451A03), Color(0xFF0C4A6E)];
+      case 'watercolors':
+        return const [Color(0xFF0F172A), Color(0xFF0C4A6E), Color(0xFF4A044E)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF022C22)];
@@ -2681,6 +2777,102 @@ class _ShopScreenState extends State<ShopScreen> {
         return const Color(0xFFDC2626);
       case 'fall_foliage':
         return const Color(0xFFD97706);
+case 'all_nighter':
+        return const Color(0xFFF59E0B);
+      case 'arcane_summons':
+        return const Color(0xFFA855F7);
+      case 'clove_s_ruse':
+        return const Color(0xFFC084FC);
+      case 'deck_the_halls':
+        return const Color(0xFFEF4444);
+      case 'doodlebob_takeover':
+        return const Color(0xFFE4E4E7);
+      case 'dragon_dance':
+        return const Color(0xFFF59E0B);
+      case 'dreamy':
+        return const Color(0xFFF472B6);
+      case 'feelin_90s':
+        return const Color(0xFF06B6D4);
+      case 'feelin_mischievous':
+        return const Color(0xFF4ADE80);
+      case 'feelin_pizzazz':
+        return const Color(0xFFFBBF24);
+      case 'fellowship_of_the_spring':
+        return const Color(0xFF34D399);
+      case 'forgotten_treasure':
+        return const Color(0xFFF59E0B);
+      case 'fortune_flurry':
+        return const Color(0xFFFACC15);
+      case 'goozilla':
+        return const Color(0xFF22C55E);
+      case 'handsome_squidward':
+        return const Color(0xFF38BDF8);
+      case 'haunted_man_o_war':
+        return const Color(0xFF2DD4BF);
+      case 'heartzilla':
+        return const Color(0xFFF43F5E);
+      case 'jolly_roger':
+        return const Color(0xFFDC2626);
+      case 'ki_detonate':
+        return const Color(0xFFFACC15);
+      case 'lilypad_life':
+        return const Color(0xFF10B981);
+      case 'mastery':
+        return const Color(0xFFF59E0B);
+      case 'midnight_celebration':
+        return const Color(0xFFA855F7);
+      case 'midnight_lilypad_life':
+        return const Color(0xFF2DD4BF);
+      case 'monster_pop':
+        return const Color(0xFFF43F5E);
+      case 'muddy_lilypad_life':
+        return const Color(0xFF84CC16);
+      case 'nice_profile':
+        return const Color(0xFF38BDF8);
+      case 'nightrunner':
+        return const Color(0xFF06B6D4);
+      case 'petal_serenade':
+        return const Color(0xFFF472B6);
+      case 'rock_slide':
+        return const Color(0xFFA8A29E);
+      case 'saya':
+        return const Color(0xFFF472B6);
+      case 'shooting_stars':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans':
+        return const Color(0xFF38BDF8);
+      case 'space_evader':
+        return const Color(0xFF22C55E);
+      case 'spirit_flame':
+        return const Color(0xFF0EA5E9);
+      case 'spring_bloom':
+        return const Color(0xFF10B981);
+      case 'study_spot':
+        return const Color(0xFFF59E0B);
+      case 'supernova':
+        return const Color(0xFFF97316);
+      case 'sushi_mania':
+        return const Color(0xFFF97316);
+      case 'the_immortal_clove':
+        return const Color(0xFFA855F7);
+      case 'tocotoco':
+        return const Color(0xFFF43F5E);
+      case 'turbo_drive':
+        return const Color(0xFFEF4444);
+      case 'twilight':
+        return const Color(0xFF818CF8);
+      case 'twinkle_trails':
+        return const Color(0xFFFBBF24);
+      case 'uplink_error':
+        return const Color(0xFF06B6D4);
+      case 'vengeance':
+        return const Color(0xFFDC2626);
+      case 'vortex':
+        return const Color(0xFFA855F7);
+      case 'wake_up':
+        return const Color(0xFFF59E0B);
+      case 'watercolors':
+        return const Color(0xFFEC4899);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -2726,6 +2918,102 @@ class _ShopScreenState extends State<ShopScreen> {
         return const [Color(0xFFF87171), Color(0xFFDC2626)];
       case 'fall_foliage':
         return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+case 'all_nighter':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'arcane_summons':
+        return const [Color(0xFFC084FC), Color(0xFF9333EA)];
+      case 'clove_s_ruse':
+        return const [Color(0xFFE879F9), Color(0xFFA855F7)];
+      case 'deck_the_halls':
+        return const [Color(0xFF22C55E), Color(0xFFDC2626)];
+      case 'doodlebob_takeover':
+        return const [Color(0xFFA1A1AA), Color(0xFF71717A)];
+      case 'dragon_dance':
+        return const [Color(0xFFF87171), Color(0xFFEA580C)];
+      case 'dreamy':
+        return const [Color(0xFFF9A8D4), Color(0xFFC084FC)];
+      case 'feelin_90s':
+        return const [Color(0xFF22D3EE), Color(0xFFF43F5E)];
+      case 'feelin_mischievous':
+        return const [Color(0xFF22C55E), Color(0xFF16A34A)];
+      case 'feelin_pizzazz':
+        return const [Color(0xFFFDE047), Color(0xFFD97706)];
+      case 'fellowship_of_the_spring':
+        return const [Color(0xFF6EE7B7), Color(0xFF059669)];
+      case 'forgotten_treasure':
+        return const [Color(0xFF38BDF8), Color(0xFFD97706)];
+      case 'fortune_flurry':
+        return const [Color(0xFFEF4444), Color(0xFFCA8A04)];
+      case 'goozilla':
+        return const [Color(0xFF4ADE80), Color(0xFF15803D)];
+      case 'handsome_squidward':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'haunted_man_o_war':
+        return const [Color(0xFF5EEAD4), Color(0xFF0D9488)];
+      case 'heartzilla':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'jolly_roger':
+        return const [Color(0xFFF87171), Color(0xFFB91C1C)];
+      case 'ki_detonate':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'lilypad_life':
+        return const [Color(0xFF34D399), Color(0xFF047857)];
+      case 'mastery':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'midnight_celebration':
+        return const [Color(0xFF38BDF8), Color(0xFFEC4899)];
+      case 'midnight_lilypad_life':
+        return const [Color(0xFF38BDF8), Color(0xFF059669)];
+      case 'monster_pop':
+        return const [Color(0xFFF472B6), Color(0xFF8B5CF6)];
+      case 'muddy_lilypad_life':
+        return const [Color(0xFFA3E635), Color(0xFF65A30D)];
+      case 'nice_profile':
+        return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
+      case 'nightrunner':
+        return const [Color(0xFF22D3EE), Color(0xFFEC4899)];
+      case 'petal_serenade':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'rock_slide':
+        return const [Color(0xFFD6D3D1), Color(0xFF78716C)];
+      case 'saya':
+        return const [Color(0xFFF9A8D4), Color(0xFFA855F7)];
+      case 'shooting_stars':
+        return const [Color(0xFF60A5FA), Color(0xFF818CF8)];
+      case 'snowy_shenanigans':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'space_evader':
+        return const [Color(0xFF4ADE80), Color(0xFF16A34A)];
+      case 'spirit_flame':
+        return const [Color(0xFF38BDF8), Color(0xFF2563EB)];
+      case 'spring_bloom':
+        return const [Color(0xFF34D399), Color(0xFF06B6D4)];
+      case 'study_spot':
+        return const [Color(0xFFFBBF24), Color(0xFF0284C7)];
+      case 'supernova':
+        return const [Color(0xFFFB923C), Color(0xFFA855F7)];
+      case 'sushi_mania':
+        return const [Color(0xFFFB923C), Color(0xFF22C55E)];
+      case 'the_immortal_clove':
+        return const [Color(0xFFC084FC), Color(0xFF7C3AED)];
+      case 'tocotoco':
+        return const [Color(0xFFFB7185), Color(0xFF38BDF8)];
+      case 'turbo_drive':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'twilight':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'twinkle_trails':
+        return const [Color(0xFFFDE047), Color(0xFFA855F7)];
+      case 'uplink_error':
+        return const [Color(0xFF22D3EE), Color(0xFF0284C7)];
+      case 'vengeance':
+        return const [Color(0xFFF87171), Color(0xFF991B1B)];
+      case 'vortex':
+        return const [Color(0xFFC084FC), Color(0xFF6B21A8)];
+      case 'wake_up':
+        return const [Color(0xFFFBBF24), Color(0xFF38BDF8)];
+      case 'watercolors':
+        return const [Color(0xFFF472B6), Color(0xFF06B6D4)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
@@ -4121,6 +4409,102 @@ class _EffectListItem extends StatelessWidget {
         return const Color(0xFFDC2626);
       case 'fall_foliage':
         return const Color(0xFFD97706);
+case 'all_nighter':
+        return const Color(0xFFF59E0B);
+      case 'arcane_summons':
+        return const Color(0xFFA855F7);
+      case 'clove_s_ruse':
+        return const Color(0xFFC084FC);
+      case 'deck_the_halls':
+        return const Color(0xFFEF4444);
+      case 'doodlebob_takeover':
+        return const Color(0xFFE4E4E7);
+      case 'dragon_dance':
+        return const Color(0xFFF59E0B);
+      case 'dreamy':
+        return const Color(0xFFF472B6);
+      case 'feelin_90s':
+        return const Color(0xFF06B6D4);
+      case 'feelin_mischievous':
+        return const Color(0xFF4ADE80);
+      case 'feelin_pizzazz':
+        return const Color(0xFFFBBF24);
+      case 'fellowship_of_the_spring':
+        return const Color(0xFF34D399);
+      case 'forgotten_treasure':
+        return const Color(0xFFF59E0B);
+      case 'fortune_flurry':
+        return const Color(0xFFFACC15);
+      case 'goozilla':
+        return const Color(0xFF22C55E);
+      case 'handsome_squidward':
+        return const Color(0xFF38BDF8);
+      case 'haunted_man_o_war':
+        return const Color(0xFF2DD4BF);
+      case 'heartzilla':
+        return const Color(0xFFF43F5E);
+      case 'jolly_roger':
+        return const Color(0xFFDC2626);
+      case 'ki_detonate':
+        return const Color(0xFFFACC15);
+      case 'lilypad_life':
+        return const Color(0xFF10B981);
+      case 'mastery':
+        return const Color(0xFFF59E0B);
+      case 'midnight_celebration':
+        return const Color(0xFFA855F7);
+      case 'midnight_lilypad_life':
+        return const Color(0xFF2DD4BF);
+      case 'monster_pop':
+        return const Color(0xFFF43F5E);
+      case 'muddy_lilypad_life':
+        return const Color(0xFF84CC16);
+      case 'nice_profile':
+        return const Color(0xFF38BDF8);
+      case 'nightrunner':
+        return const Color(0xFF06B6D4);
+      case 'petal_serenade':
+        return const Color(0xFFF472B6);
+      case 'rock_slide':
+        return const Color(0xFFA8A29E);
+      case 'saya':
+        return const Color(0xFFF472B6);
+      case 'shooting_stars':
+        return const Color(0xFF38BDF8);
+      case 'snowy_shenanigans':
+        return const Color(0xFF38BDF8);
+      case 'space_evader':
+        return const Color(0xFF22C55E);
+      case 'spirit_flame':
+        return const Color(0xFF0EA5E9);
+      case 'spring_bloom':
+        return const Color(0xFF10B981);
+      case 'study_spot':
+        return const Color(0xFFF59E0B);
+      case 'supernova':
+        return const Color(0xFFF97316);
+      case 'sushi_mania':
+        return const Color(0xFFF97316);
+      case 'the_immortal_clove':
+        return const Color(0xFFA855F7);
+      case 'tocotoco':
+        return const Color(0xFFF43F5E);
+      case 'turbo_drive':
+        return const Color(0xFFEF4444);
+      case 'twilight':
+        return const Color(0xFF818CF8);
+      case 'twinkle_trails':
+        return const Color(0xFFFBBF24);
+      case 'uplink_error':
+        return const Color(0xFF06B6D4);
+      case 'vengeance':
+        return const Color(0xFFDC2626);
+      case 'vortex':
+        return const Color(0xFFA855F7);
+      case 'wake_up':
+        return const Color(0xFFF59E0B);
+      case 'watercolors':
+        return const Color(0xFFEC4899);
       case 'zombie_slime':
       default:
         return const Color(0xFF22C55E);
@@ -4166,6 +4550,102 @@ class _EffectListItem extends StatelessWidget {
         return const [Color(0xFFF87171), Color(0xFFDC2626)];
       case 'fall_foliage':
         return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+case 'all_nighter':
+        return const [Color(0xFFFBBF24), Color(0xFFD97706)];
+      case 'arcane_summons':
+        return const [Color(0xFFC084FC), Color(0xFF9333EA)];
+      case 'clove_s_ruse':
+        return const [Color(0xFFE879F9), Color(0xFFA855F7)];
+      case 'deck_the_halls':
+        return const [Color(0xFF22C55E), Color(0xFFDC2626)];
+      case 'doodlebob_takeover':
+        return const [Color(0xFFA1A1AA), Color(0xFF71717A)];
+      case 'dragon_dance':
+        return const [Color(0xFFF87171), Color(0xFFEA580C)];
+      case 'dreamy':
+        return const [Color(0xFFF9A8D4), Color(0xFFC084FC)];
+      case 'feelin_90s':
+        return const [Color(0xFF22D3EE), Color(0xFFF43F5E)];
+      case 'feelin_mischievous':
+        return const [Color(0xFF22C55E), Color(0xFF16A34A)];
+      case 'feelin_pizzazz':
+        return const [Color(0xFFFDE047), Color(0xFFD97706)];
+      case 'fellowship_of_the_spring':
+        return const [Color(0xFF6EE7B7), Color(0xFF059669)];
+      case 'forgotten_treasure':
+        return const [Color(0xFF38BDF8), Color(0xFFD97706)];
+      case 'fortune_flurry':
+        return const [Color(0xFFEF4444), Color(0xFFCA8A04)];
+      case 'goozilla':
+        return const [Color(0xFF4ADE80), Color(0xFF15803D)];
+      case 'handsome_squidward':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'haunted_man_o_war':
+        return const [Color(0xFF5EEAD4), Color(0xFF0D9488)];
+      case 'heartzilla':
+        return const [Color(0xFFFB7185), Color(0xFFE11D48)];
+      case 'jolly_roger':
+        return const [Color(0xFFF87171), Color(0xFFB91C1C)];
+      case 'ki_detonate':
+        return const [Color(0xFFFDE047), Color(0xFFCA8A04)];
+      case 'lilypad_life':
+        return const [Color(0xFF34D399), Color(0xFF047857)];
+      case 'mastery':
+        return const [Color(0xFFFBBF24), Color(0xFFB45309)];
+      case 'midnight_celebration':
+        return const [Color(0xFF38BDF8), Color(0xFFEC4899)];
+      case 'midnight_lilypad_life':
+        return const [Color(0xFF38BDF8), Color(0xFF059669)];
+      case 'monster_pop':
+        return const [Color(0xFFF472B6), Color(0xFF8B5CF6)];
+      case 'muddy_lilypad_life':
+        return const [Color(0xFFA3E635), Color(0xFF65A30D)];
+      case 'nice_profile':
+        return const [Color(0xFF38BDF8), Color(0xFF6366F1)];
+      case 'nightrunner':
+        return const [Color(0xFF22D3EE), Color(0xFFEC4899)];
+      case 'petal_serenade':
+        return const [Color(0xFFF9A8D4), Color(0xFFEC4899)];
+      case 'rock_slide':
+        return const [Color(0xFFD6D3D1), Color(0xFF78716C)];
+      case 'saya':
+        return const [Color(0xFFF9A8D4), Color(0xFFA855F7)];
+      case 'shooting_stars':
+        return const [Color(0xFF60A5FA), Color(0xFF818CF8)];
+      case 'snowy_shenanigans':
+        return const [Color(0xFF7DD3FC), Color(0xFF0284C7)];
+      case 'space_evader':
+        return const [Color(0xFF4ADE80), Color(0xFF16A34A)];
+      case 'spirit_flame':
+        return const [Color(0xFF38BDF8), Color(0xFF2563EB)];
+      case 'spring_bloom':
+        return const [Color(0xFF34D399), Color(0xFF06B6D4)];
+      case 'study_spot':
+        return const [Color(0xFFFBBF24), Color(0xFF0284C7)];
+      case 'supernova':
+        return const [Color(0xFFFB923C), Color(0xFFA855F7)];
+      case 'sushi_mania':
+        return const [Color(0xFFFB923C), Color(0xFF22C55E)];
+      case 'the_immortal_clove':
+        return const [Color(0xFFC084FC), Color(0xFF7C3AED)];
+      case 'tocotoco':
+        return const [Color(0xFFFB7185), Color(0xFF38BDF8)];
+      case 'turbo_drive':
+        return const [Color(0xFFF87171), Color(0xFFDC2626)];
+      case 'twilight':
+        return const [Color(0xFFA5B4FC), Color(0xFF6366F1)];
+      case 'twinkle_trails':
+        return const [Color(0xFFFDE047), Color(0xFFA855F7)];
+      case 'uplink_error':
+        return const [Color(0xFF22D3EE), Color(0xFF0284C7)];
+      case 'vengeance':
+        return const [Color(0xFFF87171), Color(0xFF991B1B)];
+      case 'vortex':
+        return const [Color(0xFFC084FC), Color(0xFF6B21A8)];
+      case 'wake_up':
+        return const [Color(0xFFFBBF24), Color(0xFF38BDF8)];
+      case 'watercolors':
+        return const [Color(0xFFF472B6), Color(0xFF06B6D4)];
       case 'zombie_slime':
       default:
         return const [Color(0xFF22C55E), Color(0xFF10B981)];
