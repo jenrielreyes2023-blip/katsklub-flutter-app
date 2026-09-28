@@ -895,6 +895,9 @@ class AuthService {
         avatarFrame: hasKey(['avatarFrame', 'avatar_frame'])
             ? user.avatarFrame
             : oldUser.avatarFrame,
+        profileEffect: hasKey(['profileEffect', 'profile_effect'])
+            ? user.profileEffect
+            : oldUser.profileEffect,
       );
       await _saveUser(mergedUser);
     } else {

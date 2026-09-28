@@ -19,7 +19,9 @@ import 'services/feed_service.dart';
 import 'services/global_audio_player_service.dart';
 import 'utils/update_checker.dart';
 import 'providers/theme_provider.dart';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'widgets/profile_effect_widget.dart';
 import 'widgets/user_avatar_with_frame.dart';
 import 'widgets/voice_room_mini_overlay.dart';
 
@@ -83,6 +85,12 @@ Future<void> main() async {
       await prefs.remove('admin_equipped_frame');
     } catch (_) {}
   }
+
+  // Restore cached dynamic profile effects and trigger background sync
+  try {
+    await ProfileEffectConfig.initFromLocalCache();
+    unawaited(ProfileEffectConfig.syncWithBackend());
+  } catch (_) {}
 
   runApp(
     KatsKlubApp(

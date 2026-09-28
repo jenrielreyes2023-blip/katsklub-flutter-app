@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 /// Configuration definition for a profile effect.
 class ProfileEffectConfig {
@@ -1734,6 +1738,56 @@ class ProfileEffectConfig {
   };
 
   static final Map<String, ProfileEffectConfig> _dynamicRegistry = {};
+  static const String _cacheKey = 'katsklub_cached_profile_effects';
+
+  /// Loads cached profile effects from persistent local storage on app start
+  static Future<void> initFromLocalCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_cacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(cachedJson);
+        for (final item in decoded) {
+          if (item is Map<String, dynamic>) {
+            registerFromMap(item);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading cached profile effects: $e');
+    }
+  }
+
+  /// Persists a list of effects from backend API to local cache and memory registry
+  static Future<void> saveToLocalCache(List<Map<String, dynamic>> effectsList) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode(effectsList));
+      for (final item in effectsList) {
+        registerFromMap(item);
+      }
+    } catch (e) {
+      debugPrint('Error saving cached profile effects: $e');
+    }
+  }
+
+  /// Non-blocking background sync with backend /api/effects
+  static Future<void> syncWithBackend() async {
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiConfig.apiBaseUrl}${ApiConfig.effectsPath}'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && data['effects'] is List) {
+          final List<Map<String, dynamic>> list =
+              List<Map<String, dynamic>>.from(data['effects']);
+          await saveToLocalCache(list);
+        }
+      }
+    } catch (_) {}
+  }
 
   /// Dynamically register or override an effect configuration (e.g. from backend API).
   static void register(ProfileEffectConfig config) {
@@ -1755,14 +1809,17 @@ class ProfileEffectConfig {
     final loopUrl = data['loopUrl']?.toString() ?? data['loop_url']?.toString();
     if (introUrl == null || loopUrl == null) return;
 
+    final existing = registry[key] ?? registry[key.replaceAll('_', '-')];
+    final duration = existing != null
+        ? existing.introDuration
+        : Duration(milliseconds: (data['introDurationMs'] as num?)?.toInt() ?? 3000);
+
     register(ProfileEffectConfig(
       id: key,
       name: data['name']?.toString() ?? key,
       introUrl: introUrl,
       loopUrl: loopUrl,
-      introDuration: Duration(
-        milliseconds: (data['introDurationMs'] as num?)?.toInt() ?? 2880,
-      ),
+      introDuration: duration,
     ));
   }
 
@@ -1792,6 +1849,10 @@ class ProfileEffectConfig {
     if (registry.containsKey(hyphenKey)) {
       return registry[hyphenKey];
     }
+    final noSep = key.replaceAll('_', '').replaceAll('-', '');
+    if (_dynamicRegistry.containsKey(noSep)) {
+      return _dynamicRegistry[noSep];
+    }
     // If it's a direct URL to a WebP
     if (effectKey.startsWith('http://') || effectKey.startsWith('https://')) {
       return ProfileEffectConfig(
@@ -1802,7 +1863,25 @@ class ProfileEffectConfig {
         introDuration: Duration.zero,
       );
     }
-    return null;
+
+    // Convention Fallback:
+    // If an effect exists in the DB or CDN but is not yet cached or compiled into this APK build,
+    // synthesize standard R2 CDN URLs so the profile NEVER renders plain or empty!
+    final slug = key.replaceAll('_', '-');
+    final formattedName = key
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .split(' ')
+        .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+        .join(' ');
+
+    return ProfileEffectConfig(
+      id: key,
+      name: formattedName.isEmpty ? 'Profile Effect' : formattedName,
+      introUrl: 'https://media.katsklub.top/effects/$slug/intro.webp',
+      loopUrl: 'https://media.katsklub.top/effects/$slug/loop.webp',
+      introDuration: const Duration(milliseconds: 3000),
+    );
   }
 }
 

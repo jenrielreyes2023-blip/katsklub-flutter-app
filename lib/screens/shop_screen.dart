@@ -200,24 +200,9 @@ class _ShopScreenState extends State<ShopScreen> {
               List<String>.from(data['ownedKeys'] ?? []);
           final String equipped = data['equippedKey']?.toString() ?? 'none';
 
+          unawaited(ProfileEffectConfig.saveToLocalCache(effectsList));
           for (final e in effectsList) {
-            final key = e['key']?.toString();
-            final name = e['name']?.toString() ?? 'Profile Effect';
-            final introUrl = e['introUrl']?.toString();
-            final loopUrl = e['loopUrl']?.toString();
-            if (key != null && introUrl != null && loopUrl != null) {
-              if (ProfileEffectConfig.resolve(key) == null) {
-                ProfileEffectConfig.register(
-                  ProfileEffectConfig(
-                    id: key,
-                    name: name,
-                    introUrl: introUrl,
-                    loopUrl: loopUrl,
-                    introDuration: const Duration(milliseconds: 5000),
-                  ),
-                );
-              }
-            }
+            ProfileEffectConfig.registerFromMap(e);
           }
 
           setState(() {
