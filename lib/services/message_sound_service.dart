@@ -4,8 +4,8 @@ import 'package:audioplayers/audioplayers.dart';
 class MessageSoundService {
   MessageSoundService._();
 
-  static const String _incomingAsset = 'sounds/message_in.mp3';
-  static const String _outgoingAsset = 'sounds/message_out.mp3';
+  static const String _incomingAsset = 'sounds/ReceivedMessage.m4a';
+  static const String _outgoingAsset = 'sounds/SentMessage.m4a';
   static const String _notificationAsset = 'sounds/notification_in.mp3';
 
   static AudioPlayer? _incomingPlayer;
