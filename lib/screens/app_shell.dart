@@ -298,7 +298,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _selectTab(int index) {
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
 
     if (index == 2) {
       _showCreateMenu();
