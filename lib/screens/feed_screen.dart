@@ -2446,58 +2446,60 @@ class _SuggestedCreatorsCarousel extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.stars_rounded,
-                color: Color(0xFFFF7A45),
-                size: 20,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Suggested Creators',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Rounded',
-                  color: isDark ? Colors.white : const Color(0xFF111827),
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
+    return RepaintBoundary(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.stars_rounded,
+                  color: Color(0xFFFF7A45),
+                  size: 20,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  'Suggested Creators',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: isDark ? Colors.white : const Color(0xFF111827),
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(
-          height: 195,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: creators.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final user = creators[index];
-              final username = (user.username ?? '')
-                  .trim()
-                  .replaceFirst(RegExp(r'^@'), '')
-                  .toLowerCase();
-              final isFollowing = followedUsernames.contains(username);
-              final isPending = followPendingUsernames.contains(username);
+          SizedBox(
+            height: 195,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: creators.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final user = creators[index];
+                final username = (user.username ?? '')
+                    .trim()
+                    .replaceFirst(RegExp(r'^@'), '')
+                    .toLowerCase();
+                final isFollowing = followedUsernames.contains(username);
+                final isPending = followPendingUsernames.contains(username);
 
-              return _CreatorCard(
-                user: user,
-                isFollowing: isFollowing,
-                isFollowPending: isPending,
-                onTap: () => onTapUser(user),
-                onFollow: () => onFollowUser(user),
-              );
-            },
+                return _CreatorCard(
+                  user: user,
+                  isFollowing: isFollowing,
+                  isFollowPending: isPending,
+                  onTap: () => onTapUser(user),
+                  onFollow: () => onFollowUser(user),
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -2698,60 +2700,62 @@ class _TrendingSection extends StatelessWidget {
     final borderColor =
         isDark ? const Color(0xFF2C2D30) : const Color(0xFFE5E7EB);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.local_fire_department_rounded,
-                color: Color(0xFFFF7A45),
-                size: 22,
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.local_fire_department_rounded,
+                  color: Color(0xFFFF7A45),
+                  size: 22,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Trending Topics',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: isDark ? Colors.white : const Color(0xFF111827),
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor, width: 0.8),
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Trending Topics',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Rounded',
-                  color: isDark ? Colors.white : const Color(0xFF111827),
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Column(
+                  children: [
+                    for (int i = 0; i < topics.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: borderColor,
+                          indent: 16,
+                        ),
+                      _TrendingTopicRow(
+                        topic: topics[i],
+                        rank: i + 1,
+                        onTap: () => onTapTopic(topics[i].tag),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor, width: 0.8),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Column(
-                children: [
-                  for (int i = 0; i < topics.length; i++) ...[
-                    if (i > 0)
-                      Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        color: borderColor,
-                        indent: 16,
-                      ),
-                    _TrendingTopicRow(
-                      topic: topics[i],
-                      rank: i + 1,
-                      onTap: () => onTapTopic(topics[i].tag),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2763,26 +2767,28 @@ class _ExplorePostsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.explore_rounded,
-            color: Color(0xFFFF7A45),
-            size: 20,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Explore Posts',
-            style: TextStyle(
-              fontFamily: 'SF Pro Rounded',
-              color: isDark ? Colors.white : const Color(0xFF111827),
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w800,
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.explore_rounded,
+              color: Color(0xFFFF7A45),
+              size: 20,
             ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Text(
+              'Explore Posts',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: isDark ? Colors.white : const Color(0xFF111827),
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
