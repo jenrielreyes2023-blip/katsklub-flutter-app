@@ -2462,14 +2462,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             if (animatedPostcardUrl != null)
                               Positioned(
                                 right: 0,
-                                top: 6,
-                                height: 28,
+                                top: 0,
+                                height: 36,
                                 child: IgnorePointer(
                                   child: RepaintBoundary(
                                     child: CachedNetworkImage(
                                       imageUrl: animatedPostcardUrl,
                                       fit: BoxFit.contain,
-                                      alignment: Alignment.centerRight,
+                                      alignment: Alignment.topRight,
                                       fadeInDuration: Duration.zero,
                                       fadeOutDuration: Duration.zero,
                                       placeholder: (_, __) => const SizedBox(),

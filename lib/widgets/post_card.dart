@@ -2529,14 +2529,14 @@ class _PostCardState extends State<PostCard> {
               if (animatedPostcardUrl != null)
                 Positioned(
                   right: 0,
-                  top: _post.isDiscussion ? 8.h : 6.h,
-                  height: 28.h,
+                  top: 0,
+                  height: 36.h,
                   child: IgnorePointer(
                     child: RepaintBoundary(
                       child: CachedNetworkImage(
                         imageUrl: animatedPostcardUrl,
                         fit: BoxFit.contain,
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.topRight,
                         fadeInDuration: Duration.zero,
                         fadeOutDuration: Duration.zero,
                         placeholder: (context, url) => const SizedBox(),
