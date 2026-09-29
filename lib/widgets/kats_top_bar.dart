@@ -41,7 +41,7 @@ class KatsTopBar extends StatelessWidget {
     final isDark = themeProvider.isDarkMode;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -76,54 +76,57 @@ class KatsTopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const VoiceRoomsLobbyScreen(),
-                ),
-              );
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: Container(
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.5.h),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
-                ),
+          RepaintBoundary(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
                 borderRadius: BorderRadius.circular(10.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CustomIcons.micParty(
-                    color: Colors.white,
-                    size: 13,
-                  ),
-                  SizedBox(width: 3.w),
-                  Text(
-                    'Party',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const VoiceRoomsLobbyScreen(),
                     ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.5.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                    ),
+                    borderRadius: BorderRadius.circular(10.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                        blurRadius: 5,
+                        offset: const Offset(0, 1.5),
+                      ),
+                    ],
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CustomIcons.micParty(
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                      SizedBox(width: 3.w),
+                      Text(
+                        'Party',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            tooltip: 'Voice Party Rooms',
           ),
-          const SizedBox(width: 2),
+          const SizedBox(width: 3),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
@@ -132,8 +135,9 @@ class KatsTopBar extends StatelessWidget {
                 ),
               );
             },
+            splashRadius: 18,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             icon: SvgPicture.string(
               _topOutstandingSvg,
               width: 21,
@@ -145,33 +149,36 @@ class KatsTopBar extends StatelessWidget {
             ),
             tooltip: 'Top Outstanding Users',
           ),
-          const SizedBox(width: 2),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/youtube');
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: Container(
-              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.5.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF0000),
-                borderRadius: BorderRadius.circular(6.r),
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 14,
+          const SizedBox(width: 3),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(6.r),
+              onTap: () {
+                Navigator.of(context).pushNamed('/youtube');
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 5.5.w, vertical: 3.5.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF0000),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
               ),
             ),
-            tooltip: 'YouTube Search',
           ),
+          const SizedBox(width: 3),
           IconButton(
             onPressed: () {
               themeProvider.toggleTheme(!isDark);
             },
+            splashRadius: 18,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             icon: Icon(
               isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
               color: const Color(0xFFFF7A45),
@@ -179,15 +186,17 @@ class KatsTopBar extends StatelessWidget {
             iconSize: 21,
             tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
           ),
-          const SizedBox(width: 2),
-          ValueListenableBuilder<int>(
-            valueListenable: FeedService.unreadNotificationsNotifier,
-            builder: (context, count, _) {
-              return NotificationBellButton(
-                unreadNotifications: count,
-                onPressed: onNotificationsTap,
-              );
-            },
+          const SizedBox(width: 3),
+          RepaintBoundary(
+            child: ValueListenableBuilder<int>(
+              valueListenable: FeedService.unreadNotificationsNotifier,
+              builder: (context, count, _) {
+                return NotificationBellButton(
+                  unreadNotifications: count,
+                  onPressed: onNotificationsTap,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -209,13 +218,15 @@ class NotificationBellButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final badgeLabel =
         unreadNotifications > 9 ? '9+' : unreadNotifications.toString();
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       customBorder: const CircleBorder(),
       onTap: onPressed,
       child: SizedBox(
-        width: 36,
-        height: 36,
+        width: 34,
+        height: 34,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -231,8 +242,8 @@ class NotificationBellButton extends StatelessWidget {
               ),
             ),
             Positioned(
-              right: 2,
-              top: 2,
+              right: 1,
+              top: 1,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 transitionBuilder: (child, anim) =>
@@ -243,12 +254,14 @@ class NotificationBellButton extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: const Color(0xFFE11D48),
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                          boxShadow: const [
+                          border: Border.all(color: surfaceColor, width: 1.5),
+                          boxShadow: [
                             BoxShadow(
-                              color: Color(0x14000000),
+                              color: isDark
+                                  ? Colors.black38
+                                  : const Color(0x14000000),
                               blurRadius: 4,
-                              offset: Offset(0, 1),
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),

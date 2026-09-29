@@ -625,15 +625,17 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 );
               },
-              child: Material(
-                color: Theme.of(context).colorScheme.surface,
-                child: SizedBox(
-                  height: _homeHeaderHeight.h,
-                  child: KatsTopBar(
-                    unreadNotifications: _unreadNotifications,
-                    isMenuOpen: _isHomeMenuOpen,
-                    onHomeTap: _showHomeMenu,
-                    onNotificationsTap: _openNotifications,
+              child: RepaintBoundary(
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: SizedBox(
+                    height: _homeHeaderHeight.h,
+                    child: KatsTopBar(
+                      unreadNotifications: _unreadNotifications,
+                      isMenuOpen: _isHomeMenuOpen,
+                      onHomeTap: _showHomeMenu,
+                      onNotificationsTap: _openNotifications,
+                    ),
                   ),
                 ),
               ),
