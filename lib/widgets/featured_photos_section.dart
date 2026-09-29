@@ -9,6 +9,7 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/feed_service.dart';
 import '../screens/visitors_screen.dart';
+import 'loading_skeletons.dart';
 
 String _mimeFromPath(String path) {
   final lower = path.toLowerCase();
@@ -33,9 +34,20 @@ Widget _buildFeaturedImage(
 }) {
   final cleanUrl = rawUrl.trim();
   if (cleanUrl.isEmpty) {
-    return Container(
-      color: const Color(0xFFF3F4F6),
-      child: Center(child: Icon(Icons.image_outlined, color: Colors.grey, size: iconSize ?? 24)),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
+          child: Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: isDark ? Colors.white24 : Colors.black26,
+              size: iconSize ?? 24,
+            ),
+          ),
+        );
+      },
     );
   }
   if (cleanUrl.startsWith('data:')) {
@@ -46,10 +58,19 @@ Widget _buildFeaturedImage(
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(
-          color: const Color(0xFFF3F4F6),
-          child: Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: iconSize ?? 24)),
-        ),
+        errorBuilder: (context, __, ___) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
+            child: Center(
+              child: Icon(
+                Icons.broken_image_outlined,
+                color: isDark ? Colors.white24 : Colors.black26,
+                size: iconSize ?? 24,
+              ),
+            ),
+          );
+        },
       );
     } catch (_) {}
   }
@@ -62,24 +83,32 @@ Widget _buildFeaturedImage(
     memCacheHeight: memCacheHeight,
     maxWidthDiskCache: memCacheWidth != null ? (memCacheWidth * 2) : null,
     maxHeightDiskCache: memCacheHeight != null ? (memCacheHeight * 2) : null,
-    fadeInDuration: const Duration(milliseconds: 150),
+    fadeInDuration: const Duration(milliseconds: 200),
+    fadeInCurve: Curves.easeOut,
     fadeOutDuration: Duration.zero,
-    placeholder: (context, url) => Container(
-      color: const Color(0xFFF3F4F6),
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          color: Colors.grey.withValues(alpha: 0.35),
-          size: iconSize ?? 24,
+    placeholder: (context, url) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return SkeletonPulse(
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE6EBF2),
         ),
-      ),
-    ),
-    errorWidget: (context, url, error) => Container(
-      color: const Color(0xFFF3F4F6),
-      child: Center(
-        child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: iconSize ?? 24),
-      ),
-    ),
+      );
+    },
+    errorWidget: (context, url, error) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Container(
+        color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
+        child: Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: isDark ? Colors.white24 : Colors.black26,
+            size: iconSize ?? 24,
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -269,7 +298,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
     );
   }
 
-  Widget _buildVisitorsHeaderItem(BuildContext context, bool isDark) {
+  Widget _buildVisitorsHeaderItem(bool isDark) {
     final visitors = widget.user.recentVisitors;
     if (visitors.isEmpty) {
       return const SizedBox.shrink();
@@ -364,6 +393,14 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                               imageUrl: ApiConfig.assetUrl(visitor.avatarUrl),
                               fit: BoxFit.cover,
                               memCacheWidth: 60,
+                              placeholder: (context, url) {
+                                final isDark = Theme.of(context).brightness == Brightness.dark;
+                                return SkeletonPulse(
+                                  child: Container(
+                                    color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE6EBF2),
+                                  ),
+                                );
+                              },
                               errorWidget: (context, url, error) => _buildDefaultAvatar(visitor.username),
                             )
                           : _buildDefaultAvatar(visitor.username),
@@ -479,7 +516,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (widget.isOwnProfile && widget.user.recentVisitors.isNotEmpty) ...[
-                      _buildVisitorsHeaderItem(context, isDark),
+                      _buildVisitorsHeaderItem(isDark),
                       const SizedBox(width: 12),
                     ],
                     if (widget.isOwnProfile)
@@ -1412,12 +1449,28 @@ class _AddPhotoBottomSheetState extends State<_AddPhotoBottomSheet> {
         imageUrl: _selectedPresetUrl!,
         fit: BoxFit.cover,
         memCacheWidth: 200,
+        placeholder: (context, url) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return SkeletonPulse(
+            child: Container(
+              color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE6EBF2),
+            ),
+          );
+        },
       );
     } else if (_urlController.text.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: _urlController.text.trim(),
         fit: BoxFit.cover,
         memCacheWidth: 200,
+        placeholder: (context, url) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return SkeletonPulse(
+            child: Container(
+              color: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE6EBF2),
+            ),
+          );
+        },
         errorWidget: (context, url, error) => const Center(
           child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: 36),
         ),
