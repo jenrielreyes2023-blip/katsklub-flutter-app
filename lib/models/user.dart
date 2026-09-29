@@ -44,6 +44,10 @@ class User {
     this.charmPoints = 0,
     this.recentVisitors = const [],
     this.newVisitorsCount = 0,
+    this.profileMusicUrl,
+    this.profileMusicTitle,
+    this.profileMusicArtist,
+    this.profileMusicArtwork,
     required this.raw,
   });
 
@@ -91,6 +95,10 @@ class User {
   final int charmPoints;
   final List<ProfileVisitorInfo> recentVisitors;
   final int newVisitorsCount;
+  final String? profileMusicUrl;
+  final String? profileMusicTitle;
+  final String? profileMusicArtist;
+  final String? profileMusicArtwork;
   final Map<String, dynamic> raw;
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -179,9 +187,16 @@ class User {
               .toList() ??
           const [],
       newVisitorsCount: _readInt(json['newVisitorsCount'] ?? json['new_visitors_count']),
+      profileMusicUrl: _readString(json['profileMusicUrl'] ?? json['profile_music_url']),
+      profileMusicTitle: _readString(json['profileMusicTitle'] ?? json['profile_music_title']),
+      profileMusicArtist: _readString(json['profileMusicArtist'] ?? json['profile_music_artist']),
+      profileMusicArtwork: _readString(json['profileMusicArtwork'] ?? json['profile_music_artwork']),
       raw: Map<String, dynamic>.from(json),
     );
   }
+
+  bool get hasProfileMusic =>
+      profileMusicUrl != null && profileMusicUrl!.trim().isNotEmpty;
 
   String get displayName {
     if (_hasValue(fullName)) {
@@ -289,6 +304,10 @@ class User {
     int? charmPoints,
     List<ProfileVisitorInfo>? recentVisitors,
     int? newVisitorsCount,
+    String? profileMusicUrl,
+    String? profileMusicTitle,
+    String? profileMusicArtist,
+    String? profileMusicArtwork,
     Map<String, dynamic>? raw,
   }) {
     final nextFollowersCount = followersCount ?? this.followersCount;
@@ -354,7 +373,15 @@ class User {
       ..['pinnedPostId'] = nextPinnedPostId
       ..['recentVisitors'] = nextRecentVisitors.map((v) => v.toJson()).toList()
       ..['newVisitorsCount'] = nextNewVisitorsCount
-      ..['charmPoints'] = nextCharmPoints;
+      ..['charmPoints'] = nextCharmPoints
+      ..['profileMusicUrl'] = (profileMusicUrl ?? this.profileMusicUrl)
+      ..['profile_music_url'] = (profileMusicUrl ?? this.profileMusicUrl)
+      ..['profileMusicTitle'] = (profileMusicTitle ?? this.profileMusicTitle)
+      ..['profile_music_title'] = (profileMusicTitle ?? this.profileMusicTitle)
+      ..['profileMusicArtist'] = (profileMusicArtist ?? this.profileMusicArtist)
+      ..['profile_music_artist'] = (profileMusicArtist ?? this.profileMusicArtist)
+      ..['profileMusicArtwork'] = (profileMusicArtwork ?? this.profileMusicArtwork)
+      ..['profile_music_artwork'] = (profileMusicArtwork ?? this.profileMusicArtwork);
 
     return User(
       id: id,
@@ -401,6 +428,10 @@ class User {
       charmPoints: nextCharmPoints,
       recentVisitors: nextRecentVisitors,
       newVisitorsCount: nextNewVisitorsCount,
+      profileMusicUrl: profileMusicUrl ?? this.profileMusicUrl,
+      profileMusicTitle: profileMusicTitle ?? this.profileMusicTitle,
+      profileMusicArtist: profileMusicArtist ?? this.profileMusicArtist,
+      profileMusicArtwork: profileMusicArtwork ?? this.profileMusicArtwork,
       raw: nextRaw,
     );
   }

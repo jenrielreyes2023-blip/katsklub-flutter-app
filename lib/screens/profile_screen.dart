@@ -26,6 +26,7 @@ import '../widgets/post_card.dart';
 import '../widgets/share_post_sheet.dart';
 import '../widgets/avatar_with_border.dart';
 import '../widgets/profile_music_panel.dart';
+import '../widgets/profile_music_badge.dart';
 import '../widgets/presence_avatar_dot.dart';
 import '../widgets/user_avatar_with_frame.dart';
 import '../widgets/featured_photos_section.dart';
@@ -578,7 +579,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ? null
                                 : () => _openVoiceRoom(_activeVoiceRoom!),
                           ),
-                          const SizedBox(height: 10),
+                          ProfileMusicBadge(
+                            user: _profileUser,
+                            isOwnProfile: isOwnProfile,
+                            isTabActive: widget.isTabActive && _tabController.index == 0,
+                            onUserUpdated: (updatedUser) {
+                              if (!mounted) return;
+                              setState(() {
+                                _profileUser = updatedUser;
+                              });
+                              widget.onUserUpdated?.call(updatedUser);
+                            },
+                          ),
+                          const SizedBox(height: 6),
                           _ProfileMetadataRow(user: _profileUser),
                           const SizedBox(height: 10),
                           _ProfileInlineCounters(

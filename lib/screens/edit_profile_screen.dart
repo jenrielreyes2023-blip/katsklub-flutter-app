@@ -14,6 +14,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../widgets/profile_music_picker_sheet.dart';
 import 'cover_photo_editor_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -70,6 +71,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   final List<_EditableProfileLink> _profileLinks = [];
 
+  String? _profileMusicUrl;
+  String? _profileMusicTitle;
+  String? _profileMusicArtist;
+  String? _profileMusicArtwork;
+  bool _musicChanged = false;
+
   bool _isSaving = false;
   String? _errorMessage;
 
@@ -115,6 +122,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _bioController.text = widget.user.bio ?? '';
     _avatarUrl = widget.user.avatarUrl;
     _coverUrl = widget.user.coverUrl;
+    _profileMusicUrl = widget.user.profileMusicUrl;
+    _profileMusicTitle = widget.user.profileMusicTitle;
+    _profileMusicArtist = widget.user.profileMusicArtist;
+    _profileMusicArtwork = widget.user.profileMusicArtwork;
 
     // Parse location
     final loc = widget.user.location ?? '';
@@ -919,6 +930,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       coverImageDataUrl: _coverDataUrl,
       coverUrl: _removeCover ? '' : null,
       profileLinks: finalLinks,
+      profileMusicUrl: _musicChanged ? (_profileMusicUrl ?? '') : null,
+      profileMusicTitle: _musicChanged ? (_profileMusicTitle ?? '') : null,
+      profileMusicArtist: _musicChanged ? (_profileMusicArtist ?? '') : null,
+      profileMusicArtwork: _musicChanged ? (_profileMusicArtwork ?? '') : null,
     );
 
     if (!mounted) return;
@@ -934,6 +949,165 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _errorMessage = result.error ?? 'Failed to save changes.';
       });
     }
+  }
+
+  Widget _buildProfileSongField(bool isDark) {
+    final hasSong = _profileMusicUrl != null && _profileMusicUrl!.trim().isNotEmpty;
+    final borderColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB);
+    final inputFill = isDark ? const Color(0xFF141416) : const Color(0xFFF9FAFB);
+    final titleColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
+    final subtitleColor = isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF);
+
+    if (hasSong) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: inputFill,
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: borderColor, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6.r),
+              child: _profileMusicArtwork != null && _profileMusicArtwork!.trim().isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: _profileMusicArtwork!,
+                      width: 36.r,
+                      height: 36.r,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: Colors.grey.shade300),
+                      errorWidget: (_, __, ___) => const Icon(Icons.music_note),
+                    )
+                  : Container(
+                      width: 36.r,
+                      height: 36.r,
+                      color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                      child: const Icon(Icons.music_note, color: Color(0xFFFF7A45)),
+                    ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _profileMusicTitle ?? 'Profile Song',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor,
+                    ),
+                  ),
+                  Text(
+                    _profileMusicArtist ?? 'Apple Music preview',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 11.5.sp,
+                      color: subtitleColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: _openSongPicker,
+              child: Text(
+                'Change',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFFF7A45),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close_rounded, size: 18.r, color: const Color(0xFFEF4444)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                setState(() {
+                  _profileMusicUrl = '';
+                  _profileMusicTitle = '';
+                  _profileMusicArtist = '';
+                  _profileMusicArtwork = '';
+                  _musicChanged = true;
+                });
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: _openSongPicker,
+      borderRadius: BorderRadius.circular(8.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
+        decoration: BoxDecoration(
+          color: inputFill,
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: borderColor, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.music_note_rounded, size: 18.r, color: const Color(0xFFFF7A45)),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                'Choose a song for your profile...',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 13.sp,
+                  color: subtitleColor,
+                ),
+              ),
+            ),
+            Icon(Icons.add_rounded, size: 18.r, color: const Color(0xFFFF7A45)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openSongPicker() {
+    ProfileMusicPickerSheet.show(
+      context: context,
+      currentTitle: _profileMusicTitle,
+      currentArtist: _profileMusicArtist,
+      currentArtwork: _profileMusicArtwork,
+      currentMusicUrl: _profileMusicUrl,
+      onSelected: (song) {
+        setState(() {
+          _profileMusicUrl = song.previewUrl;
+          _profileMusicTitle = song.title;
+          _profileMusicArtist = song.artist;
+          _profileMusicArtwork = song.artworkUrl;
+          _musicChanged = true;
+        });
+      },
+      onRemove: () {
+        setState(() {
+          _profileMusicUrl = '';
+          _profileMusicTitle = '';
+          _profileMusicArtist = '';
+          _profileMusicArtwork = '';
+          _musicChanged = true;
+        });
+      },
+    );
   }
 
   @override
@@ -1368,6 +1542,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         icon: Icons.notes_rounded,
                       ),
                     ),
+                    SizedBox(height: 10.h),
+
+                    // Profile Song
+                    Text(
+                      'Profile song',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
+                    ),
+                    SizedBox(height: 5.h),
+                    _buildProfileSongField(isDark),
                     SizedBox(height: 10.h),
 
                     // Gender

@@ -898,6 +898,18 @@ class AuthService {
         profileEffect: hasKey(['profileEffect', 'profile_effect'])
             ? user.profileEffect
             : oldUser.profileEffect,
+        profileMusicUrl: hasKey(['profileMusicUrl', 'profile_music_url'])
+            ? user.profileMusicUrl
+            : oldUser.profileMusicUrl,
+        profileMusicTitle: hasKey(['profileMusicTitle', 'profile_music_title'])
+            ? user.profileMusicTitle
+            : oldUser.profileMusicTitle,
+        profileMusicArtist: hasKey(['profileMusicArtist', 'profile_music_artist'])
+            ? user.profileMusicArtist
+            : oldUser.profileMusicArtist,
+        profileMusicArtwork: hasKey(['profileMusicArtwork', 'profile_music_artwork'])
+            ? user.profileMusicArtwork
+            : oldUser.profileMusicArtwork,
       );
       await _saveUser(mergedUser);
     } else {
@@ -1172,6 +1184,10 @@ class AuthService {
     String? coverImageDataUrl,
     String? coverUrl,
     required List<Map<String, dynamic>> profileLinks,
+    String? profileMusicUrl,
+    String? profileMusicTitle,
+    String? profileMusicArtist,
+    String? profileMusicArtwork,
   }) async {
     try {
       final token = await getToken();
@@ -1198,6 +1214,12 @@ class AuthService {
         payload['coverImageDataUrl'] = coverImageDataUrl;
       } else if (coverUrl != null) {
         payload['coverUrl'] = coverUrl;
+      }
+      if (profileMusicUrl != null) {
+        payload['profileMusicUrl'] = profileMusicUrl;
+        payload['profileMusicTitle'] = profileMusicTitle;
+        payload['profileMusicArtist'] = profileMusicArtist;
+        payload['profileMusicArtwork'] = profileMusicArtwork;
       }
 
       final response = await _client.patch(
@@ -1227,6 +1249,59 @@ class AuthService {
       }
 
       await _saveUser(user);
+      return AuthResult(ok: true, user: user);
+    } catch (_) {
+      return const AuthResult(
+        ok: false,
+        error: 'Unable to connect to KatsKlub. Check your internet connection.',
+      );
+    }
+  }
+
+  Future<AuthResult> updateProfileMusic({
+    required String? musicUrl,
+    String? musicTitle,
+    String? musicArtist,
+    String? musicArtwork,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) {
+        return const AuthResult(ok: false, error: 'Not authenticated.');
+      }
+
+      final response = await _client.patch(
+        ApiConfig.uri('/api/me/profile-music'),
+        headers: _buildAuthHeaders(
+          token: token,
+          includeJsonContentType: true,
+        ),
+        body: jsonEncode({
+          'musicUrl': musicUrl,
+          'musicTitle': musicTitle,
+          'musicArtist': musicArtist,
+          'musicArtwork': musicArtwork,
+        }),
+      );
+
+      final data = _decodeJsonObject(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult(
+          ok: false,
+          error: _readError(data) ?? 'Failed to update profile music.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final user = _readUser(data);
+      if (user == null) {
+        return const AuthResult(
+          ok: false,
+          error: 'Profile music updated but no user was returned.',
+        );
+      }
+
+      await saveCurrentUser(user);
       return AuthResult(ok: true, user: user);
     } catch (_) {
       return const AuthResult(
