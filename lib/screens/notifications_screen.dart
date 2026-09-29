@@ -13,6 +13,14 @@ import 'hashtag_screen.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
 
+String? _readString(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  final stringValue = value.toString().trim();
+  return stringValue.isEmpty ? null : stringValue;
+}
+
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -172,7 +180,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   color: Color(0xFFFF7A45),
                 ),
                 label: const Text(
-                  'Mark read',
+                  'Mark all read',
                   style: TextStyle(
                     color: Color(0xFFFF7A45),
                     fontWeight: FontWeight.w700,
@@ -241,26 +249,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ...groupedNotifications.entries.map(
                 (entry) => _NotificationSectionSliver(
                   title: entry.key.label,
-                  trailing: entry.value.any(_isUnread)
-                      ? TextButton(
-                          onPressed: () => _markSectionAsRead(entry.value),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            minimumSize: const Size(0, 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            foregroundColor: const Color(0xFFFF7A45),
-                          ),
-                          child: const Text(
-                            'Mark read',
-                            style: TextStyle(
-                              color: Color(0xFFFF7A45),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
-                      : null,
                   children: entry.value
                       .map(
                         (notification) => _NotificationActivityRow(
@@ -457,9 +445,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Map<_NotificationSection, List<Map<String, dynamic>>> _groupNotifications(
     List<Map<String, dynamic>> notifications,
   ) {
+    final aggregated = _aggregateNotifications(notifications);
     final grouped = <_NotificationSection, List<Map<String, dynamic>>>{};
 
-    for (final notification in notifications) {
+    for (final notification in aggregated) {
       final section = _sectionForDate(_parseDate(notification['createdAt']));
       grouped.putIfAbsent(section, () => <Map<String, dynamic>>[]).add(
             notification,
@@ -474,6 +463,177 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
     return ordered;
+  }
+
+  List<Map<String, dynamic>> _aggregateNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) {
+    final result = <Map<String, dynamic>>[];
+    final keyToIndex = <String, int>{};
+
+    for (final notification in notifications) {
+      final aggKey = _getAggregationKey(notification);
+      if (aggKey == null) {
+        result.add(Map<String, dynamic>.from(notification));
+        continue;
+      }
+
+      final actor = _extractActor(notification);
+
+      if (!keyToIndex.containsKey(aggKey)) {
+        final groupItem = Map<String, dynamic>.from(notification);
+        groupItem['_actors'] = <Map<String, dynamic>>[if (actor != null) actor];
+        groupItem['_groupedNotificationIds'] = <String>[
+          if (notification['id'] != null) notification['id'].toString(),
+        ];
+        keyToIndex[aggKey] = result.length;
+        result.add(groupItem);
+      } else {
+        final index = keyToIndex[aggKey]!;
+        final existingGroup = result[index];
+
+        final existingIds =
+            existingGroup['_groupedNotificationIds'] as List<String>;
+        if (notification['id'] != null) {
+          final idStr = notification['id'].toString();
+          if (!existingIds.contains(idStr)) {
+            existingIds.add(idStr);
+          }
+        }
+
+        if (notification['isRead'] != true) {
+          existingGroup['isRead'] = false;
+        }
+
+        if (actor != null) {
+          final actors =
+              existingGroup['_actors'] as List<Map<String, dynamic>>;
+          final username = actor['username']?.toString().toLowerCase() ?? '';
+          final actorId = actor['id']?.toString() ?? '';
+          final alreadyPresent = actors.any((a) {
+            final aUsername = a['username']?.toString().toLowerCase() ?? '';
+            final aId = a['id']?.toString() ?? '';
+            return (username.isNotEmpty && aUsername == username) ||
+                (actorId.isNotEmpty && aId == actorId);
+          });
+          if (!alreadyPresent) {
+            actors.add(actor);
+          }
+        }
+      }
+    }
+
+    for (final item in result) {
+      final actors = item['_actors'] as List<Map<String, dynamic>>?;
+      if (actors != null && actors.length > 1) {
+        _formatAggregatedCopy(item, actors);
+      }
+    }
+
+    return result;
+  }
+
+  String? _getAggregationKey(Map<String, dynamic> notification) {
+    final type = _readString(notification['type'])?.toLowerCase() ?? '';
+    final data = notification['data'] is Map<String, dynamic>
+        ? notification['data'] as Map<String, dynamic>
+        : (notification['data'] is Map
+            ? Map<String, dynamic>.from(notification['data'] as Map)
+            : null);
+
+    final postId = _readString(notification['postId']) ??
+        _readString(notification['targetPostId']) ??
+        _readString(data?['postId']) ??
+        _readString(data?['post_id']);
+    final commentId = _readString(notification['commentId']) ??
+        _readString(notification['targetCommentId']) ??
+        _readString(data?['commentId']) ??
+        _readString(data?['comment_id']);
+    final slideId = _readString(notification['slideId']) ??
+        _readString(notification['targetSlideId']) ??
+        _readString(data?['slideId']) ??
+        _readString(data?['slide_id']);
+
+    if (type.contains('like')) {
+      if (commentId != null) {
+        return 'like_comment_$commentId';
+      }
+      if (slideId != null && postId != null) {
+        return 'like_slide_${postId}_$slideId';
+      }
+      if (postId != null) {
+        return 'like_post_$postId';
+      }
+    }
+
+    if (type.contains('comment') && postId != null && commentId == null) {
+      return 'comment_post_$postId';
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic>? _extractActor(Map<String, dynamic> notification) {
+    final actor = notification['actor'];
+    if (actor is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(actor);
+    } else if (actor is Map) {
+      return Map<String, dynamic>.from(actor);
+    }
+
+    final sender = notification['sender'];
+    if (sender is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(sender);
+    } else if (sender is Map) {
+      return Map<String, dynamic>.from(sender);
+    }
+
+    final username = _readString(notification['username']) ??
+        _readString(notification['actorUsername']);
+    if (username != null) {
+      return {
+        'username': username,
+        'fullName': _readString(notification['fullName']) ?? username,
+        'avatarUrl': _readString(notification['avatarUrl']) ?? '',
+      };
+    }
+    return null;
+  }
+
+  void _formatAggregatedCopy(
+    Map<String, dynamic> item,
+    List<Map<String, dynamic>> actors,
+  ) {
+    final type = _readString(item['type'])?.toLowerCase() ?? '';
+    final name1 = _readString(actors[0]['fullName']) ??
+        _readString(actors[0]['displayName']) ??
+        _readString(actors[0]['username']) ??
+        'Someone';
+    final name2 = _readString(actors[1]['fullName']) ??
+        _readString(actors[1]['displayName']) ??
+        _readString(actors[1]['username']) ??
+        'Someone';
+
+    String actionText;
+    if (type.contains('comment')) {
+      actionText = 'commented on your post.';
+    } else if (item['slideId'] != null || item['targetSlideId'] != null) {
+      actionText = 'liked a photo in your post.';
+    } else if (item['commentId'] != null || item['targetCommentId'] != null) {
+      actionText = 'liked your comment.';
+    } else {
+      actionText = 'liked your post.';
+    }
+
+    if (actors.length == 2) {
+      item['body'] = '$name1 and $name2 $actionText';
+    } else {
+      final othersCount = actors.length - 2;
+      final othersText = othersCount == 1 ? '1 other' : '$othersCount others';
+      item['body'] = '$name1, $name2, and $othersText $actionText';
+    }
+
+    item['title'] = type.contains('comment') ? 'Comments' : 'Likes';
   }
 
   _NotificationSection _sectionForDate(DateTime? date) {
@@ -596,6 +756,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markRead(Map<String, dynamic> notification) async {
+    final groupIds = notification['_groupedNotificationIds'];
+    if (groupIds is List && groupIds.isNotEmpty) {
+      final unreadGroupIds = groupIds
+          .map((e) => e.toString())
+          .where((id) => _notifications
+              .any((n) => _readString(n['id']) == id && _isUnread(n)))
+          .toList(growable: false);
+      if (unreadGroupIds.isNotEmpty) {
+        await _feedService.markNotificationsRead(unreadGroupIds);
+      }
+      return;
+    }
+
     final id = _readString(notification['id']);
     if (id == null || !_isUnread(notification)) {
       return;
@@ -621,23 +794,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _showMessage('All notifications marked as read.');
   }
 
-  Future<void> _markSectionAsRead(
-      List<Map<String, dynamic>> sectionNotifications) async {
-    final ids = sectionNotifications
-        .where(_isUnread)
-        .map((notification) => _readString(notification['id']))
-        .whereType<String>()
-        .toList(growable: false);
-    if (ids.isEmpty) {
-      return;
-    }
-
-    await _feedService.markNotificationsRead(ids);
-    if (!mounted) {
-      return;
-    }
-    _showMessage('Marked as read.');
-  }
 
   _FollowAction? _followActionForNotification(
       Map<String, dynamic> notification) {
@@ -768,12 +924,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   bool _isUnread(Map<String, dynamic> notification) {
+    final groupIds = notification['_groupedNotificationIds'];
+    if (groupIds is List && groupIds.isNotEmpty) {
+      return groupIds.any((id) => _notifications.any(
+          (n) => _readString(n['id']) == id.toString() && n['isRead'] != true));
+    }
     return notification['isRead'] != true;
   }
 
   String? _actorUsername(Map<String, dynamic> notification) {
+    final actors = notification['_actors'];
+    if (actors is List && actors.isNotEmpty) {
+      final first = actors.first;
+      if (first is Map) {
+        return _readString(first['username']);
+      }
+    }
     final actor = notification['actor'];
     if (actor is Map<String, dynamic>) {
+      return _readString(actor['username']);
+    } else if (actor is Map) {
       return _readString(actor['username']);
     }
     return _readString(notification['username']);
@@ -900,11 +1070,9 @@ class _NotificationSectionSliver extends StatelessWidget {
   const _NotificationSectionSliver({
     required this.title,
     required this.children,
-    this.trailing,
   });
 
   final String title;
-  final Widget? trailing;
   final List<Widget> children;
 
   @override
@@ -925,7 +1093,6 @@ class _NotificationSectionSliver extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) trailing!,
             ],
           ),
         ),
@@ -964,9 +1131,14 @@ class _NotificationActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rawActors = notification['_actors'];
+    final actors = (rawActors is List)
+        ? rawActors.cast<Map<String, dynamic>>()
+        : <Map<String, dynamic>>[];
+
     final actor = notification['actor'];
     final actorMap =
-        actor is Map<String, dynamic> ? actor : <String, dynamic>{};
+        actor is Map<String, dynamic> ? actor : (actor is Map ? Map<String, dynamic>.from(actor) : <String, dynamic>{});
     final avatarUrl = _readString(
       actorMap['avatarUrl'] ??
           actorMap['avatar_url'] ??
@@ -980,11 +1152,28 @@ class _NotificationActivityRow extends StatelessWidget {
               notification['title'],
         ) ??
         'KatsKlub';
-    final body = _normalizedBody(
-      _readString(notification['body']) ?? 'sent you a notification',
-      actorName: actorName,
-      actorUsername: actorUsername,
-    );
+
+    final String body;
+    if (actors.length >= 2) {
+      final type = _readString(notification['type'])?.toLowerCase() ?? '';
+      if (type.contains('comment')) {
+        body = 'commented on your post.';
+      } else if (notification['slideId'] != null ||
+          notification['targetSlideId'] != null) {
+        body = 'liked a photo in your post.';
+      } else if (notification['commentId'] != null ||
+          notification['targetCommentId'] != null) {
+        body = 'liked your comment.';
+      } else {
+        body = 'liked your post.';
+      }
+    } else {
+      body = _normalizedBody(
+        _readString(notification['body']) ?? 'sent you a notification',
+        actorName: actorName,
+        actorUsername: actorUsername,
+      );
+    }
     final preview = _readString(
       notification['commentPreview'] ??
           notification['preview'] ??
@@ -1014,13 +1203,19 @@ class _NotificationActivityRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: onAvatarTap,
-              child: _NotificationAvatar(
-                avatarUrl: avatarUrl,
-                label: actorName,
-              ),
-            ),
+            actors.length >= 2
+                ? _GroupedNotificationAvatar(
+                    actors: actors,
+                    onOpenProfile: onMentionTap,
+                    isUnread: isUnread,
+                  )
+                : GestureDetector(
+                    onTap: onAvatarTap,
+                    child: _NotificationAvatar(
+                      avatarUrl: avatarUrl,
+                      label: actorName,
+                    ),
+                  ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1028,10 +1223,12 @@ class _NotificationActivityRow extends StatelessWidget {
                 children: [
                   _NotificationBodyText(
                     actorName: actorName,
+                    actorUsername: actorUsername,
                     body: body,
                     timestampLabel: timestampLabel,
                     onMentionTap: onMentionTap,
                     onHashtagTap: onHashtagTap,
+                    actors: actors.length >= 2 ? actors : null,
                   ),
                   if (preview != null) ...[
                     const SizedBox(height: 5),
@@ -1130,13 +1327,17 @@ class _NotificationBodyText extends StatefulWidget {
     required this.timestampLabel,
     required this.onMentionTap,
     required this.onHashtagTap,
+    this.actorUsername,
+    this.actors,
   });
 
   final String actorName;
+  final String? actorUsername;
   final String body;
   final String timestampLabel;
   final ValueChanged<String> onMentionTap;
   final ValueChanged<String> onHashtagTap;
+  final List<Map<String, dynamic>>? actors;
 
   @override
   State<_NotificationBodyText> createState() => _NotificationBodyTextState();
@@ -1160,6 +1361,117 @@ class _NotificationBodyTextState extends State<_NotificationBodyText> {
     }
     _recognizers.clear();
 
+    final List<InlineSpan> spans = <InlineSpan>[];
+
+    if (widget.actors != null && widget.actors!.length >= 2) {
+      final actors = widget.actors!;
+      final first = actors[0];
+      final second = actors[1];
+      final name1 = _readString(first['fullName']) ??
+          _readString(first['username']) ??
+          'Someone';
+      final user1 = _readString(first['username']) ?? '';
+      final name2 = _readString(second['fullName']) ??
+          _readString(second['username']) ??
+          'Someone';
+      final user2 = _readString(second['username']) ?? '';
+
+      final tap1 = TapGestureRecognizer()
+        ..onTap = () {
+          if (user1.isNotEmpty) widget.onMentionTap(user1);
+        };
+      _recognizers.add(tap1);
+
+      final tap2 = TapGestureRecognizer()
+        ..onTap = () {
+          if (user2.isNotEmpty) widget.onMentionTap(user2);
+        };
+      _recognizers.add(tap2);
+
+      spans.add(
+        TextSpan(
+          text: name1,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+          recognizer: tap1,
+        ),
+      );
+      if (actors.length > 2) {
+        spans.add(const TextSpan(text: ', '));
+      } else {
+        spans.add(const TextSpan(text: ' and '));
+      }
+      spans.add(
+        TextSpan(
+          text: name2,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+          recognizer: tap2,
+        ),
+      );
+
+      if (actors.length > 2) {
+        final remaining = actors.length - 2;
+        spans.add(
+          TextSpan(
+            text: ', and ${remaining == 1 ? '1 other' : '$remaining others'}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        );
+      }
+
+      spans.add(const TextSpan(text: ' '));
+      spans.addAll(buildHashtagTextSpans(
+        text: widget.body,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 14,
+          height: 1.35,
+        ),
+        onHashtagTap: widget.onHashtagTap,
+        onMentionTap: widget.onMentionTap,
+        recognizers: _recognizers,
+      ));
+    } else {
+      final username = widget.actorUsername;
+      TapGestureRecognizer? nameTap;
+      if (username != null && username.isNotEmpty) {
+        nameTap = TapGestureRecognizer()
+          ..onTap = () => widget.onMentionTap(username);
+        _recognizers.add(nameTap);
+      }
+
+      spans.add(
+        TextSpan(
+          text: widget.actorName,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+          recognizer: nameTap,
+        ),
+      );
+      spans.add(const TextSpan(text: ' '));
+      spans.addAll(buildHashtagTextSpans(
+        text: widget.body,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 14,
+          height: 1.35,
+        ),
+        onHashtagTap: widget.onHashtagTap,
+        onMentionTap: widget.onMentionTap,
+        recognizers: _recognizers,
+      ));
+    }
+
+    if (widget.timestampLabel.isNotEmpty) {
+      spans.add(
+        TextSpan(
+          text: '  ${widget.timestampLabel}',
+          style: const TextStyle(
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
     return RichText(
       text: TextSpan(
         style: TextStyle(
@@ -1167,32 +1479,7 @@ class _NotificationBodyTextState extends State<_NotificationBodyText> {
           fontSize: 14,
           height: 1.35,
         ),
-        children: [
-          TextSpan(
-            text: widget.actorName,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          const TextSpan(text: ' '),
-          ...buildHashtagTextSpans(
-            text: widget.body,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 14,
-              height: 1.35,
-            ),
-            onHashtagTap: widget.onHashtagTap,
-            onMentionTap: widget.onMentionTap,
-            recognizers: _recognizers,
-          ),
-          if (widget.timestampLabel.isNotEmpty)
-            TextSpan(
-              text: '  ${widget.timestampLabel}',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-        ],
+        children: spans,
       ),
     );
   }
@@ -1218,6 +1505,100 @@ class _NotificationAvatar extends StatelessWidget {
   }
 }
 
+class _GroupedNotificationAvatar extends StatelessWidget {
+  const _GroupedNotificationAvatar({
+    required this.actors,
+    required this.onOpenProfile,
+    this.isUnread = false,
+  });
+
+  final List<Map<String, dynamic>> actors;
+  final ValueChanged<String> onOpenProfile;
+  final bool isUnread;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isUnread
+        ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF))
+        : (isDark ? Theme.of(context).scaffoldBackgroundColor : Colors.white);
+
+    final first = actors[0];
+    final second = actors[1];
+
+    final firstAvatar =
+        (first['avatarUrl'] ?? first['avatar_url'] ?? '').toString();
+    final firstName =
+        (first['fullName'] ?? first['username'] ?? 'K').toString();
+    final firstUsername = (first['username'] ?? '').toString();
+
+    final secondAvatar =
+        (second['avatarUrl'] ?? second['avatar_url'] ?? '').toString();
+    final secondName =
+        (second['fullName'] ?? second['username'] ?? 'K').toString();
+    final secondUsername = (second['username'] ?? '').toString();
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Older actor (Top-Left)
+          Positioned(
+            top: 0,
+            left: 0,
+            child: GestureDetector(
+              onTap: () {
+                if (secondUsername.isNotEmpty) {
+                  onOpenProfile(secondUsername);
+                }
+              },
+              child: UserAvatarWithFrame(
+                avatarUrl: secondAvatar,
+                initials: secondName.isEmpty
+                    ? 'K'
+                    : secondName.characters.first.toUpperCase(),
+                radius: 15,
+                isAdmin: false,
+              ),
+            ),
+          ),
+          // Newer actor (Bottom-Right with outline cutout)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () {
+                if (firstUsername.isNotEmpty) {
+                  onOpenProfile(firstUsername);
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: borderColor,
+                    width: 2.0,
+                  ),
+                ),
+                child: UserAvatarWithFrame(
+                  avatarUrl: firstAvatar,
+                  initials: firstName.isEmpty
+                      ? 'K'
+                      : firstName.characters.first.toUpperCase(),
+                  radius: 15,
+                  isAdmin: false,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotificationThumbnail extends StatelessWidget {
   const _NotificationThumbnail({required this.url});
 
@@ -1225,6 +1606,7 @@ class _NotificationThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: SizedBox(
@@ -1234,11 +1616,11 @@ class _NotificationThumbnail extends StatelessWidget {
           ApiConfig.assetUrl(url),
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
-            color: const Color(0xFFF3F4F6),
+            color: isDark ? const Color(0xFF262626) : const Color(0xFFF3F4F6),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.image_outlined,
-              color: Color(0xFF9CA3AF),
+              color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
               size: 20,
             ),
           ),
