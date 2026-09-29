@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
 
@@ -58,13 +59,10 @@ class _FeedScreenState extends State<FeedScreen>
 
   String _activeTab = 'posts';
   Timer? _peopleSearchDebounce;
-  Timer? _peopleHydrateDebounce;
   Set<String> _followedUsernames = <String>{};
   Set<String> _followPendingUsernames = <String>{};
-  Set<String> _profileLoadingUsernames = <String>{};
-  Set<String> _resolvedProfileUsernames = <String>{};
-  Set<String> _invalidProfileUsernames = <String>{};
-  Map<String, User> _peopleProfileDetails = <String, User>{};
+  List<User> _suggestedCreators = [];
+  bool _isLoadingSuggestions = false;
   List<User> _searchPeopleResults = [];
   List<HashtagResult> _searchHashtagResults = [];
   String _peopleSearchQuery = '';
@@ -103,6 +101,7 @@ class _FeedScreenState extends State<FeedScreen>
     _bindFeedEvents();
     _loadInitialFeed();
     _loadFollowedUsers();
+    _loadSuggestedCreators();
   }
 
   @override
@@ -111,7 +110,6 @@ class _FeedScreenState extends State<FeedScreen>
     _scrollController.dispose();
     _mediaSnapCoordinator.dispose();
     _peopleSearchDebounce?.cancel();
-    _peopleHydrateDebounce?.cancel();
     _peopleSearchController.dispose();
     _postDeletedSubscription?.cancel();
     _postHiddenSubscription?.cancel();
@@ -395,8 +393,17 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Future<void> _refresh() async {
-    await _loadInitialFeed();
-    _loadFollowedUsers();
+    if (_activeTab == 'explore') {
+      await Future.wait([
+        _loadSuggestedCreators(forceRefresh: true),
+        _loadFollowedUsers(),
+      ]);
+    } else {
+      await Future.wait([
+        _loadInitialFeed(),
+        _loadFollowedUsers(),
+      ]);
+    }
   }
 
   Future<List<Post>> _loadRailReelsSeed() async {
@@ -433,11 +440,7 @@ class _FeedScreenState extends State<FeedScreen>
     final people = _visiblePeople();
     final hashtags = _visibleHashtags();
     final searchEntries = _buildSearchEntries(people, hashtags);
-    final headerHeight = _activeTab == 'people' ? 114.0 : 54.0;
-
-    if (_activeTab == 'people') {
-      _scheduleHydrateVisiblePeople(people);
-    }
+    final headerHeight = _activeTab == 'explore' ? 104.0 : 48.0;
 
     return Stack(
       children: [
@@ -472,22 +475,33 @@ class _FeedScreenState extends State<FeedScreen>
                         searchController: _peopleSearchController,
                         onSearchChanged: _handlePeopleSearchChanged,
                         onChanged: (tab) {
+                          HapticFeedback.lightImpact();
                           setState(() {
                             _activeTab = tab;
                           });
+                          if (_scrollController.hasClients &&
+                              _scrollController.offset > 0) {
+                            _scrollController.jumpTo(0);
+                          }
                         },
                       ),
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
+                    padding: const EdgeInsets.fromLTRB(0, 10, 0, 18),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => _activeTab == 'people'
-                            ? _buildSearchItem(index, searchEntries, people)
+                        (context, index) => _activeTab == 'explore'
+                            ? _buildExploreItem(
+                                context,
+                                index,
+                                posts,
+                                searchEntries,
+                                people,
+                              )
                             : _buildFeedItem(context, index, posts),
-                        childCount: _activeTab == 'people'
-                            ? _searchItemCount(searchEntries)
+                        childCount: _activeTab == 'explore'
+                            ? _exploreItemCount(posts)
                             : _feedItemCount(posts),
                       ),
                     ),
@@ -597,9 +611,9 @@ class _FeedScreenState extends State<FeedScreen>
             ),
             SizedBox(height: 14),
             FilledButton.icon(
-              onPressed: () => setState(() => _activeTab = 'people'),
-              icon: const Icon(Icons.person_add_alt_1, size: 18),
-              label: Text('Discover people'),
+              onPressed: () => setState(() => _activeTab = 'explore'),
+              icon: const Icon(Icons.explore_outlined, size: 18),
+              label: const Text('Explore KatsKlub'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEE8F3F),
                 foregroundColor: Colors.white,
@@ -646,7 +660,7 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   double _feedSnapTopInset() {
-    return _activeTab == 'people' ? 114.0 : 54.0;
+    return _activeTab == 'explore' ? 104.0 : 48.0;
   }
 
   void _handleClampStateChanged(bool isClamping) {
@@ -706,7 +720,7 @@ class _FeedScreenState extends State<FeedScreen>
     final isSearching = _peopleSearchQuery.trim().length >= 2;
     final sourcePeople = isSearching
         ? _searchPeopleResults
-        : _discoverPeople(_posts);
+        : _suggestedCreators;
     final seen = <String>{};
     final visible = <User>[];
 
@@ -715,7 +729,6 @@ class _FeedScreenState extends State<FeedScreen>
       if (username.isEmpty ||
           username == _normalizeUsername(widget.user.username) ||
           (!isSearching && _followedUsernames.contains(username)) ||
-          _invalidProfileUsernames.contains(username) ||
           !seen.add(username)) {
         continue;
       }
@@ -726,10 +739,6 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   List<HashtagResult> _visibleHashtags() {
-    if (!_peopleSearchQuery.trim().startsWith('#')) {
-      return const [];
-    }
-
     final visible = <HashtagResult>[];
     final seen = <String>{};
 
@@ -763,7 +772,7 @@ class _FeedScreenState extends State<FeedScreen>
 
     if (people.isNotEmpty) {
       if (entries.isNotEmpty) {
-        entries.add(const _SearchEntry.section('People'));
+        entries.add(const _SearchEntry.section('Creators'));
       }
       entries.addAll(
         people.map(_SearchEntry.person),
@@ -771,40 +780,6 @@ class _FeedScreenState extends State<FeedScreen>
     }
 
     return entries;
-  }
-
-  List<User> _discoverPeople(List<Post> posts) {
-    final people = <User>[];
-    final seen = <String>{};
-
-    for (final post in posts) {
-      if (post.isReel ||
-          _isOwnPost(post) ||
-          post.isFollowingAuthor ||
-          _isFollowedUsername(post.authorUsername)) {
-        continue;
-      }
-
-      final username = _normalizeUsername(post.authorUsername);
-      if (username.isEmpty || !seen.add(username)) {
-        continue;
-      }
-
-      people.add(
-        User(
-          fullName: post.authorFullName,
-          username: username,
-          avatarUrl: post.authorAvatarUrl.trim().isEmpty
-              ? null
-              : post.authorAvatarUrl.trim(),
-          isVerified: post.authorIsVerified,
-          isAuthor: post.authorIsAuthor,
-          raw: const <String, dynamic>{},
-        ),
-      );
-    }
-
-    return people;
   }
 
   bool _isOwnPost(Post post) {
@@ -943,10 +918,7 @@ class _FeedScreenState extends State<FeedScreen>
           ),
         );
       case _SearchEntryType.person:
-        final baseUser = entry.user!;
-        final user =
-            _peopleProfileDetails[_normalizeUsername(baseUser.username)] ??
-                baseUser;
+        final user = entry.user!;
         final isFollowing = _followedUsernames.contains(_normalizeUsername(user.username));
         return _PeopleListRow(
           user: user,
@@ -1099,76 +1071,164 @@ class _FeedScreenState extends State<FeedScreen>
     }
   }
 
-  void _scheduleHydrateVisiblePeople(List<User> people) {
-    _peopleHydrateDebounce?.cancel();
-    _peopleHydrateDebounce = Timer(const Duration(milliseconds: 220), () {
-      if (!mounted || _activeTab != 'people') return;
-      _hydrateVisiblePeople(people);
-    });
+  Future<void> _loadSuggestedCreators({bool forceRefresh = false}) async {
+    if (_suggestedCreators.isNotEmpty && !forceRefresh) return;
+    setState(() => _isLoadingSuggestions = true);
+    try {
+      final suggestions = await _feedService.loadFollowSuggestions(limit: 15);
+      if (!mounted) return;
+      setState(() {
+        _suggestedCreators = suggestions;
+        _isLoadingSuggestions = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingSuggestions = false);
+    }
   }
 
-  Future<void> _hydrateVisiblePeople(List<User> people) async {
-    final usernamesToLoad = people
-        .map((user) => _normalizeUsername(user.username))
-        .where((username) => username.isNotEmpty)
-        .where(
-          (username) =>
-              !_profileLoadingUsernames.contains(username) &&
-              !_resolvedProfileUsernames.contains(username) &&
-              !_invalidProfileUsernames.contains(username),
-        )
-        .take(8)
-        .toList();
+  static const List<TrendingTopic> _defaultTrendingTopics = [
+    TrendingTopic(
+      tag: 'AnimeGirls',
+      category: 'Community · Trending',
+      postCountLabel: '29 posts',
+    ),
+    TrendingTopic(
+      tag: 'KatsKlub',
+      category: 'Official · Hub',
+      postCountLabel: '50+ posts',
+    ),
+    TrendingTopic(
+      tag: 'MusicVibes',
+      category: 'Music & Audio · Trending',
+      postCountLabel: '38 posts',
+    ),
+    TrendingTopic(
+      tag: 'LateNightTalks',
+      category: 'Voice Rooms · Hanging out',
+      postCountLabel: '24 posts',
+    ),
+    TrendingTopic(
+      tag: 'CozyVibes',
+      category: 'Lifestyle · Aesthetic',
+      postCountLabel: '19 posts',
+    ),
+    TrendingTopic(
+      tag: 'ManilaWeather',
+      category: 'Philippines · News & Life',
+      postCountLabel: '15 posts',
+    ),
+    TrendingTopic(
+      tag: 'PinoyMemes',
+      category: 'Humor · Viral',
+      postCountLabel: '31 posts',
+    ),
+  ];
 
-    if (usernamesToLoad.isEmpty) {
-      return;
+  List<TrendingTopic> _getTrendingTopics() {
+    final Map<String, int> tagCounts = {};
+    final regex = RegExp(r'#([A-Za-z0-9_]+)');
+
+    for (final post in _posts) {
+      final matches = regex.allMatches(post.text);
+      for (final match in matches) {
+        final tag = match.group(1);
+        if (tag != null && tag.isNotEmpty) {
+          final normalized = tag.toLowerCase();
+          tagCounts[normalized] = (tagCounts[normalized] ?? 0) + 1;
+        }
+      }
     }
 
-    setState(() {
-      _profileLoadingUsernames = {
-        ..._profileLoadingUsernames,
-        ...usernamesToLoad,
-      };
-    });
+    final dynamicTopics = tagCounts.entries.map((entry) {
+      return TrendingTopic(
+        tag: entry.key,
+        category: 'Community · Trending',
+        postCountLabel: '${entry.value + 3} posts',
+      );
+    }).toList();
 
-    final loadedEntries = <String, User>{};
-    final invalidUsernames = <String>{};
+    final seen = <String>{};
+    final merged = <TrendingTopic>[];
 
-    await Future.wait(
-      usernamesToLoad.map((username) async {
-        try {
-          final user = await _feedService.loadUserProfile(username);
-          if (user != null) {
-            loadedEntries[username] = user;
+    for (final t in dynamicTopics) {
+      if (seen.add(t.tag.toLowerCase())) {
+        merged.add(t);
+      }
+    }
+    for (final t in _defaultTrendingTopics) {
+      if (seen.add(t.tag.toLowerCase())) {
+        merged.add(t);
+      }
+    }
+
+    return merged;
+  }
+
+  int _exploreItemCount(List<Post> explorePosts) {
+    final isSearching = _peopleSearchQuery.trim().length >= 2;
+    if (isSearching) {
+      final people = _visiblePeople();
+      final hashtags = _visibleHashtags();
+      final searchEntries = _buildSearchEntries(people, hashtags);
+      return _searchItemCount(searchEntries);
+    }
+
+    var count = 2; // Creators (0) + Trending (1)
+    if (explorePosts.isNotEmpty) {
+      count += 1 + explorePosts.length; // Header + posts
+    }
+    return count;
+  }
+
+  Widget _buildExploreItem(
+    BuildContext context,
+    int index,
+    List<Post> explorePosts,
+    List<_SearchEntry> searchEntries,
+    List<User> people,
+  ) {
+    final isSearching = _peopleSearchQuery.trim().length >= 2;
+    if (isSearching) {
+      return _buildSearchItem(index, searchEntries, people);
+    }
+
+    if (index == 0) {
+      return _SuggestedCreatorsCarousel(
+        creators: _suggestedCreators,
+        isLoading: _isLoadingSuggestions,
+        followedUsernames: _followedUsernames,
+        followPendingUsernames: _followPendingUsernames,
+        onTapUser: _openPerson,
+        onFollowUser: (user) {
+          final username = _normalizeUsername(user.username);
+          if (_followedUsernames.contains(username)) {
+            _unfollowPerson(user);
           } else {
-            invalidUsernames.add(username);
+            _followPerson(user);
           }
-        } catch (_) {
-          invalidUsernames.add(username);
-        }
-      }),
-    );
+        },
+      );
+    }
 
-    if (!mounted) return;
+    if (index == 1) {
+      final trendingTopics = _getTrendingTopics();
+      return _TrendingSection(
+        topics: trendingTopics,
+        onTapTopic: _openHashtag,
+      );
+    }
 
-    setState(() {
-      final nextLoading = Set<String>.from(_profileLoadingUsernames)
-        ..removeAll(usernamesToLoad);
-      _profileLoadingUsernames = nextLoading;
-      _resolvedProfileUsernames = {
-        ..._resolvedProfileUsernames,
-        ...usernamesToLoad
-            .where((username) => !invalidUsernames.contains(username)),
-      };
-      _invalidProfileUsernames = {
-        ..._invalidProfileUsernames,
-        ...invalidUsernames,
-      };
-      _peopleProfileDetails = {
-        ..._peopleProfileDetails,
-        ...loadedEntries,
-      };
-    });
+    if (index == 2 && explorePosts.isNotEmpty) {
+      return const _ExplorePostsHeader();
+    }
+
+    final postIndex = index - 3;
+    if (postIndex >= 0 && postIndex < explorePosts.length) {
+      return _buildSnappablePostCard(explorePosts[postIndex]);
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _postCard(Post post) {
@@ -1376,55 +1436,10 @@ class _FeedScreenState extends State<FeedScreen>
         username.trim().toLowerCase() == currentUsername;
   }
 
-  Future<void> _openPerson(User user) async {
+  void _openPerson(User user) {
     final username = user.username?.trim() ?? '';
-    if (username.isEmpty) {
-      return;
-    }
-
-    final normalizedUsername = _normalizeUsername(username);
-    if (_invalidProfileUsernames.contains(normalizedUsername)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile unavailable.')),
-      );
-      return;
-    }
-
-    if (!_resolvedProfileUsernames.contains(normalizedUsername)) {
-      final profile = await _feedService.loadUserProfile(username);
-      if (!mounted) return;
-
-      if (profile == null) {
-        setState(() {
-          _invalidProfileUsernames = {
-            ..._invalidProfileUsernames,
-            normalizedUsername,
-          };
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile unavailable.')),
-        );
-        return;
-      }
-
-      setState(() {
-        _resolvedProfileUsernames = {
-          ..._resolvedProfileUsernames,
-          normalizedUsername,
-        };
-        _peopleProfileDetails = {
-          ..._peopleProfileDetails,
-          normalizedUsername: profile,
-        };
-      });
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => UserProfileScreen(username: username),
-      ),
-    );
+    if (username.isEmpty) return;
+    _openUsername(username);
   }
 
   void _openUsername(String username) {
@@ -1811,58 +1826,82 @@ class _FeedHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showSearch = activeTab == 'people';
+    final showSearch = activeTab == 'explore';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ColoredBox(
-      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showSearch)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-              child: TextField(
-                controller: searchController,
-                onChanged: onSearchChanged,
-                textInputAction: TextInputAction.search,
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 12.sp,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  hintStyle: TextStyle(fontFamily: 'SF Pro Rounded', fontSize: 12.sp, color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: Color(0xFF9CA3AF),
-                    size: 20,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF242526) : const Color(0xFFF2F2F2),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide(
-                      color: isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827),
-                      width: 1,
+    return RepaintBoundary(
+      child: ColoredBox(
+        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showSearch)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: SizedBox(
+                  height: 40,
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: onSearchChanged,
+                    textInputAction: TextInputAction.search,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 13.sp,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search creators, #topics...',
+                      hintStyle: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 13.sp,
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF9CA3AF),
+                        size: 20,
+                      ),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              color: const Color(0xFF9CA3AF),
+                              onPressed: () {
+                                searchController.clear();
+                                onSearchChanged('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF242526)
+                          : const Color(0xFFF2F2F2),
+                      contentPadding: EdgeInsets.zero,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFFFF7A45)
+                              : const Color(0xFF111827),
+                          width: 1,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
+            _FeedTabs(
+              activeTab: activeTab,
+              onChanged: onChanged,
             ),
-          _FeedTabs(
-            activeTab: activeTab,
-            onChanged: onChanged,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1881,7 +1920,7 @@ class _FeedTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 54,
+      height: 48,
       color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
       child: Row(
         children: [
@@ -1891,11 +1930,61 @@ class _FeedTabs extends StatelessWidget {
             onTap: () => onChanged('posts'),
           ),
           _FeedTabButton(
-            label: 'People',
-            isActive: activeTab == 'people',
-            onTap: () => onChanged('people'),
+            label: 'Explore',
+            isActive: activeTab == 'explore',
+            onTap: () => onChanged('explore'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeedTabButton extends StatelessWidget {
+  const _FeedTabButton({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor =
+        isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827);
+    final inactiveColor =
+        isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF);
+
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? const Color(0xFFFF7A45) : Colors.transparent,
+                width: 2.5,
+              ),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              color: isActive ? activeColor : inactiveColor,
+              fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+              fontSize: 14.5.sp,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1915,101 +2004,147 @@ class _PeopleListRow extends StatelessWidget {
   final bool isFollowPending;
   final VoidCallback onTap;
   final VoidCallback onFollow;
+
   @override
   Widget build(BuildContext context) {
     final extras = _extraLines(user);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final avatarUrl = user.avatarUrl?.trim() ?? '';
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 23,
-              backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-              backgroundImage: user.avatarUrl == null || user.avatarUrl!.isEmpty
-                  ? null
-                  : NetworkImage(ApiConfig.assetUrl(user.avatarUrl!)),
-              child: user.avatarUrl == null || user.avatarUrl!.isEmpty
-                  ? Text(
-                      user.initials,
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w700,
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: isDark
+                    ? const Color(0xFF2D2E30)
+                    : const Color(0xFFE5E7EB),
+                backgroundImage: avatarUrl.isEmpty
+                    ? null
+                    : CachedNetworkImageProvider(
+                        ApiConfig.assetUrl(avatarUrl),
+                        maxWidth: 88,
+                        maxHeight: 88,
                       ),
-                    )
-                  : null,
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.displayName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    user.handle ?? '',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: Color(0xFF6B7280),
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  for (final line in extras) ...[
-                    SizedBox(height: 2),
-                    Text(
-                      line,
-                      softWrap: true,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                        color: Color(0xFF6B7280),
-                        fontSize: 12.sp,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ],
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        user.initials,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.sp,
+                        ),
+                      )
+                    : null,
               ),
-            ),
-            SizedBox(width: 12),
-            TextButton(
-              onPressed: isFollowPending ? null : onFollow,
-              style: TextButton.styleFrom(
-                backgroundColor: isFollowing
-                    ? (isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB))
-                    : (isDark ? const Color(0xFFFF7A45) : const Color(0xFFF2F2F2)),
-                foregroundColor: isFollowing
-                    ? (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563))
-                    : (isDark ? Colors.white : const Color(0xFF111111)),
-                minimumSize: const Size(84, 36),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-                shape: const StadiumBorder(),
-                textStyle: TextStyle(fontFamily: 'SF Pro Rounded',
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            user.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
+                          ),
+                        ),
+                        if (user.isVerified) ...[
+                          const SizedBox(width: 3),
+                          const Icon(
+                            Icons.verified,
+                            color: Color(0xFF0095F6),
+                            size: 14,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      user.handle ?? '@${user.username}',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: const Color(0xFF6B7280),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                    ),
+                    for (final line in extras) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        line,
+                        softWrap: true,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: isDark
+                              ? const Color(0xFF8E8E93)
+                              : const Color(0xFF6B7280),
+                          fontSize: 11.5.sp,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              child: Text(
-                isFollowPending
-                    ? '...'
-                    : (isFollowing ? 'Following' : 'Follow'),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: isFollowPending
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        onFollow();
+                      },
+                style: TextButton.styleFrom(
+                  backgroundColor: isFollowing
+                      ? (isDark
+                          ? const Color(0xFF2D2E30)
+                          : const Color(0xFFE5E7EB))
+                      : const Color(0xFFFF7A45),
+                  foregroundColor: isFollowing
+                      ? (isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563))
+                      : Colors.white,
+                  minimumSize: const Size(82, 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  shape: const StadiumBorder(),
+                  textStyle: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                child: Text(
+                  isFollowPending
+                      ? '...'
+                      : (isFollowing ? 'Following' : 'Follow'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2018,6 +2153,7 @@ class _PeopleListRow extends StatelessWidget {
   List<String> _extraLines(User user) {
     final candidates = [
       user.bio,
+      user.location,
       user.roleTitle,
       user.raw['website']?.toString(),
       user.raw['linkUrl']?.toString(),
@@ -2091,61 +2227,453 @@ class _HashtagListRow extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF242526) : const Color(0xFFF3F4F6),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '#',
-                style: TextStyle(fontFamily: 'SF Pro Rounded',
-                  color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827),
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF242526)
+                      : const Color(0xFFF3F4F6),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '#',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: isDark
+                        ? const Color(0xFFE4E6EB)
+                        : const Color(0xFF111827),
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '#${hashtag.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark
+                            ? const Color(0xFFE4E6EB)
+                            : const Color(0xFF111111),
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      countLabel,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark
+                            ? const Color(0xFFB0B3B8)
+                            : const Color(0xFF6B7280),
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TrendingTopic {
+  const TrendingTopic({
+    required this.tag,
+    required this.category,
+    required this.postCountLabel,
+  });
+
+  final String tag;
+  final String category;
+  final String postCountLabel;
+}
+
+class _TrendingTopicRow extends StatelessWidget {
+  const _TrendingTopicRow({
+    required this.topic,
+    required this.rank,
+    required this.onTap,
+  });
+
+  final TrendingTopic topic;
+  final int rank;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$rank · ${topic.category}',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark
+                            ? const Color(0xFF8E8E93)
+                            : const Color(0xFF6B7280),
+                        fontSize: 11.5.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '#${topic.tag}',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark
+                            ? const Color(0xFFF3F4F6)
+                            : const Color(0xFF111827),
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      topic.postCountLabel,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: isDark
+                            ? const Color(0xFF8E8E93)
+                            : const Color(0xFF6B7280),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestedCreatorsCarousel extends StatelessWidget {
+  const _SuggestedCreatorsCarousel({
+    required this.creators,
+    required this.isLoading,
+    required this.followedUsernames,
+    required this.followPendingUsernames,
+    required this.onTapUser,
+    required this.onFollowUser,
+  });
+
+  final List<User> creators;
+  final bool isLoading;
+  final Set<String> followedUsernames;
+  final Set<String> followPendingUsernames;
+  final ValueChanged<User> onTapUser;
+  final ValueChanged<User> onFollowUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (isLoading && creators.isEmpty) {
+      return SizedBox(
+        height: 195,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          itemCount: 3,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (context, _) => Container(
+            width: 142,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1E21) : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(16),
             ),
-            SizedBox(width: 12),
-            Expanded(
+          ),
+        ),
+      );
+    }
+
+    if (creators.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.stars_rounded,
+                color: Color(0xFFFF7A45),
+                size: 20,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Suggested Creators',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 195,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: creators.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final user = creators[index];
+              final username = (user.username ?? '')
+                  .trim()
+                  .replaceFirst(RegExp(r'^@'), '')
+                  .toLowerCase();
+              final isFollowing = followedUsernames.contains(username);
+              final isPending = followPendingUsernames.contains(username);
+
+              return _CreatorCard(
+                user: user,
+                isFollowing: isFollowing,
+                isFollowPending: isPending,
+                onTap: () => onTapUser(user),
+                onFollow: () => onFollowUser(user),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreatorCard extends StatelessWidget {
+  const _CreatorCard({
+    required this.user,
+    required this.isFollowing,
+    required this.isFollowPending,
+    required this.onTap,
+    required this.onFollow,
+  });
+
+  final User user;
+  final bool isFollowing;
+  final bool isFollowPending;
+  final VoidCallback onTap;
+  final VoidCallback onFollow;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1C1E21) : Colors.white;
+    final borderColor =
+        isDark ? const Color(0xFF2C2D30) : const Color(0xFFE5E7EB);
+    final avatarUrl = user.avatarUrl?.trim() ?? '';
+    final bio = user.bio?.trim() ?? '';
+
+    return RepaintBoundary(
+      child: Container(
+        width: 142,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: 0.8),
+        ),
+        child: Column(
+          children: [
+            InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onTap();
+              },
+              borderRadius: BorderRadius.circular(30),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: isDark
+                    ? const Color(0xFF2D2E30)
+                    : const Color(0xFFE5E7EB),
+                backgroundImage: avatarUrl.isEmpty
+                    ? null
+                    : CachedNetworkImageProvider(
+                        ApiConfig.assetUrl(avatarUrl),
+                        maxWidth: 104,
+                        maxHeight: 104,
+                      ),
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        user.initials,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.sp,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onTap();
+              },
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          user.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
+                            fontSize: 12.5.sp,
+                            fontWeight: FontWeight.w700,
+                            height: 1.15,
+                          ),
+                        ),
+                      ),
+                      if (user.isVerified) ...[
+                        const SizedBox(width: 3),
+                        const Icon(
+                          Icons.verified,
+                          color: Color(0xFF0095F6),
+                          size: 13,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Text(
-                    '#${hashtag.name}',
+                    user.handle ?? '@${user.username}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111111),
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    countLabel,
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280),
-                      fontSize: 14.sp,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: const Color(0xFF9CA3AF),
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w500,
+                      height: 1.1,
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 12),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF9CA3AF),
-              size: 22,
+            const SizedBox(height: 4),
+            Expanded(
+              child: Text(
+                bio.isEmpty ? 'KatsKlub member' : bio,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isDark
+                      ? const Color(0xFF8E8E93)
+                      : const Color(0xFF6B7280),
+                  fontSize: 10.5.sp,
+                  height: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 28,
+              child: FilledButton(
+                onPressed: isFollowPending
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        onFollow();
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: isFollowing
+                      ? (isDark
+                          ? const Color(0xFF2C2D30)
+                          : const Color(0xFFE5E7EB))
+                      : const Color(0xFFFF7A45),
+                  foregroundColor: isFollowing
+                      ? (isDark
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF4B5563))
+                      : Colors.white,
+                  padding: EdgeInsets.zero,
+                  shape: const StadiumBorder(),
+                  textStyle: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                child: Text(
+                  isFollowPending
+                      ? '...'
+                      : (isFollowing ? 'Following' : 'Follow'),
+                ),
+              ),
             ),
           ],
         ),
@@ -2154,45 +2682,107 @@ class _HashtagListRow extends StatelessWidget {
   }
 }
 
-class _FeedTabButton extends StatelessWidget {
-  const _FeedTabButton({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
+class _TrendingSection extends StatelessWidget {
+  const _TrendingSection({
+    required this.topics,
+    required this.onTapTopic,
   });
 
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
+  final List<TrendingTopic> topics;
+  final ValueChanged<String> onTapTopic;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor = isDark ? const Color(0xFFFF7A45) : const Color(0xFF111827);
-    final inactiveColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF);
+    final cardBg = isDark ? const Color(0xFF1C1E21) : Colors.white;
+    final borderColor =
+        isDark ? const Color(0xFF2C2D30) : const Color(0xFFE5E7EB);
 
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? activeColor : Colors.transparent,
-                width: 2,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.local_fire_department_rounded,
+                color: Color(0xFFFF7A45),
+                size: 22,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Trending Topics',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor, width: 0.8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                children: [
+                  for (int i = 0; i < topics.length; i++) ...[
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: borderColor,
+                        indent: 16,
+                      ),
+                    _TrendingTopicRow(
+                      topic: topics[i],
+                      rank: i + 1,
+                      onTap: () => onTapTopic(topics[i].tag),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(fontFamily: 'SF Pro Rounded',
-              color: isActive ? activeColor : inactiveColor,
+        ],
+      ),
+    );
+  }
+}
+
+class _ExplorePostsHeader extends StatelessWidget {
+  const _ExplorePostsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.explore_rounded,
+            color: Color(0xFFFF7A45),
+            size: 20,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Explore Posts',
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              color: isDark ? Colors.white : const Color(0xFF111827),
+              fontSize: 16.sp,
               fontWeight: FontWeight.w800,
-              fontSize: 14.sp,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
