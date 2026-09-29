@@ -298,6 +298,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _selectTab(int index) {
+    HapticFeedback.selectionClick();
+
     if (index == 2) {
       _showCreateMenu();
       return;
@@ -573,50 +575,64 @@ class _AppShellState extends State<AppShell> {
               (isCurrentRoute && normalVideoOverlayController.isOpen)
                   ? null
                   : RepaintBoundary(
-                      child: BottomNavigationBar(
-                      currentIndex: _selectedIndex,
-                      onTap: _selectTab,
-                      type: BottomNavigationBarType.fixed,
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                      elevation: 0,
-                      selectedItemColor: const Color(0xFFFF7A45),
-                      unselectedItemColor: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF6B7280),
-                      showSelectedLabels: false,
-                      showUnselectedLabels: false,
-                      items: [
-                        const BottomNavigationBarItem(
-                          icon: _HomeNavIcon(),
-                          activeIcon: _HomeNavIcon(isSelected: true),
-                          label: 'Home',
-                        ),
-                        const BottomNavigationBarItem(
-                          icon: _FeedNavIcon(),
-                          activeIcon: _FeedNavIcon(isSelected: true),
-                          label: 'Feed',
-                        ),
-                        const BottomNavigationBarItem(
-                          icon: _PostNavIcon(),
-                          activeIcon: _PostNavIcon(isSelected: true),
-                          label: 'Post',
-                        ),
-                        const BottomNavigationBarItem(
-                          icon: _MessagesNavIcon(),
-                          activeIcon: _MessagesNavIcon(isSelected: true),
-                          label: 'Messages',
-                        ),
-                        BottomNavigationBarItem(
-                          icon: _ProfileNavIcon(user: _currentUser),
-                          activeIcon: _ProfileNavIcon(
-                            user: _currentUser,
-                            isSelected: true,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border(
+                            top: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF262626)
+                                  : const Color(0xFFE5E7EB),
+                              width: 0.5,
+                            ),
                           ),
-                          label: 'Profile',
                         ),
-                      ],
+                        child: BottomNavigationBar(
+                          currentIndex: _selectedIndex,
+                          onTap: _selectTab,
+                          type: BottomNavigationBarType.fixed,
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          selectedItemColor: const Color(0xFFFF7A45),
+                          unselectedItemColor:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                          showSelectedLabels: false,
+                          showUnselectedLabels: false,
+                          items: [
+                            const BottomNavigationBarItem(
+                              icon: _HomeNavIcon(),
+                              activeIcon: _HomeNavIcon(isSelected: true),
+                              label: 'Home',
+                            ),
+                            const BottomNavigationBarItem(
+                              icon: _FeedNavIcon(),
+                              activeIcon: _FeedNavIcon(isSelected: true),
+                              label: 'Feed',
+                            ),
+                            const BottomNavigationBarItem(
+                              icon: _PostNavIcon(),
+                              activeIcon: _PostNavIcon(isSelected: true),
+                              label: 'Post',
+                            ),
+                            const BottomNavigationBarItem(
+                              icon: _MessagesNavIcon(),
+                              activeIcon: _MessagesNavIcon(isSelected: true),
+                              label: 'Messages',
+                            ),
+                            BottomNavigationBarItem(
+                              icon: _ProfileNavIcon(user: _currentUser),
+                              activeIcon: _ProfileNavIcon(
+                                user: _currentUser,
+                                isSelected: true,
+                              ),
+                              label: 'Profile',
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
         ),
       ),
     );
@@ -635,13 +651,15 @@ class _HomeNavIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
 
-    return SvgPicture.string(
-      _svg,
-      width: 26,
-      height: 26,
-      colorFilter: ColorFilter.mode(
-        iconTheme.color ?? const Color(0xFF6B7280),
-        BlendMode.srcIn,
+    return RepaintBoundary(
+      child: SvgPicture.string(
+        _svg,
+        width: 26,
+        height: 26,
+        colorFilter: ColorFilter.mode(
+          iconTheme.color ?? const Color(0xFF6B7280),
+          BlendMode.srcIn,
+        ),
       ),
     );
   }
@@ -659,13 +677,15 @@ class _FeedNavIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
 
-    return SvgPicture.string(
-      _svg,
-      width: 26,
-      height: 26,
-      colorFilter: ColorFilter.mode(
-        iconTheme.color ?? const Color(0xFF6B7280),
-        BlendMode.srcIn,
+    return RepaintBoundary(
+      child: SvgPicture.string(
+        _svg,
+        width: 26,
+        height: 26,
+        colorFilter: ColorFilter.mode(
+          iconTheme.color ?? const Color(0xFF6B7280),
+          BlendMode.srcIn,
+        ),
       ),
     );
   }
@@ -693,49 +713,53 @@ class _MessagesNavIcon extends StatelessWidget {
       ),
     );
 
-    return ValueListenableBuilder<int>(
-      valueListenable: FeedService.unreadMessagesNotifier,
-      builder: (context, count, _) {
-        if (count <= 0) return icon;
-        final label = count > 99 ? '+99' : count.toString();
-        return SizedBox(
-          width: 34,
-          height: 32,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Align(alignment: Alignment.bottomLeft, child: icon),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.surface,
-                      width: 1.5,
+    return RepaintBoundary(
+      child: SizedBox(
+        width: 30,
+        height: 28,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            icon,
+            Positioned(
+              top: -3,
+              right: -5,
+              child: ValueListenableBuilder<int>(
+                valueListenable: FeedService.unreadMessagesNotifier,
+                builder: (context, count, _) {
+                  if (count <= 0) return const SizedBox.shrink();
+                  final label = count > 99 ? '99+' : count.toString();
+                  return Container(
+                    constraints:
+                        const BoxConstraints(minWidth: 16, minHeight: 16),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0,
+                    alignment: Alignment.center,
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -752,18 +776,19 @@ class _PostNavIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
 
-    return SvgPicture.string(
-      _svg,
-      width: 26,
-      height: 26,
-      colorFilter: ColorFilter.mode(
-        iconTheme.color ?? const Color(0xFF6B7280),
-        BlendMode.srcIn,
+    return RepaintBoundary(
+      child: SvgPicture.string(
+        _svg,
+        width: 26,
+        height: 26,
+        colorFilter: ColorFilter.mode(
+          iconTheme.color ?? const Color(0xFF6B7280),
+          BlendMode.srcIn,
+        ),
       ),
     );
   }
 }
-
 
 class _ProfileNavIcon extends StatelessWidget {
   const _ProfileNavIcon({
@@ -782,52 +807,65 @@ class _ProfileNavIcon extends StatelessWidget {
         ? const Color(0xFFFF7A45)
         : (isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB));
 
-    return Container(
-      width: 32,
-      height: 32,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
-      ),
-      child: ClipOval(
-        child: avatarUrl.isEmpty
-            ? ColoredBox(
-                color: const Color(0xFFE5E7EB),
-                child: Center(
-                  child: Text(
-                    user.initials,
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              )
-            : CachedNetworkImage(
-                imageUrl: ApiConfig.assetUrl(avatarUrl),
-                fit: BoxFit.cover,
-                fadeInDuration: Duration.zero,
-                fadeOutDuration: Duration.zero,
-                placeholderFadeInDuration: Duration.zero,
-                placeholder: (context, url) => const ColoredBox(
-                  color: Color(0xFFE5E7EB),
-                ),
-                errorWidget: (context, url, error) => ColoredBox(
-                  color: const Color(0xFFE5E7EB),
+    return RepaintBoundary(
+      child: Container(
+        width: 32,
+        height: 32,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+        ),
+        child: ClipOval(
+          child: avatarUrl.isEmpty
+              ? ColoredBox(
+                  color: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
                   child: Center(
                     child: Text(
                       user.initials,
-                      style: const TextStyle(
-                        color: Color(0xFF111827),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
+                )
+              : CachedNetworkImage(
+                  imageUrl: ApiConfig.assetUrl(avatarUrl),
+                  memCacheWidth: 96,
+                  memCacheHeight: 96,
+                  maxWidthDiskCache: 150,
+                  maxHeightDiskCache: 150,
+                  fit: BoxFit.cover,
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  placeholderFadeInDuration: Duration.zero,
+                  placeholder: (context, url) => ColoredBox(
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  errorWidget: (context, url, error) => ColoredBox(
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFE5E7EB),
+                    child: Center(
+                      child: Text(
+                        user.initials,
+                        style: TextStyle(
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
