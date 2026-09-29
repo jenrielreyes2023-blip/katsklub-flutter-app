@@ -62,6 +62,16 @@ class ApiConfig {
         return url;
       }
 
+      // Fast Direct CDN access: Cloudflare R2 and Bunny CDN have global caching
+      // and do not need to be proxied through the Node.js backend.
+      final host = assetUri.host.toLowerCase();
+      if (host.contains('media.katsklub.top') ||
+          host.contains('cdn.katsklub.top') ||
+          host.contains('bunnycdn.com') ||
+          host.contains('r2.cloudflarestorage.com')) {
+        return url;
+      }
+
       final sameOrigin = assetUri.scheme == apiUri.scheme &&
           assetUri.host == apiUri.host &&
           _normalizedPort(assetUri) == _normalizedPort(apiUri);

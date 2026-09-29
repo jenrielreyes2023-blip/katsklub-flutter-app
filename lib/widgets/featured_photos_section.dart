@@ -24,7 +24,13 @@ Future<String> _fileToDataUrl(File file) async {
   return 'data:$mime;base64,${base64Encode(bytes)}';
 }
 
-Widget _buildFeaturedImage(String rawUrl, {BoxFit fit = BoxFit.cover, int? memCacheWidth, double? iconSize}) {
+Widget _buildFeaturedImage(
+  String rawUrl, {
+  BoxFit fit = BoxFit.cover,
+  int? memCacheWidth,
+  int? memCacheHeight,
+  double? iconSize,
+}) {
   final cleanUrl = rawUrl.trim();
   if (cleanUrl.isEmpty) {
     return Container(
@@ -53,16 +59,18 @@ Widget _buildFeaturedImage(String rawUrl, {BoxFit fit = BoxFit.cover, int? memCa
     width: double.infinity,
     height: double.infinity,
     memCacheWidth: memCacheWidth,
+    memCacheHeight: memCacheHeight,
+    maxWidthDiskCache: memCacheWidth != null ? (memCacheWidth * 2) : null,
+    maxHeightDiskCache: memCacheHeight != null ? (memCacheHeight * 2) : null,
+    fadeInDuration: const Duration(milliseconds: 150),
+    fadeOutDuration: Duration.zero,
     placeholder: (context, url) => Container(
       color: const Color(0xFFF3F4F6),
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8A00)),
-          ),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          color: Colors.grey.withValues(alpha: 0.35),
+          size: iconSize ?? 24,
         ),
       ),
     ),
@@ -419,116 +427,119 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+    return RepaintBoundary(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF8A00), Color(0xFFFF5E3A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF8A00).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8A00).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      child: const Icon(
+                        Icons.star_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.star_rounded,
-                      color: Colors.white,
-                      size: 16,
+                    const SizedBox(width: 8),
+                    Text(
+                      'Featured Photos',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF1C1E21),
+                        letterSpacing: -0.3,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Featured Photos',
-                    style: TextStyle(fontFamily: 'SF Pro Rounded',
-                      fontSize: 12.5.sp,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1C1E21),
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.isOwnProfile && widget.user.recentVisitors.isNotEmpty) ...[
-                    _buildVisitorsHeaderItem(context, isDark),
-                    const SizedBox(width: 12),
                   ],
-                  if (widget.isOwnProfile)
-                    GestureDetector(
-                      onTap: _showAddOptions,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _photos.length >= 5
-                              ? Colors.grey.withValues(alpha: 0.1)
-                              : const Color(0xFFFF8A00).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.add_rounded,
-                              size: 14,
-                              color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              'Add',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Rounded',
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.isOwnProfile && widget.user.recentVisitors.isNotEmpty) ...[
+                      _buildVisitorsHeaderItem(context, isDark),
+                      const SizedBox(width: 12),
+                    ],
+                    if (widget.isOwnProfile)
+                      GestureDetector(
+                        onTap: _showAddOptions,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _photos.length >= 5
+                                ? Colors.grey.withValues(alpha: 0.1)
+                                : const Color(0xFFFF8A00).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.add_rounded,
+                                size: 14,
                                 color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 2),
+                              Text(
+                                'Add',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: _photos.length >= 5 ? Colors.grey : const Color(0xFFFF8A00),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        _photos.isEmpty
-            ? _buildEmptyPlaceholder(context, isDark)
-            : SizedBox(
-                height: 150,
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _photos.length + (widget.isOwnProfile && _photos.length < 5 ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (widget.isOwnProfile && index == _photos.length) {
-                      return _buildAddPlaceholderCard();
-                    }
-
-                    final photo = _photos[index];
-                    return _buildPhotoCard(photo, index);
-                  },
+                  ],
                 ),
-              ),
-        const SizedBox(height: 16),
-      ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _photos.isEmpty
+              ? _buildEmptyPlaceholder(context, isDark)
+              : SizedBox(
+                  height: 150,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < _photos.length; i++)
+                          _buildPhotoCard(_photos[i], i),
+                        if (widget.isOwnProfile && _photos.length < 5)
+                          _buildAddPlaceholderCard(),
+                      ],
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
@@ -631,7 +642,12 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
             borderRadius: BorderRadius.circular(8),
             child: Stack(
               children: [
-                _buildFeaturedImage(photo.photoUrl, fit: BoxFit.cover, memCacheWidth: 200),
+                _buildFeaturedImage(
+                  photo.photoUrl,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 250,
+                  memCacheHeight: 375,
+                ),
                 if (photo.caption.isNotEmpty)
                   Positioned(
                     left: 6,
@@ -885,7 +901,12 @@ class _ManageFeaturedPhotosSheetState extends State<ManageFeaturedPhotosSheet> {
                           Positioned.fill(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: _buildFeaturedImage(photo.photoUrl, fit: BoxFit.cover, memCacheWidth: 200),
+                              child: _buildFeaturedImage(
+                                photo.photoUrl,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 250,
+                                memCacheHeight: 375,
+                              ),
                             ),
                           ),
                           Positioned(

@@ -130,7 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   StreamSubscription<CommentCountChange>? _commentCountSubscription;
   StreamSubscription<ProfileStatsChange>? _profileStatsSubscription;
   StreamSubscription<void>? _postcardThemesResetSubscription;
-  int _featuredPhotosVersion = 0;
   int _effectVersion = 0;
   List<User> _followSuggestions = [];
   final Set<String> _loadingSuggestedUsernames = {};
@@ -602,14 +601,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                           const SizedBox(height: 20),
                           FeaturedPhotosSection(
                             key: ValueKey(
-                                'featured_photos_${_profileUser.username}_$_featuredPhotosVersion'),
+                                'featured_photos_${_profileUser.username}'),
                             user: _profileUser,
                             isOwnProfile: isOwnProfile,
                             onUpdated: (updatedUser) {
                               if (!mounted) return;
                               setState(() {
                                 _profileUser = updatedUser;
-                                _featuredPhotosVersion++;
                               });
                               widget.onUserUpdated?.call(updatedUser);
                             },
@@ -1729,7 +1727,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             if (!mounted) return;
             setState(() {
               _profileUser = updatedUser;
-              _featuredPhotosVersion++;
             });
             widget.onUserUpdated?.call(updatedUser);
           },
