@@ -287,6 +287,7 @@ class _FeaturedPhotosSectionState extends State<FeaturedPhotosSection> {
           newVisitorsCount: 0,
         ));
 
+        if (!mounted) return;
         await Navigator.push(
           context,
           MaterialPageRoute(
