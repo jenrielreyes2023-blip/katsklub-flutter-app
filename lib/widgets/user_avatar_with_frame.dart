@@ -252,6 +252,10 @@ class UserAvatarWithFrame extends StatelessWidget {
                                       imageUrl: effectiveFrame,
                                       width: frameSize,
                                       height: frameSize,
+                                      memCacheWidth: (frameSize * 2.5).round().clamp(100, 320),
+                                      memCacheHeight: (frameSize * 2.5).round().clamp(100, 320),
+                                      maxWidthDiskCache: 400,
+                                      maxHeightDiskCache: 400,
                                       fit: BoxFit.contain,
                                       errorWidget: (context, error, stackTrace) =>
                                           const SizedBox.shrink(),
@@ -260,6 +264,8 @@ class UserAvatarWithFrame extends StatelessWidget {
                                       effectiveFrame,
                                       width: frameSize,
                                       height: frameSize,
+                                      cacheWidth: (frameSize * 2.5).round().clamp(100, 320),
+                                      cacheHeight: (frameSize * 2.5).round().clamp(100, 320),
                                       fit: BoxFit.contain,
                                       errorBuilder: (context, error, stackTrace) =>
                                           const SizedBox.shrink(),

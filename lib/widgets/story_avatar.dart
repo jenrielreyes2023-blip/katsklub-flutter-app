@@ -34,64 +34,66 @@ class StoryAvatar extends StatelessWidget {
           : const [Color(0xFFF97316), Color(0xFFEC4899)],
     );
 
-    return InkWell(
-      customBorder: const CircleBorder(),
-      onTap: onTap,
-      child: SizedBox(
-        width: 62.w,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                UserAvatarWithFrame(
-                  avatarUrl: avatarUrl,
-                  initials: initials,
-                  radius: 26.w,
-                  avatarFrame: avatarFrame,
-                  isAdmin: isOwnStory && isAdmin,
-                  storyRingGradient: gradient,
-                ),
-                if (showPlus)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onPlusTap ?? onTap,
-                      child: Container(
-                        width: 17.w,
-                        height: 17.w,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.2.w),
-                        ),
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 12.r,
+    return RepaintBoundary(
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 62.w,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  UserAvatarWithFrame(
+                    avatarUrl: avatarUrl,
+                    initials: initials,
+                    radius: 26.w,
+                    avatarFrame: avatarFrame,
+                    isAdmin: isOwnStory && isAdmin,
+                    storyRingGradient: gradient,
+                  ),
+                  if (showPlus)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onPlusTap ?? onTap,
+                        child: Container(
+                          width: 17.w,
+                          height: 17.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.2.w),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 12.r,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'SF Pro Rounded',
-                fontSize: 10.5.sp,
-                height: 1.1,
-                fontWeight: FontWeight.w400,
+                ],
               ),
-            ),
-          ],
+              SizedBox(height: 2.h),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  fontSize: 10.5.sp,
+                  height: 1.1,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

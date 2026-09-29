@@ -791,23 +791,25 @@ class _HomeScreenState extends State<HomeScreen>
     if (index == 0) {
       final surfaceColor = Theme.of(context).colorScheme.surface;
       if (!_hasLoadedNetworkFeed && _storyGroups.isEmpty) {
-        return ColoredBox(
-          color: surfaceColor,
-          child: const StorySkeletonRow(),
+        return RepaintBoundary(
+          child: ColoredBox(
+            color: surfaceColor,
+            child: const StorySkeletonRow(),
+          ),
         );
       }
 
-      return ColoredBox(
-        color: surfaceColor,
-        child: _StoriesRow(
-          key: ValueKey<String>(
-            'home-stories-row-${_storyGroups.map((g) => g.first.id).join('-')}',
+      return RepaintBoundary(
+        child: ColoredBox(
+          color: surfaceColor,
+          child: _StoriesRow(
+            key: const PageStorageKey<String>('home_stories_row_stable'),
+            user: _currentUser,
+            ownStories: _ownStories,
+            storyGroups: _storyGroups,
+            onStoryTap: _openStoryViewer,
+            onCreateStory: _openCreateStory,
           ),
-          user: _currentUser,
-          ownStories: _ownStories,
-          storyGroups: _storyGroups,
-          onStoryTap: _openStoryViewer,
-          onCreateStory: _openCreateStory,
         ),
       );
     }
@@ -1738,8 +1740,10 @@ class _StoriesRowState extends State<_StoriesRow>
       height: rowHeight,
       child: ListView.separated(
         clipBehavior: Clip.none,
-        key: PageStorageKey<String>(
-          'home-stories-row-${widget.storyGroups.map((g) => g.first.id).join('-')}',
+        key: const PageStorageKey<String>('home_stories_horizontal_list'),
+        cacheExtent: 350,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
         ),
         padding: EdgeInsets.symmetric(horizontal: 10.w),
         scrollDirection: Axis.horizontal,
