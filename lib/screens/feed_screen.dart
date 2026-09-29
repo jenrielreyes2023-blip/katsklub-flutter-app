@@ -437,6 +437,7 @@ class _FeedScreenState extends State<FeedScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final posts = _visiblePosts(_posts);
+    final exploreMediaPosts = _getExploreMediaPosts(posts);
     final people = _visiblePeople();
     final hashtags = _visibleHashtags();
     final searchEntries = _buildSearchEntries(people, hashtags);
@@ -495,13 +496,13 @@ class _FeedScreenState extends State<FeedScreen>
                             ? _buildExploreItem(
                                 context,
                                 index,
-                                posts,
+                                exploreMediaPosts,
                                 searchEntries,
                                 people,
                               )
                             : _buildFeedItem(context, index, posts),
                         childCount: _activeTab == 'explore'
-                            ? _exploreItemCount(posts)
+                            ? _exploreItemCount(exploreMediaPosts)
                             : _feedItemCount(posts),
                       ),
                     ),
@@ -1165,7 +1166,18 @@ class _FeedScreenState extends State<FeedScreen>
     return merged;
   }
 
-  int _exploreItemCount(List<Post> explorePosts) {
+  List<Post> _getExploreMediaPosts(List<Post> allPosts) {
+    return allPosts.where((p) {
+      final hasImages = p.imageUrls.any((u) => u.trim().isNotEmpty);
+      final hasThumbnails = p.thumbnailUrls.any((u) => u.trim().isNotEmpty);
+      final hasVideo = p.hasVideo || p.videoUrl.trim().isNotEmpty;
+      final hasPoster = p.videoPosterUrl.trim().isNotEmpty;
+      final hasDiscussionCover = p.discussionCoverUrl.trim().isNotEmpty;
+      return hasImages || hasThumbnails || hasVideo || hasPoster || hasDiscussionCover;
+    }).toList();
+  }
+
+  int _exploreItemCount(List<Post> mediaPosts) {
     final isSearching = _peopleSearchQuery.trim().length >= 2;
     if (isSearching) {
       final people = _visiblePeople();
@@ -1175,8 +1187,9 @@ class _FeedScreenState extends State<FeedScreen>
     }
 
     var count = 2; // Creators (0) + Trending (1)
-    if (explorePosts.isNotEmpty) {
-      count += 1 + explorePosts.length; // Header + posts
+    if (mediaPosts.isNotEmpty) {
+      final rowCount = (mediaPosts.length / 3).ceil();
+      count += 1 + rowCount; // Header (2) + media grid rows
     }
     return count;
   }
@@ -1184,7 +1197,7 @@ class _FeedScreenState extends State<FeedScreen>
   Widget _buildExploreItem(
     BuildContext context,
     int index,
-    List<Post> explorePosts,
+    List<Post> mediaPosts,
     List<_SearchEntry> searchEntries,
     List<User> people,
   ) {
@@ -1219,13 +1232,24 @@ class _FeedScreenState extends State<FeedScreen>
       );
     }
 
-    if (index == 2 && explorePosts.isNotEmpty) {
+    if (index == 2 && mediaPosts.isNotEmpty) {
       return const _ExplorePostsHeader();
     }
 
-    final postIndex = index - 3;
-    if (postIndex >= 0 && postIndex < explorePosts.length) {
-      return _buildSnappablePostCard(explorePosts[postIndex]);
+    final rowIndex = index - 3;
+    final startIndex = rowIndex * 3;
+    if (startIndex >= 0 && startIndex < mediaPosts.length) {
+      final endIndex = (startIndex + 3 <= mediaPosts.length)
+          ? startIndex + 3
+          : mediaPosts.length;
+      final rowPosts = mediaPosts.sublist(startIndex, endIndex);
+      return _ExploreMediaGridRow(
+        key: ValueKey<String>(
+          'explore-media-row-$rowIndex-${rowPosts.first.id}',
+        ),
+        posts: rowPosts,
+        onTapPost: _openPost,
+      );
     }
 
     return const SizedBox.shrink();
@@ -2769,17 +2793,17 @@ class _ExplorePostsHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return RepaintBoundary(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
         child: Row(
           children: [
             const Icon(
-              Icons.explore_rounded,
+              Icons.grid_view_rounded,
               color: Color(0xFFFF7A45),
               size: 20,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Text(
-              'Explore Posts',
+              'Explore Media',
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
                 color: isDark ? Colors.white : const Color(0xFF111827),
@@ -2788,6 +2812,169 @@ class _ExplorePostsHeader extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExploreMediaGridRow extends StatelessWidget {
+  const _ExploreMediaGridRow({
+    super.key,
+    required this.posts,
+    required this.onTapPost,
+  });
+
+  final List<Post> posts;
+  final ValueChanged<Post> onTapPost;
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 3),
+        child: Row(
+          children: [
+            for (int i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 3),
+              Expanded(
+                child: i < posts.length
+                    ? _ExploreMediaTile(
+                        key: ValueKey<String>('explore-tile-${posts[i].id}'),
+                        post: posts[i],
+                        onTap: () => onTapPost(posts[i]),
+                      )
+                    : const AspectRatio(
+                        aspectRatio: 1.0,
+                        child: SizedBox.shrink(),
+                      ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExploreMediaTile extends StatelessWidget {
+  const _ExploreMediaTile({
+    super.key,
+    required this.post,
+    required this.onTap,
+  });
+
+  final Post post;
+  final VoidCallback onTap;
+
+  String _resolveMediaUrl() {
+    for (final thumb in post.thumbnailUrls) {
+      if (thumb.trim().isNotEmpty) return thumb.trim();
+    }
+    for (final img in post.imageUrls) {
+      if (img.trim().isNotEmpty) return img.trim();
+    }
+    if (post.videoPosterUrl.trim().isNotEmpty) {
+      return post.videoPosterUrl.trim();
+    }
+    if (post.discussionCoverUrl.trim().isNotEmpty) {
+      return post.discussionCoverUrl.trim();
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mediaUrl = _resolveMediaUrl();
+    final isVideo =
+        post.hasVideo || post.isReel || post.videoUrl.trim().isNotEmpty;
+    final isMultiImage = post.imageUrls.length > 1;
+
+    return AspectRatio(
+      aspectRatio: 1.0,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Material(
+          color: isDark ? const Color(0xFF1E1F23) : const Color(0xFFF3F4F6),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (mediaUrl.isNotEmpty)
+                  CachedNetworkImage(
+                    imageUrl: ApiConfig.assetUrl(mediaUrl),
+                    fit: BoxFit.cover,
+                    memCacheWidth: 400,
+                    maxWidthDiskCache: 600,
+                    fadeInDuration: Duration.zero,
+                    fadeOutDuration: Duration.zero,
+                    placeholder: (context, url) => Container(
+                      color: isDark
+                          ? const Color(0xFF262626)
+                          : const Color(0xFFEEEEEE),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 20,
+                        color: isDark ? Colors.white38 : Colors.black26,
+                      ),
+                    ),
+                  )
+                else
+                  Center(
+                    child: Icon(
+                      isVideo
+                          ? Icons.play_circle_outline_rounded
+                          : Icons.photo_outlined,
+                      size: 24,
+                      color: isDark ? Colors.white38 : Colors.black26,
+                    ),
+                  ),
+
+                // Video or Carousel Badge at top-right
+                if (isVideo)
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                    ),
+                  )
+                else if (isMultiImage)
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: Container(
+                      padding: const EdgeInsets.all(3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.collections_rounded,
+                        color: Colors.white,
+                        size: 11,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
