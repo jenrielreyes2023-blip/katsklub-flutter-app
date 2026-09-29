@@ -575,23 +575,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             user: _profileUser,
                             isOwnProfile: isOwnProfile,
                             activeVoiceRoom: _activeVoiceRoom,
+                            isTabActive: widget.isTabActive && _tabController.index == 0,
                             onOpenVoiceRoom: _activeVoiceRoom == null
                                 ? null
                                 : () => _openVoiceRoom(_activeVoiceRoom!),
                           ),
-                          ProfileMusicBadge(
-                            user: _profileUser,
-                            isOwnProfile: isOwnProfile,
-                            isTabActive: widget.isTabActive && _tabController.index == 0,
-                            onUserUpdated: (updatedUser) {
-                              if (!mounted) return;
-                              setState(() {
-                                _profileUser = updatedUser;
-                              });
-                              widget.onUserUpdated?.call(updatedUser);
-                            },
-                          ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 10),
                           _ProfileMetadataRow(user: _profileUser),
                           const SizedBox(height: 10),
                           _ProfileInlineCounters(
@@ -2799,23 +2788,19 @@ class _ProfileBio extends StatelessWidget {
     required this.isOwnProfile,
     this.activeVoiceRoom,
     this.onOpenVoiceRoom,
+    this.isTabActive = true,
   });
 
   final User user;
   final bool isOwnProfile;
   final VoiceRoom? activeVoiceRoom;
   final VoidCallback? onOpenVoiceRoom;
+  final bool isTabActive;
 
   @override
   Widget build(BuildContext context) {
     final achievements = _resolveProfileAchievements(user.achievements);
     final secondaryLines = <_ProfileBioLine>[
-      if (user.roleTitle != null && user.roleTitle!.trim().isNotEmpty)
-        _ProfileBioLine(
-          text: user.roleTitle!.trim(),
-          color: const Color(0xFF65676B),
-          fontSize: 11,
-        ),
       if (user.bio != null && user.bio!.trim().isNotEmpty)
         _ProfileBioLine(
           text: user.bio!.trim(),
@@ -2885,6 +2870,44 @@ class _ProfileBio extends StatelessWidget {
           if (achievements.isNotEmpty) ...[
             const SizedBox(height: 6),
             _ProfileAchievementPillGroup(achievements: achievements),
+          ],
+          if ((user.roleTitle != null && user.roleTitle!.trim().isNotEmpty) ||
+              user.hasProfileMusic) ...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (user.roleTitle != null && user.roleTitle!.trim().isNotEmpty) ...[
+                  Text(
+                    user.roleTitle!.trim(),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                  if (user.hasProfileMusic) ...[
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 5.w),
+                      child: Text(
+                        '•',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: const Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+                if (user.hasProfileMusic)
+                  ProfileMusicBadge(
+                    user: user,
+                    isTabActive: isTabActive,
+                  ),
+              ],
+            ),
           ],
           for (final line in secondaryLines) ...[
             const SizedBox(height: 4),

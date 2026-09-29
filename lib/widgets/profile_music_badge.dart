@@ -5,26 +5,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
-import '../services/auth_service.dart';
-import 'profile_music_picker_sheet.dart';
 
 class ProfileMusicBadge extends StatefulWidget {
   const ProfileMusicBadge({
     required this.user,
-    required this.isOwnProfile,
     this.isTabActive = true,
-    this.onUserUpdated,
     super.key,
   });
 
   final User user;
-  final bool isOwnProfile;
   final bool isTabActive;
-  final ValueChanged<User>? onUserUpdated;
 
   @override
   State<ProfileMusicBadge> createState() => _ProfileMusicBadgeState();
@@ -45,7 +38,7 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
     super.initState();
     _discController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 10),
     );
 
     if (widget.user.hasProfileMusic) {
@@ -123,10 +116,9 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
       });
 
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.setVolume(0.55); // Pleasant 55% volume, gentle on listeners
+      await player.setVolume(0.55);
       await player.setSourceUrl(url);
 
-      // Autoplay if tab is currently active
       if (widget.isTabActive && !_hasAttemptedAutoplay && !_userPaused) {
         _hasAttemptedAutoplay = true;
         await player.resume();
@@ -172,394 +164,158 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
     }
   }
 
-  void _handleVisibilityChanged(VisibilityInfo info) {
-    if (info.visibleFraction < 0.15 && _isPlaying) {
-      _pauseMusic();
-    } else if (info.visibleFraction >= 0.50 && !_isPlaying && !_userPaused && widget.isTabActive) {
-      _resumeMusic();
-    }
-  }
-
-  Future<void> _openMusicPicker() async {
-    await ProfileMusicPickerSheet.show(
-      context: context,
-      currentTitle: widget.user.profileMusicTitle,
-      currentArtist: widget.user.profileMusicArtist,
-      currentArtwork: widget.user.profileMusicArtwork,
-      currentMusicUrl: widget.user.profileMusicUrl,
-      onSelected: (song) async {
-        final result = await AuthService().updateProfileMusic(
-          musicUrl: song.previewUrl,
-          musicTitle: song.title,
-          musicArtist: song.artist,
-          musicArtwork: song.artworkUrl,
-        );
-        if (result.ok && result.user != null) {
-          widget.onUserUpdated?.call(result.user!);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Profile song set to "${song.title}" 🎵'),
-                backgroundColor: const Color(0xFF10B981),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-      },
-      onRemove: () async {
-        final result = await AuthService().updateProfileMusic(
-          musicUrl: null,
-          musicTitle: null,
-          musicArtist: null,
-          musicArtwork: null,
-        );
-        if (result.ok && result.user != null) {
-          widget.onUserUpdated?.call(result.user!);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile song removed.'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        }
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final hasMusic = widget.user.hasProfileMusic;
-
-    // If no song and NOT own profile, do not render an empty card
-    if (!hasMusic && !widget.isOwnProfile) {
+    if (!widget.user.hasProfileMusic) {
       return const SizedBox.shrink();
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // If own profile and no song yet, show inviting CTA
-    if (!hasMusic && widget.isOwnProfile) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _openMusicPicker,
-            borderRadius: BorderRadius.circular(14.r),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1B1B1E) : const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF2C2C32) : const Color(0xFFE5E7EB),
-                  width: 1,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 34.r,
-                    height: 34.r,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF7A45).withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.music_note_rounded,
-                      color: const Color(0xFFFF7A45),
-                      size: 20.r,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Add a Profile Song',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Rounded',
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
-                          ),
-                        ),
-                        Text(
-                          'Music plays when people visit your profile 🎧',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Rounded',
-                            fontSize: 11.5.sp,
-                            color: isDark ? const Color(0xFF9E9E9E) : const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.add_circle_outline_rounded,
-                    color: const Color(0xFFFF7A45),
-                    size: 20.r,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Active Profile Song Card
-    final title = widget.user.profileMusicTitle?.trim() ?? 'Profile Song';
+    final title = widget.user.profileMusicTitle?.trim() ?? 'Song';
     final artist = widget.user.profileMusicArtist?.trim() ?? '';
     final artwork = widget.user.profileMusicArtwork?.trim();
 
-    final cardBgColor = isDark
-        ? const Color(0xFF18191D)
-        : const Color(0xFFF8F9FA);
-    final borderColor = isDark
-        ? const Color(0xFF2B2C33)
-        : const Color(0xFFE5E7EB);
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final artistColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF6B7280);
+    final displayText = artist.isNotEmpty ? '$title - $artist' : title;
+    final textColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
 
-    return VisibilityDetector(
-      key: ValueKey('profile_music_detector_${widget.user.username}'),
-      onVisibilityChanged: _handleVisibilityChanged,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            color: cardBgColor,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: _isPlaying
-                  ? const Color(0xFFFF7A45).withValues(alpha: 0.4)
-                  : borderColor,
-              width: _isPlaying ? 1.2 : 0.9,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Small spinning circular album cover (no fancy outer vinyl design)
+        GestureDetector(
+          onTap: _togglePlayPause,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedBuilder(
+            animation: _discController,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _discController.value * 2 * math.pi,
+                child: child,
+              );
+            },
+            child: ClipOval(
+              child: artwork != null && artwork.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: artwork,
+                      width: 17.r,
+                      height: 17.r,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        width: 17.r,
+                        height: 17.r,
+                        color: Colors.grey.shade400,
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        width: 17.r,
+                        height: 17.r,
+                        color: const Color(0xFFFF7A45),
+                        child: Icon(Icons.music_note_rounded, size: 10.r, color: Colors.white),
+                      ),
+                    )
+                  : Container(
+                      width: 17.r,
+                      height: 17.r,
+                      color: const Color(0xFFFF7A45),
+                      child: Icon(Icons.music_note_rounded, size: 10.r, color: Colors.white),
+                    ),
             ),
-            boxShadow: [
-              if (_isPlaying)
-                BoxShadow(
-                  color: const Color(0xFFFF7A45).withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Spinning Vinyl Disc
-              GestureDetector(
-                onTap: _togglePlayPause,
-                child: AnimatedBuilder(
-                  animation: _discController,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      angle: _discController.value * 2 * math.pi,
-                      child: child,
-                    );
-                  },
-                  child: Container(
-                    width: 44.r,
-                    height: 44.r,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF111113),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Grooves
-                        Container(
-                          width: 36.r,
-                          height: 36.r,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        // Album Center Hole
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(999.r),
-                          child: artwork != null && artwork.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: artwork,
-                                  width: 22.r,
-                                  height: 22.r,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(
-                                    width: 22.r,
-                                    height: 22.r,
-                                    color: const Color(0xFFFF7A45),
-                                  ),
-                                  errorWidget: (_, __, ___) => Container(
-                                    width: 22.r,
-                                    height: 22.r,
-                                    color: const Color(0xFFFF7A45),
-                                    child: const Icon(Icons.music_note, size: 12, color: Colors.white),
-                                  ),
-                                )
-                              : Container(
-                                  width: 22.r,
-                                  height: 22.r,
-                                  color: const Color(0xFFFF7A45),
-                                  child: const Icon(Icons.music_note, size: 12, color: Colors.white),
-                                ),
-                        ),
-                        // Center dot
-                        Container(
-                          width: 5.r,
-                          height: 5.r,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12.w),
-
-              // Title, Artist & Equalizer bars
-              Expanded(
-                child: GestureDetector(
-                  onTap: _togglePlayPause,
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Rounded',
-                                fontSize: 13.5.sp,
-                                fontWeight: FontWeight.w700,
-                                color: textColor,
-                              ),
-                            ),
-                          ),
-                          if (_isPlaying) ...[
-                            SizedBox(width: 8.w),
-                            _EqualizerMiniBars(isActive: _isPlaying),
-                          ],
-                        ],
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        artist.isNotEmpty ? artist : 'Profile Soundtrack',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Rounded',
-                          fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w400,
-                          color: artistColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Play / Pause Circle Button
-              IconButton(
-                style: IconButton.styleFrom(
-                  backgroundColor: _isPlaying
-                      ? const Color(0xFFFF7A45)
-                      : (isDark ? const Color(0xFF27282F) : const Color(0xFFE5E7EB)),
-                  foregroundColor: _isPlaying
-                      ? Colors.white
-                      : (isDark ? Colors.white : const Color(0xFF1F2937)),
-                  padding: EdgeInsets.all(6.r),
-                  minimumSize: Size(34.r, 34.r),
-                ),
-                icon: Icon(
-                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  size: 20.r,
-                ),
-                onPressed: _togglePlayPause,
-              ),
-
-              // Edit / Change Button (if own profile)
-              if (widget.isOwnProfile)
-                IconButton(
-                  style: IconButton.styleFrom(
-                    padding: EdgeInsets.all(6.r),
-                    minimumSize: Size(30.r, 30.r),
-                  ),
-                  icon: Icon(
-                    Icons.more_vert_rounded,
-                    size: 18.r,
-                    color: artistColor,
-                  ),
-                  onPressed: _openMusicPicker,
-                ),
-            ],
           ),
         ),
-      ),
+        SizedBox(width: 6.w),
+
+        // Slow Running Marquee Text loop for long titles
+        GestureDetector(
+          onTap: _togglePlayPause,
+          behavior: HitTestBehavior.opaque,
+          child: _MarqueeText(
+            text: displayText,
+            maxWidth: 140.w,
+            isPlaying: _isPlaying,
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ),
+        SizedBox(width: 4.w),
+
+        // Small Play / Pause button (no background, minimalist)
+        GestureDetector(
+          onTap: _togglePlayPause,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
+            child: Icon(
+              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              size: 16.r,
+              color: iconColor,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _EqualizerMiniBars extends StatefulWidget {
-  const _EqualizerMiniBars({required this.isActive});
+class _MarqueeText extends StatefulWidget {
+  const _MarqueeText({
+    required this.text,
+    required this.style,
+    this.maxWidth = 140.0,
+    this.isPlaying = true,
+  });
 
-  final bool isActive;
+  final String text;
+  final TextStyle style;
+  final double maxWidth;
+  final bool isPlaying;
 
   @override
-  State<_EqualizerMiniBars> createState() => _EqualizerMiniBarsState();
+  State<_MarqueeText> createState() => _MarqueeTextState();
 }
 
-class _EqualizerMiniBarsState extends State<_EqualizerMiniBars>
+class _MarqueeTextState extends State<_MarqueeText>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  double _textWidth = 0.0;
+  bool _needsMarquee = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
-    if (widget.isActive) {
-      _controller.repeat(reverse: true);
-    }
+    _controller = AnimationController(vsync: this);
+    _calculateWidth();
   }
 
   @override
-  void didUpdateWidget(_EqualizerMiniBars oldWidget) {
+  void didUpdateWidget(_MarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive != oldWidget.isActive) {
-      if (widget.isActive) {
-        _controller.repeat(reverse: true);
-      } else {
-        _controller.stop();
-      }
+    if (oldWidget.text != widget.text || oldWidget.maxWidth != widget.maxWidth) {
+      _calculateWidth();
+    }
+  }
+
+  void _calculateWidth() {
+    final painter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    _textWidth = painter.width;
+    _needsMarquee = _textWidth > widget.maxWidth;
+
+    if (_needsMarquee) {
+      // Gentle, slow scroll: roughly 26 pixels per second
+      final durationMs = ((_textWidth + 36) / 26.0 * 1000).toInt().clamp(3000, 24000);
+      _controller.duration = Duration(milliseconds: durationMs);
+      _controller.repeat();
+    } else {
+      _controller.stop();
     }
   }
 
@@ -571,32 +327,44 @@ class _EqualizerMiniBarsState extends State<_EqualizerMiniBars>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final val = _controller.value;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            _bar(4 + (val * 9)),
-            SizedBox(width: 2.w),
-            _bar(12 - (val * 8)),
-            SizedBox(width: 2.w),
-            _bar(6 + ((1.0 - val) * 7)),
-          ],
-        );
-      },
-    );
-  }
+    if (!_needsMarquee) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
 
-  Widget _bar(double height) {
-    return Container(
-      width: 2.5.w,
-      height: height.h.clamp(3.0, 14.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF7A45),
-        borderRadius: BorderRadius.circular(2.r),
+    const spacing = 36.0;
+    final totalSpan = _textWidth + spacing;
+
+    return SizedBox(
+      width: widget.maxWidth,
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final offset = -(_controller.value * totalSpan);
+            return Stack(
+              children: [
+                Transform.translate(
+                  offset: Offset(offset, 0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(widget.text, style: widget.style),
+                      const SizedBox(width: spacing),
+                      Text(widget.text, style: widget.style),
+                      const SizedBox(width: spacing),
+                      Text(widget.text, style: widget.style),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
