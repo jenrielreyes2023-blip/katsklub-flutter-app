@@ -147,4 +147,13 @@ class CustomIcons {
   static const String _micOffSvg =
       '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
 
+  static Widget gif({Color color = Colors.black, double size = 24}) {
+    return _svgIcon(_gifSvg, color: color, size: size);
+  }
+
+  static const String _gifSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#292D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="16" rx="4"/><path d="M8.5 9.5H6.5C5.7 9.5 5 10.2 5 11V13C5 13.8 5.7 14.5 6.5 14.5H8.5V12H7"/><path d="M12 9.5V14.5"/><path d="M15.5 9.5H18.5M15.5 12H17.5M15.5 14.5V9.5"/></svg>';
+
 }
+
+

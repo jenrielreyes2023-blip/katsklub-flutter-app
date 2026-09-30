@@ -13,11 +13,14 @@ import '../screens/user_profile_screen.dart';
 import '../services/feed_service.dart';
 import '../services/normal_video_overlay_controller.dart';
 import '../utils/emoji_presentation.dart';
-import 'hashtag_text.dart';
 import 'loading_skeletons.dart';
 import 'mention_autocomplete.dart';
 import 'special_name_text.dart';
 import 'user_avatar_with_frame.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'comment_content.dart';
+import 'custom_icons.dart';
+import 'gif_picker_modal.dart';
 
 enum CommentSortMode {
   relevance,
@@ -134,6 +137,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   int _totalCount = 0;
   int? _nextBeforeId;
   _ReplyTarget? _activeReplyTarget;
+  String? _attachedGifUrl;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _isSending = false;
@@ -292,20 +296,37 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     }
   }
 
+  Future<void> _pickGif() async {
+    final gif = await showGifPickerModal(context);
+    if (gif != null && mounted) {
+      setState(() {
+        _attachedGifUrl = gif.url;
+      });
+      _focusNode.requestFocus();
+    }
+  }
+
   Future<void> _sendComment() async {
-    final body = _textController.text.trim();
+    final text = _textController.text.trim();
+    final gif = _attachedGifUrl;
     final activeReplyTarget = _activeReplyTarget;
-    if (body.isEmpty || _isSending) {
+    if ((text.isEmpty && gif == null) || _isSending) {
       return;
     }
 
+    final body = gif != null
+        ? (text.isNotEmpty ? '$text\n$gif' : gif)
+        : text;
+
     final previousText = _textController.text;
+    final previousGif = _attachedGifUrl;
     final previousTotalCount = _totalCount;
     final optimisticCount = _totalCount + 1;
 
     setState(() {
       _isSending = true;
       _totalCount = optimisticCount;
+      _attachedGifUrl = null;
     });
     _textController.clear();
     if (widget.slideId == null) {
@@ -359,6 +380,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       setState(() {
         _isSending = false;
         _totalCount = previousTotalCount;
+        _attachedGifUrl = previousGif;
       });
       if (_textController.text.isEmpty) {
         _textController.text = previousText;
@@ -745,6 +767,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
             isSending: _isSending,
             replyTarget: _activeReplyTarget,
             onClearReplyTarget: _clearReplyTarget,
+            attachedGifUrl: _attachedGifUrl,
+            onClearGif: () => setState(() => _attachedGifUrl = null),
+            onPickGif: _pickGif,
             onSend: _sendComment,
           ),
         ],
@@ -1107,7 +1132,7 @@ class _CommentTile extends StatelessWidget {
                               ],
                             ),
                             SizedBox(height: 3),
-                            HashtagText(
+                            CommentContent(
                               text: comment.body,
                               style: KatsText.commentBody(context),
                               onHashtagTap: onHashtagTap,
@@ -1336,7 +1361,7 @@ class _ReplyTile extends StatelessWidget {
                           ],
                         ),
                         SizedBox(height: 3),
-                        HashtagText(
+                        CommentContent(
                           text: reply.body,
                           style: KatsText.replyBody(context),
                           onHashtagTap: onHashtagTap,
@@ -1726,6 +1751,9 @@ class _CommentComposer extends StatelessWidget {
     required this.isSending,
     required this.replyTarget,
     required this.onClearReplyTarget,
+    this.attachedGifUrl,
+    this.onClearGif,
+    this.onPickGif,
     required this.onSend,
   });
 
@@ -1734,6 +1762,9 @@ class _CommentComposer extends StatelessWidget {
   final bool isSending;
   final _ReplyTarget? replyTarget;
   final VoidCallback onClearReplyTarget;
+  final String? attachedGifUrl;
+  final VoidCallback? onClearGif;
+  final VoidCallback? onPickGif;
   final VoidCallback onSend;
 
   @override
@@ -1748,6 +1779,7 @@ class _CommentComposer extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (replyTarget != null)
               Padding(
@@ -1778,6 +1810,55 @@ class _CommentComposer extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (attachedGifUrl != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                alignment: Alignment.centerLeft,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: attachedGifUrl!,
+                        height: 96.h,
+                        width: 140.w,
+                        fit: BoxFit.cover,
+                        fadeInDuration: const Duration(milliseconds: 120),
+                        placeholder: (_, __) => Container(
+                          height: 96.h,
+                          width: 140.w,
+                          color: isDark ? Colors.white10 : Colors.black12,
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          height: 96.h,
+                          width: 140.w,
+                          color: Colors.red.withValues(alpha: 0.1),
+                          child: const Icon(Icons.broken_image_rounded, size: 20),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: onClearGif,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -1822,6 +1903,17 @@ class _CommentComposer extends StatelessWidget {
                             horizontal: 14,
                             vertical: 12,
                           ),
+                          suffixIcon: IconButton(
+                            icon: CustomIcons.gif(
+                              size: 20,
+                              color: isDark
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                            ),
+                            splashRadius: 18,
+                            tooltip: 'GIF',
+                            onPressed: isSending ? null : onPickGif,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(20),
                             borderSide: BorderSide.none,
@@ -1837,27 +1929,36 @@ class _CommentComposer extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 8),
-                SizedBox(
-                  width: 42,
-                  height: 42,
-                  child: IconButton.filled(
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7A45),
-                      disabledBackgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFD1D5DB),
-                    ),
-                    icon: isSending
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.send_rounded, size: 19),
-                    color: Colors.white,
-                    onPressed: isSending ? null : onSend,
-                  ),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, val, _) {
+                    final canSend = !isSending &&
+                        (val.text.trim().isNotEmpty || attachedGifUrl != null);
+                    return SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF7A45),
+                          disabledBackgroundColor: isDark
+                              ? const Color(0xFF2D2E30)
+                              : const Color(0xFFD1D5DB),
+                        ),
+                        icon: isSending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send_rounded, size: 19),
+                        color: Colors.white,
+                        onPressed: canSend ? onSend : null,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

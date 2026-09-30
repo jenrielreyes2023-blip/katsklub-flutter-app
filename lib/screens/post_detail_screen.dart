@@ -19,8 +19,9 @@ import '../services/normal_video_inline_controls.dart';
 import '../services/normal_video_playback_session.dart';
 import '../utils/emoji_presentation.dart';
 import '../widgets/custom_icons.dart';
+import '../widgets/comment_content.dart';
+import '../widgets/gif_picker_modal.dart';
 import '../widgets/expandable_post_text.dart';
-import '../widgets/hashtag_text.dart';
 import '../widgets/loading_skeletons.dart';
 import '../widgets/mention_autocomplete.dart';
 import '../config/postcard_nameplates_data.dart';
@@ -85,6 +86,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final Set<int> _expandedReplyThreads = <int>{};
   final Set<int> _loadingReplyThreads = <int>{};
   _ReplyTarget? _activeReplyTarget;
+  String? _attachedGifUrl;
   int _musicCarouselIndex = 0;
   int? _nextCommentsBeforeId;
   bool _hasMoreComments = false;
@@ -467,16 +469,35 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     _commentFocusNode.requestFocus();
   }
 
+  Future<void> _pickGif() async {
+    final gif = await showGifPickerModal(context);
+    if (gif != null && mounted) {
+      setState(() {
+        _attachedGifUrl = gif.url;
+      });
+      _commentFocusNode.requestFocus();
+    }
+  }
+
   Future<void> _sendInlineComment() async {
     final post = _post;
-    final body = _commentController.text.trim();
+    final text = _commentController.text.trim();
+    final gif = _attachedGifUrl;
     final activeReplyTarget = _activeReplyTarget;
-    if (post == null || body.isEmpty || _isSendingComment) {
+    if (post == null || (text.isEmpty && gif == null) || _isSendingComment) {
       return;
     }
 
+    final body = gif != null
+        ? (text.isNotEmpty ? '$text\n$gif' : gif)
+        : text;
+
+    final previousText = _commentController.text;
+    final previousGif = _attachedGifUrl;
+
     setState(() {
       _isSendingComment = true;
+      _attachedGifUrl = null;
     });
 
     try {
@@ -519,7 +540,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
       setState(() {
         _isSendingComment = false;
+        _attachedGifUrl = previousGif;
       });
+      if (_commentController.text.isEmpty) {
+        _commentController.text = previousText;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Comment was not sent.')),
       );
@@ -1543,6 +1568,57 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               name: _activeReplyTarget!.displayName,
                               onClose: _clearReplyTarget,
                             ),
+                          if (_attachedGifUrl != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              alignment: Alignment.centerLeft,
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: CachedNetworkImage(
+                                      imageUrl: _attachedGifUrl!,
+                                      height: 96.h,
+                                      width: 140.w,
+                                      fit: BoxFit.cover,
+                                      fadeInDuration: const Duration(milliseconds: 120),
+                                      placeholder: (_, __) => Container(
+                                        height: 96.h,
+                                        width: 140.w,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white10
+                                            : Colors.black12,
+                                      ),
+                                      errorWidget: (_, __, ___) => Container(
+                                        height: 96.h,
+                                        width: 140.w,
+                                        color: Colors.red.withValues(alpha: 0.1),
+                                        child: const Icon(Icons.broken_image_rounded, size: 20),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _attachedGifUrl = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close_rounded,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           Row(
                             children: [
                               Expanded(
@@ -1576,6 +1652,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           horizontal: 14,
                                           vertical: 12,
                                         ),
+                                        suffixIcon: IconButton(
+                                          icon: CustomIcons.gif(
+                                            size: 20,
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? const Color(0xFF9CA3AF)
+                                                : const Color(0xFF6B7280),
+                                          ),
+                                          splashRadius: 18,
+                                          tooltip: 'GIF',
+                                          onPressed: _isSendingComment ? null : _pickGif,
+                                        ),
                                         border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(999),
@@ -1604,44 +1691,49 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              SizedBox(
-                                height: 42,
-                                child: FilledButton(
-                                  onPressed: _isSendingComment
-                                      ? null
-                                      : _sendInlineComment,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF7A45),
-                                    disabledBackgroundColor: Theme.of(context).brightness == Brightness.dark
-                                        ? const Color(0xFF2D2E30)
-                                        : const Color(0xFFD1D5DB),
-                                    disabledForegroundColor: Theme.of(context).brightness == Brightness.dark
-                                        ? const Color(0xFF6B7280)
-                                        : const Color(0xFF9CA3AF),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                  ),
-                                  child: _isSendingComment
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : const Text(
-                                          'Send',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _commentController,
+                                builder: (context, val, _) {
+                                  final canSend = !_isSendingComment &&
+                                      (val.text.trim().isNotEmpty || _attachedGifUrl != null);
+                                  return SizedBox(
+                                    height: 42,
+                                    child: FilledButton(
+                                      onPressed: canSend ? _sendInlineComment : null,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(0xFFFF7A45),
+                                        disabledBackgroundColor: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF2D2E30)
+                                            : const Color(0xFFD1D5DB),
+                                        disabledForegroundColor: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF6B7280)
+                                            : const Color(0xFF9CA3AF),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
                                         ),
-                                ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                      ),
+                                      child: _isSendingComment
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Send',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -3306,7 +3398,7 @@ class _CommentMessageBlock extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 5),
-        HashtagText(
+        CommentContent(
           text: comment.body,
           style: KatsText.commentBody(context),
           onHashtagTap: (_) {},
