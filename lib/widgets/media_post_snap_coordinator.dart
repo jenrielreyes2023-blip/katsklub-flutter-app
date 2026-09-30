@@ -138,8 +138,10 @@ class MediaPostSnapCoordinator {
 
     final measured = <_MeasuredPost>[];
     for (final post in _postsCache) {
+      if (!_isMediaPostCache!(post)) continue;
       final key = _postKeys[post.id];
-      final context = key?.currentContext;
+      if (key == null) continue;
+      final context = key.currentContext;
       if (context == null) continue;
       final renderObject = context.findRenderObject();
       if (renderObject is! RenderBox || !renderObject.attached) continue;
@@ -228,8 +230,10 @@ class MediaPostSnapCoordinator {
 
     final measuredPosts = <_MeasuredPost>[];
     for (final post in posts) {
+      if (!isMediaPost(post)) continue;
       final key = _postKeys[post.id];
-      final context = key?.currentContext;
+      if (key == null) continue;
+      final context = key.currentContext;
       if (context == null) {
         continue;
       }

@@ -109,16 +109,15 @@ class ReactionRow extends StatelessWidget {
           },
         ),
         const SizedBox(width: 24),
-        _ActionIcon(
+        _StaticActionIcon(
           icon: CustomIcons.share(color: inactiveColor, size: 23),
-          count: 0,
           onTap: () {
             HapticFeedback.selectionClick();
             onShare();
           },
         ),
         const Spacer(),
-        _ActionIcon(
+        _StaticActionIcon(
           icon: CustomIcons.bookmark(
             color: post.bookmarkedByMe
                 ? Theme.of(context).colorScheme.primary
@@ -126,7 +125,6 @@ class ReactionRow extends StatelessWidget {
             size: 23,
             isFilled: post.bookmarkedByMe,
           ),
-          count: 0,
           onTap: () {
             HapticFeedback.selectionClick();
             onBookmark();
@@ -151,6 +149,28 @@ class ReactionRow extends StatelessWidget {
   }
 }
 
+class _StaticActionIcon extends StatelessWidget {
+  const _StaticActionIcon({
+    required this.icon,
+    this.onTap,
+  });
+
+  final Widget icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999.r),
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
+        child: icon,
+      ),
+    );
+  }
+}
+
 class _ActionIcon extends StatefulWidget {
   const _ActionIcon({
     required this.icon,
@@ -171,8 +191,8 @@ class _ActionIcon extends StatefulWidget {
 
 class _ActionIconState extends State<_ActionIcon>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
+  AnimationController? _controller;
+  Animation<double>? _scale;
   int _prevCount = 0;
 
   String _formatCount(int value) {
@@ -194,14 +214,20 @@ class _ActionIconState extends State<_ActionIcon>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _prevCount = widget.count;
+  }
+
+  void _triggerBounce() {
+    _controller ??= AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 170),
     );
-    _scale = Tween<double>(begin: 1.0, end: 1.22).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _scale ??= Tween<double>(begin: 1.0, end: 1.22).animate(
+      CurvedAnimation(parent: _controller!, curve: Curves.elasticOut),
     );
-    _prevCount = widget.count;
+    _controller!.forward().then((_) {
+      if (mounted) _controller?.reverse();
+    });
   }
 
   @override
@@ -209,14 +235,14 @@ class _ActionIconState extends State<_ActionIcon>
     super.didUpdateWidget(oldWidget);
     if (widget.count != oldWidget.count && widget.count > oldWidget.count) {
       HapticFeedback.lightImpact();
-      _controller.forward().then((_) => _controller.reverse());
+      _triggerBounce();
     }
     _prevCount = widget.count;
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -226,6 +252,10 @@ class _ActionIconState extends State<_ActionIcon>
     final defaultColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
     final effectiveColor = widget.color ?? defaultColor;
 
+    final iconWidget = _scale != null
+        ? ScaleTransition(scale: _scale!, child: widget.icon)
+        : widget.icon;
+
     return InkWell(
       borderRadius: BorderRadius.circular(999.r),
       onTap: widget.onTap,
@@ -234,7 +264,7 @@ class _ActionIconState extends State<_ActionIcon>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ScaleTransition(scale: _scale, child: widget.icon),
+            iconWidget,
             if (widget.count > 0) ...[
               SizedBox(width: 5.w),
               AnimatedSwitcher(

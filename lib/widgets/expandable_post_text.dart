@@ -193,7 +193,10 @@ class _ExpandablePostTextState extends State<ExpandablePostText> {
         final bool showSeeMore;
         final String collapsedText;
 
-        if (_cachedText == currentText &&
+        if (currentText.length <= 130 && '\n'.allMatches(currentText).length < 5) {
+          showSeeMore = false;
+          collapsedText = currentText;
+        } else if (_cachedText == currentText &&
             _cachedMaxWidth == currentMaxWidth &&
             _cachedShowSeeMore != null &&
             _cachedCollapsedText != null) {

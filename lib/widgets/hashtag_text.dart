@@ -131,6 +131,20 @@ List<InlineSpan> buildHashtagTextSpans({
   TextStyle? mentionStyle,
   List<TapGestureRecognizer>? recognizers,
 }) {
+  if (text.isEmpty) return const [];
+  if (!text.contains('#') && !text.contains('@')) {
+    var hasSpecial = false;
+    for (var i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) >= 0x2000) {
+        hasSpecial = true;
+        break;
+      }
+    }
+    if (!hasSpecial) {
+      return [TextSpan(text: text, style: style)];
+    }
+  }
+
   text = ensureEmojiPresentation(text);
   final spans = <InlineSpan>[];
   var currentIndex = 0;

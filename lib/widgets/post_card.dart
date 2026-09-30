@@ -1158,34 +1158,11 @@ class _PostCardState extends State<PostCard> {
     final ghostBgColor = Theme.of(context).colorScheme.surface;
     final ghostBorderColor = const Color(0xFFFF7A59);
 
-    final mainCard = Container(
-      margin: EdgeInsets.zero,
-      decoration: isGhost
-          ? BoxDecoration(
-              color: ghostBgColor,
-              borderRadius: BorderRadius.circular(20),
-            )
-          : BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF2F3031)
-                      : const Color(0xFFD1D5DB),
-                  width: 2.5,
-                ),
-              ),
-            ),
-      child: ClipRRect(
-        borderRadius: isGhost ? BorderRadius.circular(20) : BorderRadius.zero,
-        child: Stack(
-          children: [
-
-              Padding(
-                padding: EdgeInsets.fromLTRB(0, 2.h, 0, 8.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+    final cardBody = Padding(
+      padding: EdgeInsets.fromLTRB(0, 2.h, 0, 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
                     if (widget.showPinnedBadge && _post.isPinned) ...[
                       Padding(
                         padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
@@ -1421,29 +1398,62 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ],
                 ),
-              ),
-              if (animatedPostcardUrl != null)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  height: 36.h,
-                  child: IgnorePointer(
-                    child: RepaintBoundary(
-                      child: CachedNetworkImage(
-                        imageUrl: animatedPostcardUrl,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.topRight,
-                        fadeInDuration: Duration.zero,
-                        fadeOutDuration: Duration.zero,
-                        placeholder: (context, url) => const SizedBox(),
-                        errorWidget: (context, url, error) => const SizedBox(),
-                      ),
-                    ),
+              );
+
+      final Widget cardInner;
+      if (animatedPostcardUrl != null) {
+        cardInner = Stack(
+          children: [
+            cardBody,
+            Positioned(
+              right: 0,
+              top: 0,
+              height: 36.h,
+              child: IgnorePointer(
+                child: RepaintBoundary(
+                  child: CachedNetworkImage(
+                    imageUrl: animatedPostcardUrl,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topRight,
+                    memCacheHeight: (36.h * 2).round().clamp(60, 120),
+                    fadeInDuration: Duration.zero,
+                    fadeOutDuration: Duration.zero,
+                    placeholder: (context, url) => const SizedBox(),
+                    errorWidget: (context, url, error) => const SizedBox(),
                   ),
                 ),
-            ],
-          ),
-        ),
+              ),
+            ),
+          ],
+        );
+      } else {
+        cardInner = cardBody;
+      }
+
+      final mainCard = Container(
+        margin: EdgeInsets.zero,
+        decoration: isGhost
+            ? BoxDecoration(
+                color: ghostBgColor,
+                borderRadius: BorderRadius.circular(20),
+              )
+            : BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF2F3031)
+                        : const Color(0xFFD1D5DB),
+                    width: 2.5,
+                  ),
+                ),
+              ),
+        child: isGhost
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: cardInner,
+              )
+            : cardInner,
       );
 
       Widget wrappedCard = mainCard;

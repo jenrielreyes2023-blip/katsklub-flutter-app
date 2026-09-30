@@ -462,7 +462,7 @@ class _FeedScreenState extends State<FeedScreen>
               child: CustomScrollView(
                 key: const PageStorageKey<String>('feed-post-list'),
                 controller: _scrollController,
-                cacheExtent: 1500,
+                cacheExtent: 550,
                 physics: const FeedMomentumScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
@@ -538,9 +538,20 @@ class _FeedScreenState extends State<FeedScreen>
 
   void _prefetchUpcomingPostImages(
       BuildContext context, List<Post> posts, int currentIndex) {
+    final end = (currentIndex + 3).clamp(0, posts.length - 1).toInt();
+    var hasUnfetchedMedia = false;
+    for (var i = currentIndex + 1; i <= end; i++) {
+      final p = posts[i];
+      if (!_prefetchedPostImages.contains(p.id) &&
+          (p.imageUrls.isNotEmpty || p.videoPosterUrl.trim().isNotEmpty)) {
+        hasUnfetchedMedia = true;
+        break;
+      }
+    }
+    if (!hasUnfetchedMedia) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final end = (currentIndex + 3).clamp(0, posts.length - 1).toInt();
       for (var i = currentIndex + 1; i <= end; i++) {
         final post = posts[i];
         if (!_prefetchedPostImages.add(post.id)) continue;
@@ -685,12 +696,13 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Widget _buildSnappablePostCard(Post post) {
-    return RepaintBoundary(
-      child: KeyedSubtree(
+    if (hasSnappableMedia(post)) {
+      return KeyedSubtree(
         key: _mediaSnapCoordinator.keyForPost(post),
         child: _postCard(post),
-      ),
-    );
+      );
+    }
+    return _postCard(post);
   }
 
   List<Post> _mergePosts(List<Post> existing, List<Post> incoming) {
