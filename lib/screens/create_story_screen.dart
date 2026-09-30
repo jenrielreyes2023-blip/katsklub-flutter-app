@@ -2053,34 +2053,48 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                               ),
                             ),
                           ] else ...[
-                            // Gradient Background
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              decoration: BoxDecoration(
-                                gradient: _bgGradients[_gradientIndex],
+                            // Gradient Background — tapping anywhere on canvas changes background color!
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _cycleGradient,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                decoration: BoxDecoration(
+                                  gradient: _bgGradients[_gradientIndex],
+                                ),
                               ),
                             ),
                             if (_textOverlays.isEmpty && _stickerOverlays.isEmpty && _strokes.isEmpty && !_isDrawingMode && !_isEditingText)
                               Center(
                                 child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
                                   onTap: () => _openTextEditor(),
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                                    padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 14.h),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(24.r),
+                                      color: Colors.black.withValues(alpha: 0.38),
+                                      borderRadius: BorderRadius.circular(28.r),
+                                      border: Border.all(color: Colors.white24, width: 1.0),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.edit_outlined, color: Colors.white70, size: 18.sp),
-                                        SizedBox(width: 8.w),
+                                        Icon(Icons.edit_outlined, color: Colors.white, size: 20.sp),
+                                        SizedBox(width: 10.w),
                                         Text(
                                           'Tap to add text',
                                           style: GoogleFonts.inter(
                                             color: Colors.white,
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: -0.2,
                                           ),
                                         ),
                                       ],
@@ -2089,13 +2103,16 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                                 ),
                               ),
                           ],
-                          // Freehand Doodle Layer
-                          CustomPaint(
-                            painter: _DoodlePainter(
-                              strokes: _strokes,
-                              activeStroke: _activeStroke,
+                          // Freehand Doodle Layer (wrapped in IgnorePointer so it never blocks background or button taps)
+                          IgnorePointer(
+                            ignoring: true,
+                            child: CustomPaint(
+                              painter: _DoodlePainter(
+                                strokes: _strokes,
+                                activeStroke: _activeStroke,
+                              ),
+                              size: Size.infinite,
                             ),
-                            size: Size.infinite,
                           ),
                           // Doodle Touch Area (in drawing mode)
                           if (_isDrawingMode)
@@ -2260,174 +2277,187 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
             ),
           ),
 
-          // 2. Normal Mode Top Bar
+          // 2. Normal Mode - Top Bar (Close button + optional Music pill)
           if (!_isDrawingMode && !_isEditingText)
             Positioned(
               top: 0,
               left: 0,
-              right: 0,
+              right: 70.w,
               child: SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          reverse: true,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Gallery Picker Button
-                              GestureDetector(
-                                onTap: _pickImageFromGallery,
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.0),
-                                  ),
-                                  child: const Icon(
-                                    Icons.photo_library_outlined,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Camera Capture Button
-                              GestureDetector(
-                                onTap: _capturePhotoFromCamera,
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.0),
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt_outlined,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Palette / Background Gradient Button
-                              GestureDetector(
-                                onTap: _cycleGradient,
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _imageBytes == null ? const Color(0xFFFF7A45) : Colors.white24,
-                                      width: _imageBytes == null ? 1.5 : 1.0,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.palette_outlined,
-                                    color: _imageBytes == null ? const Color(0xFFFF7A45) : Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Apple Music Button
-                              GestureDetector(
-                                onTap: _pickMusic,
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white24,
-                                      width: _selectedMusic != null ? 1.5 : 1.0,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.music_note_rounded,
-                                    color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Stickers & Emojis Button
-                              GestureDetector(
-                                onTap: _openStickerTray,
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.0),
-                                  ),
-                                  child: const Icon(
-                                    Icons.sentiment_satisfied_alt_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Doodle Drawing Button
-                              GestureDetector(
-                                onTap: () => setState(() => _isDrawingMode = true),
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.0),
-                                  ),
-                                  child: const Icon(
-                                    Icons.gesture_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              // Text Tool Button (Aa)
-                              GestureDetector(
-                                onTap: () => _openTextEditor(),
-                                child: Container(
-                                  width: 38.r,
-                                  height: 38.r,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.0),
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      'Aa',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                      // Close (X) Button
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 40.r,
+                          height: 40.r,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24, width: 1.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
+                          child: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+                        ),
+                      ),
+                      if (_selectedMusic != null) ...[
+                        SizedBox(width: 8.w),
+                        Flexible(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _pickMusic,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.52),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.music_note_rounded,
+                                    color: Color(0xFFFF7A45),
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Flexible(
+                                    child: Text(
+                                      '${_selectedMusic!.title} • ${_selectedMusic!.artist}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedMusic = null;
+                                        _musicOverlay = null;
+                                      });
+                                    },
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      color: Colors.white70,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // 3. Normal Mode - Right-Side Vertical Tools Stack (Socials standard: Instagram / TikTok)
+          if (!_isDrawingMode && !_isEditingText)
+            Positioned(
+              top: 0,
+              right: 14.w,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 8.h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Text Tool (Aa)
+                      _buildRightToolButton(
+                        onTap: () => _openTextEditor(),
+                        child: Text(
+                          'Aa',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15.sp,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Stickers & Emojis
+                      _buildRightToolButton(
+                        onTap: _openStickerTray,
+                        child: const Icon(
+                          Icons.sentiment_satisfied_alt_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Music
+                      _buildRightToolButton(
+                        onTap: _pickMusic,
+                        isActive: _selectedMusic != null,
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Doodle / Draw
+                      _buildRightToolButton(
+                        onTap: () => setState(() => _isDrawingMode = true),
+                        child: const Icon(
+                          Icons.gesture_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Palette / Background Gradient
+                      _buildRightToolButton(
+                        onTap: _cycleGradient,
+                        isActive: _imageBytes == null,
+                        child: Icon(
+                          Icons.palette_outlined,
+                          color: _imageBytes == null ? const Color(0xFFFF7A45) : Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Gallery Picker
+                      _buildRightToolButton(
+                        onTap: _pickImageFromGallery,
+                        child: const Icon(
+                          Icons.photo_library_outlined,
+                          color: Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      // Camera Capture
+                      _buildRightToolButton(
+                        onTap: _capturePhotoFromCamera,
+                        child: const Icon(
+                          Icons.camera_alt_outlined,
+                          color: Colors.white,
+                          size: 19,
                         ),
                       ),
                     ],
@@ -2992,6 +3022,39 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
             fontSize: 13.sp,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRightToolButton({
+    required VoidCallback onTap,
+    required Widget child,
+    bool isActive = false,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 38.r,
+        height: 38.r,
+        decoration: BoxDecoration(
+          color: isActive
+              ? Colors.black.withValues(alpha: 0.65)
+              : Colors.black.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isActive ? const Color(0xFFFF7A45) : Colors.white24,
+            width: isActive ? 1.8 : 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(child: child),
       ),
     );
   }
