@@ -25,6 +25,8 @@ import 'post_detail_screen.dart';
 import '../services/push_notification_service.dart';
 import '../services/trtc_call_service.dart';
 import '../widgets/in_app_notification_banner.dart';
+import '../services/daily_rewards_service.dart';
+import '../widgets/daily_rewards_overlay.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -75,6 +77,29 @@ class _AppShellState extends State<AppShell> {
     _liveNotificationSubscription =
         FeedService.notificationReceivedStream.listen(_showInAppNotificationBanner);
     TRTCCallService().initSocketListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkDailyRewards();
+    });
+  }
+
+  Future<void> _checkDailyRewards() async {
+    try {
+      final rewardsService = DailyRewardsService();
+      final status = await rewardsService.getDailyRewardsStatus();
+      if (!mounted) return;
+
+      if (status != null && status.canClaimToday) {
+        final hasShown = await rewardsService.hasBeenShownToday();
+        if (!hasShown && mounted) {
+          await rewardsService.markShownToday();
+          if (mounted) {
+            DailyRewardsOverlay.show(context, initialStatus: status);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking daily rewards in AppShell: $e');
+    }
   }
 
   @override

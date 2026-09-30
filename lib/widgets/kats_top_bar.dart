@@ -6,6 +6,9 @@ import '../providers/theme_provider.dart';
 import '../screens/top_users_screen.dart';
 import '../screens/voice_room/voice_rooms_lobby_screen.dart';
 import '../services/feed_service.dart';
+import '../models/daily_reward_item.dart';
+import '../services/daily_rewards_service.dart';
+import '../widgets/daily_rewards_overlay.dart';
 import 'custom_icons.dart';
 
 const String _topOutstandingSvg =
@@ -125,6 +128,68 @@ class KatsTopBar extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          const SizedBox(width: 3),
+          ValueListenableBuilder<DailyRewardsStatus?>(
+            valueListenable: DailyRewardsService.statusNotifier,
+            builder: (context, status, _) {
+              final canClaim = status?.canClaimToday ?? false;
+              final streak = status?.streakCount ?? 0;
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10.r),
+                  onTap: () {
+                    DailyRewardsOverlay.show(context, initialStatus: status);
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.5.h),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: canClaim
+                            ? const [Color(0xFFF59E0B), Color(0xFFFF7A45)]
+                            : [Colors.white.withValues(alpha: 0.08), Colors.white.withValues(alpha: 0.04)],
+                      ),
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(
+                        color: canClaim
+                            ? const Color(0xFFF59E0B)
+                            : Colors.white.withValues(alpha: 0.12),
+                        width: 0.8,
+                      ),
+                      boxShadow: canClaim
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                                blurRadius: 5,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          canClaim ? '🎁' : '🔥',
+                          style: TextStyle(fontSize: 10.5.sp),
+                        ),
+                        SizedBox(width: 2.5.w),
+                        Text(
+                          canClaim ? 'Claim' : '${streak}d',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 3),
           IconButton(
