@@ -13,6 +13,8 @@ import '../widgets/custom_icons.dart';
 import '../widgets/hashtag_text.dart';
 import '../widgets/post_with_users_line.dart';
 import '../widgets/share_post_sheet.dart';
+import '../widgets/special_name_text.dart';
+import '../widgets/user_avatar_with_frame.dart';
 import 'hashtag_screen.dart';
 import 'repost_post_screen.dart';
 import 'user_profile_screen.dart';
@@ -324,33 +326,34 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
             SafeArea(
               child: Padding(
                 padding:
-                    EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       icon: Icon(Icons.close,
-                          color: Colors.white, size: 28.sp),
+                          color: Colors.white, size: 24.sp),
                       onPressed: () => Navigator.pop(context, _post),
                     ),
                     Text(
                       '${_currentIndex + 1} of ${widget.imageUrls.length}',
                       style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.white,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     Row(
                       children: [
                         IconButton(
                           icon: Icon(Icons.ios_share_outlined,
-                              color: Colors.white, size: 24.sp),
+                              color: Colors.white, size: 22.sp),
                           onPressed: shareAction,
                         ),
                         IconButton(
                           icon: Icon(Icons.more_vert,
-                              color: Colors.white, size: 24.sp),
+                              color: Colors.white, size: 22.sp),
                           onPressed: () {},
                         ),
                       ],
@@ -372,6 +375,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       effectivePost?.commentCount ?? widget.commentCount ?? 0;
 
                   return _ImagePostDetailsOverlay(
+                    post: effectivePost,
                     uploaderName: effectivePost?.authorFullName ??
                         widget.uploaderName?.trim() ??
                         '',
@@ -413,6 +417,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
 
 class _ImagePostDetailsOverlay extends StatefulWidget {
   const _ImagePostDetailsOverlay({
+    this.post,
     required this.uploaderName,
     required this.createdAt,
     required this.privacyLabel,
@@ -428,6 +433,7 @@ class _ImagePostDetailsOverlay extends StatefulWidget {
     this.onShare,
   });
 
+  final Post? post;
   final String uploaderName;
   final DateTime? createdAt;
   final String privacyLabel;
@@ -467,9 +473,11 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
   }
 
   void _openMention(BuildContext context, String username) {
+    final clean = username.trim().replaceAll('@', '');
+    if (clean.isEmpty) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => UserProfileScreen(username: username),
+        builder: (_) => UserProfileScreen(username: clean),
       ),
     );
   }
@@ -477,17 +485,35 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
   @override
   Widget build(BuildContext context) {
     const inactiveColor = Colors.white;
-    const likedColor = Color(0xFFFF6B81);
+    const likedColor = Color(0xFFE11D48);
+
+    final post = widget.post;
+    final authorUsername = post?.authorUsername.trim() ?? '';
+    final displayName = widget.uploaderName.isNotEmpty
+        ? widget.uploaderName
+        : (post?.authorFullName.trim().isNotEmpty == true
+            ? post!.authorFullName
+            : authorUsername);
+    final avatarUrl = post?.authorAvatarUrl ?? '';
+    final initials = post?.authorInitials ??
+        (displayName.isNotEmpty ? displayName[0].toUpperCase() : 'K');
+    final hasAuthor = displayName.isNotEmpty || avatarUrl.isNotEmpty;
+
+    // Feed inline post body typography (SF Pro Rounded 13.sp w500)
     final captionStyle = TextStyle(
+      fontFamily: 'SF Pro Rounded',
       color: Colors.white,
-      fontSize: 14.sp,
-      height: 1.35,
+      fontSize: 13.sp,
+      height: 1.33,
+      letterSpacing: -0.2,
       fontWeight: FontWeight.w500,
     );
     final captionLinkStyle = TextStyle(
+      fontFamily: 'SF Pro Rounded',
       color: Colors.white,
-      fontSize: 14.sp,
-      height: 1.35,
+      fontSize: 13.sp,
+      height: 1.33,
+      letterSpacing: -0.2,
       fontWeight: FontWeight.w700,
       decoration: TextDecoration.underline,
       decorationColor: Colors.white,
@@ -513,67 +539,154 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.uploaderName.isNotEmpty)
-                Text(
-                  widget.uploaderName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w800,
-                  ),
+              if (hasAuthor)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (avatarUrl.isNotEmpty || initials.isNotEmpty) ...[
+                      UserAvatarWithFrame(
+                        avatarUrl: avatarUrl,
+                        initials: initials,
+                        radius: 17,
+                        isAdmin: post?.authorIsAdmin ?? false,
+                        framePath: post?.authorAvatarFrame,
+                        onTap: authorUsername.isNotEmpty
+                            ? () => _openMention(context, authorUsername)
+                            : null,
+                      ),
+                      SizedBox(width: 8.w),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: GestureDetector(
+                                  onTap: authorUsername.isNotEmpty
+                                      ? () => _openMention(context, authorUsername)
+                                      : null,
+                                  child: SpecialNameText(
+                                    username: authorUsername,
+                                    displayName: displayName,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: Colors.white,
+                                      fontSize: 13.sp,
+                                      height: 1.33,
+                                      letterSpacing: -0.2,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (post?.authorIsVerified == true) ...[
+                                SizedBox(width: 4.w),
+                                Icon(
+                                  Icons.verified,
+                                  color: const Color(0xFF1D9BF0),
+                                  size: 14.sp,
+                                ),
+                              ],
+                              if (post != null && post.feeling.isNotEmpty) ...[
+                                SizedBox(width: 4.w),
+                                Text(
+                                  'is feeling',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 13.sp,
+                                    color: Colors.white.withValues(alpha: 0.72),
+                                  ),
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  post.feeling,
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          SizedBox(height: 1.h),
+                          Row(
+                            children: [
+                              if (widget.createdAt != null)
+                                Text(
+                                  _formatTimeAgo(widget.createdAt!),
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: Colors.white.withValues(alpha: 0.72),
+                                    fontSize: 10.5.sp,
+                                    height: 1.33,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              if (widget.privacyLabel.isNotEmpty) ...[
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                                  child: Text(
+                                    '·',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: Colors.white.withValues(alpha: 0.72),
+                                      fontSize: 10.5.sp,
+                                      height: 1.33,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  _privacyIcon(widget.privacyLabel),
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                  size: 11.5.sp,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               if (widget.withUsers.isNotEmpty) ...[
                 SizedBox(height: 3.h),
                 PostWithUsersLine(
                   users: widget.withUsers,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    fontSize: 12.5.sp,
+                  prefix: 'is — with ',
+                  prefixHighlight: '— with',
+                  prefixHighlightStyle: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                    height: 1.1,
+                  ),
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                    height: 1.1,
                   ),
                   linkStyle: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
                     color: Colors.white,
-                    fontSize: 12.5.sp,
-                    fontWeight: FontWeight.w800,
-                    decoration: TextDecoration.underline,
-                    decorationColor: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                    height: 1.1,
                   ),
                   onUserTap: (username) => _openMention(context, username),
                 ),
               ],
-              SizedBox(height: 3.h),
-              Row(
-                children: [
-                  if (widget.createdAt != null)
-                    Text(
-                      _formatTimeAgo(widget.createdAt!),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  if (widget.privacyLabel.isNotEmpty) ...[
-                    SizedBox(width: 7.w),
-                    Icon(
-                      _privacyIcon(widget.privacyLabel),
-                      color: Colors.white.withValues(alpha: 0.78),
-                      size: 14.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      widget.privacyLabel,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
               if (widget.caption.isNotEmpty) ...[
                 SizedBox(height: 8.h),
                 LayoutBuilder(
@@ -621,30 +734,21 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                           child: captionBody,
                         ),
                         if (canExpand) ...[
-                          SizedBox(height: 8.h),
+                          SizedBox(height: 4.h),
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: _toggleExpanded,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _expanded ? 'Less' : 'More',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 2.h),
+                              child: Text(
+                                _expanded ? 'See less' : 'See more',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFFFF7A45),
                                 ),
-                                SizedBox(width: 4.w),
-                                Icon(
-                                  _expanded
-                                      ? Icons.keyboard_arrow_up_rounded
-                                      : Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                  size: 18.sp,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ],
@@ -653,34 +757,34 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                   },
                 ),
               ],
-              SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
               Row(
                 children: [
                   _ViewerActionButton(
                     icon: widget.likedByMe
-                        ? CustomIcons.heartFilled(color: likedColor, size: 22.sp)
-                        : CustomIcons.heart(color: inactiveColor, size: 22.sp),
+                        ? CustomIcons.heartFilled(color: likedColor, size: 23)
+                        : CustomIcons.heart(color: inactiveColor, size: 23),
                     count: widget.likeCount,
                     color: widget.likedByMe ? likedColor : inactiveColor,
                     onTap: widget.onLike,
                   ),
                   SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.comment(color: inactiveColor, size: 22.sp),
+                    icon: CustomIcons.comment(color: inactiveColor, size: 23),
                     count: widget.commentCount,
                     color: inactiveColor,
                     onTap: widget.onComment,
                   ),
                   SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.repost(color: inactiveColor, size: 22.sp),
+                    icon: CustomIcons.repost(color: inactiveColor, size: 23),
                     count: widget.repostCount,
                     color: inactiveColor,
                     onTap: widget.onRepost,
                   ),
                   SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.share(color: inactiveColor, size: 22.sp),
+                    icon: CustomIcons.share(color: inactiveColor, size: 23),
                     count: 0,
                     color: inactiveColor,
                     onTap: widget.onShare,
@@ -761,27 +865,47 @@ class _ViewerActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback? onTap;
 
+  static String _formatCount(int value) {
+    if (value >= 1000000) {
+      double val = value / 1000000.0;
+      String str = val.toStringAsFixed(1);
+      if (str.endsWith('.0')) str = str.substring(0, str.length - 2);
+      return '${str}M';
+    }
+    if (value >= 1000) {
+      double val = value / 1000.0;
+      String str = val.toStringAsFixed(1);
+      if (str.endsWith('.0')) str = str.substring(0, str.length - 2);
+      return '${str}K';
+    }
+    return value.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(999.r),
       onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon,
-          if (count > 0) ...[
-            SizedBox(width: 6.w),
-            Text(
-              count.toString(),
-              style: TextStyle(
-                color: color,
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            if (count > 0) ...[
+              SizedBox(width: 5.w),
+              Text(
+                _formatCount(count),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: color,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

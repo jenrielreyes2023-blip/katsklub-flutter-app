@@ -291,15 +291,16 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
             icon: Icon(
               Icons.arrow_back,
               color: isDark ? Colors.white : Colors.black87,
-              size: 24.sp,
+              size: 22.sp,
             ),
             onPressed: () => Navigator.of(context).pop(_post),
           ),
           title: Text(
             '${widget.imageUrls.length} photos',
             style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
               color: isDark ? Colors.white : Colors.black87,
-              fontSize: 16.sp,
+              fontSize: 15.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -318,6 +319,22 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
         ),
       ),
     );
+  }
+
+  static String _formatCount(int value) {
+    if (value >= 1000000) {
+      double val = value / 1000000.0;
+      String str = val.toStringAsFixed(1);
+      if (str.endsWith('.0')) str = str.substring(0, str.length - 2);
+      return '${str}M';
+    }
+    if (value >= 1000) {
+      double val = value / 1000.0;
+      String str = val.toStringAsFixed(1);
+      if (str.endsWith('.0')) str = str.substring(0, str.length - 2);
+      return '${str}K';
+    }
+    return value.toString();
   }
 
   Widget _buildGalleryItem(BuildContext context, int index) {
@@ -360,27 +377,28 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
                 borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _toggleLike : null,
                 child: Padding(
-                  padding: EdgeInsets.all(8.r),
+                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       likedByMe
                           ? CustomIcons.heartFilled(
                               color: likedColor,
-                              size: 22.sp,
+                              size: 23,
                             )
                           : CustomIcons.heart(
                               color: inactiveColor,
-                              size: 22.sp,
+                              size: 23,
                             ),
                       if (likeCount > 0) ...[
-                        SizedBox(width: 6.w),
+                        SizedBox(width: 5.w),
                         Text(
-                          '$likeCount',
+                          _formatCount(likeCount),
                           style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: likedByMe ? likedColor : inactiveColor,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -388,27 +406,28 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: 16.w),
+              SizedBox(width: 24.w),
               InkWell(
                 borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _openComments : null,
                 child: Padding(
-                  padding: EdgeInsets.all(8.r),
+                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CustomIcons.comment(
                         color: inactiveColor,
-                        size: 22.sp,
+                        size: 23,
                       ),
                       if (commentCount > 0) ...[
-                        SizedBox(width: 6.w),
+                        SizedBox(width: 5.w),
                         Text(
-                          '$commentCount',
+                          _formatCount(commentCount),
                           style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: inactiveColor,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -416,27 +435,27 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: 16.w),
+              SizedBox(width: 24.w),
               InkWell(
                 borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _repostPost : null,
                 child: Padding(
-                  padding: EdgeInsets.all(8.r),
+                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
                   child: CustomIcons.repost(
                     color: inactiveColor,
-                    size: 22.sp,
+                    size: 23,
                   ),
                 ),
               ),
-              SizedBox(width: 16.w),
+              SizedBox(width: 24.w),
               InkWell(
                 borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _sharePost : null,
                 child: Padding(
-                  padding: EdgeInsets.all(8.r),
+                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
                   child: CustomIcons.share(
                     color: inactiveColor,
-                    size: 22.sp,
+                    size: 23,
                   ),
                 ),
               ),
