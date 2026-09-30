@@ -600,14 +600,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  void _openImages(int index) {
+  Future<void> _openImages(int index) async {
     final post = _post;
     if (post == null) {
       return;
     }
 
     if (post.imageUrls.length == 1) {
-      Navigator.of(context).push(
+      final updated = await Navigator.of(context).push<Post>(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               ImageViewerScreen(
@@ -635,10 +635,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           barrierColor: Colors.black,
         ),
       );
+      if (updated != null && mounted) {
+        _applyUpdatedPost(updated);
+      }
       return;
     }
 
-    Navigator.of(context).push(
+    final updated = await Navigator.of(context).push<Post>(
       MaterialPageRoute(
         builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
@@ -655,6 +658,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       ),
     );
+    if (updated != null && mounted) {
+      _applyUpdatedPost(updated);
+    }
   }
 
   void _openAuthor() {

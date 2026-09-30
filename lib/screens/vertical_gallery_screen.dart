@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -54,6 +55,8 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
   Post? _post;
   bool _didScrollToInitialImage = false;
   bool _likePending = false;
+  StreamSubscription<Post>? _postUpdatedSubscription;
+  StreamSubscription<CommentCountChange>? _commentCountSubscription;
 
   @override
   void initState() {
@@ -61,9 +64,50 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
     _post = widget.post;
     _scrollController = ScrollController();
     _imageKeys = _buildImageKeys(widget.imageUrls.length);
+
+    final targetId = _post?.id ?? widget.postId;
+    _postUpdatedSubscription =
+        FeedService.postUpdatedStream.listen((updatedPost) {
+      if (!mounted) return;
+      final currentTargetId = _post?.id ?? widget.postId;
+      if (currentTargetId != null && updatedPost.id == currentTargetId) {
+        setState(() {
+          _post = updatedPost;
+        });
+      }
+    });
+
+    _commentCountSubscription =
+        FeedService.commentCountChangedStream.listen((change) {
+      if (!mounted) return;
+      final currentTargetId = _post?.id ?? widget.postId;
+      if (currentTargetId != null && change.postId == currentTargetId) {
+        setState(() {
+          if (_post != null) {
+            _post = _post!.copyWith(commentCount: change.commentCount);
+          }
+        });
+      }
+    });
+
+    if (targetId != null && targetId.trim().isNotEmpty) {
+      _loadFreshPost(targetId.trim());
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToInitialImage();
     });
+  }
+
+  Future<void> _loadFreshPost(String postId) async {
+    try {
+      final fresh = await _feedService.loadPost(postId);
+      if (!mounted || fresh == null) return;
+      setState(() {
+        _post = fresh;
+      });
+      FeedService.notifyPostUpdated(fresh);
+    } catch (_) {}
   }
 
   @override
@@ -83,6 +127,8 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
 
   @override
   void dispose() {
+    _postUpdatedSubscription?.cancel();
+    _commentCountSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -138,6 +184,7 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
       setState(() {
         _post = updatedPost;
       });
+      FeedService.notifyPostUpdated(updatedPost);
     } catch (error) {
       if (!mounted) {
         return;
@@ -156,88 +203,6 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
     }
   }
 
-  Future<void> _toggleSlideLike(int slideId) async {
-    final post = _post;
-    if (post == null || _likePending) {
-      return;
-    }
-
-    setState(() {
-      _likePending = true;
-    });
-
-    final slideIndex = post.slides.indexWhere((s) => s.id == slideId);
-    if (slideIndex < 0) return;
-    final slide = post.slides[slideIndex];
-    final previous = post;
-
-    setState(() {
-      final updatedSlides = List<PostSlide>.from(post.slides);
-      updatedSlides[slideIndex] = slide.copyWith(
-        likedByMe: !slide.likedByMe,
-        likeCount: (slide.likeCount + (slide.likedByMe ? -1 : 1))
-            .clamp(0, 1 << 31)
-            .toInt(),
-      );
-      _post = post.copyWith(slides: updatedSlides);
-    });
-
-    try {
-      final updatedPost = await _feedService.toggleSlideLike(post: previous, slideId: slideId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _post = updatedPost;
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _post = previous;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(_errorMessage(error, fallback: 'Failed to like image.'))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _likePending = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _openSlideComments(int slideId) async {
-    final post = _post;
-    if (post == null) {
-      return;
-    }
-
-    final slideIndex = post.slides.indexWhere((s) => s.id == slideId);
-    if (slideIndex < 0) return;
-    final slide = post.slides[slideIndex];
-
-    final updatedCount = await showCommentsModal(
-      context: context,
-      post: post,
-      slideId: slide.id,
-      initialSlideCommentCount: slide.commentCount,
-    );
-
-    if (!mounted || updatedCount == null) {
-      return;
-    }
-
-    setState(() {
-      final updatedSlides = List<PostSlide>.from(post.slides);
-      updatedSlides[slideIndex] = slide.copyWith(commentCount: updatedCount);
-      _post = post.copyWith(slides: updatedSlides);
-    });
-  }
 
   Future<void> _openComments() async {
     final post = _post;
@@ -250,9 +215,15 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
       return;
     }
 
+    final updatedPost = post.copyWith(commentCount: updatedCount);
     setState(() {
-      _post = post.copyWith(commentCount: updatedCount);
+      _post = updatedPost;
     });
+    FeedService.notifyCommentCountChanged(
+      postId: post.id,
+      commentCount: updatedCount,
+    );
+    FeedService.notifyPostUpdated(updatedPost);
   }
 
   Future<void> _repostPost() async {
@@ -305,18 +276,45 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF18191A) : Colors.white,
-      body: SafeArea(
-        top: true,
-        bottom: true,
-        child: ListView(
-          controller: _scrollController,
-          padding: EdgeInsets.zero,
-          children: [
-            for (var index = 0; index < widget.imageUrls.length; index++)
-              _buildGalleryItem(context, index),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_post);
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? const Color(0xFF18191A) : Colors.white,
+        appBar: AppBar(
+          backgroundColor: isDark ? const Color(0xFF18191A) : Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: isDark ? Colors.white : Colors.black87,
+              size: 24.sp,
+            ),
+            onPressed: () => Navigator.of(context).pop(_post),
+          ),
+          title: Text(
+            '${widget.imageUrls.length} photos',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        body: SafeArea(
+          top: false,
+          bottom: true,
+          child: ListView(
+            controller: _scrollController,
+            padding: EdgeInsets.zero,
+            children: [
+              for (var index = 0; index < widget.imageUrls.length; index++)
+                _buildGalleryItem(context, index),
+            ],
+          ),
         ),
       ),
     );
@@ -327,17 +325,14 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
     final url = widget.imageUrls[index];
     final heroTagPrefix = post?.id ?? widget.postId ?? 'image';
 
-    final hasSlide = post != null &&
-        post.slides.isNotEmpty &&
-        index < post.slides.length &&
-        post.slides[index].id > 0;
-    final slide = hasSlide ? post.slides[index] : null;
-
-    final likedByMe = slide != null ? slide.likedByMe : (post?.likedByMe ?? false);
-    final likeCount = slide != null ? slide.likeCount : (post?.likeCount ?? widget.likeCount ?? 0);
-    final commentCount = slide != null ? slide.commentCount : (post?.commentCount ?? widget.commentCount ?? 0);
+    final likedByMe = post?.likedByMe ?? false;
+    final likeCount =
+        post?.likeCount ?? widget.likeCount ?? 0;
+    final commentCount =
+        post?.commentCount ?? widget.commentCount ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactiveColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final inactiveColor =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
     const likedColor = Color(0xFFE11D48);
 
     return Column(
@@ -345,9 +340,9 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
       children: [
         if (index > 0)
           Container(
-             height: 8,
-             width: double.infinity,
-             color: isDark ? const Color(0xFF242526) : const Color(0xFFE5E7EB),
+            height: 8.h,
+            width: double.infinity,
+            color: isDark ? const Color(0xFF242526) : const Color(0xFFE5E7EB),
           ),
         GestureDetector(
           onTap: () => _openLightbox(context, index),
@@ -358,35 +353,33 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
           child: Row(
             children: [
               InkWell(
-                borderRadius: BorderRadius.circular(999),
-                onTap: post != null
-                    ? (slide != null ? () => _toggleSlideLike(slide.id) : _toggleLike)
-                    : null,
+                borderRadius: BorderRadius.circular(999.r),
+                onTap: post != null ? _toggleLike : null,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8.r),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       likedByMe
                           ? CustomIcons.heartFilled(
                               color: likedColor,
-                              size: 22,
+                              size: 22.sp,
                             )
                           : CustomIcons.heart(
                               color: inactiveColor,
-                              size: 22,
+                              size: 22.sp,
                             ),
                       if (likeCount > 0) ...[
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text(
                           '$likeCount',
                           style: TextStyle(
                             color: likedByMe ? likedColor : inactiveColor,
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -395,28 +388,26 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               InkWell(
-                borderRadius: BorderRadius.circular(999),
-                onTap: post != null
-                    ? (slide != null ? () => _openSlideComments(slide.id) : _openComments)
-                    : null,
+                borderRadius: BorderRadius.circular(999.r),
+                onTap: post != null ? _openComments : null,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8.r),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CustomIcons.comment(
                         color: inactiveColor,
-                        size: 22,
+                        size: 22.sp,
                       ),
                       if (commentCount > 0) ...[
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text(
                           '$commentCount',
                           style: TextStyle(
                             color: inactiveColor,
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -425,40 +416,40 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               InkWell(
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _repostPost : null,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8.r),
                   child: CustomIcons.repost(
                     color: inactiveColor,
-                    size: 22,
+                    size: 22.sp,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               InkWell(
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
                 onTap: post != null ? _sharePost : null,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8.r),
                   child: CustomIcons.share(
                     color: inactiveColor,
-                    size: 22,
+                    size: 22.sp,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
       ],
     );
   }
 
-  void _openLightbox(BuildContext context, int index) {
-    Navigator.of(context).push(
+  Future<void> _openLightbox(BuildContext context, int index) async {
+    final updated = await Navigator.of(context).push<Post>(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             ImageViewerScreen(
@@ -471,9 +462,9 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
           createdAt: widget.createdAt,
           privacyLabel: widget.privacyLabel,
           caption: widget.caption,
-          likeCount: widget.likeCount,
-          commentCount: widget.commentCount,
-          repostCount: widget.repostCount,
+          likeCount: _post?.likeCount ?? widget.likeCount,
+          commentCount: _post?.commentCount ?? widget.commentCount,
+          repostCount: _post?.repostCount ?? widget.repostCount,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
@@ -487,6 +478,12 @@ class _VerticalGalleryScreenState extends State<VerticalGalleryScreen> {
         barrierColor: Colors.black,
       ),
     );
+
+    if (updated != null && mounted) {
+      setState(() {
+        _post = updated;
+      });
+    }
   }
 }
 

@@ -259,9 +259,9 @@ class _HashtagScreenState extends State<HashtagScreen> {
     );
   }
 
-  void _openImages(Post post, int index) {
+  Future<void> _openImages(Post post, int index) async {
     if (post.imageUrls.length == 1) {
-      Navigator.of(context).push(
+      final updated = await Navigator.of(context).push<Post>(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               ImageViewerScreen(
@@ -289,10 +289,13 @@ class _HashtagScreenState extends State<HashtagScreen> {
           barrierColor: Colors.black.withValues(alpha: 0.5),
         ),
       );
+      if (updated != null && mounted) {
+        _replacePost(updated);
+      }
       return;
     }
 
-    Navigator.of(context).push(
+    final updated = await Navigator.of(context).push<Post>(
       MaterialPageRoute(
         builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
@@ -309,6 +312,9 @@ class _HashtagScreenState extends State<HashtagScreen> {
         ),
       ),
     );
+    if (updated != null && mounted) {
+      _replacePost(updated);
+    }
   }
 
   void _openAuthor(Post post) {

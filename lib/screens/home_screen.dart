@@ -1271,10 +1271,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _openImages(Post post, int index) {
+  Future<void> _openImages(Post post, int index) async {
     // Single image: go directly to lightbox
     if (post.imageUrls.length == 1) {
-      Navigator.of(context).push(
+      final updated = await Navigator.of(context).push<Post>(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               ImageViewerScreen(
@@ -1303,11 +1303,14 @@ class _HomeScreenState extends State<HomeScreen>
           barrierColor: Colors.black,
         ),
       );
+      if (updated != null && mounted) {
+        _replacePost(updated);
+      }
       return;
     }
 
     // Multiple images: go to vertical gallery first
-    Navigator.of(context).push(
+    final updated = await Navigator.of(context).push<Post>(
       MaterialPageRoute(
         builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
@@ -1324,6 +1327,9 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
     );
+    if (updated != null && mounted) {
+      _replacePost(updated);
+    }
   }
 
   void _openAuthor(Post post) {

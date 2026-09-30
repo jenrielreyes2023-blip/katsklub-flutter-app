@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
@@ -15,7 +16,6 @@ import '../widgets/share_post_sheet.dart';
 import 'hashtag_screen.dart';
 import 'repost_post_screen.dart';
 import 'user_profile_screen.dart';
-import 'vertical_gallery_screen.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   const ImageViewerScreen({
@@ -59,6 +59,8 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
   double _dragOffset = 0;
   double _backgroundOpacity = 1.0;
   bool _likePending = false;
+  StreamSubscription<Post>? _postUpdatedSubscription;
+  StreamSubscription<CommentCountChange>? _commentCountSubscription;
 
   @override
   void initState() {
@@ -67,6 +69,46 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     _currentIndex =
         widget.initialIndex.clamp(0, widget.imageUrls.length - 1).toInt();
     _pageController = PageController(initialPage: _currentIndex);
+
+    final targetId = _post?.id ?? widget.postId;
+    _postUpdatedSubscription =
+        FeedService.postUpdatedStream.listen((updatedPost) {
+      if (!mounted) return;
+      final currentTargetId = _post?.id ?? widget.postId;
+      if (currentTargetId != null && updatedPost.id == currentTargetId) {
+        setState(() {
+          _post = updatedPost;
+        });
+      }
+    });
+
+    _commentCountSubscription =
+        FeedService.commentCountChangedStream.listen((change) {
+      if (!mounted) return;
+      final currentTargetId = _post?.id ?? widget.postId;
+      if (currentTargetId != null && change.postId == currentTargetId) {
+        setState(() {
+          if (_post != null) {
+            _post = _post!.copyWith(commentCount: change.commentCount);
+          }
+        });
+      }
+    });
+
+    if (targetId != null && targetId.trim().isNotEmpty) {
+      _loadFreshPost(targetId.trim());
+    }
+  }
+
+  Future<void> _loadFreshPost(String postId) async {
+    try {
+      final fresh = await _feedService.loadPost(postId);
+      if (!mounted || fresh == null) return;
+      setState(() {
+        _post = fresh;
+      });
+      FeedService.notifyPostUpdated(fresh);
+    } catch (_) {}
   }
 
   @override
@@ -79,6 +121,8 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
 
   @override
   void dispose() {
+    _postUpdatedSubscription?.cancel();
+    _commentCountSubscription?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -92,7 +136,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
 
   void _handleVerticalDragEnd(DragEndDetails details) {
     if (_dragOffset.abs() > 100) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(_post);
     } else {
       setState(() {
         _dragOffset = 0;
@@ -119,6 +163,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       setState(() {
         _post = updatedPost;
       });
+      FeedService.notifyPostUpdated(updatedPost);
     } catch (error) {
       if (!mounted) {
         return;
@@ -137,60 +182,6 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     }
   }
 
-  Future<void> _toggleSlideLike(int slideId) async {
-    final post = _post;
-    if (post == null || _likePending) {
-      return;
-    }
-
-    setState(() {
-      _likePending = true;
-    });
-
-    final slideIndex = post.slides.indexWhere((s) => s.id == slideId);
-    if (slideIndex < 0) return;
-    final slide = post.slides[slideIndex];
-    final previous = post;
-
-    setState(() {
-      final updatedSlides = List<PostSlide>.from(post.slides);
-      updatedSlides[slideIndex] = slide.copyWith(
-        likedByMe: !slide.likedByMe,
-        likeCount: (slide.likeCount + (slide.likedByMe ? -1 : 1))
-            .clamp(0, 1 << 31)
-            .toInt(),
-      );
-      _post = post.copyWith(slides: updatedSlides);
-    });
-
-    try {
-      final updatedPost = await _feedService.toggleSlideLike(post: previous, slideId: slideId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _post = updatedPost;
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _post = previous;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(_errorMessage(error, fallback: 'Failed to like image.'))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _likePending = false;
-        });
-      }
-    }
-  }
 
   Future<void> _openComments() async {
     final post = _post;
@@ -203,38 +194,17 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       return;
     }
 
+    final updatedPost = post.copyWith(commentCount: updatedCount);
     setState(() {
-      _post = post.copyWith(commentCount: updatedCount);
+      _post = updatedPost;
     });
-  }
-
-  Future<void> _openSlideComments(int slideId) async {
-    final post = _post;
-    if (post == null) {
-      return;
-    }
-
-    final slideIndex = post.slides.indexWhere((s) => s.id == slideId);
-    if (slideIndex < 0) return;
-    final slide = post.slides[slideIndex];
-
-    final updatedCount = await showCommentsModal(
-      context: context,
-      post: post,
-      slideId: slide.id,
-      initialSlideCommentCount: slide.commentCount,
+    FeedService.notifyCommentCountChanged(
+      postId: post.id,
+      commentCount: updatedCount,
     );
-
-    if (!mounted || updatedCount == null) {
-      return;
-    }
-
-    setState(() {
-      final updatedSlides = List<PostSlide>.from(post.slides);
-      updatedSlides[slideIndex] = slide.copyWith(commentCount: updatedCount);
-      _post = post.copyWith(slides: updatedSlides);
-    });
+    FeedService.notifyPostUpdated(updatedPost);
   }
+
 
   Future<void> _repostPost() async {
     final post = _post;
@@ -354,33 +324,33 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
             SafeArea(
               child: Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 28),
-                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close,
+                          color: Colors.white, size: 28.sp),
+                      onPressed: () => Navigator.pop(context, _post),
                     ),
                     Text(
                       '${_currentIndex + 1} of ${widget.imageUrls.length}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.ios_share_outlined,
-                              color: Colors.white, size: 24),
+                          icon: Icon(Icons.ios_share_outlined,
+                              color: Colors.white, size: 24.sp),
                           onPressed: shareAction,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.more_vert,
-                              color: Colors.white, size: 24),
+                          icon: Icon(Icons.more_vert,
+                              color: Colors.white, size: 24.sp),
                           onPressed: () {},
                         ),
                       ],
@@ -395,11 +365,11 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 right: 0,
                 bottom: 0,
                 child: () {
-                  final hasSlide = effectivePost != null &&
-                      effectivePost.slides.isNotEmpty &&
-                      _currentIndex < effectivePost.slides.length &&
-                      effectivePost.slides[_currentIndex].id > 0;
-                  final slide = hasSlide ? effectivePost.slides[_currentIndex] : null;
+                  final likeCount =
+                      effectivePost?.likeCount ?? widget.likeCount ?? 0;
+                  final likedByMe = effectivePost?.likedByMe ?? false;
+                  final commentCount =
+                      effectivePost?.commentCount ?? widget.commentCount ?? 0;
 
                   return _ImagePostDetailsOverlay(
                     uploaderName: effectivePost?.authorFullName ??
@@ -410,18 +380,14 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                         widget.privacyLabel?.trim() ??
                         '',
                     caption: effectivePost?.text ?? widget.caption?.trim() ?? '',
-                    likeCount: slide != null ? slide.likeCount : (effectivePost?.likeCount ?? widget.likeCount ?? 0),
-                    likedByMe: slide != null ? slide.likedByMe : (effectivePost?.likedByMe ?? false),
-                    commentCount: slide != null ? slide.commentCount : (effectivePost?.commentCount ?? widget.commentCount ?? 0),
+                    likeCount: likeCount,
+                    likedByMe: likedByMe,
+                    commentCount: commentCount,
                     repostCount:
                         effectivePost?.repostCount ?? widget.repostCount ?? 0,
                     withUsers: effectivePost?.withUsers ?? const <User>[],
-                    onLike: effectivePost != null
-                        ? (slide != null ? () => _toggleSlideLike(slide.id) : _toggleLike)
-                        : null,
-                    onComment: effectivePost != null
-                        ? (slide != null ? () => _openSlideComments(slide.id) : _openComments)
-                        : null,
+                    onLike: effectivePost != null ? _toggleLike : null,
+                    onComment: effectivePost != null ? _openComments : null,
                     onRepost: effectivePost != null ? _repostPost : null,
                     onShare: effectivePost != null ? _sharePost : null,
                   );
@@ -512,16 +478,16 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
   Widget build(BuildContext context) {
     const inactiveColor = Colors.white;
     const likedColor = Color(0xFFFF6B81);
-    final captionStyle = const TextStyle(
+    final captionStyle = TextStyle(
       color: Colors.white,
-      fontSize: 14,
-      height: 1.3,
+      fontSize: 14.sp,
+      height: 1.35,
       fontWeight: FontWeight.w500,
     );
-    final captionLinkStyle = const TextStyle(
+    final captionLinkStyle = TextStyle(
       color: Colors.white,
-      fontSize: 14,
-      height: 1.3,
+      fontSize: 14.sp,
+      height: 1.35,
       fontWeight: FontWeight.w700,
       decoration: TextDecoration.underline,
       decorationColor: Colors.white,
@@ -542,7 +508,7 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 44, 16, 12),
+          padding: EdgeInsets.fromLTRB(16.w, 40.h, 16.w, 14.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -552,24 +518,24 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                   widget.uploaderName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               if (widget.withUsers.isNotEmpty) ...[
-                const SizedBox(height: 3),
+                SizedBox(height: 3.h),
                 PostWithUsersLine(
                   users: widget.withUsers,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.82),
-                    fontSize: 12.5,
+                    fontSize: 12.5.sp,
                     fontWeight: FontWeight.w600,
                   ),
-                  linkStyle: const TextStyle(
+                  linkStyle: TextStyle(
                     color: Colors.white,
-                    fontSize: 12.5,
+                    fontSize: 12.5.sp,
                     fontWeight: FontWeight.w800,
                     decoration: TextDecoration.underline,
                     decorationColor: Colors.white,
@@ -577,7 +543,7 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                   onUserTap: (username) => _openMention(context, username),
                 ),
               ],
-              const SizedBox(height: 3),
+              SizedBox(height: 3.h),
               Row(
                 children: [
                   if (widget.createdAt != null)
@@ -585,23 +551,23 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                       _formatTimeAgo(widget.createdAt!),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   if (widget.privacyLabel.isNotEmpty) ...[
-                    const SizedBox(width: 7),
+                    SizedBox(width: 7.w),
                     Icon(
                       _privacyIcon(widget.privacyLabel),
                       color: Colors.white.withValues(alpha: 0.78),
-                      size: 14,
+                      size: 14.sp,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       widget.privacyLabel,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -609,7 +575,7 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                 ],
               ),
               if (widget.caption.isNotEmpty) ...[
-                const SizedBox(height: 9),
+                SizedBox(height: 8.h),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final canExpand = _captionExceedsCollapsedLines(
@@ -655,7 +621,7 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                           child: captionBody,
                         ),
                         if (canExpand) ...[
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: _toggleExpanded,
@@ -666,17 +632,17 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                                   _expanded ? 'Less' : 'More',
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.92),
-                                    fontSize: 13,
+                                    fontSize: 13.sp,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Icon(
                                   _expanded
                                       ? Icons.keyboard_arrow_up_rounded
                                       : Icons.keyboard_arrow_down_rounded,
                                   color: Colors.white.withValues(alpha: 0.92),
-                                  size: 18,
+                                  size: 18.sp,
                                 ),
                               ],
                             ),
@@ -687,34 +653,34 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                   },
                 ),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Row(
                 children: [
                   _ViewerActionButton(
                     icon: widget.likedByMe
-                        ? CustomIcons.heartFilled(color: likedColor, size: 23)
-                        : CustomIcons.heart(color: inactiveColor, size: 23),
+                        ? CustomIcons.heartFilled(color: likedColor, size: 22.sp)
+                        : CustomIcons.heart(color: inactiveColor, size: 22.sp),
                     count: widget.likeCount,
                     color: widget.likedByMe ? likedColor : inactiveColor,
                     onTap: widget.onLike,
                   ),
-                  const SizedBox(width: 24),
+                  SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.comment(color: inactiveColor, size: 23),
+                    icon: CustomIcons.comment(color: inactiveColor, size: 22.sp),
                     count: widget.commentCount,
                     color: inactiveColor,
                     onTap: widget.onComment,
                   ),
-                  const SizedBox(width: 24),
+                  SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.repost(color: inactiveColor, size: 23),
+                    icon: CustomIcons.repost(color: inactiveColor, size: 22.sp),
                     count: widget.repostCount,
                     color: inactiveColor,
                     onTap: widget.onRepost,
                   ),
-                  const SizedBox(width: 24),
+                  SizedBox(width: 24.w),
                   _ViewerActionButton(
-                    icon: CustomIcons.share(color: inactiveColor, size: 23),
+                    icon: CustomIcons.share(color: inactiveColor, size: 22.sp),
                     count: 0,
                     color: inactiveColor,
                     onTap: widget.onShare,
@@ -798,19 +764,19 @@ class _ViewerActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(999.r),
       onTap: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           icon,
           if (count > 0) ...[
-            const SizedBox(width: 6),
+            SizedBox(width: 6.w),
             Text(
               count.toString(),
               style: TextStyle(
                 color: color,
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
               ),
             ),

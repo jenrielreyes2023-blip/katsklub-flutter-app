@@ -1407,9 +1407,9 @@ class _FeedScreenState extends State<FeedScreen>
     );
   }
 
-  void _openImages(Post post, int index) {
+  Future<void> _openImages(Post post, int index) async {
     if (post.imageUrls.length == 1) {
-      Navigator.of(context).push(
+      final updated = await Navigator.of(context).push<Post>(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               ImageViewerScreen(
@@ -1437,10 +1437,13 @@ class _FeedScreenState extends State<FeedScreen>
           barrierColor: Colors.black,
         ),
       );
+      if (updated != null && mounted) {
+        _replacePost(updated);
+      }
       return;
     }
 
-    Navigator.of(context).push(
+    final updated = await Navigator.of(context).push<Post>(
       MaterialPageRoute(
         builder: (_) => VerticalGalleryScreen(
           imageUrls: post.imageUrls,
@@ -1457,6 +1460,9 @@ class _FeedScreenState extends State<FeedScreen>
         ),
       ),
     );
+    if (updated != null && mounted) {
+      _replacePost(updated);
+    }
   }
 
   void _openAuthor(Post post) {
