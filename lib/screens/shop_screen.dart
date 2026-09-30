@@ -128,6 +128,52 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isPurchasingEffect = false;
   int _previewIntroSeed = 0;
 
+  // Owned Cosmetics Inventory State
+  List<Map<String, dynamic>> _ownedCosmetics = [];
+  bool _isLoadingInventory = false;
+  String _selectedOwnedCategory = 'All'; // 'All', 'Frames', 'Postcards', 'Effects', 'Catalog (Admin)'
+
+  Future<void> _fetchInventory() async {
+    setState(() => _isLoadingInventory = true);
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return;
+
+      final res = await http.get(
+        ApiConfig.uri('/api/me/inventory'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['ok'] == true && mounted) {
+          final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+          final equipped = data['equipped'] as Map<String, dynamic>? ?? {};
+
+          setState(() {
+            _ownedCosmetics = items;
+            if (equipped['avatarFrame'] != null) {
+              _equippedAdminFrame = equipped['avatarFrame']?.toString() ?? 'none';
+            }
+            if (equipped['postcardTheme'] != null) {
+              _appliedPostcardTheme = (equipped['postcardTheme']?.toString() ?? '').trim().toLowerCase();
+            }
+            if (equipped['profileEffect'] != null) {
+              _equippedProfileEffect = equipped['profileEffect']?.toString() ?? 'none';
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching inventory: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingInventory = false);
+    }
+  }
+
   Future<void> _fetchDynamicFrames() async {
     setState(() => _isLoadingFrames = true);
     try {
@@ -611,6 +657,7 @@ class _ShopScreenState extends State<ShopScreen> {
     _fetchDynamicFrames();
     _fetchWalletBalance();
     _fetchProfileEffects();
+    _fetchInventory();
   }
 
   void _switchTab(int index) {
@@ -647,6 +694,8 @@ class _ShopScreenState extends State<ShopScreen> {
               (p) => _isBubbleProduct(p),
               orElse: () => _visibleProducts.first,
             );
+      } else if (index == 3) {
+        _fetchInventory();
       }
     });
   }
@@ -1804,6 +1853,347 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  String _findPostcardPreview(String key, String? explicitPreview) {
+    if (explicitPreview != null && explicitPreview.startsWith('http')) {
+      return explicitPreview;
+    }
+    for (final p in themeProducts) {
+      if (p.key.toLowerCase() == key.toLowerCase()) {
+        return p.assetPath;
+      }
+    }
+    return '';
+  }
+
+  String _findEffectPreview(String key, String? explicitPreview) {
+    if (explicitPreview != null && explicitPreview.startsWith('http')) {
+      return explicitPreview;
+    }
+    for (final e in _profileEffects) {
+      if (e['key']?.toString().toLowerCase() == key.toLowerCase()) {
+        return e['loopUrl']?.toString() ?? e['introUrl']?.toString() ?? '';
+      }
+    }
+    return 'https://media.katsklub.top/effects/$key/loop_v2.webp';
+  }
+
+  Widget _buildOwnedCosmeticCard(Map<String, dynamic> item) {
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final initials = _currentUser?.initials ?? 'U';
+
+    final String itemType = item['itemType']?.toString() ?? 'avatar_frame';
+    final String itemKey = item['itemKey']?.toString() ?? '';
+    final String itemName = item['itemName']?.toString() ?? 'Cosmetic Item';
+    final String description = item['description']?.toString() ?? '';
+    final String? rawPreview = item['itemPreview']?.toString();
+    final bool isPermanent = item['isPermanent'] == true || item['expiresAt'] == null;
+
+    // Check equipped status
+    bool isEquipped = false;
+    if (itemType == 'avatar_frame') {
+      isEquipped = (_equippedAdminFrame == itemKey ||
+          _currentUser?.avatarFrame == itemKey ||
+          (_equippedAdminFrame == 'none' && _currentUser?.avatarFrame == itemKey));
+    } else if (itemType == 'postcard_theme') {
+      isEquipped = (_appliedPostcardTheme.toLowerCase() == itemKey.toLowerCase() ||
+          (_currentUser?.postcardTheme?.toLowerCase() ?? '') == itemKey.toLowerCase());
+    } else if (itemType == 'profile_effect') {
+      isEquipped = (_equippedProfileEffect == itemKey ||
+          _currentUser?.profileEffect == itemKey);
+    }
+
+    // Type Badge details
+    String typeBadge;
+    List<Color> typeGradient;
+    if (itemType == 'avatar_frame') {
+      typeBadge = 'AVATAR FRAME';
+      typeGradient = const [Color(0xFFEC4899), Color(0xFFA855F7)];
+    } else if (itemType == 'postcard_theme') {
+      typeBadge = 'POSTCARD THEME';
+      typeGradient = const [Color(0xFF06B6D4), Color(0xFF3B82F6)];
+    } else {
+      typeBadge = 'PROFILE EFFECT';
+      typeGradient = const [Color(0xFF10B981), Color(0xFF059669)];
+    }
+
+    // Timer details
+    String timerText;
+    Color timerColor;
+    Color timerBg;
+    if (isPermanent) {
+      timerText = '👑 PERMANENT';
+      timerColor = const Color(0xFFD97706);
+      timerBg = const Color(0xFFFEF3C7);
+    } else {
+      final expiresAt = DateTime.tryParse(item['expiresAt']?.toString() ?? '');
+      if (expiresAt == null) {
+        timerText = 'ACTIVE';
+        timerColor = const Color(0xFF16A34A);
+        timerBg = const Color(0xFFDCFCE7);
+      } else {
+        final diff = expiresAt.difference(DateTime.now());
+        if (diff.isNegative) {
+          timerText = '⚠️ EXPIRED';
+          timerColor = const Color(0xFFDC2626);
+          timerBg = const Color(0xFFFEE2E2);
+        } else if (diff.inDays > 0) {
+          timerText = '⏳ ${diff.inDays}d ${diff.inHours % 24}h left';
+          timerColor = const Color(0xFF7C3AED);
+          timerBg = const Color(0xFFF3E8FF);
+        } else if (diff.inHours > 0) {
+          timerText = '⏳ ${diff.inHours}h ${diff.inMinutes % 60}m left';
+          timerColor = const Color(0xFFD97706);
+          timerBg = const Color(0xFFFEF3C7);
+        } else {
+          timerText = '⏳ ${diff.inMinutes}m left';
+          timerColor = const Color(0xFFEA580C);
+          timerBg = const Color(0xFFFFEDD5);
+        }
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEquipped ? const Color(0xFFA855F7) : const Color(0xFFE5E7EB),
+          width: isEquipped ? 2.0 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isEquipped
+                ? const Color(0xFFA855F7).withOpacity(0.18)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isEquipped ? 16 : 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Preview Visual
+          if (itemType == 'avatar_frame')
+            UserAvatarWithFrame(
+              avatarUrl: avatarUrl,
+              initials: initials,
+              radius: 30.0,
+              framePath: itemKey,
+            )
+          else if (itemType == 'postcard_theme')
+            Builder(builder: (context) {
+              final previewUrl = _findPostcardPreview(itemKey, rawPreview);
+              return Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                  color: const Color(0xFF1E293B),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: (previewUrl.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: previewUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => const Icon(Icons.style_outlined, color: Colors.white),
+                      )
+                    : const Icon(Icons.style_outlined, color: Colors.white),
+              );
+            })
+          else
+            Builder(builder: (context) {
+              final effectUrl = _findEffectPreview(itemKey, rawPreview);
+              return Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                  color: const Color(0xFF0F172A),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: (effectUrl.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: effectUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white),
+                      )
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
+              );
+            }),
+
+          const SizedBox(width: 14),
+
+          // Details column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row badges: Type & Timer
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: typeGradient),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        typeBadge,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: timerBg,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: timerColor.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        timerText,
+                        style: TextStyle(
+                          color: timerColor,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+
+                // Name
+                Text(
+                  itemName,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+
+                // Description
+                Text(
+                  description.isNotEmpty ? description : 'Owned in your KatShop collection',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    height: 1.25,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Action Row
+                Row(
+                  children: [
+                    if (isEquipped) ...[
+                      GestureDetector(
+                        onTap: () async {
+                          if (itemType == 'avatar_frame') {
+                            await _equipAdminFrame('none', itemName);
+                          } else if (itemType == 'postcard_theme') {
+                            await _setApplied(itemKey, false);
+                          } else if (itemType == 'profile_effect') {
+                            await _toggleEquipEffect('none', itemName);
+                          }
+                          await _fetchInventory();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 14),
+                              SizedBox(width: 4),
+                              Text(
+                                'EQUIPPED (Tap to remove)',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF16A34A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      GestureDetector(
+                        onTap: () async {
+                          if (itemType == 'avatar_frame') {
+                            await _equipAdminFrame(itemKey, itemName);
+                          } else if (itemType == 'postcard_theme') {
+                            await _setApplied(itemKey, true);
+                          } else if (itemType == 'profile_effect') {
+                            await _toggleEquipEffect(itemKey, itemName);
+                          }
+                          await _fetchInventory();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFA855F7), Color(0xFF7C3AED)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFA855F7).withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.auto_awesome, color: Colors.white, size: 12),
+                              SizedBox(width: 4),
+                              Text(
+                                'Equip',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileEffectCard({
     required String title,
     required String description,
@@ -2006,47 +2396,223 @@ class _ShopScreenState extends State<ShopScreen> {
     final avatarUrl = _currentUser?.avatarUrl ?? '';
     final initials = _currentUser?.initials ?? 'U';
 
+    // Sub-categories for inventory
+    final categories = ['All', 'Frames 🖼️', 'Postcards 💌', 'Effects ✨'];
+    if (isAdmin) {
+      categories.add('Catalog (Admin) 🛠️');
+    }
+
+    // Filter owned cosmetics
+    final filteredCosmetics = _ownedCosmetics.where((item) {
+      final type = item['itemType']?.toString() ?? '';
+      if (_selectedOwnedCategory == 'Frames 🖼️' || _selectedOwnedCategory == 'Frames') {
+        return type == 'avatar_frame';
+      }
+      if (_selectedOwnedCategory == 'Postcards 💌' || _selectedOwnedCategory == 'Postcards') {
+        return type == 'postcard_theme';
+      }
+      if (_selectedOwnedCategory == 'Effects ✨' || _selectedOwnedCategory == 'Effects') {
+        return type == 'profile_effect';
+      }
+      return true; // 'All'
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: _fetchInventory,
+      color: const Color(0xFF7C3AED),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          // Header summary
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'My Owned Cosmetics',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Manage your active frames, postcards, and effects',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ),
+              if (_ownedCosmetics.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Text(
+                    '${_ownedCosmetics.length} items',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Category Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: categories.map((cat) {
+                final isSelected = (_selectedOwnedCategory == cat) ||
+                    (_selectedOwnedCategory == 'All' && cat == 'All') ||
+                    (_selectedOwnedCategory == 'Frames' && cat == 'Frames 🖼️') ||
+                    (_selectedOwnedCategory == 'Postcards' && cat == 'Postcards 💌') ||
+                    (_selectedOwnedCategory == 'Effects' && cat == 'Effects ✨') ||
+                    (_selectedOwnedCategory == 'Catalog (Admin)' && cat == 'Catalog (Admin) 🛠️');
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF8B5CF6).withOpacity(0.18),
+                    backgroundColor: const Color(0xFFF3F4F6),
+                    checkmarkColor: const Color(0xFF8B5CF6),
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFF4B5563),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent,
+                      ),
+                    ),
+                    onSelected: (_) {
+                      setState(() => _selectedOwnedCategory = cat);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Loading state
+          if (_isLoadingInventory && _ownedCosmetics.isEmpty) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+              ),
+            ),
+          ] else if (_selectedOwnedCategory.startsWith('Catalog (Admin)') && isAdmin) ...[
+            _buildAdminCatalogList(avatarUrl, initials),
+          ] else if (filteredCosmetics.isEmpty) ...[
+            // Empty state
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFA855F7).withOpacity(0.15),
+                          const Color(0xFFEC4899).withOpacity(0.15),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.card_giftcard_rounded,
+                      size: 32,
+                      color: Color(0xFF9333EA),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No items in this category',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _ownedCosmetics.isEmpty
+                        ? 'Claim your daily check-in rewards to earn avatar frames, postcard themes, and profile effects! Items with timers stay here until expired.'
+                        : 'You do not have any items under this filter yet. Check back when claiming more daily rewards!',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            for (final item in filteredCosmetics)
+              _buildOwnedCosmeticCard(item),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Color> _parseBadgeGradient(dynamic raw) {
+    if (raw is List<Color>) return raw;
+    if (raw is List) {
+      final list = raw.map((c) {
+        if (c is Color) return c;
+        if (c is int) return Color(c);
+        if (c is String) {
+          final hex = c.replaceFirst('#', '').replaceAll('0x', '');
+          final val = int.tryParse(hex, radix: 16);
+          if (val != null) {
+            return Color(hex.length <= 6 ? (0xFF000000 | val) : val);
+          }
+        }
+        return const Color(0xFFA855F7);
+      }).toList();
+      if (list.length >= 2) return list;
+    }
+    return const [Color(0xFFA855F7), Color(0xFF7C3AED)];
+  }
+
+  Widget _buildAdminCatalogList(String avatarUrl, String initials) {
     final filteredDynamicFrames = _selectedFrameCategory == 'All'
         ? _dynamicFrames
         : _dynamicFrames.where((f) => f['category'] == _selectedFrameCategory).toList();
 
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Avatar Frames & Accessories',
-              style: TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-              ),
-            ),
-            if (_dynamicFrames.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3E8FF),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${filteredDynamicFrames.length} items',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7C3AED),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Category Chips
         if (_dynamicCategories.length > 1) ...[
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -2084,366 +2650,34 @@ class _ShopScreenState extends State<ShopScreen> {
           const SizedBox(height: 12),
         ],
 
-        // Loading indicator
-        if (_isLoadingFrames && _dynamicFrames.isEmpty) ...[
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
-            ),
-          ),
-        ],
-
-        // Dynamic Frames from Cloudflare R2 / API
         for (final frame in filteredDynamicFrames) ...[
           _buildAdminFrameCard(
             avatarUrl: avatarUrl,
             initials: initials,
             title: frame['name'] ?? 'Frame',
-            description: frame['description'] ?? 'Animated avatar decoration frame.',
+            description: frame['description'] ?? 'Exclusive avatar frame overlay.',
             framePath: frame['frameUrl'],
-            badgeText: (frame['category'] ?? 'FRAME').toString().toUpperCase(),
-            badgeGradient: const [Color(0xFF8B5CF6), Color(0xFFEC4899)],
-            isEquipped: _equippedAdminFrame == frame['frameUrl'] ||
-                _equippedAdminFrame == frame['key'] ||
-                _currentUser?.avatarFrame == frame['frameUrl'],
+            badgeText: (frame['badgeText'] ?? 'EXCLUSIVE').toString().toUpperCase(),
+            badgeGradient: _parseBadgeGradient(frame['badgeGradient']),
+            isEquipped: _equippedAdminFrame == frame['frameUrl'],
             onEquip: () => _equipAdminFrame(frame['frameUrl'], frame['name'] ?? 'Frame'),
             onUnequip: () => _equipAdminFrame('none', frame['name'] ?? 'Frame'),
           ),
           const SizedBox(height: 12),
         ],
 
-        if (isAdmin) ...[
-          // Option: Cyber Neon Pulse Frame (neon.json)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Cyber Neon Pulse Frame',
-            description: 'Futuristic rotating purple accent & electric cyan glowing neon Lottie frame.',
-            framePath: 'assets/frames/neon.json',
-            badgeText: 'CYBER LOTTIE',
-            badgeGradient: const [Color(0xFF00F0FF), Color(0xFFD946EF)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/neon.json',
-            onEquip: () => _equipAdminFrame('assets/frames/neon.json', 'Cyber Neon Pulse Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Cyber Neon Pulse Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option: Floating Hearts Animated Frame (heart_512.webp)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Floating Hearts Animated Frame',
-            description: 'Adorable animated floating pink hearts with center pop animation streamed from Cloudflare R2.',
-            framePath: 'https://media.katsklub.top/frames/heart_512.webp',
-            badgeText: 'SWEET HEARTS',
-            badgeGradient: const [Color(0xFFFF2D55), Color(0xFFFF69B4)],
-            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/heart_512.webp' ||
-                _equippedAdminFrame == 'https://media.katsklub.top/frames/heart%20512%20optimized.webp',
-            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/heart_512.webp', 'Floating Hearts Animated Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Floating Hearts Animated Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option: Magical Potion Animated Frame (magical_potion.webp)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Magical Potion Animated Frame',
-            description: 'Translucent crystal flask with bubbling purple potion, popping cork & magical aura clouds.',
-            framePath: 'https://media.katsklub.top/frames/magical_potion.webp',
-            badgeText: 'MAGICAL POTION',
-            badgeGradient: const [Color(0xFF9333EA), Color(0xFFC084FC)],
-            isEquipped: _equippedAdminFrame == 'https://media.katsklub.top/frames/magical_potion.webp' ||
-                _equippedAdminFrame == 'magical_potion.webp',
-            onEquip: () => _equipAdminFrame('https://media.katsklub.top/frames/magical_potion.webp', 'Magical Potion Animated Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Magical Potion Animated Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option: Purple Kawaii Animated Frame (purpleav.webp)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Purple Kawaii Animated Frame',
-            description: 'Exclusive animated purple ribbon frame with sparkling accents & peeking eyes.',
-            framePath: 'assets/frames/purpleav.webp',
-            badgeText: 'NEW KAWAII',
-            badgeGradient: const [Color(0xFFA855F7), Color(0xFF7C3AED)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/purpleav.webp',
-            onEquip: () => _equipAdminFrame('assets/frames/purpleav.webp', 'Purple Kawaii Animated Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Purple Kawaii Animated Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 0: Spring Master Blossom Frame (spring_blossom_frame.webp)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Spring Master Blossom Frame',
-            description: 'Exclusive 60FPS animated floral & golden antlers frame.',
-            framePath: 'assets/frames/spring_blossom_frame.webp',
-            badgeText: 'SPRING SPECIAL',
-            badgeGradient: const [Color(0xFF10B981), Color(0xFFF59E0B)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/spring_blossom_frame.webp',
-            onEquip: () => _equipAdminFrame('assets/frames/spring_blossom_frame.webp', 'Spring Master Blossom Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Spring Master Blossom Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 0.5: Tropical Beach SVGA Frame (beach-frame.svga)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Tropical Beach SVGA Frame',
-            description: 'Exclusive 30FPS animated summer beach & ocean SVGA frame.',
-            framePath: 'assets/frames/beach-frame.svga',
-            badgeText: 'SVGA BEACH',
-            badgeGradient: const [Color(0xFF06B6D4), Color(0xFFF59E0B)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/beach-frame.svga',
-            onEquip: () => _equipAdminFrame('assets/frames/beach-frame.svga', 'Tropical Beach SVGA Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Tropical Beach SVGA Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 0.6: Kawaii Cat Blossom SVGA Frame (kawaii2.svga)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Kawaii Cat Blossom SVGA Frame',
-            description: 'Exclusive 60FPS animated cute kitty & falling sakura petals SVGA frame.',
-            framePath: 'assets/frames/kawaii2.svga',
-            badgeText: 'SVGA KAWAII',
-            badgeGradient: const [Color(0xFFEC4899), Color(0xFFF43F5E)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/kawaii2.svga' ||
-                _equippedAdminFrame == 'https://media.katsklub.top/frames/kawaii2.svga',
-            onEquip: () => _equipAdminFrame('assets/frames/kawaii2.svga', 'Kawaii Cat Blossom SVGA Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Kawaii Cat Blossom SVGA Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 0.7: Golden Angel Ornament SVGA Frame (orna.svga)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Golden Angel Ornament SVGA Frame',
-            description: 'Exclusive 30FPS animated golden crescent with fairy angel & stars.',
-            framePath: 'assets/frames/orna.svga',
-            badgeText: 'SVGA ORNAMENT',
-            badgeGradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/orna.svga' ||
-                _equippedAdminFrame == 'https://media.katsklub.top/frames/orna.svga',
-            onEquip: () => _equipAdminFrame('assets/frames/orna.svga', 'Golden Angel Ornament SVGA Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Golden Angel Ornament SVGA Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 1: Golden Admin Frame (bframe.png)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Golden Admin Frame',
-            description: 'Exclusive VIP animated frame (bframe.png).',
-            framePath: 'assets/frames/bframe.png',
-            badgeText: 'GOLDEN VIP',
-            badgeGradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/bframe.png',
-            onEquip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Golden Admin Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 2: Angel Wings Lottie Frame (wing_frame.json)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Angel Wings Lottie Frame',
-            description: 'Exclusive Lottie animated wing frame (wing_frame.json).',
-            framePath: 'assets/frames/wing_frame.json',
-            badgeText: 'LOTTIE WINGS',
-            badgeGradient: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/wing_frame.json',
-            onEquip: () => _equipAdminFrame('assets/frames/wing_frame.json', 'Angel Wings Lottie Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Angel Wings Lottie Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 3: Neon Sparkle Lottie Frame (test_frame.json)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Neon Sparkle Lottie Frame',
-            description: 'Exclusive Lottie animated sparkle frame (test_frame.json).',
-            framePath: 'assets/frames/test_frame.json',
-            badgeText: 'NEON LOTTIE',
-            badgeGradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/test_frame.json',
-            onEquip: () => _equipAdminFrame('assets/frames/test_frame.json', 'Neon Sparkle Lottie Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Neon Sparkle Lottie Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 3: Classic Frame (aframe.png)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Classic Frame',
-            description: 'Classic animated frame overlay (aframe.png).',
-            framePath: 'assets/frames/aframe.png',
-            badgeText: 'CLASSIC',
-            badgeGradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/aframe.png',
-            onEquip: () => _equipAdminFrame('assets/frames/aframe.png', 'Classic Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Classic Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 4: Cyber Crystal Frame (cframe.png)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'Cyber Crystal Frame',
-            description: 'Exclusive Cyber Crystal VIP frame overlay (cframe.png).',
-            framePath: 'assets/frames/cframe.png',
-            badgeText: 'CYBER VIP',
-            badgeGradient: const [Color(0xFF06B6D4), Color(0xFF0284C7)],
-            isEquipped: _equippedAdminFrame == 'assets/frames/cframe.png',
-            onEquip: () => _equipAdminFrame('assets/frames/cframe.png', 'Cyber Crystal Frame'),
-            onUnequip: () => _equipAdminFrame('none', 'Cyber Crystal Frame'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 5: Remove Avatar Frame (none)
-          _buildAdminFrameCard(
-            avatarUrl: avatarUrl,
-            initials: initials,
-            title: 'No Avatar Frame',
-            description: 'Display profile photo without any frame overlay.',
-            framePath: null,
-            badgeText: 'NORMAL',
-            badgeGradient: const [Color(0xFF6B7280), Color(0xFF4B5563)],
-            isEquipped: _equippedAdminFrame == 'none',
-            onEquip: () => _equipAdminFrame('none', 'No Frame'),
-            onUnequip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
-          ),
-        ] else ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.8)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF3F4F6),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.interests_outlined,
-                    size: 32,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'No owned avatar frames yet',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Your inventory currently has 0 avatar frames. Check out KatShop for exclusive upcoming drops!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6B7280),
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Profile Effects',
-              style: TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'NEW FEATURE',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF15803D),
-                ),
-              ),
-            ),
-          ],
+        _buildAdminFrameCard(
+          avatarUrl: avatarUrl,
+          initials: initials,
+          title: 'No Avatar Frame',
+          description: 'Display profile photo without any frame overlay.',
+          framePath: null,
+          badgeText: 'NORMAL',
+          badgeGradient: const [Color(0xFF6B7280), Color(0xFF4B5563)],
+          isEquipped: _equippedAdminFrame == 'none',
+          onEquip: () => _equipAdminFrame('none', 'No Frame'),
+          onUnequip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
         ),
-        const SizedBox(height: 12),
-
-        // Profile Effects in Inventory
-        if (_profileEffects.isNotEmpty) ...[
-          for (final effect in _profileEffects)
-            if (_ownedEffectKeys.contains(effect['key']) ||
-                _currentUser?.username == 'jayriel' ||
-                _currentUser?.id == '2' ||
-                (_currentUser?.isAdmin ?? false) ||
-                effect['key'] == 'zombie_slime')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildProfileEffectCard(
-                  title: effect['name']?.toString() ?? 'Profile Effect',
-                  description: effect['description']?.toString() ?? '',
-                  effectKey: effect['key']?.toString() ?? '',
-                  previewUrl: effect['loopUrl']?.toString() ?? '',
-                  badgeText: effect['name']?.toString().toUpperCase() ?? 'EFFECT',
-                  badgeGradient: _getEffectBadgeGradient(effect['key']?.toString() ?? ''),
-                  isEquipped: _equippedProfileEffect == effect['key'] ||
-                      _currentUser?.profileEffect == effect['key'],
-                  onEquip: () => _toggleEquipEffect(effect['key']?.toString() ?? '', effect['name']?.toString() ?? 'Profile Effect'),
-                  onUnequip: () => _toggleEquipEffect('none', effect['name']?.toString() ?? 'Profile Effect'),
-                ),
-              ),
-        ] else ...[
-          _buildProfileEffectCard(
-            title: 'Zombie Slime',
-            description: 'Animated glowing toxic slime dripping over profile with bubbling green toxic particles.',
-            effectKey: 'zombie_slime',
-            previewUrl: 'https://media.katsklub.top/effects/zombie-slime/loop_v2.webp',
-            badgeText: 'ZOMBIE SLIME',
-            badgeGradient: const [Color(0xFF22C55E), Color(0xFF10B981)],
-            isEquipped: _equippedProfileEffect == 'zombie_slime' ||
-                _currentUser?.profileEffect == 'zombie_slime' ||
-                _currentUser?.profileEffect == 'zombie-slime',
-            onEquip: () => _toggleEquipEffect('zombie_slime', 'Zombie Slime'),
-            onUnequip: () => _toggleEquipEffect('none', 'Zombie Slime'),
-          ),
-        ],
-        const SizedBox(height: 16),
       ],
     );
   }

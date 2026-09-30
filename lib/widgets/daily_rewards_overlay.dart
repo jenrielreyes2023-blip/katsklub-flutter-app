@@ -1011,6 +1011,31 @@ class _ClaimCelebrationDialog extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+              ] else ...[
+                SizedBox(height: 8.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: const Color(0xFFA855F7).withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, color: const Color(0xFFD8B4FE), size: 13.r),
+                      SizedBox(width: 5.w),
+                      Text(
+                        'Stored in KatShop > Owned tab',
+                        style: TextStyle(
+                          color: const Color(0xFFE9D5FF),
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               SizedBox(height: 18.h),
               GestureDetector(
