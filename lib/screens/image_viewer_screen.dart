@@ -549,7 +549,7 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                   children: [
                     Padding(
                       padding: EdgeInsets.only(
-                        right: animatedPostcardUrl != null ? 130.w : 0,
+                        right: animatedPostcardUrl != null ? 105.w : 0,
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -676,21 +676,27 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                     if (animatedPostcardUrl != null)
                       Positioned(
                         right: -16.w,
-                        top: -6.h,
-                        height: 48.h,
-                        child: IgnorePointer(
-                          child: RepaintBoundary(
-                            child: CachedNetworkImage(
-                              imageUrl: animatedPostcardUrl,
-                              fit: BoxFit.contain,
-                              alignment: Alignment.topRight,
-                              memCacheHeight:
-                                  (48.h * 2).round().clamp(60, 150),
-                              fadeInDuration: Duration.zero,
-                              fadeOutDuration: Duration.zero,
-                              placeholder: (context, url) => const SizedBox(),
-                              errorWidget: (context, url, error) =>
-                                  const SizedBox(),
+                        top: 0,
+                        height: 35.h,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: 115.w,
+                            maxHeight: 35.h,
+                          ),
+                          child: IgnorePointer(
+                            child: RepaintBoundary(
+                              child: CachedNetworkImage(
+                                imageUrl: animatedPostcardUrl,
+                                fit: BoxFit.contain,
+                                alignment: Alignment.topRight,
+                                memCacheHeight:
+                                    (35.h * 2).round().clamp(60, 120),
+                                fadeInDuration: Duration.zero,
+                                fadeOutDuration: Duration.zero,
+                                placeholder: (context, url) => const SizedBox(),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox(),
+                              ),
                             ),
                           ),
                         ),
