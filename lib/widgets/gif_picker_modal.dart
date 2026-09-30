@@ -385,19 +385,22 @@ class _GifPickerModalSheetState extends State<_GifPickerModalSheet> {
                                 child: Container(
                                   height: h,
                                   color: surfaceColor,
-                                  child: CachedNetworkImage(
-                                    imageUrl: gif.previewUrl,
-                                    fit: BoxFit.cover,
-                                    fadeInDuration: const Duration(milliseconds: 120),
-                                    placeholder: (_, __) => Container(
-                                      color: isDark ? Colors.white10 : Colors.black12,
-                                    ),
-                                    errorWidget: (_, __, ___) => Container(
-                                      color: isDark ? Colors.white10 : Colors.black12,
-                                      child: Icon(
-                                        Icons.broken_image_rounded,
-                                        size: 24,
-                                        color: hintColor,
+                                  child: RepaintBoundary(
+                                    child: CachedNetworkImage(
+                                      imageUrl: gif.previewUrl,
+                                      fit: BoxFit.cover,
+                                      memCacheHeight: (h * 2).round().clamp(140, 400),
+                                      fadeInDuration: const Duration(milliseconds: 120),
+                                      placeholder: (_, __) => Container(
+                                        color: isDark ? Colors.white10 : Colors.black12,
+                                      ),
+                                      errorWidget: (_, __, ___) => Container(
+                                        color: isDark ? Colors.white10 : Colors.black12,
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 24,
+                                          color: hintColor,
+                                        ),
                                       ),
                                     ),
                                   ),

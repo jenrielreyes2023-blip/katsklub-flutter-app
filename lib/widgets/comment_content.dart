@@ -75,10 +75,13 @@ class CommentContent extends StatelessWidget {
                 maxHeight: 180.h,
                 maxWidth: 240.w,
               ),
-              child: CachedNetworkImage(
-                imageUrl: gifUrl,
-                fit: BoxFit.cover,
-                fadeInDuration: const Duration(milliseconds: 120),
+              child: RepaintBoundary(
+                child: CachedNetworkImage(
+                  imageUrl: gifUrl,
+                  fit: BoxFit.cover,
+                  memCacheHeight: (180.h * 2).round().clamp(160, 400),
+                  memCacheWidth: (240.w * 2).round().clamp(200, 500),
+                  fadeInDuration: const Duration(milliseconds: 120),
                 placeholder: (context, url) => Container(
                   height: 120.h,
                   width: 160.w,
@@ -118,7 +121,8 @@ class CommentContent extends StatelessWidget {
             ),
           ),
         ),
-      ],
+      ),
+    ],
     );
   }
 }

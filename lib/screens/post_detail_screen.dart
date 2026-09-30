@@ -1576,24 +1576,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: CachedNetworkImage(
-                                      imageUrl: _attachedGifUrl!,
-                                      height: 96.h,
-                                      width: 140.w,
-                                      fit: BoxFit.cover,
-                                      fadeInDuration: const Duration(milliseconds: 120),
-                                      placeholder: (_, __) => Container(
+                                    child: RepaintBoundary(
+                                      child: CachedNetworkImage(
+                                        imageUrl: _attachedGifUrl!,
                                         height: 96.h,
                                         width: 140.w,
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? Colors.white10
-                                            : Colors.black12,
-                                      ),
-                                      errorWidget: (_, __, ___) => Container(
-                                        height: 96.h,
-                                        width: 140.w,
-                                        color: Colors.red.withValues(alpha: 0.1),
-                                        child: const Icon(Icons.broken_image_rounded, size: 20),
+                                        memCacheHeight: (96.h * 2).round().clamp(100, 250),
+                                        fit: BoxFit.cover,
+                                        fadeInDuration: const Duration(milliseconds: 120),
+                                        placeholder: (_, __) => Container(
+                                          height: 96.h,
+                                          width: 140.w,
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? Colors.white10
+                                              : Colors.black12,
+                                        ),
+                                        errorWidget: (_, __, ___) => Container(
+                                          height: 96.h,
+                                          width: 140.w,
+                                          color: Colors.red.withValues(alpha: 0.1),
+                                          child: const Icon(Icons.broken_image_rounded, size: 20),
+                                        ),
                                       ),
                                     ),
                                   ),
