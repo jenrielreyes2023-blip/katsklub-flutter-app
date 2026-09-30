@@ -544,131 +544,148 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (hasAuthor)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    if (avatarUrl.isNotEmpty || initials.isNotEmpty) ...[
-                      UserAvatarWithFrame(
-                        avatarUrl: avatarUrl,
-                        initials: initials,
-                        radius: 17,
-                        isAdmin: post?.authorIsAdmin ?? false,
-                        framePath: post?.authorAvatarFrame,
-                        onTap: authorUsername.isNotEmpty
-                            ? () => _openMention(context, authorUsername)
-                            : null,
+                    Padding(
+                      padding: EdgeInsets.only(
+                        right: animatedPostcardUrl != null ? 130.w : 0,
                       ),
-                      SizedBox(width: 8.w),
-                    ],
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: GestureDetector(
-                                  onTap: authorUsername.isNotEmpty
-                                      ? () => _openMention(context, authorUsername)
-                                      : null,
-                                  child: SpecialNameText(
-                                    username: authorUsername,
-                                    displayName: displayName,
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Rounded',
-                                      color: Colors.white,
-                                      fontSize: 13.sp,
-                                      height: 1.33,
-                                      letterSpacing: -0.2,
-                                      fontWeight: FontWeight.w700,
+                          if (avatarUrl.isNotEmpty || initials.isNotEmpty) ...[
+                            UserAvatarWithFrame(
+                              avatarUrl: avatarUrl,
+                              initials: initials,
+                              radius: 17,
+                              isAdmin: post?.authorIsAdmin ?? false,
+                              framePath: post?.authorAvatarFrame,
+                              onTap: authorUsername.isNotEmpty
+                                  ? () => _openMention(context, authorUsername)
+                                  : null,
+                            ),
+                            SizedBox(width: 8.w),
+                          ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: GestureDetector(
+                                        onTap: authorUsername.isNotEmpty
+                                            ? () => _openMention(
+                                                context, authorUsername)
+                                            : null,
+                                        child: SpecialNameText(
+                                          username: authorUsername,
+                                          displayName: displayName,
+                                          style: TextStyle(
+                                            fontFamily: 'SF Pro Rounded',
+                                            color: Colors.white,
+                                            fontSize: 13.sp,
+                                            height: 1.33,
+                                            letterSpacing: -0.2,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    if (post?.authorIsVerified == true) ...[
+                                      SizedBox(width: 4.w),
+                                      Icon(
+                                        Icons.verified,
+                                        color: const Color(0xFF1D9BF0),
+                                        size: 14.sp,
+                                      ),
+                                    ],
+                                    if (post != null &&
+                                        post.feeling.isNotEmpty) ...[
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'is feeling',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 13.sp,
+                                          color: Colors.white
+                                              .withValues(alpha: 0.72),
+                                        ),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        post.feeling,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13.sp,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ),
-                              if (post?.authorIsVerified == true) ...[
-                                SizedBox(width: 4.w),
-                                Icon(
-                                  Icons.verified,
-                                  color: const Color(0xFF1D9BF0),
-                                  size: 14.sp,
+                                SizedBox(height: 1.h),
+                                Row(
+                                  children: [
+                                    if (widget.createdAt != null)
+                                      Text(
+                                        _formatTimeAgo(widget.createdAt!),
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          color: Colors.white
+                                              .withValues(alpha: 0.72),
+                                          fontSize: 10.5.sp,
+                                          height: 1.33,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    if (widget.privacyLabel.isNotEmpty) ...[
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 4.w),
+                                        child: Text(
+                                          '·',
+                                          style: TextStyle(
+                                            fontFamily: 'SF Pro Rounded',
+                                            color: Colors.white
+                                                .withValues(alpha: 0.72),
+                                            fontSize: 10.5.sp,
+                                            height: 1.33,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        _privacyIcon(widget.privacyLabel),
+                                        color: Colors.white
+                                            .withValues(alpha: 0.72),
+                                        size: 11.5.sp,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
-                              if (post != null && post.feeling.isNotEmpty) ...[
-                                SizedBox(width: 4.w),
-                                Text(
-                                  'is feeling',
-                                  style: TextStyle(
-                                    fontFamily: 'SF Pro Rounded',
-                                    fontSize: 13.sp,
-                                    color: Colors.white.withValues(alpha: 0.72),
-                                  ),
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  post.feeling,
-                                  style: TextStyle(
-                                    fontFamily: 'SF Pro Rounded',
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13.sp,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          SizedBox(height: 1.h),
-                          Row(
-                            children: [
-                              if (widget.createdAt != null)
-                                Text(
-                                  _formatTimeAgo(widget.createdAt!),
-                                  style: TextStyle(
-                                    fontFamily: 'SF Pro Rounded',
-                                    color: Colors.white.withValues(alpha: 0.72),
-                                    fontSize: 10.5.sp,
-                                    height: 1.33,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              if (widget.privacyLabel.isNotEmpty) ...[
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                                  child: Text(
-                                    '·',
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Rounded',
-                                      color: Colors.white.withValues(alpha: 0.72),
-                                      fontSize: 10.5.sp,
-                                      height: 1.33,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                                Icon(
-                                  _privacyIcon(widget.privacyLabel),
-                                  color: Colors.white.withValues(alpha: 0.72),
-                                  size: 11.5.sp,
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    if (animatedPostcardUrl != null) ...[
-                      SizedBox(width: 8.w),
-                      ConstrainedBox(
-                        constraints:
-                            BoxConstraints(maxWidth: 110.w, maxHeight: 32.h),
+                    if (animatedPostcardUrl != null)
+                      Positioned(
+                        right: -16.w,
+                        top: -6.h,
+                        height: 48.h,
                         child: IgnorePointer(
                           child: RepaintBoundary(
                             child: CachedNetworkImage(
                               imageUrl: animatedPostcardUrl,
                               fit: BoxFit.contain,
-                              alignment: Alignment.centerRight,
+                              alignment: Alignment.topRight,
                               memCacheHeight:
-                                  (32.h * 2).round().clamp(60, 100),
+                                  (48.h * 2).round().clamp(60, 150),
                               fadeInDuration: Duration.zero,
                               fadeOutDuration: Duration.zero,
                               placeholder: (context, url) => const SizedBox(),
@@ -678,7 +695,6 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
               if (widget.withUsers.isNotEmpty) ...[
