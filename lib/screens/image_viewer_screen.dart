@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../config/api_config.dart';
+import '../config/postcard_nameplates_data.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
@@ -488,6 +489,9 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
     const likedColor = Color(0xFFE11D48);
 
     final post = widget.post;
+    final postcardTheme =
+        (post?.authorPostcardTheme ?? '').trim().toLowerCase();
+    final animatedPostcardUrl = PostcardThemeConfig.resolveUrl(postcardTheme);
     final authorUsername = post?.authorUsername.trim() ?? '';
     final displayName = widget.uploaderName.isNotEmpty
         ? widget.uploaderName
@@ -652,6 +656,29 @@ class _ImagePostDetailsOverlayState extends State<_ImagePostDetailsOverlay> {
                         ],
                       ),
                     ),
+                    if (animatedPostcardUrl != null) ...[
+                      SizedBox(width: 8.w),
+                      ConstrainedBox(
+                        constraints:
+                            BoxConstraints(maxWidth: 110.w, maxHeight: 32.h),
+                        child: IgnorePointer(
+                          child: RepaintBoundary(
+                            child: CachedNetworkImage(
+                              imageUrl: animatedPostcardUrl,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.centerRight,
+                              memCacheHeight:
+                                  (32.h * 2).round().clamp(60, 100),
+                              fadeInDuration: Duration.zero,
+                              fadeOutDuration: Duration.zero,
+                              placeholder: (context, url) => const SizedBox(),
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               if (widget.withUsers.isNotEmpty) ...[
