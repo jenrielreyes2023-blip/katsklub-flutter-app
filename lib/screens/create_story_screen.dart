@@ -28,478 +28,21 @@ class _OptimizedImage {
   final String mime;
 }
 
-class CreateStoryScreen extends StatefulWidget {
+class CreateStoryScreen extends StatelessWidget {
   const CreateStoryScreen({
     required this.user,
+    this.initialImageBytes,
     super.key,
   });
 
   final User user;
-
-  @override
-  State<CreateStoryScreen> createState() => _CreateStoryScreenState();
-}
-
-class _CreateStoryScreenState extends State<CreateStoryScreen> {
-  final picker = ImagePicker();
-
-  Future<void> _pickImageFromGallery() async {
-    try {
-      final picked = await picker.pickImage(source: ImageSource.gallery);
-      if (picked == null || !mounted) return;
-
-      final bytes = await picked.readAsBytes();
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ImageStoryEditorScreen(
-            user: widget.user,
-            imageBytes: bytes,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
-      );
-    }
-  }
-
-  Future<void> _pickVideoFromGallery() async {
-    try {
-      final picked = await picker.pickVideo(source: ImageSource.gallery);
-      if (picked == null || !mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => VideoStoryEditorScreen(
-            user: widget.user,
-            videoFile: picked,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick video: $e')),
-      );
-    }
-  }
-
-  Future<void> _capturePhoto() async {
-    try {
-      final picked = await picker.pickImage(source: ImageSource.camera);
-      if (picked == null || !mounted) return;
-
-      final bytes = await picked.readAsBytes();
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ImageStoryEditorScreen(
-            user: widget.user,
-            imageBytes: bytes,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to capture photo: $e')),
-      );
-    }
-  }
-
-  Future<void> _captureVideo() async {
-    try {
-      final picked = await picker.pickVideo(source: ImageSource.camera);
-      if (picked == null || !mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => VideoStoryEditorScreen(
-            user: widget.user,
-            videoFile: picked,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to capture video: $e')),
-      );
-    }
-  }
-
-  void _openTextEditor() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => StoryEditorScreen(user: widget.user),
-      ),
-    );
-  }
-
-  void _showGallerySelector() {
-    _showSelectionBottomSheet(
-      title: 'Upload from Gallery',
-      onPhoto: _pickImageFromGallery,
-      onVideo: _pickVideoFromGallery,
-    );
-  }
-
-  void _showCameraSelector() {
-    _showSelectionBottomSheet(
-      title: 'Record with Camera',
-      onPhoto: _capturePhoto,
-      onVideo: _captureVideo,
-    );
-  }
-
-  void _showSelectionBottomSheet({
-    required String title,
-    required VoidCallback onPhoto,
-    required VoidCallback onVideo,
-  }) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.65),
-      builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF1F1F23),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-          ),
-          padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 32.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(999.r),
-                ),
-              ),
-              SizedBox(height: 24.h),
-              Text(
-                title,
-                style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                  color: Colors.white,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  ),
-              ),
-              SizedBox(height: 24.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _BottomSheetOption(
-                      icon: Icons.photo_outlined,
-                      label: 'Photo',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        onPhoto();
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: _BottomSheetOption(
-                      icon: Icons.videocam_outlined,
-                      label: 'Video',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        onVideo();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  final Uint8List? initialImageBytes;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0C0C0E),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Create story',
-          style: TextStyle(fontFamily: 'SF Pro Rounded', 
-            color: Colors.white,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40.w, vertical: 16.h),
-                  child: AspectRatio(
-                    aspectRatio: 9 / 16,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24.r),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFF8A65), // Warm coral
-                            Color(0xFFE53935), // KatsKlub primary red/orange
-                            Color(0xFF8E24AA), // Elegant Purple
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24.r),
-                                color: Colors.black.withValues(alpha: 0.15),
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24.r),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.16),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.auto_awesome,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                                  ),
-                                  SizedBox(height: 24.h),
-                                  Text(
-                                    'Share your moment',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                                      color: Colors.white,
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.w800,
-                                      ),
-                                  ),
-                                  SizedBox(height: 8.h),
-                                  Text(
-                                    'Post a photo, record a video, or write a thought for your followers.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                                      color: Colors.white.withValues(alpha: 0.72),
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(bottom: 24, top: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _StudioOptionButton(
-                    icon: Icons.text_fields,
-                    label: 'Text',
-                    onTap: _openTextEditor,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF36D1DC), Color(0xFF5B86E5)],
-                    ),
-                  ),
-                  _StudioCenterShutterButton(
-                    onTap: _showCameraSelector,
-                  ),
-                  _StudioOptionButton(
-                    icon: Icons.photo_library_outlined,
-                    label: 'Gallery',
-                    onTap: _showGallerySelector,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StudioCenterShutterButton extends StatelessWidget {
-  const _StudioCenterShutterButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 4),
-        ),
-        padding: EdgeInsets.all(4.r),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Color(0xFFFF7A59), // Primary brand accent color
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.camera_alt,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StudioOptionButton extends StatelessWidget {
-  const _StudioOptionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.gradient,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Gradient gradient;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: gradient,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              customBorder: const CircleBorder(),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          label,
-          style: TextStyle(fontFamily: 'SF Pro Rounded', 
-            color: Colors.white70,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BottomSheetOption extends StatelessWidget {
-  const _BottomSheetOption({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16.r),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16.r),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20.h),
-          child: Column(
-            children: [
-              Icon(icon, color: const Color(0xFFFF7A59), size: 36),
-              SizedBox(height: 12.h),
-              Text(
-                label,
-                style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                  color: Colors.white,
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return ImageStoryEditorScreen(
+      user: user,
+      imageBytes: initialImageBytes,
     );
   }
 }
@@ -944,7 +487,7 @@ class _StorySelectedMusicChip extends StatelessWidget {
   }
 }
 
-class StoryEditorScreen extends StatefulWidget {
+class StoryEditorScreen extends StatelessWidget {
   const StoryEditorScreen({
     required this.user,
     super.key,
@@ -953,702 +496,9 @@ class StoryEditorScreen extends StatefulWidget {
   final User user;
 
   @override
-  State<StoryEditorScreen> createState() => _StoryEditorScreenState();
-}
-
-class _StoryEditorScreenState extends State<StoryEditorScreen> {
-  final GlobalKey _canvasKey = GlobalKey();
-  final _textController = TextEditingController();
-  final _bgColors = const [
-    Color(0xFF667EEA),
-    Color(0xFF764BA2),
-    Color(0xFFF093FB),
-    Color(0xFFF5576C),
-    Color(0xFF4FACFE),
-    Color(0xFF00F2FE),
-    Color(0xFF43E97B),
-    Color(0xFF38F9D7),
-    Color(0xFFFA709A),
-    Color(0xFFFEE140),
-  ];
-  final List<_StoryTextStylePreset> _textPresets = [
-    _StoryTextStylePreset(
-      label: 'Classic',
-      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
-        color: Colors.white,
-        fontSize: 34.sp,
-        fontWeight: FontWeight.w700,
-        height: 1.2,
-        shadows: [
-          Shadow(
-            color: Color(0x66000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-    ),
-    _StoryTextStylePreset(
-      label: 'Outline',
-      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
-        color: Colors.black,
-        fontSize: 34.sp,
-        fontWeight: FontWeight.w800,
-        height: 1.18,
-      ),
-      backgroundColor: Colors.white,
-      borderColor: Colors.black,
-      horizontalPadding: 18,
-      verticalPadding: 12,
-      borderRadius: 18,
-    ),
-    _StoryTextStylePreset(
-      label: 'Soft',
-      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
-        color: Colors.white,
-        fontSize: 32.sp,
-        fontWeight: FontWeight.w600,
-        fontStyle: FontStyle.italic,
-        height: 1.24,
-      ),
-      backgroundColor: Color(0x33000000),
-      horizontalPadding: 16,
-      verticalPadding: 12,
-      borderRadius: 22,
-    ),
-    _StoryTextStylePreset(
-      label: 'Bold',
-      textStyle: TextStyle(fontFamily: 'SF Pro Rounded', 
-        color: Colors.white,
-        fontSize: 38.sp,
-        fontWeight: FontWeight.w900,
-        height: 1.1,
-        letterSpacing: -0.3,
-      ),
-      backgroundColor: Color(0xCC000000),
-      horizontalPadding: 18,
-      verticalPadding: 10,
-      borderRadius: 14,
-    ),
-  ];
-
-  int _colorIndex = 0;
-  int _textPresetIndex = 0;
-  bool _isSharing = false;
-  _SelectedStoryMusic? _selectedMusic;
-  Offset _textOffset = Offset.zero;
-  double _textScale = 1.0;
-  double _scaleStart = 1.0;
-
-  LinearGradient get _currentGradient {
-    final color1 = _bgColors[_colorIndex % _bgColors.length];
-    final color2 = _bgColors[(_colorIndex + 1) % _bgColors.length];
-    return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [color1, color2],
-    );
-  }
-
-  _StoryTextStylePreset get _activePreset => _textPresets[_textPresetIndex % _textPresets.length];
-
-  void _cycleBackground() {
-    setState(() {
-      _colorIndex = (_colorIndex + 1) % _bgColors.length;
-    });
-  }
-
-  void _cycleTextStyle() {
-    setState(() {
-      _textPresetIndex = (_textPresetIndex + 1) % _textPresets.length;
-    });
-  }
-
-  void _resetTextTransform() {
-    setState(() {
-      _textOffset = Offset.zero;
-      _textScale = 1.0;
-      _textPresetIndex = 0;
-    });
-  }
-
-  Future<void> _pickMusic() async {
-    final selected = await _showStoryMusicPicker(
-      context,
-      currentSelection: _selectedMusic,
-    );
-    if (!mounted || selected == null) {
-      return;
-    }
-    setState(() {
-      _selectedMusic = selected;
-    });
-  }
-
-  void _removeMusic() {
-    setState(() {
-      _selectedMusic = null;
-    });
-  }
-
-  Future<void> _shareStory() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add some text first')),
-      );
-      return;
-    }
-
-    setState(() => _isSharing = true);
-
-    try {
-      final boundary = _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) {
-        throw Exception('Canvas not found');
-      }
-
-      final image = await boundary.toImage(pixelRatio: 2.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) {
-        throw Exception('Failed to export story');
-      }
-
-      final pngBytes = byteData.buffer.asUint8List();
-      final optimized = await _optimizeImage(pngBytes, 'image/png');
-      final dataUrl = 'data:${optimized.mime};base64,${base64Encode(optimized.bytes)}';
-      final result = await _uploadImageStory(dataUrl);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (result.ok) {
-        FeedService.notifyStoryCreated();
-        if (result.story != null) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => StoryViewerScreen(
-                storyGroups: [
-                  [result.story!],
-                ],
-                initialGroupIndex: 0,
-                initialStoryIndex: 0,
-              ),
-            ),
-            result: true,
-          );
-        } else {
-          Navigator.of(context).pop();
-          Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Story shared!')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.error ?? 'Failed to share story')),
-        );
-      }
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSharing = false);
-      }
-    }
-  }
-
-  Future<_OptimizedImage> _optimizeImage(Uint8List bytes, String mime) async {
-    try {
-      if (mime == 'image/gif') {
-        return _OptimizedImage(bytes: bytes, mime: mime);
-      }
-
-      final webpBytes = await FlutterImageCompress.compressWithList(
-        bytes,
-        minWidth: 1080,
-        minHeight: 1920,
-        quality: 85,
-        format: CompressFormat.webp,
-      );
-
-      if (webpBytes.isNotEmpty && webpBytes.length < bytes.length * 0.95) {
-        return _OptimizedImage(bytes: webpBytes, mime: 'image/webp');
-      }
-
-      return _OptimizedImage(bytes: bytes, mime: mime);
-    } catch (_) {
-      return _OptimizedImage(bytes: bytes, mime: mime);
-    }
-  }
-
-  Future<_StoryUploadResult> _uploadImageStory(String imageDataUrl) async {
-    final token = await _readAuthToken();
-    if (token == null) {
-      return const _StoryUploadResult(ok: false, error: 'Not authenticated');
-    }
-
-    io.Socket? socket;
-    try {
-      final socketOptions = io.OptionBuilder()
-          .setPath('/socket.io/')
-          .setTransports(['websocket', 'polling'])
-          .disableAutoConnect()
-          .enableForceNew()
-          .disableMultiplex()
-          .enableReconnection()
-          .setReconnectionAttempts(2)
-          .setReconnectionDelay(500)
-          .setTimeout(20000)
-          .setAckTimeout(60000)
-          .setExtraHeaders({'Authorization': 'Bearer $token'})
-          .build();
-
-      socket = io.io(ApiConfig.apiBaseUrl, socketOptions);
-
-      final completer = _StoryUploadCompleter();
-      var emitSent = false;
-
-      socket.onConnect((_) {
-        debugPrint('story upload: socket connected');
-        socket?.on('story:new', (payload) {
-          debugPrint('story upload: story:new received');
-          final storyMap = _readAckMap(payload);
-          if (!emitSent || !_storyBelongsToUser(storyMap, widget.user)) {
-            return;
-          }
-          debugPrint('story upload: completed by story:new');
-          completer.complete(_StoryUploadResult(ok: true, story: _storyFromPayload(payload)));
-        });
-        emitSent = true;
-        debugPrint('story upload: emit sent');
-        socket?.emitWithAck(
-          'story:create',
-          {
-            'imageDataUrl': imageDataUrl,
-            'authToken': token,
-            if (_selectedMusic != null) 'musicTitle': _selectedMusic!.title,
-            if (_selectedMusic != null) 'musicArtist': _selectedMusic!.artist,
-            if (_selectedMusic != null) 'musicArtworkUrl': _selectedMusic!.artworkUrl,
-            if (_selectedMusic != null) 'musicPreviewUrl': _selectedMusic!.previewUrl,
-            if (_selectedMusic != null) 'musicSource': _selectedMusic!.source,
-          },
-          ack: (response) {
-            debugPrint('story upload: ack received');
-            final ackMap = _readAckMap(response);
-            if (ackMap?['ok'] == true) {
-              debugPrint('story upload: completed by ack');
-              completer.complete(
-                _StoryUploadResult(
-                  ok: true,
-                  story: _storyFromPayload(ackMap?['story']) ?? _storyFromPayload(response),
-                ),
-              );
-            } else {
-              final error = ackMap?['error']?.toString() ?? 'Failed to create story';
-              completer.complete(_StoryUploadResult(ok: false, error: error));
-            }
-          },
-        );
-      });
-
-      socket.onConnectError((error) {
-        completer.complete(_StoryUploadResult(ok: false, error: error.toString()));
-      });
-
-      socket.onError((error) {
-        completer.complete(_StoryUploadResult(ok: false, error: error.toString()));
-      });
-
-      socket.connect();
-
-      return await completer.future.timeout(
-        const Duration(seconds: 60),
-        onTimeout: () {
-          debugPrint('story upload: completed by timeout');
-          return const _StoryUploadResult(ok: false, error: 'Upload timeout');
-        },
-      );
-    } catch (error) {
-      return _StoryUploadResult(ok: false, error: error.toString());
-    } finally {
-      socket?.dispose();
-    }
-  }
-
-  Future<String?> _readAuthToken() async {
-    return AuthService().getToken();
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final hasText = _textController.text.trim().isNotEmpty;
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.queue_music_outlined, color: Colors.white),
-                    onPressed: _pickMusic,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.text_fields, color: Colors.white),
-                    onPressed: () => _showTextDialog(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 9 / 16,
-                  child: RepaintBoundary(
-                    key: _canvasKey,
-                    child: ClipRect(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          GestureDetector(
-                            onTap: _cycleBackground,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(gradient: _currentGradient),
-                            ),
-                          ),
-                          IgnorePointer(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.18),
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.14),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (!hasText)
-                            Center(
-                              child: GestureDetector(
-                                onTap: () => _showTextDialog(context),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(24.r),
-                                  ),
-                                  child: Text(
-                                    'Tap to add text',
-                                    style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                                      color: Colors.white,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            Center(
-                              child: Transform.translate(
-                                offset: _textOffset,
-                                child: Transform.scale(
-                                  scale: _textScale,
-                                  child: GestureDetector(
-                                    onTap: () => _showTextDialog(context),
-                                    onScaleStart: (details) {
-                                      _scaleStart = _textScale;
-                                    },
-                                    onScaleUpdate: (details) {
-                                      setState(() {
-                                        _textScale = (_scaleStart * details.scale).clamp(0.7, 3.2);
-                                        _textOffset += details.focalPointDelta;
-                                      });
-                                    },
-                                    child: _StoryCanvasText(
-                                      text: _textController.text,
-                                      preset: _activePreset,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_selectedMusic != null)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: _StorySelectedMusicChip(
-                        music: _selectedMusic!,
-                        onRemove: _removeMusic,
-                      ),
-                    ),
-                  if (hasText)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Drag to move. Pinch to zoom. Tap background to change color.',
-                              style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                                color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: 12.sp,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Text(
-                            _activePreset.label,
-                            style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                              color: Colors.white.withValues(alpha: 0.88),
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (hasText)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _cycleTextStyle,
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
-                                foregroundColor: Colors.white,
-                                minimumSize: const Size.fromHeight(46),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23.r),
-                                ),
-                              ),
-                              child: Text(
-                                'Text style',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 10.w),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _resetTextTransform,
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
-                                foregroundColor: Colors.white,
-                                minimumSize: const Size.fromHeight(46),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23.r),
-                                ),
-                              ),
-                              child: Text(
-                                'Reset text',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isSharing ? null : _shareStory,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isSharing
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
-                          : Text(
-                              'Your story',
-                              style: TextStyle(fontFamily: 'SF Pro Rounded', 
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTextDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController(text: _textController.text);
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final dialogBgColor = isDark ? const Color(0xFF1C1E21) : Colors.white;
-        final textColor = isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF111827);
-        final secondaryColor = isDark ? const Color(0xFFB0B3B8) : const Color(0xFF6B7280);
-
-        return AlertDialog(
-          backgroundColor: dialogBgColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            'Add text',
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: TextField(
-            controller: controller,
-            maxLines: 5,
-            maxLength: 200,
-            autofocus: true,
-            style: TextStyle(color: textColor),
-            inputFormatters: [EmojiPresentationFormatter()],
-            decoration: InputDecoration(
-              hintText: "What's on your mind?",
-              hintStyle: TextStyle(color: secondaryColor),
-              border: InputBorder.none,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: secondaryColor),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _textController.text = controller.text;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Done',
-                style: TextStyle(
-                  color: Color(0xFFFF7A45),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _StoryTextStylePreset {
-  const _StoryTextStylePreset({
-    required this.label,
-    required this.textStyle,
-    this.backgroundColor,
-    this.borderColor,
-    this.horizontalPadding = 0,
-    this.verticalPadding = 0,
-    this.borderRadius = 0,
-  });
-
-  final String label;
-  final TextStyle textStyle;
-  final Color? backgroundColor;
-  final Color? borderColor;
-  final double horizontalPadding;
-  final double verticalPadding;
-  final double borderRadius;
-}
-
-class _StoryCanvasText extends StatelessWidget {
-  const _StoryCanvasText({
-    required this.text,
-    required this.preset,
-  });
-
-  final String text;
-  final _StoryTextStylePreset preset;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasContainer = preset.backgroundColor != null || preset.borderColor != null;
-    final textWidget = Text(
-      text,
-      textAlign: TextAlign.center,
-      style: preset.textStyle,
-    );
-
-    if (!hasContainer) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 28.w),
-        child: textWidget,
-      );
-    }
-
-    return Container(
-      constraints: BoxConstraints(maxWidth: 300),
-      padding: EdgeInsets.symmetric(
-        horizontal: preset.horizontalPadding,
-        vertical: preset.verticalPadding,
-      ),
-      decoration: BoxDecoration(
-        color: preset.backgroundColor,
-        borderRadius: BorderRadius.circular(preset.borderRadius),
-        border: preset.borderColor == null ? null : Border.all(color: preset.borderColor!, width: 1.5),
-      ),
-      child: textWidget,
+    return ImageStoryEditorScreen(
+      user: user,
     );
   }
 }
@@ -2562,12 +1412,12 @@ class _MusicOverlayWidget extends StatelessWidget {
 class ImageStoryEditorScreen extends StatefulWidget {
   const ImageStoryEditorScreen({
     required this.user,
-    required this.imageBytes,
+    this.imageBytes,
     super.key,
   });
 
   final User user;
-  final Uint8List imageBytes;
+  final Uint8List? imageBytes;
 
   @override
   State<ImageStoryEditorScreen> createState() => _ImageStoryEditorScreenState();
@@ -2577,6 +1427,52 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final GlobalKey _trashKey = GlobalKey();
   final TransformationController _transformController = TransformationController();
+
+  Uint8List? _imageBytes;
+  int _gradientIndex = 0;
+
+  static const List<Gradient> _bgGradients = [
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045)],
+    ),
+    LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFF2E0854), Color(0xFF180B26), Color(0xFF0D021A)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFFF0844), Color(0xFFFFB199)],
+    ),
+    LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFFC5C7D), Color(0xFF6A82FB)],
+    ),
+    LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFFFF6A00), Color(0xFFEE0979)],
+    ),
+    LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFF1F1C2C), Color(0xFF928DAB)],
+    ),
+  ];
 
   // Mode: Normal vs Drawing vs TextEditing
   bool _isDrawingMode = false;
@@ -2615,10 +1511,76 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
   String _uploadStatus = '';
 
   @override
+  void initState() {
+    super.initState();
+    _imageBytes = widget.imageBytes;
+  }
+
+  @override
   void dispose() {
     _transformController.dispose();
     _textEditingController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 95,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+          _transformController.value = Matrix4.identity();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _capturePhotoFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 95,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+          _transformController.value = Matrix4.identity();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to capture photo: $e')),
+        );
+      }
+    }
+  }
+
+  void _cycleGradient() {
+    setState(() {
+      if (_imageBytes != null) {
+        _imageBytes = null;
+      } else {
+        _gradientIndex = (_gradientIndex + 1) % _bgGradients.length;
+      }
+    });
   }
 
   void _openTextEditor({_TextOverlay? existing}) {
@@ -3052,42 +2014,81 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Blurred Background
-                          ImageFiltered(
-                            imageFilter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                            child: Image.memory(
-                              widget.imageBytes,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.18),
-                          ),
-                          // Main Image
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(14.r),
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return InteractiveViewer(
-                                    transformationController: _transformController,
-                                    minScale: 1.0,
-                                    maxScale: 8.0,
-                                    boundaryMargin: EdgeInsets.all(280.r),
-                                    clipBehavior: Clip.none,
-                                    child: SizedBox(
-                                      width: constraints.maxWidth,
-                                      height: constraints.maxHeight,
-                                      child: Image.memory(
-                                        widget.imageBytes,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  );
-                                },
+                          // Background & Image Area
+                          if (_imageBytes != null) ...[
+                            // Blurred Background
+                            ImageFiltered(
+                              imageFilter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                              child: Image.memory(
+                                _imageBytes!,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ),
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.18),
+                            ),
+                            // Main Image
+                            Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(14.r),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return InteractiveViewer(
+                                      transformationController: _transformController,
+                                      minScale: 1.0,
+                                      maxScale: 8.0,
+                                      boundaryMargin: EdgeInsets.all(280.r),
+                                      clipBehavior: Clip.none,
+                                      child: SizedBox(
+                                        width: constraints.maxWidth,
+                                        height: constraints.maxHeight,
+                                        child: Image.memory(
+                                          _imageBytes!,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            // Gradient Background
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              decoration: BoxDecoration(
+                                gradient: _bgGradients[_gradientIndex],
+                              ),
+                            ),
+                            if (_textOverlays.isEmpty && _stickerOverlays.isEmpty && _strokes.isEmpty && !_isDrawingMode && !_isEditingText)
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () => _openTextEditor(),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(24.r),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.edit_outlined, color: Colors.white70, size: 18.sp),
+                                        SizedBox(width: 8.w),
+                                        Text(
+                                          'Tap to add text',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.white,
+                                            fontSize: 15.sp,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                           // Freehand Doodle Layer
                           CustomPaint(
                             painter: _DoodlePainter(
@@ -3274,87 +2275,158 @@ class _ImageStoryEditorScreenState extends State<ImageStoryEditorScreen> {
                         icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
-                      const Spacer(),
-                      // Apple Music Button
-                      GestureDetector(
-                        onTap: _pickMusic,
-                        child: Container(
-                          width: 38.r,
-                          height: 38.r,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white24,
-                              width: _selectedMusic != null ? 1.5 : 1.0,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.music_note_rounded,
-                            color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      // Stickers & Emojis Button
-                      GestureDetector(
-                        onTap: _openStickerTray,
-                        child: Container(
-                          width: 38.r,
-                          height: 38.r,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 1.0),
-                          ),
-                          child: const Icon(
-                            Icons.sentiment_satisfied_alt_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      // Doodle Drawing Button
-                      GestureDetector(
-                        onTap: () => setState(() => _isDrawingMode = true),
-                        child: Container(
-                          width: 38.r,
-                          height: 38.r,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 1.0),
-                          ),
-                          child: const Icon(
-                            Icons.gesture_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      // Text Tool Button (Aa)
-                      GestureDetector(
-                        onTap: () => _openTextEditor(),
-                        child: Container(
-                          width: 38.r,
-                          height: 38.r,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 1.0),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Aa',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 16,
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          reverse: true,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Gallery Picker Button
+                              GestureDetector(
+                                onTap: _pickImageFromGallery,
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.photo_library_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
-                            ),
+                              SizedBox(width: 8.w),
+                              // Camera Capture Button
+                              GestureDetector(
+                                onTap: _capturePhotoFromCamera,
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // Palette / Background Gradient Button
+                              GestureDetector(
+                                onTap: _cycleGradient,
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _imageBytes == null ? const Color(0xFFFF7A45) : Colors.white24,
+                                      width: _imageBytes == null ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.palette_outlined,
+                                    color: _imageBytes == null ? const Color(0xFFFF7A45) : Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // Apple Music Button
+                              GestureDetector(
+                                onTap: _pickMusic,
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white24,
+                                      width: _selectedMusic != null ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.music_note_rounded,
+                                    color: _selectedMusic != null ? const Color(0xFFFF7A45) : Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // Stickers & Emojis Button
+                              GestureDetector(
+                                onTap: _openStickerTray,
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.sentiment_satisfied_alt_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // Doodle Drawing Button
+                              GestureDetector(
+                                onTap: () => setState(() => _isDrawingMode = true),
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.gesture_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // Text Tool Button (Aa)
+                              GestureDetector(
+                                onTap: () => _openTextEditor(),
+                                child: Container(
+                                  width: 38.r,
+                                  height: 38.r,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1.0),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Aa',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
