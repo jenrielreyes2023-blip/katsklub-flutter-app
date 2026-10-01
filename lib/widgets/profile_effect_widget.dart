@@ -1784,7 +1784,7 @@ class ProfileEffectConfig {
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 10000),
+      introDuration: Duration(milliseconds: 4980),
       introFrameCount: 60,
     ),
     'darth-vader-arrives': ProfileEffectConfig(
@@ -1792,7 +1792,7 @@ class ProfileEffectConfig {
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 10000),
+      introDuration: Duration(milliseconds: 4980),
       introFrameCount: 60,
     ),
     'deep_dive': ProfileEffectConfig(
@@ -4982,14 +4982,11 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (config == null) return;
 
     // Cross-fade timing: Start fading out 350ms BEFORE the intro finishes.
-    // If introFrameCount is configured, frameBuilder drives the cross-fade deterministically
-    // based on actual painted frames, and this timer acts as a safety fallback.
+    // This guarantees the intro is still in active, fluid motion while dissolving
+    // into the idle loop, completely eliminating any freeze/halt on the last frame
+    // and preventing the WebP from repeating into a 2nd loop.
     const fadeDuration = Duration(milliseconds: 350);
-    final totalDuration = (config.introFrameCount != null && config.introFrameCount! > 5)
-        ? (config.introDuration > const Duration(milliseconds: 8000)
-            ? config.introDuration
-            : const Duration(milliseconds: 10000))
-        : config.introDuration;
+    final totalDuration = config.introDuration;
     final fadeStartDelay = totalDuration > fadeDuration
         ? totalDuration - fadeDuration
         : Duration.zero;
