@@ -117,6 +117,9 @@ class _ShopScreenState extends State<ShopScreen> {
   List<String> _dynamicCategories = ['All'];
   String _selectedFrameCategory = 'All';
   bool _isLoadingFrames = false;
+  Map<String, dynamic>? _selectedFrame;
+  String _frameSearchQuery = '';
+  final TextEditingController _frameSearchController = TextEditingController();
 
   // Profile Effects & KatsCoins State
   double _coinsBalance = 0.0;
@@ -186,6 +189,12 @@ class _ShopScreenState extends State<ShopScreen> {
           setState(() {
             _dynamicFrames = List<Map<String, dynamic>>.from(data['frames'] ?? []);
             _dynamicCategories = List<String>.from(data['categories'] ?? ['All']);
+            if (_selectedFrame == null && _dynamicFrames.isNotEmpty) {
+              _selectedFrame = _dynamicFrames.firstWhere(
+                (f) => f['frameUrl'] == _equippedAdminFrame,
+                orElse: () => _dynamicFrames.first,
+              );
+            }
           });
         }
       }
@@ -660,6 +669,12 @@ class _ShopScreenState extends State<ShopScreen> {
     _fetchInventory();
   }
 
+  @override
+  void dispose() {
+    _frameSearchController.dispose();
+    super.dispose();
+  }
+
   void _switchTab(int index) {
     if (_activeTabIndex == index) return;
     setState(() {
@@ -675,13 +690,25 @@ class _ShopScreenState extends State<ShopScreen> {
         }
         _selectedTheme = selected ?? (postcards.isNotEmpty ? postcards.first : null);
       } else if (index == 1) {
+        // Tab 1: Frames
+        if (_dynamicFrames.isEmpty) {
+          _fetchDynamicFrames();
+        } else if (_selectedFrame == null) {
+          _selectedFrame = _dynamicFrames.firstWhere(
+            (f) => f['frameUrl'] == _equippedAdminFrame,
+            orElse: () => _dynamicFrames.first,
+          );
+        }
+      } else if (index == 2) {
+        // Tab 2: Profile Effects
         if (_profileEffects.isNotEmpty && _selectedEffect == null) {
           _selectedEffect = _profileEffects.firstWhere(
             (e) => e['key'] == _equippedProfileEffect,
             orElse: () => _profileEffects.first,
           );
         }
-      } else if (index == 2) {
+      } else if (index == 3) {
+        // Tab 3: Chat Bubbles
         ThemeProductData? selected;
         for (final p in _visibleProducts) {
           if (_isBubbleProduct(p) && _themeKeyFor(p) == _appliedBubbleTheme) {
@@ -694,7 +721,8 @@ class _ShopScreenState extends State<ShopScreen> {
               (p) => _isBubbleProduct(p),
               orElse: () => _visibleProducts.first,
             );
-      } else if (index == 3) {
+      } else if (index == 4) {
+        // Tab 4: Owned Items
         _fetchInventory();
       }
     });
@@ -788,6 +816,13 @@ class _ShopScreenState extends State<ShopScreen> {
       } else {
         _equippedAdminFrame = 'none';
         equippedAdminFrameNotifier.value = 'none';
+      }
+
+      if (_dynamicFrames.isNotEmpty && _selectedFrame == null) {
+        _selectedFrame = _dynamicFrames.firstWhere(
+          (f) => f['frameUrl'] == _equippedAdminFrame,
+          orElse: () => _dynamicFrames.first,
+        );
       }
 
       final currentEffect = user?.profileEffect?.trim();
@@ -2678,6 +2713,643 @@ class _ShopScreenState extends State<ShopScreen> {
           onEquip: () => _equipAdminFrame('none', 'No Frame'),
           onUnequip: () => _equipAdminFrame('assets/frames/bframe.png', 'Golden Admin Frame'),
         ),
+      ],
+    );
+  }
+
+  // ==================== AVATAR FRAMES TAB ====================
+  Widget _buildLiveFramePreviewCard(Map<String, dynamic>? frame) {
+    final frameUrl = frame?['frameUrl']?.toString() ?? (_equippedAdminFrame.isNotEmpty ? _equippedAdminFrame : 'none');
+    final frameName = frame?['name']?.toString() ?? 'Select an Avatar Frame';
+    final category = frame?['category']?.toString() ?? 'Avatar Frames';
+    final isVip = frame?['isVip'] == true;
+    final isEquipped = frameUrl != 'none' && _equippedAdminFrame == frameUrl;
+    final isNoFrame = frameUrl == 'none' || frameUrl.isEmpty;
+
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final fullName = _currentUser?.fullName?.isNotEmpty == true
+        ? _currentUser!.fullName!
+        : (_currentUsername.isNotEmpty ? _currentUsername : 'User');
+    final initials = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEquipped
+              ? const Color(0xFF22C55E).withOpacity(0.7)
+              : const Color(0xFFA855F7).withOpacity(0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isEquipped ? const Color(0xFF22C55E) : const Color(0xFFA855F7))
+                .withOpacity(0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Stack(
+          children: [
+            // Dark gradient backdrop
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0F172A),
+                      Color(0xFF1E1B4B),
+                      Color(0xFF2E1065),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+
+            // Decorative background circle
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFA855F7).withOpacity(0.12),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Live Avatar with Frame
+                  UserAvatarWithFrame(
+                    avatarUrl: avatarUrl,
+                    initials: initials,
+                    radius: 36,
+                    framePath: isNoFrame ? 'none' : frameUrl,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isVip
+                                      ? const [Color(0xFFF59E0B), Color(0xFFD97706)]
+                                      : const [Color(0xFFA855F7), Color(0xFF7C3AED)],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isVip ? 'VIP FRAME' : category.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                            if (isEquipped) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF15803D),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 10,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'EQUIPPED',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          frameName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          isEquipped
+                              ? 'This avatar frame is currently showing on your profile!'
+                              : (frame?['description'] ?? 'Tap any frame below to preview on your profile.'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 11,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrameSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: TextField(
+          controller: _frameSearchController,
+          onChanged: (val) {
+            setState(() {
+              _frameSearchQuery = val.trim();
+            });
+          },
+          style: const TextStyle(fontSize: 12.5, color: Color(0xFF111827)),
+          decoration: InputDecoration(
+            hintText: 'Search ${_dynamicFrames.length} avatar frames...',
+            hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey.shade600),
+            suffixIcon: _frameSearchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () {
+                      _frameSearchController.clear();
+                      setState(() => _frameSearchQuery = '');
+                    },
+                  )
+                : null,
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            border: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrameCategoryChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: _dynamicCategories.map((cat) {
+          final isSelected = cat == _selectedFrameCategory;
+          final count = cat == 'All'
+              ? _dynamicFrames.length
+              : _dynamicFrames.where((f) => f['category'] == cat).length;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                count > 0 ? '$cat ($count)' : cat,
+              ),
+              selected: isSelected,
+              selectedColor: const Color(0xFFA855F7).withOpacity(0.2),
+              backgroundColor: Colors.white.withOpacity(0.7),
+              checkmarkColor: const Color(0xFFA855F7),
+              labelStyle: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFF4B5563),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFFA855F7) : Colors.grey.shade300,
+                ),
+              ),
+              onSelected: (_) {
+                setState(() => _selectedFrameCategory = cat);
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildFrameGridCard({
+    required Map<String, dynamic> frame,
+    required bool isSelected,
+    required bool isEquipped,
+    required VoidCallback onTap,
+  }) {
+    final frameUrl = frame['frameUrl']?.toString();
+    final frameName = frame['name']?.toString() ?? 'Frame';
+    final category = frame['category']?.toString() ?? '';
+    final isVip = frame['isVip'] == true;
+    final isNoFrame = frameUrl == 'none' || frameUrl == null || frameUrl.isEmpty;
+
+    final avatarUrl = _currentUser?.avatarUrl ?? '';
+    final fullName = _currentUser?.fullName?.isNotEmpty == true
+        ? _currentUser!.fullName!
+        : (_currentUsername.isNotEmpty ? _currentUsername : 'User');
+    final initials = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFAF5FF) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFFA855F7)
+                : (isEquipped ? const Color(0xFF22C55E).withOpacity(0.6) : Colors.grey.shade200),
+            width: isSelected ? 2.0 : (isEquipped ? 1.5 : 1.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFFA855F7).withOpacity(0.18)
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: isSelected ? 10 : 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(6, 8, 6, 6),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Avatar with frame
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                UserAvatarWithFrame(
+                  avatarUrl: avatarUrl,
+                  initials: initials,
+                  radius: 22.0,
+                  framePath: isNoFrame ? 'none' : frameUrl,
+                ),
+                if (isEquipped)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF16A34A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 10,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              frameName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              isEquipped
+                  ? 'Equipped'
+                  : (isVip ? 'VIP' : (category.isNotEmpty ? category : 'Frame')),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: isEquipped ? FontWeight.w800 : FontWeight.w500,
+                color: isEquipped
+                    ? const Color(0xFF16A34A)
+                    : (isVip ? const Color(0xFFD97706) : const Color(0xFF9CA3AF)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrameBottomActionBar(BuildContext context, Map<String, dynamic> frame) {
+    final frameUrl = frame['frameUrl']?.toString() ?? 'none';
+    final frameName = frame['name']?.toString() ?? 'Avatar Frame';
+    final isEquipped = frameUrl != 'none' && _equippedAdminFrame == frameUrl;
+    final isNoFrame = frameUrl == 'none' || frameUrl.isEmpty;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        14 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          UserAvatarWithFrame(
+            avatarUrl: _currentUser?.avatarUrl ?? '',
+            initials: _currentUser?.initials ?? 'U',
+            radius: 20,
+            framePath: isNoFrame ? 'none' : frameUrl,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  frameName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isEquipped
+                      ? 'Currently active on your profile'
+                      : (frame['category'] ?? 'Avatar Frame'),
+                  style: TextStyle(
+                    color: isEquipped ? const Color(0xFF15803D) : const Color(0xFF6B7280),
+                    fontSize: 11.5,
+                    fontWeight: isEquipped ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (isEquipped && !isNoFrame) ...[
+            OutlinedButton(
+              onPressed: () => _equipAdminFrame('none', 'No Frame'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFDC2626),
+                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              ),
+              child: const Text('Unequip', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+          ] else ...[
+            ElevatedButton(
+              onPressed: () => _equipAdminFrame(frameUrl, frameName),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFA855F7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+              child: Text(
+                isEquipped ? 'Equipped' : 'Equip Frame',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFramesTab() {
+    final filteredFrames = _dynamicFrames.where((f) {
+      final name = (f['name'] ?? '').toString().toLowerCase();
+      final desc = (f['description'] ?? '').toString().toLowerCase();
+      final cat = (f['category'] ?? '').toString();
+      final matchesCategory = _selectedFrameCategory == 'All' || cat == _selectedFrameCategory;
+      final matchesSearch = _frameSearchQuery.isEmpty ||
+          name.contains(_frameSearchQuery.toLowerCase()) ||
+          desc.contains(_frameSearchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    final showNoFrameCard = _selectedFrameCategory == 'All' && _frameSearchQuery.isEmpty;
+    final totalCount = filteredFrames.length + (showNoFrameCard ? 1 : 0);
+
+    return Column(
+      children: [
+        // Live Preview Card
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Live Avatar Frame Preview',
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildLiveFramePreviewCard(_selectedFrame),
+            ],
+          ),
+        ),
+
+        // Search Bar
+        _buildFrameSearchBar(),
+        const SizedBox(height: 8),
+
+        // Category Chips
+        _buildFrameCategoryChips(),
+        const SizedBox(height: 8),
+
+        // Frames Grid Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text(
+                _selectedFrameCategory == 'All' ? 'All Avatar Frames' : _selectedFrameCategory,
+                style: const TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${filteredFrames.length} frames',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // Grid View
+        Expanded(
+          child: _isLoadingFrames && _dynamicFrames.isEmpty
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFA855F7),
+                  ),
+                )
+              : totalCount == 0
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No avatar frames found',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 0.78,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: totalCount,
+                      itemBuilder: (context, index) {
+                        if (showNoFrameCard && index == 0) {
+                          // No Frame / Default Card
+                          final isSelected = _selectedFrame?['frameUrl'] == 'none' ||
+                              (_selectedFrame == null && _equippedAdminFrame == 'none');
+                          final isEquipped = _equippedAdminFrame == 'none';
+                          return _buildFrameGridCard(
+                            frame: const {
+                              'name': 'No Frame',
+                              'category': 'Default',
+                              'frameUrl': 'none',
+                              'description': 'Display your avatar without any frame overlay.',
+                              'isVip': false,
+                            },
+                            isSelected: isSelected,
+                            isEquipped: isEquipped,
+                            onTap: () {
+                              setState(() {
+                                _selectedFrame = const {
+                                  'name': 'No Frame',
+                                  'category': 'Default',
+                                  'frameUrl': 'none',
+                                  'description': 'Display your avatar without any frame overlay.',
+                                  'isVip': false,
+                                };
+                              });
+                            },
+                          );
+                        }
+
+                        final frameIndex = showNoFrameCard ? index - 1 : index;
+                        final frame = filteredFrames[frameIndex];
+                        final frameUrl = frame['frameUrl']?.toString();
+                        final isSelected = _selectedFrame?['frameUrl'] == frameUrl;
+                        final isEquipped = frameUrl != null && _equippedAdminFrame == frameUrl;
+
+                        return _buildFrameGridCard(
+                          frame: frame,
+                          isSelected: isSelected,
+                          isEquipped: isEquipped,
+                          onTap: () {
+                            setState(() {
+                              _selectedFrame = frame;
+                            });
+                          },
+                        );
+                      },
+                    ),
+        ),
+
+        // Bottom Action Bar
+        if (_selectedFrame != null)
+          _buildFrameBottomActionBar(context, _selectedFrame!),
       ],
     );
   }
@@ -5314,7 +5986,7 @@ case 'angelic_intervention':
           bottom: false,
           child: Column(
             children: [
-              // Segmented Tab Selector (4 Tabs)
+              // Segmented Tab Selector (5 Tabs: Postcards, Frames, Effects, Bubbles, Owned)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Container(
@@ -5340,20 +6012,23 @@ case 'angelic_intervention':
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              'Postcards',
-                              style: TextStyle(
-                                color: _activeTabIndex == 0
-                                    ? Colors.white
-                                    : const Color(0xFF4B5563),
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Postcards',
+                                style: TextStyle(
+                                  color: _activeTabIndex == 0
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      // Tab 1: Profile Effects (NEW)
+                      // Tab 1: Frames (NEW)
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _switchTab(1),
@@ -5366,48 +6041,23 @@ case 'angelic_intervention':
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Effects',
-                                  style: TextStyle(
-                                    color: _activeTabIndex == 1
-                                        ? Colors.white
-                                        : const Color(0xFF4B5563),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Frames',
+                                style: TextStyle(
+                                  color: _activeTabIndex == 1
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                const SizedBox(width: 3),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _activeTabIndex == 1
-                                        ? Colors.white.withOpacity(0.3)
-                                        : const Color(0xFFDCFCE7),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'NEW',
-                                    style: TextStyle(
-                                      color: _activeTabIndex == 1
-                                          ? Colors.white
-                                          : const Color(0xFF15803D),
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      // Tab 2: Chat Bubbles
+                      // Tab 2: Profile Effects
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _switchTab(2),
@@ -5420,48 +6070,23 @@ case 'angelic_intervention':
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Bubbles',
-                                  style: TextStyle(
-                                    color: _activeTabIndex == 2
-                                        ? Colors.white
-                                        : const Color(0xFF4B5563),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Effects',
+                                style: TextStyle(
+                                  color: _activeTabIndex == 2
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                const SizedBox(width: 3),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _activeTabIndex == 2
-                                        ? Colors.white.withOpacity(0.3)
-                                        : const Color(0xFFFEF3C7),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'VIP',
-                                    style: TextStyle(
-                                      color: _activeTabIndex == 2
-                                          ? Colors.white
-                                          : const Color(0xFFD97706),
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      // Tab 3: Owned Items
+                      // Tab 3: Chat Bubbles
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _switchTab(3),
@@ -5474,14 +6099,46 @@ case 'angelic_intervention':
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              'Owned',
-                              style: TextStyle(
-                                color: _activeTabIndex == 3
-                                    ? Colors.white
-                                    : const Color(0xFF4B5563),
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Bubbles',
+                                style: TextStyle(
+                                  color: _activeTabIndex == 3
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Tab 4: Owned Items
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _switchTab(4),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 4
+                                  ? const Color(0xFFA855F7)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Owned',
+                                style: TextStyle(
+                                  color: _activeTabIndex == 4
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ),
@@ -5637,12 +6294,17 @@ case 'angelic_intervention':
                   },
                 ),
               ] else if (_activeTabIndex == 1) ...[
-                // Tab 1: Profile Effects
+                // Tab 1: Avatar Frames (NEW)
+                Expanded(
+                  child: _buildFramesTab(),
+                ),
+              ] else if (_activeTabIndex == 2) ...[
+                // Tab 2: Profile Effects
                 Expanded(
                   child: _buildEffectsTab(),
                 ),
-              ] else if (_activeTabIndex == 2) ...[
-                // Tab 2: Chat Bubbles
+              ] else if (_activeTabIndex == 3) ...[
+                // Tab 3: Chat Bubbles
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Column(
