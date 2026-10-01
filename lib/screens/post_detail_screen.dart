@@ -213,7 +213,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     });
 
     try {
-      final page = await _feedService.loadComments(widget.postId, limit: 5);
+      final page = await _feedService.loadComments(widget.postId, limit: 15);
       if (!mounted) {
         return;
       }
@@ -271,7 +271,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       final page = await _feedService.loadComments(
         widget.postId,
-        limit: 10,
+        limit: 15,
         beforeId: beforeId,
       );
       if (!mounted) {
