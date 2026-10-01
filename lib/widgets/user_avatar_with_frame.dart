@@ -90,6 +90,7 @@ class UserAvatarWithFrame extends StatelessWidget {
           ),
         );
       }
+    } else {
       final lowerUrl = cleanUrl.toLowerCase();
       final isAnim = lowerUrl.endsWith('.gif') ||
           lowerUrl.contains('.gif') ||
