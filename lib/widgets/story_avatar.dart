@@ -80,7 +80,7 @@ class StoryAvatar extends StatelessWidget {
                     ),
                 ],
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: 4.h),
               Text(
                 label,
                 maxLines: 1,

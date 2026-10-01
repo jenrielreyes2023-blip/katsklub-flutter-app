@@ -593,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: SizedBox(height: totalHeaderHeight + 2.h),
+                    child: SizedBox(height: totalHeaderHeight + 6.h),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -1742,7 +1742,9 @@ class _StoriesRowState extends State<_StoriesRow>
     super.build(context);
 
     final hasOwnStories = widget.ownStories.isNotEmpty;
-    final rowHeight = 64.w + 2.h + 14.sp;
+    final topPadding = 10.h;
+    final bottomPadding = 6.h;
+    final rowHeight = 54.w + 4.h + 14.sp + topPadding + bottomPadding;
 
     return SizedBox(
       height: rowHeight,
@@ -1753,7 +1755,12 @@ class _StoriesRowState extends State<_StoriesRow>
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
-        padding: EdgeInsets.symmetric(horizontal: 10.w),
+        padding: EdgeInsets.only(
+          left: 10.w,
+          right: 10.w,
+          top: topPadding,
+          bottom: bottomPadding,
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: widget.storyGroups.length + 1,
         separatorBuilder: (_, __) => SizedBox(width: 6.w),

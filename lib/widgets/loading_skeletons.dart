@@ -285,11 +285,18 @@ class StorySkeletonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rowHeight = 64.w + 2.h + 14.sp;
+    final topPadding = 10.h;
+    final bottomPadding = 6.h;
+    final rowHeight = 54.w + 4.h + 14.sp + topPadding + bottomPadding;
     return SizedBox(
       height: rowHeight,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 10.w),
+        padding: EdgeInsets.only(
+          left: 10.w,
+          right: 10.w,
+          top: topPadding,
+          bottom: bottomPadding,
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: count,
         separatorBuilder: (_, __) => SizedBox(width: 6.w),
@@ -336,7 +343,7 @@ class StorySkeletonRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: 4.h),
                   SkeletonBox(width: labelWidth, height: 10.h, radius: 5.r),
                 ],
               ),
