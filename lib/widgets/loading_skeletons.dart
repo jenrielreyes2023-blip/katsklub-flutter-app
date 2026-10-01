@@ -285,7 +285,7 @@ class StorySkeletonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final topPadding = 10.h;
+    final topPadding = 12.h;
     final bottomPadding = 6.h;
     final rowHeight = 54.w + 4.h + 14.sp + topPadding + bottomPadding;
     return SizedBox(

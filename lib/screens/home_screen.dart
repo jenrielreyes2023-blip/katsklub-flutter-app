@@ -593,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: SizedBox(height: totalHeaderHeight + 6.h),
+                    child: SizedBox(height: totalHeaderHeight),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -1742,7 +1742,7 @@ class _StoriesRowState extends State<_StoriesRow>
     super.build(context);
 
     final hasOwnStories = widget.ownStories.isNotEmpty;
-    final topPadding = 10.h;
+    final topPadding = 12.h;
     final bottomPadding = 6.h;
     final rowHeight = 54.w + 4.h + 14.sp + topPadding + bottomPadding;
 
