@@ -4888,9 +4888,6 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   bool _introTimerStarted = false;
   bool _introFadeOut = false;
   bool _introDone = false;
-  bool _routeReady = false;
-  Animation<double>? _routeAnimation;
-  AnimationStatusListener? _routeStatusListener;
 
   Timer? _introTimer;
   Timer? _safetyTimeout;
@@ -5005,35 +5002,10 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (_loopProvider != null) {
       precacheImage(_loopProvider!, context).catchError((_) {});
     }
-
-    // Smooth entry: wait for route push transition (slide animation) to complete
-    // so the intro doesn't contend with screen GPU transformation for frame budgets
-    if (!_routeReady) {
-      final modalRoute = ModalRoute.of(context);
-      final anim = modalRoute?.animation;
-      if (anim != null && !anim.isCompleted) {
-        _routeAnimation = anim;
-        _routeStatusListener = (status) {
-          if (status == AnimationStatus.completed) {
-            if (_routeAnimation != null && _routeStatusListener != null) {
-              _routeAnimation!.removeStatusListener(_routeStatusListener!);
-              _routeAnimation = null;
-              _routeStatusListener = null;
-            }
-            if (mounted) {
-              setState(() {
-                _routeReady = true;
-              });
-            }
-          }
-        };
-        anim.addStatusListener(_routeStatusListener!);
-      } else {
-        _routeReady = true;
-      }
-    }
-
     // Pre-fetch raw intro file to disk cache WITHOUT starting the animation stream ticker.
+    // NOTE: Do NOT use precacheImage on the animated intro; precacheImage attaches a stream listener
+    // which immediately starts advancing animation frames in the background before the widget paints,
+    // causing it to skip frame 0!
     final config = _config;
     if (config != null &&
         config.introDuration > Duration.zero &&
@@ -5050,11 +5022,6 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
   @override
   void dispose() {
     _cleanupTimers();
-    if (_routeAnimation != null && _routeStatusListener != null) {
-      _routeAnimation!.removeStatusListener(_routeStatusListener!);
-      _routeAnimation = null;
-      _routeStatusListener = null;
-    }
     _introProvider?.evict();
     super.dispose();
   }
@@ -5072,8 +5039,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     }
 
     final double effectiveHeight = widget.height ?? 460.h;
-    final bool isIntroPending = !_introDone && _introProvider != null;
-    final bool hasIntro = isIntroPending && _routeReady;
+    final bool hasIntro = !_introDone && _introProvider != null;
 
     final Widget effectContent = SizedBox(
       width: double.infinity,
@@ -5082,10 +5048,11 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
         fit: StackFit.passthrough,
         children: [
           // Layer 1: Ambient Idle Loop
-          // PERFORMANCE OPTIMIZATION: Only mount the loop image when there is no intro,
-          // OR when the intro reaches its final crossfade window (_introFadeOut == true).
-          // This stops the background loop WebP from constantly decoding during the fast intro action!
-          if (!isIntroPending)
+          // CRITICAL FIX: ALWAYS mounted underneath in the Stack so its WebP frames are pre-decoded
+          // and warm in GPU texture memory. While the intro is playing, its opacity is 0.0.
+          // When the intro begins its crossfade, the loop dissolves in from 0.0 to 1.0 with ZERO
+          // cold-decode raster hitch/jank!
+          if (!hasIntro)
             Image(
               image: _loopProvider ?? CachedNetworkImageProvider(config.loopUrl),
               width: double.infinity,
@@ -5096,9 +5063,9 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
               gaplessPlayback: true,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             )
-          else if (_introFadeOut)
+          else
             AnimatedOpacity(
-              opacity: 1.0,
+              opacity: _introFadeOut ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeInOut,
               child: Image(
@@ -5113,7 +5080,7 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
               ),
             ),
 
-          // Layer 2: Intro Animation (Starts at 100% opacity, plays from frame 0 once route is settled, then cross-fades out in active motion)
+          // Layer 2: Intro Animation (Starts at 100% opacity, plays from frame 0, then cross-fades out in active motion)
           if (hasIntro)
             AnimatedOpacity(
               opacity: _introFadeOut ? 0.0 : 1.0,

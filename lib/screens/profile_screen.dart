@@ -2220,11 +2220,6 @@ class _ProfileHeader extends StatelessWidget {
     final surfaceColor = Theme.of(context).colorScheme.surface;
     final coverUrl = user.coverUrl?.trim() ?? '';
     final hasCover = coverUrl.isNotEmpty;
-    final lowerCover = coverUrl.toLowerCase();
-    final isAnimCover = lowerCover.endsWith('.webp') ||
-        lowerCover.contains('.webp') ||
-        lowerCover.endsWith('.gif') ||
-        lowerCover.contains('.gif');
 
     // Dynamic cover & header heights
     final double avatarSize = 80.0.r;
@@ -2255,13 +2250,27 @@ class _ProfileHeader extends StatelessWidget {
                 children: [
                   if (hasCover) ...[
                     // Base Image with alpha fade to 0.0 at the bottom
-                    () {
-                      final imageWidget = CachedNetworkImage(
+                    ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.35, 0.65, 0.88, 1.0],
+                          colors: [
+                            Colors.white,
+                            Colors.white,
+                            Color(0xB3FFFFFF), // 70% opacity
+                            Color(0x33FFFFFF), // 20% opacity
+                            Colors.transparent, // Completely fades out to 0!
+                          ],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: CachedNetworkImage(
                         imageUrl: ApiConfig.assetUrl(coverUrl),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: coverHeight,
-                        filterQuality: FilterQuality.low,
                         placeholder: (context, url) => Container(
                           color: isDark
                               ? const Color(0xFF1E1F28)
@@ -2291,33 +2300,8 @@ class _ProfileHeader extends StatelessWidget {
                             ),
                           ),
                         ),
-                      );
-
-                      if (isAnimCover) {
-                        // Skip expensive ShaderMask offscreen GPU buffer pass for animated covers.
-                        // The multi-stop surfaceColor gradient overlay below already dissolves the bottom cleanly!
-                        return imageWidget;
-                      }
-
-                      return ShaderMask(
-                        shaderCallback: (Rect bounds) {
-                          return const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: [0.0, 0.35, 0.65, 0.88, 1.0],
-                            colors: [
-                              Colors.white,
-                              Colors.white,
-                              Color(0xB3FFFFFF), // 70% opacity
-                              Color(0x33FFFFFF), // 20% opacity
-                              Colors.transparent, // Completely fades out to 0!
-                            ],
-                          ).createShader(bounds);
-                        },
-                        blendMode: BlendMode.dstIn,
-                        child: imageWidget,
-                      );
-                    }(),
+                      ),
+                    ),
                     // Multi-stop surface color gradient overlay for flawless dissolving into page
                     DecoratedBox(
                       decoration: BoxDecoration(
