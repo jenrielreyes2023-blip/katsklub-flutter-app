@@ -16,6 +16,7 @@ class ProfileEffectConfig {
   final String loopUrl;
   final Duration introDuration;
   final double aspectRatio;
+  final int? introFrameCount;
 
   const ProfileEffectConfig({
     required this.id,
@@ -24,6 +25,7 @@ class ProfileEffectConfig {
     required this.loopUrl,
     this.introDuration = const Duration(milliseconds: 2880),
     this.aspectRatio = 450 / 880,
+    this.introFrameCount,
   });
 
   static const Map<String, ProfileEffectConfig> registry = {
@@ -1782,14 +1784,16 @@ class ProfileEffectConfig {
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 5400),
+      introDuration: Duration(milliseconds: 10000),
+      introFrameCount: 60,
     ),
     'darth-vader-arrives': ProfileEffectConfig(
       id: 'darth-vader-arrives',
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 5400),
+      introDuration: Duration(milliseconds: 10000),
+      introFrameCount: 60,
     ),
     'deep_dive': ProfileEffectConfig(
       id: 'deep_dive',
@@ -4978,17 +4982,21 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
     if (config == null) return;
 
     // Cross-fade timing: Start fading out 350ms BEFORE the intro finishes.
-    // This guarantees the intro is still in active, fluid motion while dissolving
-    // into the idle loop, completely eliminating any freeze/halt on the last frame!
+    // If introFrameCount is configured, frameBuilder drives the cross-fade deterministically
+    // based on actual painted frames, and this timer acts as a safety fallback.
     const fadeDuration = Duration(milliseconds: 350);
-    final totalDuration = config.introDuration;
+    final totalDuration = (config.introFrameCount != null && config.introFrameCount! > 5)
+        ? (config.introDuration > const Duration(milliseconds: 8000)
+            ? config.introDuration
+            : const Duration(milliseconds: 10000))
+        : config.introDuration;
     final fadeStartDelay = totalDuration > fadeDuration
         ? totalDuration - fadeDuration
         : Duration.zero;
 
     _introTimer?.cancel();
     _introTimer = Timer(fadeStartDelay, () {
-      if (!mounted) return;
+      if (!mounted || _introDone || _introFadeOut) return;
       setState(() {
         _introFadeOut = true;
       });
@@ -5104,12 +5112,30 @@ class _ProfileEffectWidgetState extends State<ProfileEffectWidget> {
                 filterQuality: FilterQuality.low,
                 gaplessPlayback: false,
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (frame != null && !_introTimerStarted) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _startIntroCountdown();
+                  if (frame != null) {
+                    if (!_introTimerStarted) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          _startIntroCountdown();
+                        }
+                      });
+                    }
+
+                    final targetFrames = config.introFrameCount;
+                    if (targetFrames != null && targetFrames > 5) {
+                      // Trigger cross-fade when reaching target frame (e.g. frame 56 of 60).
+                      // This guarantees the sword animation (frames 50-58) renders in full
+                      // on screen even if device decoding is slower than normal.
+                      if (frame >= targetFrames - 4 && !_introFadeOut) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && !_introFadeOut && !_introDone) {
+                            setState(() {
+                              _introFadeOut = true;
+                            });
+                          }
+                        });
                       }
-                    });
+                    }
                   }
                   return child;
                 },
