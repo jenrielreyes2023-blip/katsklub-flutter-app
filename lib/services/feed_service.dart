@@ -1680,7 +1680,7 @@ class FeedService {
 
   Future<CommentPageResult> loadComments(
     String postId, {
-    int limit = 15,
+    int limit = 50,
     int? beforeId,
     int? slideId,
   }) async {
@@ -1695,9 +1695,9 @@ class FeedService {
     }
 
     final cleanLimit = limit < 1
-        ? 15
-        : limit > 50
-            ? 50
+        ? 50
+        : limit > 100
+            ? 100
             : limit;
     final basePath = slideId != null
         ? '/api/posts/$cleanPostId/slides/$slideId/comments'
