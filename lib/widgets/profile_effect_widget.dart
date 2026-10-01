@@ -1782,14 +1782,14 @@ class ProfileEffectConfig {
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 4980),
+      introDuration: Duration(milliseconds: 5400),
     ),
     'darth-vader-arrives': ProfileEffectConfig(
       id: 'darth-vader-arrives',
       name: 'Darth Vader Arrives',
       introUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/intro.webp',
       loopUrl: 'https://cdn.katsklub.top/effects/darth-vader-arrives/loop.webp',
-      introDuration: Duration(milliseconds: 4980),
+      introDuration: Duration(milliseconds: 5400),
     ),
     'deep_dive': ProfileEffectConfig(
       id: 'deep_dive',
