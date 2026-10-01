@@ -913,6 +913,7 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                               initials: widget.user.initials,
                               radius: 20.r,
                               isAdmin: widget.user.isAdmin,
+                              isCurrentUser: true,
                             ),
                             SizedBox(height: 6.h),
                             Expanded(

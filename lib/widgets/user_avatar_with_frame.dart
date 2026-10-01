@@ -20,6 +20,7 @@ class UserAvatarWithFrame extends StatelessWidget {
     this.framePath,
     this.avatarFrame,
     this.isAdmin = false,
+    this.isCurrentUser = false,
     this.initials = '',
     this.onTap,
     this.preserveLayoutFootprint = true,
@@ -32,6 +33,7 @@ class UserAvatarWithFrame extends StatelessWidget {
   final String? framePath;
   final String? avatarFrame;
   final bool isAdmin;
+  final bool isCurrentUser;
   final String initials;
   final VoidCallback? onTap;
   final bool preserveLayoutFootprint;
@@ -131,8 +133,9 @@ class UserAvatarWithFrame extends StatelessWidget {
       valueListenable: equippedAdminFrameNotifier,
       builder: (context, globalEquippedFrame, _) {
         final cleanGlobal = globalEquippedFrame.trim();
-        final String? rawFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath) ??
-            (isAdmin && cleanGlobal.isNotEmpty && cleanGlobal != 'none' ? cleanGlobal : null);
+        final String? explicitFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath);
+        final String? rawFrame = explicitFrame ??
+            (isCurrentUser && cleanGlobal.isNotEmpty && cleanGlobal != 'none' ? cleanGlobal : null);
         final cleanRaw = (rawFrame == 'none' || rawFrame == null) ? null : rawFrame.trim();
         final effectiveFrame = cleanRaw != null ? ApiConfig.frameUrl(cleanRaw) : null;
         final hasFrame = effectiveFrame != null && effectiveFrame.isNotEmpty;
