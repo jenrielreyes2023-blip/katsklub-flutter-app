@@ -105,6 +105,7 @@ class UserAvatarWithFrame extends StatelessWidget {
         memCacheHeight: isAnim ? null : cachePx,
         maxWidthDiskCache: isAnim ? null : 300,
         maxHeightDiskCache: isAnim ? null : 300,
+        filterQuality: FilterQuality.low,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
