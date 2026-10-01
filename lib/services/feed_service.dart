@@ -1680,7 +1680,7 @@ class FeedService {
 
   Future<CommentPageResult> loadComments(
     String postId, {
-    int limit = 50,
+    int limit = 15,
     int? beforeId,
     int? slideId,
   }) async {
@@ -1695,9 +1695,9 @@ class FeedService {
     }
 
     final cleanLimit = limit < 1
-        ? 50
-        : limit > 100
-            ? 100
+        ? 15
+        : limit > 50
+            ? 50
             : limit;
     final basePath = slideId != null
         ? '/api/posts/$cleanPostId/slides/$slideId/comments'
@@ -1712,6 +1712,13 @@ class FeedService {
     final comments = data['comments'];
     final pagination = data['pagination'];
 
+    final bool hasMore =
+        (pagination is Map<String, dynamic> && pagination['hasMore'] == true) ||
+            data['hasMore'] == true;
+    final int? nextBeforeId = pagination is Map<String, dynamic>
+        ? _readNullableInt(pagination['nextBeforeId'])
+        : _readNullableInt(data['nextBeforeId']);
+
     return CommentPageResult(
       comments: comments is List
           ? comments
@@ -1721,11 +1728,8 @@ class FeedService {
               .toList()
           : [],
       totalCount: _readInt(data['totalCount']),
-      hasMore:
-          pagination is Map<String, dynamic> && pagination['hasMore'] == true,
-      nextBeforeId: pagination is Map<String, dynamic>
-          ? _readNullableInt(pagination['nextBeforeId'])
-          : null,
+      hasMore: hasMore,
+      nextBeforeId: nextBeforeId,
     );
   }
 
