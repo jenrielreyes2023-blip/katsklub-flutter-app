@@ -14,6 +14,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../utils/animated_image_utils.dart';
 import '../widgets/profile_music_picker_sheet.dart';
 import 'cover_photo_editor_screen.dart';
 
@@ -456,20 +457,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
 
-      final isGif = bytes.length > 3 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46;
-      if (isGif) {
-        final isAdmin = widget.user.isAdmin == true || widget.user.username?.toLowerCase() == 'gemini';
-        if (!isAdmin) {
+      final isAnim = isAnimatedImageBytes(bytes);
+      if (isAnim) {
+        if (!canUseAnimatedAvatar(widget.user)) {
           setState(() {
-            _errorMessage = 'Only admin users are allowed to upload animated GIF avatars.';
+            _errorMessage =
+                'Only admins are allowed to use animated profile avatars (GIF / WebP).';
           });
-        } else {
-          setState(() {
-            _avatarPreviewBytes = bytes;
-            _avatarDataUrl = 'data:image/gif;base64,${base64Encode(bytes)}';
-            _selectedDefaultAvatarPath = null;
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Only admins are allowed to use animated profile avatars (GIF / WebP).'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
         }
+
+        if (bytes.lengthInBytes > maxAnimatedAvatarSizeBytes) {
+          setState(() {
+            _errorMessage =
+                'Animated avatar exceeds the 2.5MB limit. Please choose a smaller file.';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Animated avatar exceeds the 2.5MB limit. Please choose a smaller file.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        final mime = getAnimatedMimeType(bytes);
+        setState(() {
+          _avatarPreviewBytes = bytes;
+          _avatarDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+          _selectedDefaultAvatarPath = null;
+          _errorMessage = null;
+        });
         return;
       }
 
@@ -718,6 +744,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     if (action == 'reposition') {
+      final isCurrentAnim = (_coverPreviewBytes != null &&
+              isAnimatedImageBytes(_coverPreviewBytes!)) ||
+          (_coverUrl != null &&
+              (_coverUrl!.toLowerCase().endsWith('.gif') ||
+                  _coverUrl!.toLowerCase().endsWith('.webp')));
+      if (isCurrentAnim) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Repositioning is only available for static cover photos.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
       Uint8List? rawBytes = _coverPreviewBytes;
       if (rawBytes == null &&
           _coverUrl != null &&
@@ -760,16 +802,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         action == 'camera' ? ImageSource.camera : ImageSource.gallery;
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: source,
-        imageQuality: 92,
-        maxWidth: 2400,
-        maxHeight: 2400,
-      );
+      final picked = await picker.pickImage(source: source);
       if (picked == null || !mounted) return;
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
+
+      if (isAnimatedImageBytes(bytes)) {
+        if (!canUseAnimatedCover(widget.user)) {
+          setState(() {
+            _errorMessage =
+                'Only authors and admins can set animated cover photos (GIF / WebP).';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Only authors and admins can set animated cover photos (GIF / WebP).'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        if (bytes.lengthInBytes > maxAnimatedCoverSizeBytes) {
+          setState(() {
+            _errorMessage =
+                'Animated cover photo exceeds the 3.5MB limit. Please choose a smaller file.';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Animated cover photo exceeds the 3.5MB limit. Please choose a smaller file.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        final mime = getAnimatedMimeType(bytes);
+        setState(() {
+          _coverPreviewBytes = bytes;
+          _coverDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+          _removeCover = false;
+          _errorMessage = null;
+        });
+        return;
+      }
 
       final cropResult =
           await Navigator.of(context).push<CoverPhotoCropResult>(

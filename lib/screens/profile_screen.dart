@@ -52,6 +52,7 @@ import 'cover_photo_editor_screen.dart';
 import 'webview_screen.dart';
 import 'user_relations_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import '../utils/animated_image_utils.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -1471,6 +1472,22 @@ class _ProfileScreenState extends State<ProfileScreen>
     final cover = _profileUser.coverUrl?.trim();
     if (cover == null || cover.isEmpty) return;
 
+    final lower = cover.toLowerCase();
+    final isAnim = lower.endsWith('.gif') ||
+        lower.contains('.gif') ||
+        lower.endsWith('.webp') ||
+        lower.contains('.webp');
+    if (isAnim) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Repositioning is only available for static cover photos.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isUpdatingCover = true);
     try {
       final file = await DefaultCacheManager()
@@ -1512,16 +1529,39 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _pickCoverImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: source,
-        imageQuality: 92,
-        maxWidth: 2400,
-        maxHeight: 2400,
-      );
+      final picked = await picker.pickImage(source: source);
       if (picked == null || !mounted) return;
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
+
+      if (isAnimatedImageBytes(bytes)) {
+        if (!canUseAnimatedCover(_profileUser)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Only authors and admins can set animated cover photos (GIF / WebP).'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        if (bytes.lengthInBytes > maxAnimatedCoverSizeBytes) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Animated cover photo exceeds the 3.5MB limit. Please choose a smaller file.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        final mime = getAnimatedMimeType(bytes);
+        await _uploadCoverDataUrl('data:$mime;base64,${base64Encode(bytes)}');
+        return;
+      }
 
       // Open interactive reposition & crop editor screen
       final cropResult =

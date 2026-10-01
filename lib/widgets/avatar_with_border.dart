@@ -159,27 +159,34 @@ class AvatarWithBorder extends StatelessWidget {
                             ),
                           ),
                         )
-                      : CachedNetworkImage(
-                          imageUrl: ApiConfig.assetUrl(avatarUrl),
-                          memCacheWidth: 200,
-                          maxWidthDiskCache: 200,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: const Color(0xFFF3F4F6),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: const Color(0xFFE5E7EB),
-                            alignment: Alignment.center,
-                            child: Text(
-                              initials,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF111827),
-                                fontSize: math.max(1.0, avatarSize * 0.4),
+                      : () {
+                          final lowerUrl = avatarUrl.toLowerCase();
+                          final isAnim = lowerUrl.endsWith('.gif') ||
+                              lowerUrl.contains('.gif') ||
+                              lowerUrl.endsWith('.webp') ||
+                              lowerUrl.contains('.webp');
+                          return CachedNetworkImage(
+                            imageUrl: ApiConfig.assetUrl(avatarUrl),
+                            memCacheWidth: isAnim ? null : 200,
+                            maxWidthDiskCache: isAnim ? null : 200,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: const Color(0xFFF3F4F6),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: const Color(0xFFE5E7EB),
+                              alignment: Alignment.center,
+                              child: Text(
+                                initials,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF111827),
+                                  fontSize: math.max(1.0, avatarSize * 0.4),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        }(),
                 ),
               ),
               // The Border Overlay with a circular cutout in the middle

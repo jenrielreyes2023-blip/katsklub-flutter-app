@@ -90,14 +90,18 @@ class UserAvatarWithFrame extends StatelessWidget {
           ),
         );
       }
-    } else {
+      final lowerUrl = cleanUrl.toLowerCase();
+      final isAnim = lowerUrl.endsWith('.gif') ||
+          lowerUrl.contains('.gif') ||
+          lowerUrl.endsWith('.webp') ||
+          lowerUrl.contains('.webp');
       final cachePx = (innerRadius * 3.0).round().clamp(72, 250);
       avatarChild = CachedNetworkImage(
         imageUrl: ApiConfig.assetUrl(cleanUrl),
-        memCacheWidth: cachePx,
-        memCacheHeight: cachePx,
-        maxWidthDiskCache: 300,
-        maxHeightDiskCache: 300,
+        memCacheWidth: isAnim ? null : cachePx,
+        memCacheHeight: isAnim ? null : cachePx,
+        maxWidthDiskCache: isAnim ? null : 300,
+        maxHeightDiskCache: isAnim ? null : 300,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: innerRadius,
           backgroundColor: const Color(0xFFE5E7EB),
