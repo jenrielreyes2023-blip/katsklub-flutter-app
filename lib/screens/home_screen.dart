@@ -34,6 +34,8 @@ import 'game_room_screen.dart';
 import 'wallet_screen.dart';
 import 'youtube_search_screen.dart';
 import '../services/promotions_service.dart';
+import '../models/voice_room.dart';
+import 'voice_room/voice_room_pin_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -1146,7 +1148,13 @@ class _HomeScreenState extends State<HomeScreen>
       onRepost: _openRepostComposer,
       onShare: _showSharePlaceholder,
       onBookmark: _toggleBookmark,
+      isHomeFeed: true,
+      onOpenVoiceRoom: _openVoiceRoom,
     );
+  }
+
+  Future<void> _openVoiceRoom(VoiceRoom room) async {
+    await VoiceRoomPinScreen.tryOpen(context, room, widget.user);
   }
 
   Future<void> _openRepostComposer(Post post) async {

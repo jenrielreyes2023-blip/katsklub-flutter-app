@@ -1,4 +1,5 @@
 import 'user.dart';
+import 'voice_room.dart';
 
 class PostSlide {
   const PostSlide({
@@ -250,6 +251,7 @@ class Post {
     this.promotionUrl = '',
     this.promotionButtonText = '',
     this.promotionTargetUsername = '',
+    this.authorActiveVoiceRoom,
   });
 
   final String id;
@@ -263,6 +265,7 @@ class Post {
   final String? authorProfileBorder;
   final String? authorPostcardTheme;
   final String? authorAvatarFrame;
+  final VoiceRoom? authorActiveVoiceRoom;
   final bool ownedByMe;
   final String visibility;
   final String repostOriginalPostId;
@@ -473,6 +476,11 @@ class Post {
             json['likePreview'] ??
             json['like_preview'],
       ),
+      authorActiveVoiceRoom: json['authorActiveVoiceRoom'] != null && json['authorActiveVoiceRoom'] is Map
+          ? VoiceRoom.fromJson(Map<String, dynamic>.from(json['authorActiveVoiceRoom']))
+          : (json['author_active_voice_room'] != null && json['author_active_voice_room'] is Map
+              ? VoiceRoom.fromJson(Map<String, dynamic>.from(json['author_active_voice_room']))
+              : null),
     );
   }
 
@@ -503,6 +511,7 @@ class Post {
     bool? isPinned,
     bool? isGhost,
     List<PostSlide>? slides,
+    VoiceRoom? authorActiveVoiceRoom,
   }) {
     return Post(
       id: id,
@@ -516,6 +525,7 @@ class Post {
       authorProfileBorder: authorProfileBorder,
       authorPostcardTheme: authorPostcardTheme ?? this.authorPostcardTheme,
       authorAvatarFrame: authorAvatarFrame ?? this.authorAvatarFrame,
+      authorActiveVoiceRoom: authorActiveVoiceRoom ?? this.authorActiveVoiceRoom,
       ownedByMe: ownedByMe,
       visibility: visibility,
       repostOriginalPostId: repostOriginalPostId ?? this.repostOriginalPostId,

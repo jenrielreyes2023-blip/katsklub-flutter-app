@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/post.dart';
+import '../models/voice_room.dart';
 import '../theme/app_text_styles.dart';
 import '../screens/user_profile_screen.dart';
 import 'custom_icons.dart';
@@ -19,6 +20,8 @@ class PostHeader extends StatelessWidget {
     this.onFollow,
     this.onHide,
     this.isHiding = false,
+    this.isHomeFeed = false,
+    this.onOpenVoiceRoom,
     super.key,
   });
 
@@ -30,6 +33,8 @@ class PostHeader extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onHide;
   final bool isHiding;
+  final bool isHomeFeed;
+  final ValueChanged<VoiceRoom>? onOpenVoiceRoom;
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +216,68 @@ class PostHeader extends StatelessWidget {
                           color: metaColor,
                           size: 13,
                         ),
+
+                        if (isHomeFeed && post.authorActiveVoiceRoom != null) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '·',
+                              style: TextStyle(
+                                color: metaColor,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (onOpenVoiceRoom != null && post.authorActiveVoiceRoom != null) {
+                                  onOpenVoiceRoom!(post.authorActiveVoiceRoom!);
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6.5,
+                                      height: 6.5,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF4ADE80),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Color(0x664ADE80),
+                                            blurRadius: 4,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'In a voice room',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          color: const Color(0xFF4ADE80),
+                                          fontSize: 11.5.sp,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
 
                         if (post.location.isNotEmpty) ...[
                           Padding(

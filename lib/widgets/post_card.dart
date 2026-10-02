@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../config/api_config.dart';
 import '../models/post.dart';
+import '../models/voice_room.dart';
 import '../theme/app_text_styles.dart';
 import '../models/user.dart';
 import '../screens/edit_post_screen.dart';
@@ -63,6 +64,8 @@ class PostCard extends StatefulWidget {
     this.isAuthorFollowPending = false,
     this.onAuthorFollow,
     this.showPinnedBadge = false,
+    this.isHomeFeed = false,
+    this.onOpenVoiceRoom,
     super.key,
   });
 
@@ -83,6 +86,8 @@ class PostCard extends StatefulWidget {
   final bool isAuthorFollowPending;
   final VoidCallback? onAuthorFollow;
   final bool showPinnedBadge;
+  final bool isHomeFeed;
+  final ValueChanged<VoiceRoom>? onOpenVoiceRoom;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -1224,6 +1229,8 @@ class _PostCardState extends State<PostCard> {
                         showFollowButton: widget.showAuthorFollowButton,
                         isFollowPending: widget.isAuthorFollowPending,
                         onFollow: widget.onAuthorFollow,
+                        isHomeFeed: widget.isHomeFeed,
+                        onOpenVoiceRoom: widget.onOpenVoiceRoom,
                       ),
                     ),
                     if (displayTitle.isNotEmpty) ...[
