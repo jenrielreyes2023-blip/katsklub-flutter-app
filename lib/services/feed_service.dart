@@ -669,6 +669,21 @@ class FeedService {
   static const String _cachedDiscoverPostsKey = 'cached_discover_posts';
   static const String _cachedHomePostsKey = 'cached_home_posts';
   static const String _cachedStoriesKey = 'cached_stories';
+  static const String _cachedHiddenPostsKey = 'cached_hidden_post_ids';
+  static final Set<String> _hiddenPostIds = <String>{};
+  static bool _hiddenPostIdsLoaded = false;
+
+  static Future<void> _ensureHiddenPostsLoaded() async {
+    if (_hiddenPostIdsLoaded) return;
+    _hiddenPostIdsLoaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_cachedHiddenPostsKey);
+      if (list != null && list.isNotEmpty) {
+        _hiddenPostIds.addAll(list);
+      }
+    } catch (_) {}
+  }
   static final StreamController<String> _postDeletedController =
       StreamController<String>.broadcast();
   static final StreamController<String> _postHiddenController =
@@ -736,7 +751,9 @@ class FeedService {
 
   FeedService({http.Client? client, AuthService? authService})
       : _client = client ?? http.Client(),
-        _authService = authService ?? AuthService();
+        _authService = authService ?? AuthService() {
+    unawaited(_ensureHiddenPostsLoaded());
+  }
 
   static Stream<String> get postDeletedStream => _postDeletedController.stream;
   static Stream<String> get postHiddenStream => _postHiddenController.stream;
@@ -1217,6 +1234,9 @@ class FeedService {
       await prefs.remove(_cachedHomePostsKey);
       await prefs.remove(_cachedDiscoverPostsKey);
       await prefs.remove(_cachedStoriesKey);
+      await prefs.remove(_cachedHiddenPostsKey);
+      _hiddenPostIds.clear();
+      _hiddenPostIdsLoaded = false;
     } catch (_) {}
   }
 
@@ -1668,6 +1688,12 @@ class FeedService {
     if (cleanPostId.isEmpty) {
       throw StateError('Post id is required.');
     }
+
+    _hiddenPostIds.add(cleanPostId);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_cachedHiddenPostsKey, _hiddenPostIds.toList());
+    } catch (_) {}
 
     final data = await _authenticatedPost('/api/posts/$cleanPostId/hide');
     if (data['ok'] != true) {
@@ -2932,6 +2958,7 @@ class FeedService {
   }
 
   Future<List<Post>> _loadCachedPosts(String key) async {
+    await _ensureHiddenPostsLoaded();
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) {
@@ -2947,7 +2974,7 @@ class FeedService {
       return decoded
           .whereType<Map<String, dynamic>>()
           .map(Post.fromJson)
-          .where((post) => post.id.isNotEmpty)
+          .where((post) => post.id.isNotEmpty && !_hiddenPostIds.contains(post.id))
           .toList();
     } catch (_) {
       return [];
@@ -3408,7 +3435,7 @@ class FeedService {
       if (json is! Map) continue;
       try {
         final post = Post.fromJson(Map<String, dynamic>.from(json));
-        if (post.id.isNotEmpty) {
+        if (post.id.isNotEmpty && !_hiddenPostIds.contains(post.id)) {
           list.add(post);
         }
       } catch (e, stack) {
