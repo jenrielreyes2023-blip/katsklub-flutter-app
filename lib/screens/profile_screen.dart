@@ -441,7 +441,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: RefreshIndicator(
+        child: Stack(
+          children: [
+            RefreshIndicator(
           onRefresh: () async {
             await Future.wait([
               _reloadUserProfile(),
@@ -617,28 +619,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ],
                       ),
                     ),
-                    if (_profileUser.profileEffect != null &&
-                        _profileUser.profileEffect!.trim().isNotEmpty &&
-                        _profileUser.profileEffect!.trim() != 'none')
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: RepaintBoundary(
-                          child: ValueListenableBuilder<bool>(
-                            valueListenable: _headerEffectActiveNotifier,
-                            builder: (context, isEffectActive, _) {
-                              return ProfileEffectWidget(
-                                key: ValueKey(
-                                    'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
-                                effect: _profileUser.profileEffect!,
-                                isActive: isEffectActive,
-                                applyBottomFade: false,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -657,8 +637,30 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
         ),
-      ),
-    );
+        if (_profileUser.profileEffect != null &&
+            _profileUser.profileEffect!.trim().isNotEmpty &&
+            _profileUser.profileEffect!.trim() != 'none')
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              ignoring: true,
+              child: RepaintBoundary(
+                child: ProfileEffectWidget(
+                  key: ValueKey(
+                      'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
+                  effect: _profileUser.profileEffect!,
+                  isActive: widget.isTabActive,
+                  applyBottomFade: false,
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  ),
+);
   }
 
   void _goBack() {
