@@ -13,17 +13,24 @@ class PresenceState {
     required this.userId,
     required this.isOnline,
     this.lastSeenAt,
+    this.fetchedAt,
   });
 
   final String userId;
   final bool isOnline;
   final DateTime? lastSeenAt;
+  final DateTime? fetchedAt;
 
-  PresenceState copyWith({bool? isOnline, DateTime? lastSeenAt}) {
+  PresenceState copyWith({
+    bool? isOnline,
+    DateTime? lastSeenAt,
+    DateTime? fetchedAt,
+  }) {
     return PresenceState(
       userId: userId,
       isOnline: isOnline ?? this.isOnline,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
     );
   }
 }
@@ -52,6 +59,16 @@ class PresenceService {
       _applyPresence(map);
     });
 
+    socket.on('connect', (_) {
+      final s = _socket;
+      if (s != null && s.connected) {
+        s.emit('presence:heartbeat');
+      }
+      if (presenceNotifier.value.isNotEmpty) {
+        refreshAll(presenceNotifier.value.keys);
+      }
+    });
+
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(
       const Duration(seconds: 25),
@@ -76,10 +93,30 @@ class PresenceService {
 
   /// Request presence for a user. Batched + debounced so multiple widgets
   /// asking near-simultaneously share one HTTP call.
-  static void ensureLoaded(String userId) {
+  static void ensureLoaded(String userId, {bool force = false}) {
     if (userId.isEmpty) return;
-    if (presenceNotifier.value.containsKey(userId)) return;
+    final existing = presenceNotifier.value[userId];
+    if (!force && existing != null && existing.fetchedAt != null) {
+      final age = DateTime.now().difference(existing.fetchedAt!);
+      if (age < const Duration(seconds: 45)) {
+        return;
+      }
+    }
     _pendingFetch.add(userId);
+    _fetchDebounce?.cancel();
+    _fetchDebounce = Timer(const Duration(milliseconds: 120), _flushFetch);
+  }
+
+  static void refresh(String userId) {
+    ensureLoaded(userId, force: true);
+  }
+
+  static void refreshAll(Iterable<String> userIds) {
+    for (final id in userIds) {
+      if (id.isNotEmpty) {
+        _pendingFetch.add(id);
+      }
+    }
     _fetchDebounce?.cancel();
     _fetchDebounce = Timer(const Duration(milliseconds: 120), _flushFetch);
   }
@@ -141,6 +178,7 @@ class PresenceService {
       userId: userId,
       isOnline: isOnline,
       lastSeenAt: lastSeenAt,
+      fetchedAt: DateTime.now(),
     );
   }
 }

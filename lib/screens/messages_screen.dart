@@ -1158,6 +1158,14 @@ class _MessagesScreenState extends State<MessagesScreen>
         _isLoadingThreads = false;
         _hasLoadedThreadsOnce = true;
       });
+
+      final otherIds = threads
+          .map((t) => t.otherUser.id)
+          .whereType<String>()
+          .where((id) => id.isNotEmpty);
+      if (otherIds.isNotEmpty) {
+        PresenceService.refreshAll(otherIds);
+      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -5484,32 +5492,96 @@ class _ThreadAvatar extends StatelessWidget {
   }
 }
 
-class _ConversationPresenceLabel extends StatelessWidget {
+class _ConversationPresenceLabel extends StatefulWidget {
   const _ConversationPresenceLabel({required this.userId});
 
   final String userId;
 
   @override
-  Widget build(BuildContext context) {
-    PresenceService.ensureLoaded(userId);
+  State<_ConversationPresenceLabel> createState() =>
+      _ConversationPresenceLabelState();
+}
 
+class _ConversationPresenceLabelState
+    extends State<_ConversationPresenceLabel> {
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    PresenceService.ensureLoaded(widget.userId, force: true);
+    // Periodically refresh presence while looking at this active conversation
+    _pollingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) {
+        PresenceService.ensureLoaded(widget.userId, force: true);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(_ConversationPresenceLabel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId) {
+      PresenceService.ensureLoaded(widget.userId, force: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<Map<String, PresenceState>>(
       valueListenable: PresenceService.presenceNotifier,
       builder: (context, map, _) {
-        final label = presenceLabel(map[userId]);
+        final state = map[widget.userId];
+        final label = presenceLabel(state);
         if (label == null) {
           return const SizedBox.shrink();
         }
 
-        return Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontFamily: 'SF Pro Rounded',
-            color: Color(0xFF6B7280),
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w400,
-          ),
+        final isOnline = state?.isOnline == true;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isOnline) ...[
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF22C55E),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x6622C55E),
+                      blurRadius: 4,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: isOnline
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFF6B7280),
+                  fontSize: 11.5.sp,
+                  fontWeight: isOnline ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
