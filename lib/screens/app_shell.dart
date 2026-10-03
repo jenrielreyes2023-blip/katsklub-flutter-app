@@ -50,7 +50,7 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final PageStorageBucket _pageStorageBucket = PageStorageBucket();
   LocalHistoryEntry? _normalVideoOverlayHistoryEntry;
 
@@ -65,6 +65,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentUser = widget.user;
     normalVideoOverlayController.addListener(_syncNormalVideoOverlayHistory);
     AppShell.activeTabNotifier.addListener(_handleActiveTabChanged);
@@ -124,7 +125,15 @@ class _AppShellState extends State<AppShell> {
     _notificationClickSubscription?.cancel();
     _liveNotificationSubscription?.cancel();
     InAppNotificationOverlay.dismiss();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(FeedService.ensureRealtimeSync());
+    }
   }
 
   void _handleActiveTabChanged() {
