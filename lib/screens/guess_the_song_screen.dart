@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,18 +11,58 @@ import '../services/wallet_service.dart';
 import '../services/global_audio_player_service.dart';
 
 /// H5 Guess the Song Game Screen for KatsKlub.
-/// Full bridge implementation conforming strictly to AI_NOTES.md (protocol v9).
+/// Full bridge implementation conforming strictly to AI_NOTES.md (protocol v9/v10).
 class GuessTheSongScreen extends StatefulWidget {
   final User user;
+  final List<Map<String, dynamic>>? voiceRoomMembers;
 
-  const GuessTheSongScreen({required this.user, super.key});
+  const GuessTheSongScreen({
+    required this.user,
+    this.voiceRoomMembers,
+    super.key,
+  });
 
   @override
   State<GuessTheSongScreen> createState() => _GuessTheSongScreenState();
 }
 
 class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
-  static const String _gameUrl = 'https://cdn.katsklub.top/games/guess-the-song/index.html';
+  static const String _gameUrl =
+      'https://cdn.katsklub.top/games/guess-the-song/index.html?v=10';
+
+  // Active KatsKlub community personas for simulated 1v1 duel matchmaking
+  static final List<Map<String, String>> _communityPersonas = [
+    {
+      'name': 'Yume Aiko',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-45ececd7-d586-4a19-9436-5a0f4db30304-1787957853822.webp',
+    },
+    {
+      'name': 'Eri Natsuki',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-f38a6bf2-ec7a-4b53-8ae7-4597fdad6cc7-1787958330398.webp',
+    },
+    {
+      'name': 'Katrina Velasco',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-d1785d88-4ebe-45da-aed6-e458d6785c78-1786531234431.webp',
+    },
+    {
+      'name': 'Yuna Shiho',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-7a5f1ebc-f3f9-4dce-96ee-128c682dc81a-1787958323418.webp',
+    },
+    {
+      'name': 'Aiko Rin',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-4397b2e6-e3ca-4d61-837c-4827227bd10f-1787958325624.webp',
+    },
+    {
+      'name': 'Mikaela Santos',
+      'avatarUrl':
+          'https://media.katsklub.top/avatars/avatar-0209d6ab-69bb-47b7-beba-3cc0ff79c6c1-1786531809416.webp',
+    },
+  ];
 
   late final WebViewController _controller;
   final stt.SpeechToText _speech = stt.SpeechToText();
@@ -33,6 +74,12 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
   bool _selfReady = false;
   int _currentScore = 0;
   String _roomMode = '1v1';
+
+  // Matchmaking opponent state for 1v1 mode
+  Timer? _matchTimer;
+  Map<String, String>? _matchedOpponent;
+  bool _opponentReady = false;
+  int _opponentScore = 0;
 
   @override
   void initState() {
@@ -135,7 +182,7 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           : username;
       final avatarUrl = widget.user.avatarUrl ?? '';
 
-      final seatsJson = jsonEncode([
+      final seats = <Map<String, dynamic>>[
         {
           'name': fullName,
           'avatarUrl': avatarUrl,
@@ -143,7 +190,24 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           'ready': _selfReady,
           'score': _currentScore,
         }
-      ]);
+      ];
+
+      if (widget.voiceRoomMembers != null &&
+          widget.voiceRoomMembers!.isNotEmpty) {
+        for (final m in widget.voiceRoomMembers!) {
+          seats.add(m);
+        }
+      } else if (_matchedOpponent != null) {
+        seats.add({
+          'name': _matchedOpponent!['name'],
+          'avatarUrl': _matchedOpponent!['avatarUrl'],
+          'isSelf': false,
+          'ready': _opponentReady,
+          'score': _opponentScore,
+        });
+      }
+
+      final seatsJson = jsonEncode(seats);
       _controller.runJavaScript('window.setSeats($seatsJson);');
     } catch (e) {
       debugPrint('[Push Seats Error] $e');
@@ -159,8 +223,12 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
       switch (type) {
         case 'gameStart':
           // Deck loaded, entering lobby
+          _matchTimer?.cancel();
           _selfReady = false;
+          _matchedOpponent = null;
+          _opponentReady = false;
           _currentScore = 0;
+          _opponentScore = 0;
           _pushSeats();
           break;
 
@@ -169,6 +237,29 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           HapticFeedback.lightImpact();
           _selfReady = data['ready'] == true;
           _pushSeats();
+
+          // In 1v1 mode, if playing solo, match a Persona challenger after 1.2s
+          if (_selfReady &&
+              _roomMode == '1v1' &&
+              (widget.voiceRoomMembers == null ||
+                  widget.voiceRoomMembers!.isEmpty) &&
+              _matchedOpponent == null) {
+            _matchTimer?.cancel();
+            _matchTimer = Timer(const Duration(milliseconds: 1200), () {
+              if (!mounted || !_selfReady) return;
+              final randomPersona = _communityPersonas[
+                  math.Random().nextInt(_communityPersonas.length)];
+              _matchedOpponent = randomPersona;
+              _opponentReady = true;
+              _opponentScore = 0;
+              _pushSeats();
+            });
+          } else if (!_selfReady) {
+            _matchTimer?.cancel();
+            _matchedOpponent = null;
+            _opponentReady = false;
+            _pushSeats();
+          }
           break;
 
         case 'buzzer':
@@ -201,6 +292,15 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
             HapticFeedback.lightImpact();
           }
           _currentScore = (data['score'] as num?)?.toInt() ?? _currentScore;
+
+          // If playing against a matched persona opponent, simulate their score
+          if (_matchedOpponent != null) {
+            if (!won && math.Random().nextDouble() < 0.65) {
+              _opponentScore += 80 + math.Random().nextInt(70);
+            } else if (won && math.Random().nextDouble() < 0.35) {
+              _opponentScore += 50 + math.Random().nextInt(40);
+            }
+          }
           _pushSeats();
           break;
 
@@ -327,6 +427,7 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
   }
 
   void _onExit() {
+    _matchTimer?.cancel();
     _stopVoiceListening();
     if (mounted) {
       Navigator.of(context).pop();
@@ -335,6 +436,7 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
 
   @override
   void dispose() {
+    _matchTimer?.cancel();
     _stopVoiceListening();
     super.dispose();
   }
