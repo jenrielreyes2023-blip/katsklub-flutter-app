@@ -9,6 +9,8 @@ import '../models/user.dart';
 import '../services/wallet_service.dart';
 import '../services/global_audio_player_service.dart';
 
+/// H5 Guess the Song Game Screen for KatsKlub.
+/// Full bridge implementation conforming strictly to AI_NOTES.md (protocol v9).
 class GuessTheSongScreen extends StatefulWidget {
   final User user;
 
@@ -28,7 +30,9 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
   double _loadProgress = 0.0;
   bool _speechAvailable = false;
   bool _isListening = false;
-  int _latestScore = 0;
+  bool _selfReady = false;
+  int _currentScore = 0;
+  String _roomMode = '1v1';
 
   @override
   void initState() {
@@ -78,33 +82,38 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           },
           onPageFinished: (_) {
             if (mounted) setState(() => _isLoading = false);
-            _injectUserData();
+            _injectInitialBridgeData();
           },
         ),
       )
       ..loadRequest(Uri.parse(_gameUrl));
   }
 
-  Future<void> _injectUserData() async {
+  /// Initial bridge injection per AI_NOTES.md §4a (called on page finish)
+  Future<void> _injectInitialBridgeData() async {
     try {
-      // 1. Player Info
       final username = widget.user.username ?? 'anonymous';
       final fullName = widget.user.fullName?.trim().isNotEmpty == true
           ? widget.user.fullName!
           : username;
       final avatarUrl = widget.user.avatarUrl ?? '';
 
+      // 1. window.setPlayer({name, avatarUrl})
       final playerPayload = jsonEncode({
         'name': fullName,
         'avatarUrl': avatarUrl,
       });
       await _controller.runJavaScript('window.setPlayer($playerPayload);');
 
-      // 2. Room Mode & Owner
+      // 2. window.setRoomInfo({isOwner, mode})
       await _controller.runJavaScript(
-          'window.setRoomInfo({ isOwner: true, mode: "1v1" });');
+        'window.setRoomInfo({ isOwner: true, mode: ${jsonEncode(_roomMode)} });',
+      );
 
-      // 3. User Wallet Balance
+      // 3. window.setSeats([...])
+      _pushSeats();
+
+      // 4. window.setBalance(n)
       try {
         final wallet = await WalletService().fetchBalance();
         final coins = wallet.balanceCents ~/ 100;
@@ -113,28 +122,76 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
         await _controller.runJavaScript('window.setBalance(0);');
       }
     } catch (e) {
-      debugPrint('[Game Inject Error] $e');
+      debugPrint('[Game Initial Bridge Error] $e');
     }
   }
 
+  /// Updates and re-pushes seat tally & ranks per AI_NOTES.md §4a & §7
+  void _pushSeats() {
+    try {
+      final username = widget.user.username ?? 'anonymous';
+      final fullName = widget.user.fullName?.trim().isNotEmpty == true
+          ? widget.user.fullName!
+          : username;
+      final avatarUrl = widget.user.avatarUrl ?? '';
+
+      final seatsJson = jsonEncode([
+        {
+          'name': fullName,
+          'avatarUrl': avatarUrl,
+          'isSelf': true,
+          'ready': _selfReady,
+          'score': _currentScore,
+        }
+      ]);
+      _controller.runJavaScript('window.setSeats($seatsJson);');
+    } catch (e) {
+      debugPrint('[Push Seats Error] $e');
+    }
+  }
+
+  /// Handles incoming bridge messages from GameResult per AI_NOTES.md §4b
   void _handleGameMessage(String rawJson) {
     try {
       final data = jsonDecode(rawJson) as Map<String, dynamic>;
       final type = data['type'] as String?;
 
       switch (type) {
+        case 'gameStart':
+          // Deck loaded, entering lobby
+          _selfReady = false;
+          _currentScore = 0;
+          _pushSeats();
+          break;
+
+        case 'playerReady':
+          // Self toggled I'M READY
+          HapticFeedback.lightImpact();
+          _selfReady = data['ready'] == true;
+          _pushSeats();
+          break;
+
         case 'buzzer':
+          // Self pressed buzzer: arbitrate & grant turn immediately via setTurn
           HapticFeedback.heavyImpact();
+          final player = data['player'] as String? ??
+              (widget.user.fullName ?? widget.user.username ?? 'You');
+          _controller.runJavaScript(
+            'window.setTurn({ isSelf: true, holder: ${jsonEncode(player)} });',
+          );
           _startVoiceListening();
           break;
 
         case 'turnEnd':
+          // Turn ended (correct / wrong / timeout)
           _stopVoiceListening();
           break;
 
         case 'wrongGuess':
+          // Anti-spam deduction applied
           HapticFeedback.mediumImpact();
-          _latestScore = (data['score'] as num?)?.toInt() ?? _latestScore;
+          _currentScore = (data['score'] as num?)?.toInt() ?? _currentScore;
+          _pushSeats();
           break;
 
         case 'roundEnd':
@@ -143,7 +200,8 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           if (won) {
             HapticFeedback.lightImpact();
           }
-          _latestScore = (data['score'] as num?)?.toInt() ?? _latestScore;
+          _currentScore = (data['score'] as num?)?.toInt() ?? _currentScore;
+          _pushSeats();
           break;
 
         case 'gameEnd':
@@ -151,8 +209,12 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           _onGameEnd(data);
           break;
 
-        case 'leaveRoom':
-          _onExit();
+        case 'setRoomMode':
+          final mode = data['mode'] as String? ?? '1v1';
+          _roomMode = mode;
+          _controller.runJavaScript(
+            'window.setRoomInfo({ isOwner: true, mode: ${jsonEncode(mode)} });',
+          );
           break;
 
         case 'inviteFriend':
@@ -160,11 +222,14 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
           break;
 
         case 'toggleMute':
-          // Handled within game UI
+          final muted = data['muted'] == true;
+          if (muted) {
+            _stopVoiceListening();
+          }
           break;
 
-        case 'playerReady':
-          HapticFeedback.lightImpact();
+        case 'leaveRoom':
+          _onExit();
           break;
       }
     } catch (e) {
@@ -203,10 +268,11 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
   }
 
   Future<void> _onGameEnd(Map<String, dynamic> data) async {
-    final score = (data['score'] as num?)?.toInt() ?? _latestScore;
+    final score = (data['score'] as num?)?.toInt() ?? _currentScore;
     final coins = (data['coinsEarned'] as num?)?.toInt() ?? 0;
     final username = widget.user.username ?? 'anonymous';
 
+    // 1. Record High Score in SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = 'guess_song_highscore_$username';
@@ -216,24 +282,36 @@ class _GuessTheSongScreenState extends State<GuessTheSongScreen> {
       }
     } catch (_) {}
 
-    if (coins > 0 && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Text('🪙', style: TextStyle(fontSize: 18)),
-              const SizedBox(width: 8),
-              Text(
-                'Great game! You earned +$coins Kats Coins!',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
+    // 2. Real wallet credit via backend per AI_NOTES.md §4b
+    if (coins > 0) {
+      try {
+        final updatedWallet =
+            await WalletService().topUp(amountCents: coins * 100);
+        final newCoins = updatedWallet.balanceCents ~/ 100;
+        await _controller.runJavaScript('window.setBalance($newCoins);');
+      } catch (e) {
+        debugPrint('[Wallet Credit Error] $e');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Text('🪙', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Text(
+                  'Awesome game! +$coins Kats Coins credited to your wallet!',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF241543),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
           ),
-          backgroundColor: const Color(0xFF241543),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+        );
+      }
     }
   }
 
