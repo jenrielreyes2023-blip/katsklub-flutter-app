@@ -1,15 +1,23 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svga/flutter_svga.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:zego_express_engine/zego_express_engine.dart';
 import 'edit_voice_room_screen.dart';
+import '../../config/api_config.dart';
 import '../../models/user.dart';
 import '../../models/voice_room.dart';
+import '../../services/auth_service.dart';
 import '../../services/voice_room_controller.dart';
 import '../../services/zego_voice_service.dart';
 import '../../widgets/custom_icons.dart';
+import '../../widgets/gif_picker_modal.dart';
 import '../../widgets/user_avatar_with_frame.dart';
 import '../../widgets/voice_room_gift_sheet.dart';
 import '../../widgets/voice_room_set_pin_sheet.dart';
@@ -49,6 +57,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   final ScrollController _chatScrollController = ScrollController();
   SVGAAnimationController? _svgaController;
   int _lastHandledGiftToken = -1;
+  bool _isSpeakerMuted = false;
 
   @override
   void initState() {
@@ -345,60 +354,528 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
     );
   }
 
+  Future<void> _pickAndSendImage() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      await _uploadAndSendImage(File(picked.path));
+    } catch (e) {
+      debugPrint('[VoiceRoom] Error picking image: $e');
+    }
+  }
+
+  Future<void> _uploadAndSendImage(File file) async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sending photo...'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    try {
+      final token = await AuthService().getToken();
+      final request = http.MultipartRequest('POST', ApiConfig.uri('/api/upload/image'));
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      final streamed = await request.send();
+      final res = await http.Response.fromStream(streamed);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final url = data['url'] ?? data['fileUrl'];
+        if (url != null && url.toString().isNotEmpty) {
+          VoiceRoomController().sendChatMessage(url.toString());
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to upload image')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[VoiceRoom] Image upload error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickAndSendGif() async {
+    try {
+      final gif = await showGifPickerModal(context);
+      if (gif != null && gif.url.isNotEmpty) {
+        VoiceRoomController().sendChatMessage(gif.url);
+      }
+    } catch (e) {
+      debugPrint('[VoiceRoom] Error picking GIF: $e');
+    }
+  }
+
   void _showChatInputSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: const Color(0xFF16181F),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) {
+        bool hasText = _chatTextController.text.trim().isNotEmpty;
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 10.w,
+                right: 10.w,
+                top: 10.h,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 10.h,
+              ),
+              child: Row(
+                children: [
+                  // Left 1: Picture attachment icon
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(ctx);
+                      _pickAndSendImage();
+                    },
+                    child: Container(
+                      width: 32.r,
+                      height: 32.r,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image_outlined,
+                        color: Colors.white70,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+
+                  // Left 2: GIF icon
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(ctx);
+                      _pickAndSendGif();
+                    },
+                    child: Container(
+                      width: 32.r,
+                      height: 32.r,
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white54, width: 1.2),
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          'GIF',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+
+                  // Center: Input TextField
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _chatTextController,
+                        autofocus: true,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        onChanged: (val) {
+                          final currentHasText = val.trim().isNotEmpty;
+                          if (currentHasText != hasText) {
+                            setSheetState(() {
+                              hasText = currentHasText;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Type message...',
+                          hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                        onSubmitted: (val) {
+                          if (val.trim().isNotEmpty) {
+                            VoiceRoomController().sendChatMessage(val);
+                            _chatTextController.clear();
+                            Navigator.pop(ctx);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Right: Send icon ONLY when text is typed ("sa labas lalabas yung send icon pag may tinaype kanang words")
+                  if (hasText) ...[
+                    SizedBox(width: 8.w),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        final val = _chatTextController.text;
+                        if (val.trim().isNotEmpty) {
+                          VoiceRoomController().sendChatMessage(val);
+                          _chatTextController.clear();
+                          Navigator.pop(ctx);
+                        }
+                      },
+                      child: Container(
+                        width: 32.r,
+                        height: 32.r,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFFF8A50), Color(0xFFFF5722)],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _toggleSpeaker() {
+    setState(() {
+      _isSpeakerMuted = !_isSpeakerMuted;
+    });
+    try {
+      ZegoExpressEngine.instance.muteSpeaker(_isSpeakerMuted);
+    } catch (e) {
+      debugPrint('[VoiceRoom] Error toggling speaker: $e');
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isSpeakerMuted ? 'Room audio muted' : 'Room audio unmuted'),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showQuickEmojiSheet() {
+    final emojis = ['❤️', '🔥', '👏', '😂', '🎉', '✨', '💯', '👍', '😍', '🤩', '🌸', '🍕'];
+    showModalBottomSheet(
+      context: context,
       backgroundColor: const Color(0xFF1E2024),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16.w,
-          right: 16.w,
-          top: 12.h,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 12.h,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _chatTextController,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Type message...',
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.08),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                onSubmitted: (val) {
-                  if (val.trim().isNotEmpty) {
-                    VoiceRoomController().sendChatMessage(val);
-                    _chatTextController.clear();
-                    Navigator.pop(ctx);
-                  }
-                },
               ),
-            ),
-            SizedBox(width: 8.w),
-            IconButton(
-              onPressed: () {
-                final val = _chatTextController.text;
-                if (val.trim().isNotEmpty) {
-                  VoiceRoomController().sendChatMessage(val);
-                  _chatTextController.clear();
-                  Navigator.pop(ctx);
-                }
-              },
-              icon: const Icon(Icons.send_rounded, color: Color(0xFFFF7A45)),
-            ),
-          ],
+              Text(
+                'Quick Reactions',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 14.h),
+              Wrap(
+                spacing: 12.w,
+                runSpacing: 12.h,
+                children: emojis.map((e) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      VoiceRoomController().sendChatMessage(e);
+                    },
+                    child: Container(
+                      width: 44.r,
+                      height: 44.r,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(22.r),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        e,
+                        style: TextStyle(fontSize: 22.sp),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showAudienceListSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E2024),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.people_alt_rounded, color: Color(0xFFFFB800), size: 18),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Audience & Participants (${room.participantCount})',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Container(
+                padding: EdgeInsets.all(10.r),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Row(
+                  children: [
+                    UserAvatarWithFrame(
+                      avatarUrl: room.host.avatarUrl,
+                      avatarFrame: room.host.avatarFrame,
+                      radius: 18.r,
+                      preserveLayoutFootprint: true,
+                      initials: room.host.fullName.isNotEmpty
+                          ? room.host.fullName[0].toUpperCase()
+                          : '?',
+                    ),
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                room.host.fullName.isNotEmpty ? room.host.fullName : room.host.username,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 6.w),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFB800).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                                child: Text(
+                                  'HOST',
+                                  style: TextStyle(
+                                    color: const Color(0xFFFFB800),
+                                    fontSize: 8.5.sp,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '@${room.host.username}',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (controller.currentUser?.id.toString() != room.host.id.toString())
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          VoiceRoomGiftSheet.show(context, room: room, initialReceiver: room.host);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF7A45), Color(0xFFFF4D4F)],
+                            ),
+                            borderRadius: BorderRadius.circular(14.r),
+                          ),
+                          child: Text(
+                            'Send Gift',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                'Seats & Speaking Guests',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 6.h),
+              ...room.seats.where((s) => s.user != null).map((s) => Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4.h),
+                    child: Row(
+                      children: [
+                        UserAvatarWithFrame(
+                          avatarUrl: s.user!.avatarUrl,
+                          avatarFrame: s.user!.avatarFrame,
+                          radius: 14.r,
+                          preserveLayoutFootprint: true,
+                          initials: s.user!.fullName.isNotEmpty ? s.user!.fullName[0].toUpperCase() : '?',
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            s.user!.fullName.isNotEmpty ? s.user!.fullName : s.user!.username,
+                            style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.5.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            'Mic ${s.seatIndex + 1}',
+                            style: TextStyle(color: Colors.white60, fontSize: 9.5.sp),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+              if (room.seats.where((s) => s.user != null).isEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Center(
+                    child: Text(
+                      'No other guests currently on microphone',
+                      style: TextStyle(color: Colors.white38, fontSize: 11.5.sp),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeatCluster(VoiceSeat seatA, VoiceSeat seatB) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        VoiceSeatWidget(
+          seat: seatA,
+          isHost: false,
+          onTap: () => _handleSeatTap(seatA),
+        ),
+        Container(
+          height: 46.w,
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(horizontal: 5.w),
+          child: SizedBox(
+            width: 28.w,
+            height: 18.h,
+            child: CustomPaint(
+              painter: SoundWavePainter(
+                color: Colors.white.withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+        ),
+        VoiceSeatWidget(
+          seat: seatB,
+          isHost: false,
+          onTap: () => _handleSeatTap(seatB),
+        ),
+      ],
     );
   }
 
@@ -897,9 +1374,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                 center: Alignment(0, -0.4),
                 radius: 1.2,
                 colors: [
-                  Color(0xFF26193E),
-                  Color(0xFF13111C),
-                  Color(0xFF0A090F),
+                  Color(0xFF1E2028),
+                  Color(0xFF14151B),
+                  Color(0xFF0D0E12),
                 ],
               ),
             ),
@@ -908,154 +1385,229 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
           SafeArea(
             child: Column(
               children: [
-                // Top Header Bar
+                // WePlay-Style Top Header Bar (Ultra-Compact, Top-Aligned)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  padding: EdgeInsets.only(left: 10.w, right: 10.w, top: 2.h, bottom: 4.h),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Minimize button
-                      IconButton(
-                        onPressed: () {
-                          controller.minimize();
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white, size: 28),
-                        tooltip: 'Minimize',
+                      // Back Arrow (<) at the very top (20.r)
+                      Padding(
+                        padding: EdgeInsets.only(top: 1.h),
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _handleExit(context, room, controller);
+                          },
+                          child: Container(
+                            width: 20.r,
+                            height: 20.r,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
                       ),
+                      SizedBox(width: 4.w),
 
-                      // Room Info
+                      // Room Info Capsule (Delicate small words: Title 9sp, ID 7sp)
                       Expanded(
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (room.coverUrl.isNotEmpty) ...[
-                              Container(
-                                width: 34.r,
-                                height: 34.r,
-                                margin: EdgeInsets.only(right: 8.w),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    width: 1.2,
-                                  ),
-                                ),
-                                child: ClipOval(
-                                  child: CachedNetworkImage(
-                                    imageUrl: room.coverUrl,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                                  ),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.38),
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  width: 0.7,
                                 ),
                               ),
-                            ],
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    room.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w700,
+                                  // Cyan Diamond Level Badge
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(3.r),
                                     ),
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding:
-                                            EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'ID: ${room.id}',
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.hexagon_rounded, size: 6.5, color: Colors.white),
+                                        SizedBox(width: 1.5.w),
+                                        Text(
+                                          '3',
                                           style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            fontSize: 6.5.sp,
+                                            fontWeight: FontWeight.w900,
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(width: 6.w),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
-                                  decoration: BoxDecoration(
-                                    color: room.isPermanent
-                                        ? const Color(0xFFFFB800).withValues(alpha: 0.15)
-                                        : Colors.cyanAccent.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: room.isPermanent
-                                          ? const Color(0xFFFFB800).withValues(alpha: 0.35)
-                                          : Colors.cyanAccent.withValues(alpha: 0.35),
-                                      width: 0.6,
+                                      ],
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (room.isPermanent)
-                                        CustomIcons.crown(color: const Color(0xFFFFB800), size: 9)
-                                      else
-                                        const Icon(Icons.timer_outlined, size: 9, color: Colors.cyanAccent),
-                                      SizedBox(width: 3.w),
-                                      Text(
-                                        room.durationBadgeText,
-                                        style: TextStyle(
-                                          color: room.isPermanent ? const Color(0xFFFFD54F) : Colors.cyanAccent,
-                                          fontSize: 10.sp,
-                                          fontWeight: FontWeight.w700,
+                                  SizedBox(width: 4.w),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          room.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9.sp,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        GestureDetector(
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            Clipboard.setData(ClipboardData(text: '${room.id}'));
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Room ID ${room.id} copied!'),
+                                                duration: const Duration(seconds: 1),
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            '${room.category.isNotEmpty ? room.category : "Music"} P${room.id} Rooms',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.6),
+                                              fontSize: 7.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Icon(Icons.people_alt_rounded,
-                                    color: Colors.white60, size: 13.r),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  '${room.audienceCount}',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w600,
+                                ],
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(top: 2.h, left: 2.w),
+                              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(5.r),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.bar_chart_rounded, size: 8, color: Color(0xFFFFB800)),
+                                  SizedBox(width: 2.w),
+                                  Text(
+                                    'Hourly Ranking',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.75),
+                                      fontSize: 7.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                      SizedBox(width: 5.w),
 
-                      // Room Options button (Host only)
-                      if (controller.isHost ||
-                          (controller.currentUser != null &&
-                              room.host.id.toString() ==
-                                  controller.currentUser!.id.toString()))
-                        IconButton(
-                          onPressed: () =>
-                              _showRoomOptions(context, room, controller),
-                          icon: const Icon(Icons.tune_rounded,
-                              color: Colors.white70, size: 20),
-                          tooltip: 'Room Options',
+                      // Right Controls: [-] Minimize, [ 1 ] Participant, [...] Options (Nasa pinakataas at size 20)
+                      Padding(
+                        padding: EdgeInsets.only(top: 1.h),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 1. Minimize pill [-] (20.r)
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                controller.minimize();
+                                Navigator.of(context).pop();
+                              },
+                              child: Container(
+                                width: 20.r,
+                                height: 20.r,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: 7.w,
+                                    height: 1.4.h,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      borderRadius: BorderRadius.circular(1),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+
+                            // 2. Audience / Participant Pill [ 1 ] (20.r)
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                _showAudienceListSheet(context, room, controller);
+                              },
+                              child: Container(
+                                height: 20.r,
+                                padding: EdgeInsets.symmetric(horizontal: 6.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${room.participantCount}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 6.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+
+                            // 3. More options [...] (Unwrapped clean icon)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                _showRoomOptions(context, room, controller);
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
+                                child: const Icon(
+                                  Icons.more_horiz_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-
-                      // Exit button
-                      IconButton(
-                        onPressed: () => _handleExit(context, room, controller),
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white70, size: 22),
-                        tooltip: 'Exit Room',
                       ),
                     ],
                   ),
@@ -1080,32 +1632,45 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   ),
                 ),
 
-                SizedBox(height: 10.h),
+                SizedBox(height: 14.h),
 
-                // 8 Guest Mic Seats Grid (4x2)
+                // WePlay 8 Guest Seats in Two 2x2 Clusters with Wave Connectors
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 8,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 0.96,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final seat = index < seats.length
-                          ? seats[index]
-                          : VoiceSeat(seatIndex: index);
-
-                      return VoiceSeatWidget(
-                        seat: seat,
-                        isHost: false,
-                        onTap: () => _handleSeatTap(seat),
-                      );
-                    },
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  child: Column(
+                    children: [
+                      // Row 1: Left Pair (0, 1) & Right Pair (2, 3)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSeatCluster(
+                            seats.isNotEmpty ? seats[0] : VoiceSeat(seatIndex: 0),
+                            seats.length > 1 ? seats[1] : VoiceSeat(seatIndex: 1),
+                          ),
+                          SizedBox(width: 26.w),
+                          _buildSeatCluster(
+                            seats.length > 2 ? seats[2] : VoiceSeat(seatIndex: 2),
+                            seats.length > 3 ? seats[3] : VoiceSeat(seatIndex: 3),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16.h),
+                      // Row 2: Left Pair (4, 5) & Right Pair (6, 7)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSeatCluster(
+                            seats.length > 4 ? seats[4] : VoiceSeat(seatIndex: 4),
+                            seats.length > 5 ? seats[5] : VoiceSeat(seatIndex: 5),
+                          ),
+                          SizedBox(width: 26.w),
+                          _buildSeatCluster(
+                            seats.length > 6 ? seats[6] : VoiceSeat(seatIndex: 6),
+                            seats.length > 7 ? seats[7] : VoiceSeat(seatIndex: 7),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
 
@@ -1202,34 +1767,113 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           );
                         }
 
+                        final isMedia = msg.message.startsWith('http') &&
+                            (msg.message.contains('.gif') ||
+                             msg.message.contains('giphy.com') ||
+                             msg.message.contains('tenor.com') ||
+                             msg.message.contains('/attachments/') ||
+                             msg.message.contains('.webp') ||
+                             msg.message.contains('.png') ||
+                             msg.message.contains('.jpg') ||
+                             msg.message.contains('.jpeg'));
+
                         return Container(
-                          margin: EdgeInsets.symmetric(vertical: 2.h),
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.5.h),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.32),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '${msg.sender.fullName}: ',
-                                  style: TextStyle(
-                                    color: const Color(0xFFFF7A45),
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w700,
+                          margin: EdgeInsets.symmetric(vertical: 2.5.h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 1. User Header: Avatar (same size as font) + Name (reduced weight) + Charm Badge
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  UserAvatarWithFrame(
+                                    avatarUrl: msg.sender.avatarUrl,
+                                    avatarFrame: msg.sender.avatarFrame,
+                                    radius: 6.r,
+                                    preserveLayoutFootprint: true,
+                                    initials: msg.sender.fullName.isNotEmpty
+                                        ? msg.sender.fullName[0].toUpperCase()
+                                        : '?',
+                                  ),
+                                  SizedBox(width: 4.5.w),
+                                  Flexible(
+                                    child: Text(
+                                      msg.sender.fullName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: const Color(0xFFFF8A50),
+                                        fontSize: 11.5.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Image.asset(
+                                    msg.sender.charmBadgeAsset,
+                                    height: 11.5.h,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 3.h),
+
+                              // 2. Message Bubble (Yung message lang ang nakabalot sa pill!)
+                              Container(
+                                padding: isMedia
+                                    ? EdgeInsets.all(3.r)
+                                    : EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.5.h),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.42),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    width: 0.7,
                                   ),
                                 ),
-                                TextSpan(
-                                  text: msg.message,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                child: isMedia
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(9.r),
+                                        child: CachedNetworkImage(
+                                          imageUrl: msg.message,
+                                          height: 95.h,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(
+                                            width: 95.w,
+                                            height: 95.h,
+                                            color: Colors.white10,
+                                            child: const Center(
+                                              child: SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Color(0xFFFF7A45),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) => const Icon(
+                                            Icons.broken_image_rounded,
+                                            color: Colors.white38,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        msg.message,
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.95),
+                                          fontSize: 11.5.sp,
+                                          fontWeight: FontWeight.w400,
+                                          height: 1.28,
+                                        ),
+                                      ),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -1239,58 +1883,63 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
                 SizedBox(height: 10.h),
 
-                // Bottom Action Bar
+                // WePlay Bottom Action Bar (All Icons Wrapped in Glassmorphic Pills)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+                  padding: EdgeInsets.only(
+                    left: 8.w,
+                    right: 8.w,
+                    top: 6.h,
+                    bottom: 6.h,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.5),
+                      ],
+                    ),
                   ),
                   child: Row(
                     children: [
-                      // 1. Sleek Compact Message Pill ("kasya lang type message ...")
-                      GestureDetector(
-                        onTap: _showChatInputSheet,
-                        child: Container(
-                          height: 30.h,
-                          padding: EdgeInsets.symmetric(horizontal: 10.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(15.r),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline_rounded,
-                                color: Colors.white38,
-                                size: 13.r,
-                              ),
-                              SizedBox(width: 5.w),
-                              Text(
-                                'Type message...',
-                                style: TextStyle(
-                                  color: Colors.white38,
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // 2. Microphone SVG (Pure SVG, small & sleek)
+                      // 1. Speaker Pill Button (Audio Output)
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
+                          HapticFeedback.lightImpact();
+                          _toggleSpeaker();
+                        },
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: _isSpeakerMuted
+                                ? const Color(0xFFEF4444).withValues(alpha: 0.18)
+                                : Colors.white.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _isSpeakerMuted
+                                  ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                                  : Colors.white.withValues(alpha: 0.14),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            _isSpeakerMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                            color: _isSpeakerMuted ? const Color(0xFFEF4444) : Colors.white,
+                            size: 17.r,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+
+                      // 2. Microphone Pill Button
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
                           if (!controller.isOnMic) {
                             final empty = seats.firstWhere(
                               (s) => s.user == null && !s.isLocked,
@@ -1300,8 +1949,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                               controller.takeSeat(empty.seatIndex);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('All mic seats are occupied')),
+                                const SnackBar(content: Text('All mic seats are occupied')),
                               );
                             }
                           } else {
@@ -1309,48 +1957,182 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                             setState(() {});
                           }
                         },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: controller.isOnMic && controller.isMuted
+                                ? const Color(0xFFEF4444).withValues(alpha: 0.18)
+                                : (controller.isOnMic
+                                    ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                                    : Colors.white.withValues(alpha: 0.1)),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: controller.isOnMic && controller.isMuted
+                                  ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                                  : (controller.isOnMic
+                                      ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                                      : Colors.white.withValues(alpha: 0.14)),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
                           child: controller.isOnMic && controller.isMuted
                               ? CustomIcons.micOffParty(
                                   color: const Color(0xFFEF4444),
-                                  size: 16.r,
+                                  size: 17.r,
                                 )
                               : CustomIcons.micParty(
                                   color: controller.isOnMic
                                       ? const Color(0xFF10B981)
-                                      : Colors.white60,
-                                  size: 16.r,
+                                      : Colors.white,
+                                  size: 17.r,
                                 ),
                         ),
                       ),
                       SizedBox(width: 4.w),
 
-                      // 3. Gift SVG Button (Pure SVG, small & sleek)
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          VoiceRoomGiftSheet.show(context, room: room);
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-                          child: CustomIcons.giftBox(
-                            color: Colors.white,
-                            size: 16.r,
+                      // 3. Type message... Pill Input (Takes flex)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _showChatInputSheet();
+                          },
+                          child: Container(
+                            height: 28.r,
+                            padding: EdgeInsets.symmetric(horizontal: 10.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                width: 0.7,
+                              ),
+                            ),
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Type...',
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 10.5.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                       SizedBox(width: 4.w),
 
-                      // 4. Voice Effects SVG Button (Pure SVG, small & sleek)
+                      // 4. Emoji Reaction Pill Button
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: _showVoiceEffectsSheet,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showQuickEmojiSheet();
+                        },
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.sentiment_satisfied_alt_rounded,
+                            color: Colors.white,
+                            size: 17.5.r,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+
+                      // 5. Gift Pill Button
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          VoiceRoomGiftSheet.show(context, room: room);
+                        },
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: CustomIcons.giftBox(
+                            color: const Color(0xFFFF7A45),
+                            size: 17.r,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+
+                      // 6. Voice Effects Pill Button
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showVoiceEffectsSheet();
+                        },
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFA78BFA).withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFA78BFA).withValues(alpha: 0.35),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
                           child: CustomIcons.sparkles(
                             color: const Color(0xFFA78BFA),
-                            size: 16.r,
+                            size: 17.r,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+
+                      // 7. Grid / Tools Pill Button
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showRoomOptions(context, room, controller);
+                        },
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              width: 0.7,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.grid_view_rounded,
+                            color: Colors.white,
+                            size: 16.5.r,
                           ),
                         ),
                       ),
@@ -1476,4 +2258,39 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
       ),
     );
   }
+}
+
+/// ECG / Sound Wave waveform painter connecting horizontal voice seat pairs (WePlay style)
+class SoundWavePainter extends CustomPainter {
+  final Color color;
+  const SoundWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final w = size.width;
+    final h = size.height;
+    final cy = h / 2;
+
+    final path = Path();
+    path.moveTo(0, cy);
+    path.lineTo(w * 0.28, cy);
+    path.lineTo(w * 0.38, cy + 4);
+    path.lineTo(w * 0.48, cy - 7);
+    path.lineTo(w * 0.58, cy + 7);
+    path.lineTo(w * 0.68, cy - 3);
+    path.lineTo(w * 0.74, cy);
+    path.lineTo(w, cy);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant SoundWavePainter oldDelegate) => oldDelegate.color != color;
 }

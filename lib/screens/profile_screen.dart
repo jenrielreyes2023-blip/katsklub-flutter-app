@@ -991,6 +991,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _openVoiceRoom(VoiceRoom room) async {
     final currentUser = await AuthService().getSavedUser();
     if (!mounted || currentUser == null) return;
+    ProfileMusicBadge.pauseAll();
     await VoiceRoomPinScreen.tryOpen(context, room, currentUser);
     if (mounted) {
       _loadActiveVoiceRoom();
@@ -3084,6 +3085,7 @@ class _ProfileBio extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticFeedback.lightImpact();
+        ProfileMusicBadge.pauseAll();
         onOpenVoiceRoom?.call();
       },
       child: Stack(

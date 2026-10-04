@@ -8,12 +8,39 @@ import '../config/api_config.dart';
 import 'auth_service.dart';
 import 'feed_service.dart';
 import 'zego_voice_service.dart';
+import 'global_audio_player_service.dart';
 
 /// Global Singleton Controller for active Voice Room state, Socket.io signaling, and UI overlays.
 class VoiceRoomController extends ChangeNotifier {
   factory VoiceRoomController() => _instance;
   VoiceRoomController._internal();
   static final VoiceRoomController _instance = VoiceRoomController._internal();
+
+  /// Optional hooks to silence other audio sources (profile music, media players, etc.)
+  static final List<VoidCallback> _silenceAudioHooks = [];
+
+  static void addSilenceAudioHook(VoidCallback hook) {
+    if (!_silenceAudioHooks.contains(hook)) {
+      _silenceAudioHooks.add(hook);
+    }
+  }
+
+  static void removeSilenceAudioHook(VoidCallback hook) {
+    _silenceAudioHooks.remove(hook);
+  }
+
+  static void silenceExternalAudio() {
+    try {
+      GlobalAudioPlayerService.instance?.setPlaying(false);
+    } catch (_) {}
+    for (final hook in List<VoidCallback>.from(_silenceAudioHooks)) {
+      try {
+        hook();
+      } catch (e) {
+        debugPrint('[VoiceRoomController] silenceExternalAudio error: $e');
+      }
+    }
+  }
 
   VoiceRoom? _currentRoom;
   User? _currentUser;
@@ -315,7 +342,13 @@ class VoiceRoomController extends ChangeNotifier {
         final data = jsonDecode(res.body);
         if (data['ok'] == true && data['room'] is Map && _currentRoom != null && _currentRoom!.id == roomId) {
           final refreshedRoom = VoiceRoom.fromJson(Map<String, dynamic>.from(data['room']));
-          _currentRoom = refreshedRoom;
+          final liveAudience = refreshedRoom.audienceCount > 0
+              ? refreshedRoom.audienceCount
+              : (_currentRoom!.audienceCount > 0 ? _currentRoom!.audienceCount : 1);
+          _currentRoom = refreshedRoom.copyWith(
+            audienceCount: liveAudience,
+            isHostInRoom: isHost ? true : refreshedRoom.isHostInRoom,
+          );
 
           // Re-sync local seat state
           final myId = _currentUser?.id?.toString();
@@ -361,12 +394,20 @@ class VoiceRoomController extends ChangeNotifier {
       return true;
     }
 
+    // Silence any playing profile music, playlists, or external media
+    silenceExternalAudio();
+
     // Leave previous room if any
     if (_currentRoom != null) {
       await leaveRoom();
     }
 
-    _currentRoom = room;
+    final isUserHost = room.host.id.toString() == user.id.toString();
+
+    _currentRoom = room.copyWith(
+      audienceCount: room.audienceCount > 0 ? room.audienceCount : 1,
+      isHostInRoom: isUserHost ? true : room.isHostInRoom,
+    );
     _currentUser = user;
     _isMinimized = false;
     _mySeatIndex = null;
@@ -374,8 +415,6 @@ class VoiceRoomController extends ChangeNotifier {
     _isHostMuted = false;
     _hostSoundLevel = 0.0;
     _messages.clear();
-
-    final isUserHost = room.host.id.toString() == user.id.toString();
 
     if (isUserHost) {
       // Host automatically occupies the main Stage Seat (seat 99)
@@ -784,12 +823,11 @@ class VoiceRoomController extends ChangeNotifier {
       if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
       final count = data['audienceCount'] as int?;
-      if (count != null) {
-        _currentRoom!.audienceCount = count;
-      }
-      if (data['isHostInRoom'] != null) {
-        _currentRoom = _currentRoom!.copyWith(isHostInRoom: data['isHostInRoom'] == true);
-      }
+      final isHostPresent = data['isHostInRoom'] == true;
+      _currentRoom = _currentRoom!.copyWith(
+        audienceCount: count ?? _currentRoom!.audienceCount,
+        isHostInRoom: data['isHostInRoom'] != null ? isHostPresent : _currentRoom!.isHostInRoom,
+      );
       notifyListeners();
     });
 
@@ -1065,6 +1103,9 @@ class VoiceRoomController extends ChangeNotifier {
           'username': _currentUser!.username,
           'fullName': _currentUser!.fullName ?? _currentUser!.username,
           'avatarUrl': _currentUser!.avatarUrl ?? '',
+          'avatarFrame': _currentUser!.avatarFrame ?? '',
+          'charmPoints': _currentUser!.charmPoints,
+          'charmLevel': _currentUser!.charmLevel,
         },
       });
     }

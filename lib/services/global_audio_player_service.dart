@@ -29,8 +29,11 @@ class GlobalAudioQueueItem {
 
 class GlobalAudioPlayerService extends ChangeNotifier {
   static const Duration _autoHideDelay = Duration(seconds: 7);
+  static GlobalAudioPlayerService? _instance;
+  static GlobalAudioPlayerService? get instance => _instance;
 
   GlobalAudioPlayerService() {
+    _instance = this;
     _currentIndexSubscription = _player.currentIndexStream.listen((value) {
       if (_queue.isEmpty) {
         return;

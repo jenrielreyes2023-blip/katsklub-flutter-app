@@ -8,6 +8,8 @@ import 'package:audioplayers/audioplayers.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
+import '../services/voice_room_controller.dart';
+import '../utils/app_route_observer.dart';
 
 class ProfileMusicBadge extends StatefulWidget {
   const ProfileMusicBadge({
@@ -19,12 +21,26 @@ class ProfileMusicBadge extends StatefulWidget {
   final User user;
   final bool isTabActive;
 
+  static final Set<_ProfileMusicBadgeState> _activeInstances = {};
+
+  static void pauseAll() {
+    for (final instance in List<_ProfileMusicBadgeState>.from(_activeInstances)) {
+      instance._pauseMusic();
+    }
+  }
+
+  static void stopAll() {
+    for (final instance in List<_ProfileMusicBadgeState>.from(_activeInstances)) {
+      instance._disposePlayer();
+    }
+  }
+
   @override
   State<ProfileMusicBadge> createState() => _ProfileMusicBadgeState();
 }
 
 class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _stateSubscription;
   bool _isPlaying = false;
@@ -36,6 +52,10 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
   @override
   void initState() {
     super.initState();
+    ProfileMusicBadge._activeInstances.add(this);
+    VoiceRoomController.addSilenceAudioHook(ProfileMusicBadge.pauseAll);
+    VoiceRoomController().addListener(_onVoiceRoomChanged);
+
     _discController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -43,6 +63,15 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
 
     if (widget.user.hasProfileMusic) {
       _initPlayerAndAutoplay();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      appRouteObserver.subscribe(this, route);
     }
   }
 
@@ -64,16 +93,45 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
       if (!widget.isTabActive) {
         _pauseMusic();
       } else if (!_userPaused && widget.user.hasProfileMusic && !_isPlaying) {
-        _resumeMusic();
+        if (VoiceRoomController().currentRoom == null) {
+          _resumeMusic();
+        }
       }
     }
   }
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
+    VoiceRoomController.removeSilenceAudioHook(ProfileMusicBadge.pauseAll);
+    VoiceRoomController().removeListener(_onVoiceRoomChanged);
+    ProfileMusicBadge._activeInstances.remove(this);
     _discController.dispose();
     _disposePlayer();
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    // Route covered by another screen (e.g. VoiceRoom, Reels, PostDetail)
+    _pauseMusic();
+  }
+
+  @override
+  void didPopNext() {
+    // Returned back to the profile screen
+    if (!_userPaused && widget.user.hasProfileMusic && !_isPlaying && widget.isTabActive) {
+      if (VoiceRoomController().currentRoom == null) {
+        _resumeMusic();
+      }
+    }
+  }
+
+  void _onVoiceRoomChanged() {
+    // Pause automatically if user joins or enters a voice room
+    if (VoiceRoomController().currentRoom != null && _isPlaying) {
+      _pauseMusic();
+    }
   }
 
   Future<void> _disposePlayer() async {
@@ -95,6 +153,11 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
   Future<void> _initPlayerAndAutoplay() async {
     final rawUrl = widget.user.profileMusicUrl?.trim();
     if (rawUrl == null || rawUrl.isEmpty) return;
+
+    // Never autoplay profile music if the user is currently inside a voice room / Klubhouse!
+    if (VoiceRoomController().currentRoom != null) {
+      return;
+    }
 
     final url = _resolveAudioUrl(rawUrl);
 
@@ -119,7 +182,10 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
       await player.setVolume(0.55);
       await player.setSourceUrl(url);
 
-      if (widget.isTabActive && !_hasAttemptedAutoplay && !_userPaused) {
+      if (widget.isTabActive &&
+          !_hasAttemptedAutoplay &&
+          !_userPaused &&
+          VoiceRoomController().currentRoom == null) {
         _hasAttemptedAutoplay = true;
         await player.resume();
       }
@@ -136,6 +202,18 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
   }
 
   Future<void> _togglePlayPause() async {
+    if (VoiceRoomController().currentRoom != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cannot play music while in a voice room.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
     final player = _player;
     if (player == null) {
       _userPaused = false;
@@ -159,6 +237,9 @@ class _ProfileMusicBadgeState extends State<ProfileMusicBadge>
   }
 
   Future<void> _resumeMusic() async {
+    if (VoiceRoomController().currentRoom != null) {
+      return;
+    }
     if (!_isPlaying && _player != null && !_userPaused) {
       await _player?.resume();
     }

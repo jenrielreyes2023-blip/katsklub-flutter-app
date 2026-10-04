@@ -18,6 +18,7 @@ import 'services/conversation_theme.dart';
 import 'services/feed_service.dart';
 import 'services/global_audio_player_service.dart';
 import 'utils/update_checker.dart';
+import 'utils/app_route_observer.dart';
 import 'providers/theme_provider.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -199,6 +200,7 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
             builder: (context, child) {
               return MaterialApp(
                 navigatorKey: UpdateChecker.navigatorKey,
+                navigatorObservers: [appRouteObserver],
                 title: 'KatsKlub',
                 debugShowCheckedModeBanner: false,
                 themeMode: themeProvider.themeMode,

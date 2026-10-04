@@ -32,10 +32,10 @@ class VoiceSeatWidget extends StatelessWidget {
 
     final isSpeaking = (isAway != true) && !seat.isMuted && seat.soundLevel > 6.0;
 
-    final avatarSize = isHost ? 50.w : 40.w;
+    final avatarSize = isHost ? 58.w : 46.w;
     final rippleSize = isHost
-        ? (hasFrame ? 66.w : 58.w)
-        : (hasFrame ? 52.w : 48.w);
+        ? (hasFrame ? 76.w : 68.w)
+        : (hasFrame ? 58.w : 54.w);
 
     return GestureDetector(
       onTap: onTap,
@@ -144,9 +144,9 @@ class VoiceSeatWidget extends StatelessWidget {
                   height: avatarSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.04),
+                    color: const Color(0xFF181A20).withValues(alpha: 0.7),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.white.withValues(alpha: 0.1),
                       width: 1.0,
                     ),
                   ),
@@ -164,17 +164,17 @@ class VoiceSeatWidget extends StatelessWidget {
                   height: avatarSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: const Color(0xFF181A20).withValues(alpha: 0.7),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      width: 1.0,
+                      color: const Color(0xFFE2C488).withValues(alpha: 0.45),
+                      width: 1.2,
                     ),
                   ),
                   child: Center(
                     child: Icon(
                       Icons.add_rounded,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      size: 18,
+                      color: const Color(0xFFE2C488).withValues(alpha: 0.65),
+                      size: 20.r,
                     ),
                   ),
                 ),
@@ -249,30 +249,70 @@ class VoiceSeatWidget extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: 4.h),
-
-        // User Name or Seat Number (Mute badge is cleanly shown only on avatar frame)
-        SizedBox(
-          width: 64.w,
-          height: 16.h,
-          child: Text(
-            user != null
-                ? (user.fullName.isNotEmpty ? user.fullName : user.username)
-                : (seat.isLocked ? 'Locked' : 'Seat ${seat.seatIndex + 1}'),
+        // User Name or Seat Status (WePlay style)
+        if (isHost && user != null) ...[
+          SizedBox(height: 5.h),
+          Text(
+            (user.roleTitle.isNotEmpty ? user.roleTitle : 'HOST')
+                .toUpperCase()
+                .split('')
+                .join(' '),
+            style: TextStyle(
+              fontSize: 8.5.sp,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2.0,
+              color: const Color(0xFFFFB800),
+            ),
+          ),
+          SizedBox(height: 1.h),
+          Text(
+            user.fullName.isNotEmpty ? user.fullName : user.username,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: user != null ? FontWeight.w600 : FontWeight.w400,
-              color: user != null
-                  ? (isHost && isAway
-                      ? Colors.white38
-                      : Colors.white.withValues(alpha: 0.95))
-                  : Colors.white.withValues(alpha: 0.4),
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'SF Pro Rounded',
+              color: isAway ? Colors.white38 : Colors.white,
             ),
           ),
-        ),
+        ] else if (user != null) ...[
+          SizedBox(height: 4.h),
+          SizedBox(
+            width: 54.w,
+            height: 15.h,
+            child: Text(
+              user.fullName.isNotEmpty ? user.fullName : user.username,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.95),
+              ),
+            ),
+          ),
+        ] else if (seat.isLocked) ...[
+          SizedBox(height: 4.h),
+          SizedBox(
+            width: 54.w,
+            height: 15.h,
+            child: Text(
+              'Locked',
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: Colors.white30,
+              ),
+            ),
+          ),
+        ] else ...[
+          // Empty seats in WePlay style do not have text underneath to keep UI pristine
+          SizedBox(height: 19.h),
+        ],
         ],
       ),
     );

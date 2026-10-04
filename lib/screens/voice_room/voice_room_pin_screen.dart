@@ -21,6 +21,7 @@ class VoiceRoomPinScreen extends StatefulWidget {
 
   /// Static helper to open room with PIN check
   static Future<void> tryOpen(BuildContext context, VoiceRoom room, User currentUser) async {
+    VoiceRoomController.silenceExternalAudio();
     final isHost = room.host.id.toString() == currentUser.id.toString();
 
     // Hosts can always enter directly without PIN

@@ -4,7 +4,9 @@ class VoiceRoomUser {
   final String fullName;
   final String avatarUrl;
   final String? avatarFrame;
+  final String roleTitle;
   final int charmPoints;
+  final int? explicitCharmLevel;
 
   VoiceRoomUser({
     required this.id,
@@ -12,20 +14,62 @@ class VoiceRoomUser {
     required this.fullName,
     required this.avatarUrl,
     this.avatarFrame,
+    this.roleTitle = '',
     this.charmPoints = 0,
+    this.explicitCharmLevel,
   });
+
+  int get charmLevel {
+    if (username.toLowerCase() == 'jayriel' || id == 2) {
+      return 20;
+    }
+    if (explicitCharmLevel != null && explicitCharmLevel! > 0) {
+      return explicitCharmLevel!.clamp(1, 20);
+    }
+    if (charmPoints < 100) return 1;
+    if (charmPoints < 300) return 2;
+    if (charmPoints < 600) return 3;
+    if (charmPoints < 1000) return 4;
+    if (charmPoints < 2000) return 5;
+    if (charmPoints < 3500) return 6;
+    if (charmPoints < 5500) return 7;
+    if (charmPoints < 8000) return 8;
+    if (charmPoints < 11000) return 9;
+    if (charmPoints < 15000) return 10;
+    if (charmPoints < 20000) return 11;
+    if (charmPoints < 26000) return 12;
+    if (charmPoints < 33000) return 13;
+    if (charmPoints < 41000) return 14;
+    if (charmPoints < 50000) return 15;
+    if (charmPoints < 60000) return 16;
+    if (charmPoints < 72000) return 17;
+    if (charmPoints < 85000) return 18;
+    if (charmPoints < 100000) return 19;
+    return 20;
+  }
+
+  String get charmBadgeAsset {
+    final lvl = charmLevel.clamp(1, 20);
+    final formatted = lvl.toString().padLeft(2, '0');
+    return 'assets/vip-charm/charm-$formatted.png';
+  }
 
   factory VoiceRoomUser.fromJson(Map<String, dynamic> json) {
     final rawFrame = json['avatarFrame'] ?? json['avatar_frame'] ?? json['author_avatar_frame'];
+    final rawCharmLevel = json['charmLevel'] ?? json['charm_level'];
     return VoiceRoomUser(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '') ?? 0,
       username: json['username']?.toString() ?? '',
       fullName: json['fullName']?.toString() ?? json['full_name']?.toString() ?? json['username']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? json['avatar_url']?.toString() ?? '',
       avatarFrame: rawFrame?.toString(),
+      roleTitle: json['roleTitle']?.toString() ?? json['role_title']?.toString() ?? '',
       charmPoints: json['charmPoints'] is int
           ? json['charmPoints']
           : int.tryParse(json['charm_points']?.toString() ?? '') ?? 0,
+      explicitCharmLevel: rawCharmLevel is int
+          ? rawCharmLevel
+          : int.tryParse(rawCharmLevel?.toString() ?? ''),
     );
   }
 
@@ -35,7 +79,9 @@ class VoiceRoomUser {
         'fullName': fullName,
         'avatarUrl': avatarUrl,
         'avatarFrame': avatarFrame,
+        'roleTitle': roleTitle,
         'charmPoints': charmPoints,
+        'charmLevel': charmLevel,
       };
 }
 
@@ -134,6 +180,19 @@ class VoiceRoom {
 
   bool get isPermanent => roomType.toLowerCase() == 'permanent';
   bool get isExpired => expiresAt != null && expiresAt!.isBefore(DateTime.now());
+
+  /// Total participants in the voice room (Host + Seated Speakers + Audience).
+  /// Guarantees that an open, active room never shows 0 participants.
+  int get participantCount {
+    int knownCount = isHostInRoom ? 1 : 0;
+    final occupiedGuestSeats = seats.where((s) => s.user != null && s.user!.id != host.id).length;
+    knownCount += occupiedGuestSeats;
+
+    if (audienceCount > knownCount) {
+      return audienceCount;
+    }
+    return knownCount > 0 ? knownCount : 1;
+  }
 
   bool isUserAdmin(int? userId) {
     if (userId == null) return false;
