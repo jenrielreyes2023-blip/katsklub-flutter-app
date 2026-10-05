@@ -62,6 +62,9 @@ class VoiceRoomController extends ChangeNotifier {
   bool _isMusicEnabled = false;
   AudioPlayer? _roomMusicPlayer;
   StreamSubscription<PlayerState>? _roomMusicPlayerStateSub;
+  StreamSubscription<Duration>? _roomMusicPlayerPositionSub;
+  StreamSubscription<Duration?>? _roomMusicPlayerDurationSub;
+  Duration? _roomMusicCurrentDuration;
   YouTubeVideoItem? _roomMusicTrack;
   VoiceRoomMusicTrack? _roomCdnTrack;
   bool _isRoomMusicPlaying = false;
@@ -127,7 +130,7 @@ class VoiceRoomController extends ChangeNotifier {
     } catch (e) {
       debugPrint('[VoiceRoomController] _onTrackCompleted error: $e');
     } finally {
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 1500));
       _isAdvancingQueue = false;
     }
   }
@@ -160,12 +163,34 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
+      await _roomMusicPlayerPositionSub?.cancel();
+      _roomMusicPlayerPositionSub = null;
+      await _roomMusicPlayerDurationSub?.cancel();
+      _roomMusicPlayerDurationSub = null;
       await _roomMusicPlayer?.stop();
 
       _roomMusicPlayer ??= AudioPlayer(
         handleInterruptions: false,
         handleAudioSessionActivation: false,
       );
+
+      _roomMusicCurrentDuration = null;
+
+      _roomMusicPlayerDurationSub = _roomMusicPlayer!.durationStream.listen((d) {
+        if (d != null && d > Duration.zero) {
+          _roomMusicCurrentDuration = d;
+        }
+      });
+
+      _roomMusicPlayerPositionSub = _roomMusicPlayer!.positionStream.listen((pos) {
+        final d = _roomMusicCurrentDuration;
+        if (d != null && d > Duration.zero) {
+          if (pos >= d - const Duration(milliseconds: 600)) {
+            debugPrint('[VoiceRoomController] just_audio position reached end ($pos / $d)');
+            _onTrackCompleted();
+          }
+        }
+      });
 
       _roomMusicPlayerStateSub = _roomMusicPlayer!.playerStateStream.listen((state) {
         final playing = state.playing && state.processingState != ProcessingState.completed;
@@ -176,6 +201,7 @@ class VoiceRoomController extends ChangeNotifier {
 
         // Auto-advance to next track in queue when current track completes
         if (state.processingState == ProcessingState.completed) {
+          debugPrint('[VoiceRoomController] just_audio ProcessingState.completed fired');
           _onTrackCompleted();
         }
       });
@@ -238,12 +264,34 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
+      await _roomMusicPlayerPositionSub?.cancel();
+      _roomMusicPlayerPositionSub = null;
+      await _roomMusicPlayerDurationSub?.cancel();
+      _roomMusicPlayerDurationSub = null;
       await _roomMusicPlayer?.stop();
 
       _roomMusicPlayer ??= AudioPlayer(
         handleInterruptions: false,
         handleAudioSessionActivation: false,
       );
+
+      _roomMusicCurrentDuration = null;
+
+      _roomMusicPlayerDurationSub = _roomMusicPlayer!.durationStream.listen((d) {
+        if (d != null && d > Duration.zero) {
+          _roomMusicCurrentDuration = d;
+        }
+      });
+
+      _roomMusicPlayerPositionSub = _roomMusicPlayer!.positionStream.listen((pos) {
+        final d = _roomMusicCurrentDuration;
+        if (d != null && d > Duration.zero) {
+          if (pos >= d - const Duration(milliseconds: 600)) {
+            debugPrint('[VoiceRoomController] just_audio YouTube position reached end ($pos / $d)');
+            _onTrackCompleted();
+          }
+        }
+      });
 
       _roomMusicPlayerStateSub = _roomMusicPlayer!.playerStateStream.listen((state) {
         final playing = state.playing && state.processingState != ProcessingState.completed;
@@ -350,11 +398,16 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
+      await _roomMusicPlayerPositionSub?.cancel();
+      _roomMusicPlayerPositionSub = null;
+      await _roomMusicPlayerDurationSub?.cancel();
+      _roomMusicPlayerDurationSub = null;
       await _roomMusicPlayer?.stop();
       await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
     _roomMusicTrack = null;
     _roomCdnTrack = null;
+    _roomMusicCurrentDuration = null;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
     notifyListeners();
@@ -1582,10 +1635,14 @@ class VoiceRoomController extends ChangeNotifier {
     } catch (_) {}
 
     try {
-      _roomMusicPlayerStateSub?.cancel();
+      await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
-      _roomMusicPlayer?.stop();
-      _roomMusicPlayer?.dispose();
+      await _roomMusicPlayerPositionSub?.cancel();
+      _roomMusicPlayerPositionSub = null;
+      await _roomMusicPlayerDurationSub?.cancel();
+      _roomMusicPlayerDurationSub = null;
+      await _roomMusicPlayer?.stop();
+      await _roomMusicPlayer?.dispose();
       _roomMusicPlayer = null;
     } catch (_) {}
 

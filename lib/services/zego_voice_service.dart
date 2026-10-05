@@ -19,6 +19,7 @@ class ZegoVoiceService {
   bool _isPublishing = false;
   bool _isMuted = false;
   ZegoMediaPlayer? _mediaPlayer;
+  int _mediaPlayerTotalDurationMs = 0;
 
   /// Callback fired when Zego media player completes playback of a track
   void Function()? onMusicCompleted;
@@ -60,6 +61,16 @@ class ZegoVoiceService {
           (ZegoMediaPlayer mediaPlayer, ZegoMediaPlayerState state, int errorCode) {
         debugPrint('[ZegoVoiceService] onMediaPlayerStateUpdate: state=$state, errorCode=$errorCode');
         if (state == ZegoMediaPlayerState.PlayEnded) {
+          onMusicCompleted?.call();
+        }
+      };
+
+      ZegoExpressEngine.onMediaPlayerPlayingProgress =
+          (ZegoMediaPlayer mediaPlayer, int millisecond) {
+        if (_mediaPlayerTotalDurationMs > 0 &&
+            millisecond >= _mediaPlayerTotalDurationMs - 600) {
+          debugPrint(
+              '[ZegoVoiceService] onMediaPlayerPlayingProgress reached end: $millisecond / $_mediaPlayerTotalDurationMs');
           onMusicCompleted?.call();
         }
       };
@@ -238,7 +249,6 @@ class ZegoVoiceService {
         if (playLocally) {
           await _mediaPlayer!.setPlayVolume(publishVol);
         }
-        await _mediaPlayer!.enableRepeat(false);
         await _mediaPlayer!.stop();
 
         String loadPath = url;
@@ -248,8 +258,26 @@ class ZegoVoiceService {
 
         final res = await _mediaPlayer!.loadResource(loadPath);
         if (res.errorCode == 0) {
+          // In ZegoExpressEngine, properties like enableRepeat, enableAux, and volume
+          // MUST be applied AFTER loadResource has succeeded!
+          await _mediaPlayer!.enableRepeat(false);
+          await _mediaPlayer!.enableAux(true);
+          await _mediaPlayer!.muteLocal(!playLocally);
+          final publishVol = (volume * 100).round().clamp(0, 100);
+          await _mediaPlayer!.setPublishVolume(publishVol);
+          if (playLocally) {
+            await _mediaPlayer!.setPlayVolume(publishVol);
+          }
+          await _mediaPlayer!.setProgressInterval(500);
+          try {
+            _mediaPlayerTotalDurationMs = await _mediaPlayer!.getTotalDuration();
+          } catch (_) {
+            _mediaPlayerTotalDurationMs = 0;
+          }
           await _mediaPlayer!.start();
-          debugPrint('[ZegoVoiceService] Background music Aux started successfully (playLocally: $playLocally)');
+          // Reinforce repeat false after start to guarantee single play
+          await _mediaPlayer!.enableRepeat(false);
+          debugPrint('[ZegoVoiceService] Background music Aux started: $loadPath (duration: $_mediaPlayerTotalDurationMs ms, playLocally: $playLocally)');
           return true;
         } else {
           debugPrint('[ZegoVoiceService] MediaPlayer loadResource returned: ${res.errorCode}');
