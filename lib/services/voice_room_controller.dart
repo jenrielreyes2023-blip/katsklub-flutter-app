@@ -56,6 +56,7 @@ class VoiceRoomController extends ChangeNotifier {
   VoiceRoomUser? _activeGiftSender;
   VoiceRoomUser? _activeGiftReceiver;
   int _giftPlayToken = 0;
+  bool _isMusicEnabled = false;
 
   VoiceRoom? get currentRoom => _currentRoom;
   User? get currentUser => _currentUser ?? AuthService().currentUser;
@@ -67,6 +68,12 @@ class VoiceRoomController extends ChangeNotifier {
   double get hostSoundLevel => isHost ? (ZegoVoiceService().mySoundLevelNotifier.value) : _hostSoundLevel;
   bool get isHostMuted => isHost ? _isMuted : _isHostMuted;
   int get giftPlayToken => _giftPlayToken;
+  bool get isMusicEnabled => _isMusicEnabled;
+
+  void toggleMusicEnabled([bool? enable]) {
+    _isMusicEnabled = enable ?? !_isMusicEnabled;
+    notifyListeners();
+  }
 
   bool get isHost {
     try {
@@ -1290,6 +1297,7 @@ class VoiceRoomController extends ChangeNotifier {
     _activePlayingGift = null;
     _activeGiftSender = null;
     _activeGiftReceiver = null;
+    _isMusicEnabled = false;
 
     notifyListeners();
   }

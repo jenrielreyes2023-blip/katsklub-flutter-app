@@ -1132,6 +1132,224 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
     );
   }
 
+  void _showRoomToolsSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF17181F),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final isMusicOn = controller.isMusicEnabled;
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36.w,
+                      height: 4.h,
+                      margin: EdgeInsets.only(bottom: 14.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(7.r),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Icon(
+                          Icons.grid_view_rounded,
+                          color: const Color(0xFFFF7A45),
+                          size: 18.r,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        'Room Tools & Applications',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 14.h),
+                  const Divider(color: Colors.white12, height: 1),
+                  SizedBox(height: 12.h),
+
+                  // 1. Background Music Toggle Card
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
+                        color: isMusicOn
+                            ? const Color(0xFFFF7A45).withValues(alpha: 0.35)
+                            : Colors.white.withValues(alpha: 0.08),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40.r,
+                          height: 40.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.music_note_rounded,
+                            color: Colors.white,
+                            size: 20.r,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Background Music',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                isMusicOn
+                                    ? 'Enabled: Tap "Add Music" at the top right to pick a song'
+                                    : 'Enable music playback in the room',
+                                style: TextStyle(
+                                  color: isMusicOn ? const Color(0xFFFFB800) : Colors.white38,
+                                  fontSize: 11.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Switch.adaptive(
+                          value: isMusicOn,
+                          activeThumbColor: const Color(0xFFFF7A45),
+                          activeTrackColor: const Color(0xFFFF7A45).withValues(alpha: 0.45),
+                          onChanged: (val) {
+                            HapticFeedback.lightImpact();
+                            controller.toggleMusicEnabled(val);
+                            setSheetState(() {});
+                            setState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // If Music is enabled, show shortcut button to directly pick song
+                  if (isMusicOn) ...[
+                    SizedBox(height: 8.h),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        Navigator.of(context).pushNamed('/youtube');
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.search_rounded, color: const Color(0xFFFF7A45), size: 16.r),
+                            SizedBox(width: 6.w),
+                            Text(
+                              'Search & Add Music Now',
+                              style: TextStyle(
+                                color: const Color(0xFFFF7A45),
+                                fontSize: 12.5.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  SizedBox(height: 12.h),
+
+                  // 2. Sound Effects / Voice FX Shortcut Tile
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFA78BFA).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: CustomIcons.sparkles(
+                        color: const Color(0xFFA78BFA),
+                        size: 18.r,
+                      ),
+                    ),
+                    title: Text(
+                      'Voice Changer & Effects',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Apply sound filters or voice pitch changer',
+                      style: TextStyle(color: Colors.white38, fontSize: 10.5.sp),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 20),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showVoiceEffectsSheet();
+                    },
+                  ),
+
+                  SizedBox(height: 10.h),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showRoomOptions(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
     final isHost = controller.isHost ||
         (controller.currentUser != null &&
@@ -2298,23 +2516,27 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          _showRoomOptions(context, room, controller);
+                          _showRoomToolsSheet(context, room, controller);
                         },
                         child: Container(
                           width: 28.r,
                           height: 28.r,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: controller.isMusicEnabled
+                                ? const Color(0xFFFF7A45).withValues(alpha: 0.22)
+                                : Colors.white.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.14),
+                              color: controller.isMusicEnabled
+                                  ? const Color(0xFFFF7A45).withValues(alpha: 0.5)
+                                  : Colors.white.withValues(alpha: 0.14),
                               width: 0.7,
                             ),
                           ),
                           alignment: Alignment.center,
                           child: Icon(
                             Icons.grid_view_rounded,
-                            color: Colors.white,
+                            color: controller.isMusicEnabled ? const Color(0xFFFF7A45) : Colors.white,
                             size: 16.5.r,
                           ),
                         ),
@@ -2325,6 +2547,80 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
               ],
             ),
           ),
+
+          // Floating "Add Music" Overlay Pill (Top Right, directly below more options [...])
+          if (controller.isMusicEnabled)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 34.h,
+              right: 10.w,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context).pushNamed('/youtube');
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.5.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF26193E), Color(0xFF161426)],
+                    ),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: const Color(0xFFFF7A45).withValues(alpha: 0.75),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 18.r,
+                        height: 18.r,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 11.r,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 5.w),
+                      Text(
+                        'Add Music',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(width: 3.w),
+                      Icon(
+                        Icons.add_rounded,
+                        size: 13.r,
+                        color: const Color(0xFFFF7A45),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // Full Screen SVGA Gift Player Animation Overlay
           if (controller.activePlayingGift != null && _svgaController != null)
