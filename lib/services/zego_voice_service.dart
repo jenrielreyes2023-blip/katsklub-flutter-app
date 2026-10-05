@@ -18,6 +18,7 @@ class ZegoVoiceService {
   String? _myStreamId;
   bool _isPublishing = false;
   bool _isMuted = false;
+  ZegoMediaPlayer? _mediaPlayer;
 
   // StreamId -> SoundLevel (0.0 to 100.0)
   final ValueNotifier<Map<String, double>> soundLevelsNotifier =
@@ -198,6 +199,7 @@ class ZegoVoiceService {
     if (_currentRoomId == null) return;
 
     try {
+      await stopBackgroundMusic();
       await stopSpeaking();
       await ZegoExpressEngine.instance.stopSoundLevelMonitor();
       await ZegoExpressEngine.instance.logoutRoom(_currentRoomId!);
@@ -207,6 +209,70 @@ class ZegoVoiceService {
       debugPrint('[ZegoVoiceService] Left room and cleared engine state');
     } catch (e) {
       debugPrint('[ZegoVoiceService] leaveRoom error: $e');
+    }
+  }
+
+  /// Starts playing background music streamed into Aux (so other participants in room hear it).
+  Future<void> playBackgroundMusic(String url, {double volume = 0.6}) async {
+    try {
+      await ensureInitialized();
+      _mediaPlayer ??= await ZegoExpressEngine.instance.createMediaPlayer();
+      if (_mediaPlayer != null) {
+        await _mediaPlayer!.enableAux(true);
+        // muteLocal(true) ensures the local user doesn't hear double audio 
+        // since just_audio plays it crystal-clear locally
+        await _mediaPlayer!.muteLocal(true);
+        final publishVol = (volume * 100).round().clamp(0, 100);
+        await _mediaPlayer!.setPublishVolume(publishVol);
+        await _mediaPlayer!.enableRepeat(true);
+        await _mediaPlayer!.stop();
+        final res = await _mediaPlayer!.loadResource(url);
+        if (res.errorCode == 0) {
+          await _mediaPlayer!.start();
+          debugPrint('[ZegoVoiceService] Background music Aux started successfully');
+        } else {
+          debugPrint('[ZegoVoiceService] MediaPlayer loadResource returned: ${res.errorCode}');
+        }
+      }
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] playBackgroundMusic error: $e');
+    }
+  }
+
+  /// Pauses the Aux background music stream.
+  Future<void> pauseBackgroundMusic() async {
+    try {
+      await _mediaPlayer?.pause();
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] pauseBackgroundMusic error: $e');
+    }
+  }
+
+  /// Resumes the Aux background music stream.
+  Future<void> resumeBackgroundMusic() async {
+    try {
+      await _mediaPlayer?.resume();
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] resumeBackgroundMusic error: $e');
+    }
+  }
+
+  /// Stops Aux background music and releases resource.
+  Future<void> stopBackgroundMusic() async {
+    try {
+      await _mediaPlayer?.stop();
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] stopBackgroundMusic error: $e');
+    }
+  }
+
+  /// Sets publish volume for Aux background music.
+  Future<void> setMusicPublishVolume(double volume) async {
+    try {
+      final publishVol = (volume * 100).round().clamp(0, 100);
+      await _mediaPlayer?.setPublishVolume(publishVol);
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] setMusicPublishVolume error: $e');
     }
   }
 
