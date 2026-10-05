@@ -12,17 +12,25 @@ import 'app_shell.dart';
 class YouTubeSearchScreen extends StatefulWidget {
   const YouTubeSearchScreen({
     this.initialQuery,
+    this.onVideoSelected,
     super.key,
   });
 
   final String? initialQuery;
 
+  /// When set, the screen runs in selection mode: tapping a video pops the
+  /// route with that video instead of opening the player. Used by the post
+  /// composer to attach a video to a feed post.
+  final ValueChanged<YouTubeVideoItem>? onVideoSelected;
+
   static Route<YouTubeVideoItem?> route({
     String? initialQuery,
+    ValueChanged<YouTubeVideoItem>? onVideoSelected,
   }) {
     return MaterialPageRoute<YouTubeVideoItem?>(
       builder: (_) => YouTubeSearchScreen(
         initialQuery: initialQuery,
+        onVideoSelected: onVideoSelected,
       ),
     );
   }
@@ -100,7 +108,17 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
     }
   }
 
+  void _selectVideo(YouTubeVideoItem video) {
+    widget.onVideoSelected?.call(video);
+    Navigator.of(context).pop(video);
+  }
+
   Future<void> _playVideo(YouTubeVideoItem video) async {
+    if (widget.onVideoSelected != null) {
+      _selectVideo(video);
+      return;
+    }
+
     setState(() {
       _currentlyLoadingVideoId = video.id;
     });
@@ -480,13 +498,15 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
       itemBuilder: (context, index) {
         final video = _videos[index];
         final isItemLoading = _currentlyLoadingVideoId == video.id;
+        final selectionMode = widget.onVideoSelected != null;
 
         return _VideoCard(
           video: video,
           isLoading: isItemLoading,
           isDark: isDark,
           onTap: () => _playVideo(video),
-          onPostToFeed: () => _postVideoToFeed(video),
+          onSelect: selectionMode ? () => _selectVideo(video) : null,
+          onPostToFeed: selectionMode ? null : () => _postVideoToFeed(video),
         );
       },
     );
@@ -500,6 +520,7 @@ class _VideoCard extends StatelessWidget {
     required this.isLoading,
     required this.isDark,
     required this.onTap,
+    this.onSelect,
     this.onPostToFeed,
   });
 
@@ -507,12 +528,13 @@ class _VideoCard extends StatelessWidget {
   final bool isLoading;
   final bool isDark;
   final VoidCallback onTap;
+  final VoidCallback? onSelect;
   final VoidCallback? onPostToFeed;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: isLoading ? null : onTap,
+      onTap: isLoading ? null : (onSelect ?? onTap),
       borderRadius: BorderRadius.circular(14.r),
       child: Container(
         decoration: BoxDecoration(
@@ -703,7 +725,42 @@ class _VideoCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            if (onPostToFeed != null) ...[
+                            if (onSelect != null) ...[
+                              const Spacer(),
+                              InkWell(
+                                onTap: onSelect,
+                                borderRadius: BorderRadius.circular(16.r),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w, vertical: 4.5.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF0000),
+                                    borderRadius: BorderRadius.circular(16.r),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_rounded,
+                                        color: Colors.white,
+                                        size: 15.sp,
+                                      ),
+                                      SizedBox(width: 3.w),
+                                      Text(
+                                        'Select',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Rounded',
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ] else if (onPostToFeed != null) ...[
                               const Spacer(),
                               InkWell(
                                 onTap: onPostToFeed,
