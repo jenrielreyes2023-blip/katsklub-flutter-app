@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -229,12 +230,13 @@ class UserAvatarWithFrame extends StatelessWidget {
           );
         }
 
-        final widgetStack = SizedBox(
-          width: effectiveWidth,
-          height: effectiveHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
+        final widgetStack = RepaintBoundary(
+          child: SizedBox(
+            width: effectiveWidth,
+            height: effectiveHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
             children: [
               // Layer 1 (Bottom): The CircleAvatar / Story Ring displaying the user photo
               effectiveAvatar,
@@ -286,7 +288,8 @@ class UserAvatarWithFrame extends StatelessWidget {
                 ),
             ],
           ),
-        );
+        ),
+      );
 
         if (onTap != null) {
           return GestureDetector(
@@ -347,27 +350,43 @@ class _LottieFrameOverlayState extends State<_LottieFrameOverlay>
     final isRemote = widget.framePath.startsWith('http://') ||
         widget.framePath.startsWith('https://');
 
-    if (isRemote) {
-      return Lottie.network(
-        widget.framePath,
-        width: widget.frameSize,
-        height: widget.frameSize,
-        fit: BoxFit.contain,
-        controller: _controller,
-        onLoaded: _onLoaded,
-        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-      );
-    }
-
-    return Lottie.asset(
-      widget.framePath,
-      width: widget.frameSize,
-      height: widget.frameSize,
-      fit: BoxFit.contain,
-      controller: _controller,
-      onLoaded: _onLoaded,
-      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    return RepaintBoundary(
+      child: isRemote
+          ? Lottie.network(
+              widget.framePath,
+              width: widget.frameSize,
+              height: widget.frameSize,
+              fit: BoxFit.contain,
+              controller: _controller,
+              onLoaded: _onLoaded,
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+            )
+          : Lottie.asset(
+              widget.framePath,
+              width: widget.frameSize,
+              height: widget.frameSize,
+              fit: BoxFit.contain,
+              controller: _controller,
+              onLoaded: _onLoaded,
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+            ),
     );
+  }
+}
+
+/// Global in-memory cache for parsed SVGA animation entities.
+/// Prevents redundant zip decompression, protobuf parsing, and texture re-uploads.
+class _SvgaCacheManager {
+  static final Map<String, MovieEntity> _cache = {};
+  static final Map<String, Future<MovieEntity?>> _inFlight = {};
+
+  static MovieEntity? get(String path) => _cache[path];
+
+  static void put(String path, MovieEntity entity) {
+    // Crucial: set autorelease = false so that when any SVGAAnimationController
+    // is disposed, it will not dispose the shared decoded textures!
+    entity.autorelease = false;
+    _cache[path] = entity;
   }
 }
 
@@ -407,6 +426,36 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
   Future<void> _loadSvga() async {
     final targetPath = widget.framePath;
     _loadedPath = targetPath;
+
+    // 1. Instant check from static in-memory cache (0ms)
+    final cached = _SvgaCacheManager.get(targetPath);
+    if (cached != null) {
+      if (mounted && _loadedPath == targetPath) {
+        setState(() {
+          _controller?.videoItem = cached;
+          _controller?.repeat();
+        });
+      }
+      return;
+    }
+
+    // 2. If already loading, wait for existing future to prevent duplicate decodes
+    if (_SvgaCacheManager._inFlight.containsKey(targetPath)) {
+      try {
+        final videoItem = await _SvgaCacheManager._inFlight[targetPath];
+        if (videoItem != null && mounted && _loadedPath == targetPath) {
+          setState(() {
+            _controller?.videoItem = videoItem;
+            _controller?.repeat();
+          });
+        }
+      } catch (_) {}
+      return;
+    }
+
+    final completer = Completer<MovieEntity?>();
+    _SvgaCacheManager._inFlight[targetPath] = completer.future;
+
     try {
       final isRemote = targetPath.startsWith('http://') ||
           targetPath.startsWith('https://');
@@ -445,21 +494,21 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
         }
       }
 
-      if (_loadedPath != targetPath || bytes == null || bytes.isEmpty) return;
+      if (_loadedPath != targetPath || bytes == null || bytes.isEmpty) {
+        completer.complete(null);
+        return;
+      }
 
       MovieEntity videoItem;
       try {
         videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
       } catch (decodeErr) {
-        // If decoding failed (e.g. stale/corrupted disk cache from earlier version),
-        // bust cache and attempt recovery
         debugPrint(
             'SVGA decode error for $targetPath: $decodeErr. Attempting fresh recovery...');
         if (isRemote) {
           try {
             await DefaultCacheManager().removeFile(targetPath);
           } catch (_) {}
-          // Try local asset first
           final fileName = targetPath.split('/').last;
           try {
             final byteData = await rootBundle.load('assets/frames/$fileName');
@@ -467,14 +516,12 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
                 .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
             videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
           } catch (_) {
-            // Fresh download with cache buster
             final freshRes = await http.get(Uri.parse(
                 '$targetPath?t=${DateTime.now().millisecondsSinceEpoch}'));
             bytes = freshRes.bodyBytes;
             videoItem = await SVGAParser.shared.decodeFromBuffer(bytes);
           }
         } else {
-          // Local decode failed, try fresh CDN
           final fileName = targetPath.split('/').last;
           final freshRes = await http.get(Uri.parse(
               'https://media.katsklub.top/frames/$fileName?t=${DateTime.now().millisecondsSinceEpoch}'));
@@ -487,6 +534,10 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
       videoItem.dynamicItem.setHidden(true, 'shim');
       videoItem.dynamicItem.setHidden(true, 'glint');
       videoItem.dynamicItem.setHidden(true, 'spark');
+
+      _SvgaCacheManager.put(targetPath, videoItem);
+      completer.complete(videoItem);
+
       if (mounted && _loadedPath == targetPath) {
         setState(() {
           _controller?.videoItem = videoItem;
@@ -495,6 +546,9 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
       }
     } catch (e) {
       debugPrint('Error loading SVGA frame $targetPath: $e');
+      completer.complete(null);
+    } finally {
+      _SvgaCacheManager._inFlight.remove(targetPath);
     }
   }
 
@@ -512,12 +566,16 @@ class _SvgaFrameOverlayState extends State<_SvgaFrameOverlay>
         height: widget.frameSize,
       );
     }
-    return SizedBox(
-      width: widget.frameSize,
-      height: widget.frameSize,
-      child: SVGAImage(
-        _controller!,
-        fit: BoxFit.contain,
+    return RepaintBoundary(
+      child: SizedBox(
+        width: widget.frameSize,
+        height: widget.frameSize,
+        child: SVGAImage(
+          _controller!,
+          fit: BoxFit.contain,
+          allowDrawingOverflow: false,
+          clearsAfterStop: false,
+        ),
       ),
     );
   }

@@ -1781,42 +1781,44 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                 SizedBox(height: 14.h),
 
                 // WePlay 8 Guest Seats in Two 2x2 Clusters with Wave Connectors
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  child: Column(
-                    children: [
-                      // Row 1: Left Pair (0, 1) & Right Pair (2, 3)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSeatCluster(
-                            seats.isNotEmpty ? seats[0] : VoiceSeat(seatIndex: 0),
-                            seats.length > 1 ? seats[1] : VoiceSeat(seatIndex: 1),
-                          ),
-                          SizedBox(width: 26.w),
-                          _buildSeatCluster(
-                            seats.length > 2 ? seats[2] : VoiceSeat(seatIndex: 2),
-                            seats.length > 3 ? seats[3] : VoiceSeat(seatIndex: 3),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16.h),
-                      // Row 2: Left Pair (4, 5) & Right Pair (6, 7)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSeatCluster(
-                            seats.length > 4 ? seats[4] : VoiceSeat(seatIndex: 4),
-                            seats.length > 5 ? seats[5] : VoiceSeat(seatIndex: 5),
-                          ),
-                          SizedBox(width: 26.w),
-                          _buildSeatCluster(
-                            seats.length > 6 ? seats[6] : VoiceSeat(seatIndex: 6),
-                            seats.length > 7 ? seats[7] : VoiceSeat(seatIndex: 7),
-                          ),
-                        ],
-                      ),
-                    ],
+                RepaintBoundary(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    child: Column(
+                      children: [
+                        // Row 1: Left Pair (0, 1) & Right Pair (2, 3)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildSeatCluster(
+                              seats.isNotEmpty ? seats[0] : VoiceSeat(seatIndex: 0),
+                              seats.length > 1 ? seats[1] : VoiceSeat(seatIndex: 1),
+                            ),
+                            SizedBox(width: 26.w),
+                            _buildSeatCluster(
+                              seats.length > 2 ? seats[2] : VoiceSeat(seatIndex: 2),
+                              seats.length > 3 ? seats[3] : VoiceSeat(seatIndex: 3),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        // Row 2: Left Pair (4, 5) & Right Pair (6, 7)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildSeatCluster(
+                              seats.length > 4 ? seats[4] : VoiceSeat(seatIndex: 4),
+                              seats.length > 5 ? seats[5] : VoiceSeat(seatIndex: 5),
+                            ),
+                            SizedBox(width: 26.w),
+                            _buildSeatCluster(
+                              seats.length > 6 ? seats[6] : VoiceSeat(seatIndex: 6),
+                              seats.length > 7 ? seats[7] : VoiceSeat(seatIndex: 7),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -1824,8 +1826,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
                 // Live Floating Chat Stream (Directly under seats 5, 6, 7, 8)
                 Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 14.w),
+                  child: RepaintBoundary(
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 14.w),
                     child: ListView.builder(
                       controller: _chatScrollController,
                       padding: EdgeInsets.only(top: 2.h, bottom: 4.h),
@@ -2058,6 +2061,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                       },
                     ),
                   ),
+                ),
                 ),
 
                 SizedBox(height: 10.h),

@@ -41,9 +41,10 @@ class VoiceSeatWidget extends StatelessWidget {
 
     final seatWidth = isHost ? 84.w : 54.w;
 
-    return SizedBox(
-      width: seatWidth,
-      child: GestureDetector(
+    return RepaintBoundary(
+      child: SizedBox(
+        width: seatWidth,
+        child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Column(
@@ -66,22 +67,24 @@ class VoiceSeatWidget extends StatelessWidget {
                     width: rippleSize,
                     height: rippleSize,
                     child: IgnorePointer(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.5),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                            BoxShadow(
-                              color: const Color(0xFF34D399).withValues(alpha: 0.3),
-                              blurRadius: 14,
-                              spreadRadius: 3,
-                            ),
-                          ],
+                      child: RepaintBoundary(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                              BoxShadow(
+                                color: const Color(0xFF34D399).withValues(alpha: 0.3),
+                                blurRadius: 14,
+                                spreadRadius: 3,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -338,6 +341,7 @@ class VoiceSeatWidget extends StatelessWidget {
         ],
         ],
       ),
+    ),
     ),
     );
   }
