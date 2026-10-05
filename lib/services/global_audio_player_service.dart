@@ -30,7 +30,8 @@ class GlobalAudioQueueItem {
 class GlobalAudioPlayerService extends ChangeNotifier {
   static const Duration _autoHideDelay = Duration(seconds: 7);
   static GlobalAudioPlayerService? _instance;
-  static GlobalAudioPlayerService? get instance => _instance;
+  static GlobalAudioPlayerService get instance =>
+      _instance ??= GlobalAudioPlayerService();
 
   GlobalAudioPlayerService() {
     _instance = this;
@@ -110,6 +111,14 @@ class GlobalAudioPlayerService extends ChangeNotifier {
   bool _hidden = false;
   ProcessingState _processingState = ProcessingState.idle;
 
+  bool _isVoiceRoomMode = false;
+  bool get isVoiceRoomMode => _isVoiceRoomMode;
+
+  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
+  Stream<Duration?> get durationStream => _player.durationStream;
+  Stream<Duration> get positionStream => _player.positionStream;
+  AudioPlayer get rawPlayer => _player;
+
   List<GlobalAudioQueueItem> get queue => _queue;
   int get currentIndex => _currentIndex;
   Duration get currentTime => _currentTime;
@@ -152,6 +161,7 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     int startIndex = 0,
     bool autoPlay = true,
   }) async {
+    _isVoiceRoomMode = false;
     if (nextQueue.isEmpty) {
       await clearPlayer();
       return;
@@ -297,6 +307,7 @@ class GlobalAudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> clearPlayer() async {
+    _isVoiceRoomMode = false;
     _cancelAutoHideTimer();
     if (_ytController != null) {
       _ytController!.removeListener(_onYtControllerUpdate);
@@ -311,8 +322,96 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     _playing = false;
     _hidden = false;
     _processingState = ProcessingState.idle;
-    await _player.stop();
+    try {
+      await _player.stop();
+    } catch (_) {}
     notifyListeners();
+  }
+
+  /// Dedicated playback method for KatsKlub Voice Room CDN tracks.
+  ///
+  /// Reuses the singleton [AudioPlayer] configured with just_audio_background
+  /// so that the host device maintains an active Android MediaSession foreground
+  /// notification without conflicting with multiple player instances.
+  Future<void> playVoiceRoomTrack({
+    required String id,
+    required String title,
+    required String artist,
+    required String artworkUrl,
+    required String streamUrl,
+    double volume = 0.85,
+  }) async {
+    _cancelAutoHideTimer();
+    if (_ytController != null) {
+      _ytController!.removeListener(_onYtControllerUpdate);
+      await _ytController!.pause();
+      await _ytController!.dispose();
+      _ytController = null;
+    }
+
+    _isVoiceRoomMode = true;
+    _hidden = true; // Never show floating disc mini player in Voice Room mode
+
+    final queueItem = GlobalAudioQueueItem(
+      id: id,
+      src: streamUrl,
+      title: title.isNotEmpty ? title : 'Unknown Track',
+      artist: artist.isNotEmpty ? artist : 'KatsKlub Voice Room',
+      artworkUrl: artworkUrl,
+      source: 'voice_room',
+    );
+
+    _queue = List<GlobalAudioQueueItem>.unmodifiable([queueItem]);
+    _currentIndex = 0;
+    _currentTime = Duration.zero;
+    _duration = Duration.zero;
+    _playing = true;
+    _processingState = ProcessingState.loading;
+    notifyListeners();
+
+    final cleanArt = artworkUrl.trim();
+    Uri? artUri;
+    if (cleanArt.isNotEmpty && !cleanArt.startsWith('data:')) {
+      artUri = Uri.tryParse(cleanArt);
+    }
+
+    final source = AudioSource.uri(
+      Uri.parse(streamUrl),
+      tag: MediaItem(
+        id: id.isNotEmpty ? id : 'voice-room-track',
+        album: 'KatsKlub Voice Room',
+        title: title.trim().isNotEmpty ? title.trim() : 'Unknown Track',
+        artist: artist.trim().isNotEmpty ? artist.trim() : 'KatsKlub Voice Room',
+        artUri: artUri,
+      ),
+    );
+
+    try {
+      // preload: false enables immediate non-blocking start in native ExoPlayer
+      await _player.setAudioSource(
+        source,
+        preload: false,
+        initialPosition: Duration.zero,
+      );
+      await _player.setVolume(volume.clamp(0.0, 1.0));
+      await _player.setLoopMode(LoopMode.off);
+      await _player.play();
+    } catch (e) {
+      debugPrint('[GlobalAudioPlayerService] playVoiceRoomTrack error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> stopVoiceRoomMusic() async {
+    if (!_isVoiceRoomMode) return;
+    _isVoiceRoomMode = false;
+    await clearPlayer();
+  }
+
+  Future<void> setVolume(double volume) async {
+    try {
+      await _player.setVolume(volume.clamp(0.0, 1.0));
+    } catch (_) {}
   }
 
   void _syncAutoHideTimer() {

@@ -158,7 +158,7 @@ class _GlobalAudioMiniPlayerState extends State<GlobalAudioMiniPlayer>
     return Consumer<GlobalAudioPlayerService>(
       builder: (context, player, child) {
         final track = player.currentTrack;
-        if (track == null || player.hidden) {
+        if (track == null || player.hidden || player.isVoiceRoomMode) {
           _syncRotation(false);
           return const SizedBox.shrink();
         }

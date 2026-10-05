@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:katsklub_flutter/services/voice_room_controller.dart';
+import 'package:katsklub_flutter/services/global_audio_player_service.dart';
 
 void main() {
   group('buildVoiceRoomAudioSource', () {
@@ -82,6 +83,21 @@ void main() {
         runMusicStage('boom', () => Future<void>.error(StateError('x'))),
         throwsA(isA<StateError>()),
       );
+    });
+  });
+
+  group('GlobalAudioPlayerService Voice Room Mode', () {
+    test('isVoiceRoomMode initial state is false and instance is singleton', () {
+      final service = GlobalAudioPlayerService.instance;
+      expect(service, isNotNull);
+      expect(service.isVoiceRoomMode, isFalse);
+    });
+
+    test('stopVoiceRoomMusic resets isVoiceRoomMode to false', () async {
+      final service = GlobalAudioPlayerService.instance;
+      await service.stopVoiceRoomMusic();
+      expect(service.isVoiceRoomMode, isFalse);
+      expect(service.queue, isEmpty);
     });
   });
 }

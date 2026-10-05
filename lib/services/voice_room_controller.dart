@@ -113,9 +113,7 @@ class VoiceRoomController extends ChangeNotifier {
   VoiceRoomUser? _activeGiftReceiver;
   int _giftPlayToken = 0;
   bool _isMusicEnabled = false;
-  AudioPlayer? _roomMusicPlayer;
   StreamSubscription<PlayerState>? _roomMusicPlayerStateSub;
-  StreamSubscription<Duration>? _roomMusicPlayerPositionSub;
   StreamSubscription<Duration?>? _roomMusicPlayerDurationSub;
   Duration? _roomMusicCurrentDuration;
   VoiceRoomMusicTrack? _roomCdnTrack;
@@ -148,7 +146,6 @@ class VoiceRoomController extends ChangeNotifier {
 
   void addToQueue(VoiceRoomMusicTrack track) {
     _musicQueue.add(track);
-    _roomMusicPlayer?.setLoopMode(LoopMode.off);
     ZegoVoiceService().enableRepeat(false);
     notifyListeners();
     // If no song is currently playing, start playing it immediately
@@ -212,40 +209,26 @@ class VoiceRoomController extends ChangeNotifier {
   Future<void> playCdnMusic(VoiceRoomMusicTrack track) async {
     _roomCdnTrack = track;
     _isMusicEnabled = true;
-    _isRoomMusicLoading = true;
-    _isRoomMusicPlaying = false;
+    _isRoomMusicLoading = false;
+    _isRoomMusicPlaying = true;
     notifyListeners();
 
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
-      await _roomMusicPlayerPositionSub?.cancel();
-      _roomMusicPlayerPositionSub = null;
       await _roomMusicPlayerDurationSub?.cancel();
       _roomMusicPlayerDurationSub = null;
-      // Best-effort stop of the previous track; never let it hang the new play.
-      final previousPlayer = _roomMusicPlayer;
-      if (previousPlayer != null) {
-        try {
-          await runMusicStage('prestop', previousPlayer.stop);
-        } catch (_) {}
-      }
 
-      _roomMusicPlayer ??= AudioPlayer(
-        handleInterruptions: false,
-        androidApplyAudioAttributes: false,
-        handleAudioSessionActivation: false,
-      );
-
+      final globalAudio = GlobalAudioPlayerService.instance;
       _roomMusicCurrentDuration = null;
 
-      _roomMusicPlayerDurationSub = _roomMusicPlayer!.durationStream.listen((d) {
+      _roomMusicPlayerDurationSub = globalAudio.durationStream.listen((d) {
         if (d != null && d > Duration.zero) {
           _roomMusicCurrentDuration = d;
         }
       });
 
-      _roomMusicPlayerStateSub = _roomMusicPlayer!.playerStateStream.listen((state) {
+      _roomMusicPlayerStateSub = globalAudio.playerStateStream.listen((state) {
         final playing = state.playing && state.processingState != ProcessingState.completed;
         if (_isRoomMusicPlaying != playing) {
           _isRoomMusicPlaying = playing;
@@ -254,9 +237,7 @@ class VoiceRoomController extends ChangeNotifier {
 
         // Mirror background-notification transport controls to the Zego Aux
         // stream so the room hears the same play/pause state as the host.
-        // Only explicit pause (ready) and play are mirrored; transitions
-        // (loading/completed/idle/error) are handled by the play/stop flow.
-        if (_localPlaybackActive && !_isRoomMusicLoading) {
+        if (globalAudio.isVoiceRoomMode) {
           if (playing) {
             ZegoVoiceService().resumeBackgroundMusic();
           } else if (state.processingState == ProcessingState.ready) {
@@ -272,104 +253,39 @@ class VoiceRoomController extends ChangeNotifier {
       });
 
       final streamUrl = track.streamUrl;
-      bool justAudioStarted = false;
+      bool localStarted = false;
 
-      // 1. Primary: Start just_audio with MediaItem tag so system notification & artwork are active
+      // 1. Primary: Start just_audio via GlobalAudioPlayerService
+      // This maintains the persistent Android foreground service & MediaSession notification
       try {
-        await runMusicStage(
-          'just_audio',
-          () async {
-            await _roomMusicPlayer?.setAudioSource(
-              buildVoiceRoomAudioSource(
-                uri: Uri.parse(streamUrl),
-                headers: const {
-                  'User-Agent':
-                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                  'Accept': '*/*',
-                },
-                id: track.id,
-                title: track.title,
-                artist: track.artist,
-                artworkUrl: track.artworkUrl,
-              ),
-            );
-            await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-            await _roomMusicPlayer?.setLoopMode(LoopMode.off);
-            await _roomMusicPlayer?.play();
-          },
-          timeout: const Duration(seconds: 8),
+        await globalAudio.playVoiceRoomTrack(
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          artworkUrl: track.artworkUrl,
+          streamUrl: streamUrl,
+          volume: _roomMusicVolume,
         );
-        justAudioStarted = true;
-      } on TimeoutException catch (e) {
-        debugPrint('[VoiceRoomController] playCdnMusic just_audio timed out: $e');
-        try {
-          await _roomMusicPlayer!.stop().timeout(const Duration(seconds: 3));
-        } catch (_) {}
+        localStarted = true;
       } catch (e) {
-        debugPrint('[VoiceRoomController] playCdnMusic just_audio error (retrying without custom headers): $e');
-        try {
-          await runMusicStage(
-            'just_audio_retry',
-            () async {
-              await _roomMusicPlayer?.setAudioSource(
-                buildVoiceRoomAudioSource(
-                  uri: Uri.parse(streamUrl),
-                  id: track.id,
-                  title: track.title,
-                  artist: track.artist,
-                  artworkUrl: track.artworkUrl,
-                ),
-              );
-              await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-              await _roomMusicPlayer?.setLoopMode(LoopMode.off);
-              await _roomMusicPlayer?.play();
-            },
-            timeout: const Duration(seconds: 8),
-          );
-          justAudioStarted = true;
-        } catch (e2) {
-          debugPrint('[VoiceRoomController] playCdnMusic just_audio retry error: $e2');
-        }
+        debugPrint('[VoiceRoomController] playCdnMusic globalAudio error: $e');
       }
 
-      _localPlaybackActive = justAudioStarted;
-
-      // If local audio started, immediately release the loading flag!
-      // This synchronizes the pill UI with the Android Media notification immediately,
-      // preventing the awkward spinner delay while Zego RTC Aux loads in parallel.
-      if (justAudioStarted) {
-        _isRoomMusicLoading = false;
-        _isRoomMusicPlaying = true;
-        notifyListeners();
-      }
+      _localPlaybackActive = localStarted;
+      _isRoomMusicPlaying = localStarted;
+      _isRoomMusicLoading = false;
+      notifyListeners();
 
       // 2. Stream into Zego RTC Aux so participants in room hear it crystal-clear
-      bool zegoStarted = false;
       try {
-        zegoStarted = await runMusicStage(
-          'zego_aux',
-          () => ZegoVoiceService().playBackgroundMusic(
-            streamUrl,
-            volume: _roomMusicVolume,
-            playLocally: !justAudioStarted,
-          ),
-          timeout: const Duration(seconds: 10),
+        await ZegoVoiceService().playBackgroundMusic(
+          streamUrl,
+          volume: _roomMusicVolume,
+          playLocally: false, // Never play locally on Zego; host hears via GlobalAudioPlayerService
         );
       } catch (e) {
         debugPrint('[VoiceRoomController] playCdnMusic zego error: $e');
       }
-
-      if (!justAudioStarted && zegoStarted) {
-        try {
-          await runMusicStage(
-            'zego_unmute_local',
-            () => ZegoVoiceService().setMediaPlayerMuteLocal(false),
-            timeout: const Duration(seconds: 3),
-          );
-        } catch (_) {}
-      }
-
-      _isRoomMusicPlaying = justAudioStarted || zegoStarted;
 
       if (_isRoomMusicPlaying) {
         // Broadcast chat announcement to the room
@@ -387,12 +303,13 @@ class VoiceRoomController extends ChangeNotifier {
   Future<void> togglePauseRoomMusic() async {
     if (_roomCdnTrack == null) return;
     try {
+      final globalAudio = GlobalAudioPlayerService.instance;
       if (_isRoomMusicPlaying) {
-        await _roomMusicPlayer?.pause();
+        await globalAudio.setPlaying(false);
         await ZegoVoiceService().pauseBackgroundMusic();
         _isRoomMusicPlaying = false;
       } else {
-        await _roomMusicPlayer?.play();
+        await globalAudio.setPlaying(true);
         await ZegoVoiceService().resumeBackgroundMusic();
         _isRoomMusicPlaying = true;
       }
@@ -406,11 +323,9 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
-      await _roomMusicPlayerPositionSub?.cancel();
-      _roomMusicPlayerPositionSub = null;
       await _roomMusicPlayerDurationSub?.cancel();
       _roomMusicPlayerDurationSub = null;
-      await _roomMusicPlayer?.stop();
+      await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
       await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
     _roomCdnTrack = null;
@@ -424,7 +339,7 @@ class VoiceRoomController extends ChangeNotifier {
   Future<void> setRoomMusicVolume(double volume) async {
     _roomMusicVolume = volume.clamp(0.0, 1.0);
     try {
-      await _roomMusicPlayer?.setVolume(_roomMusicVolume);
+      await GlobalAudioPlayerService.instance.setVolume(_roomMusicVolume);
       await ZegoVoiceService().setMusicPublishVolume(_roomMusicVolume);
     } catch (_) {}
     notifyListeners();
@@ -1645,13 +1560,10 @@ class VoiceRoomController extends ChangeNotifier {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
-      await _roomMusicPlayerPositionSub?.cancel();
-      _roomMusicPlayerPositionSub = null;
       await _roomMusicPlayerDurationSub?.cancel();
       _roomMusicPlayerDurationSub = null;
-      await _roomMusicPlayer?.stop();
-      await _roomMusicPlayer?.dispose();
-      _roomMusicPlayer = null;
+      await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
+      await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
 
     _currentRoom = null;
