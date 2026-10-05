@@ -2664,49 +2664,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   final musicArtwork = controller.roomMusicArtwork;
                   final isLoading = controller.isRoomMusicLoading;
 
-                  if (isLoading) {
-                    return Container(
-                      height: 22.h,
-                      padding: EdgeInsets.symmetric(horizontal: 7.w),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF141522).withValues(alpha: 0.88),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
-                          width: 0.8,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 10.r,
-                            height: 10.r,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 1.8,
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
-                            ),
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'Loading...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9.5.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
+                  // 1. If we have track info (loading or playing), show artwork + title + state
                   if (hasMusic) {
                     return GestureDetector(
                       onTap: () {
@@ -2769,7 +2727,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                             MarqueeText(
                               text: musicTitle,
                               maxWidth: 72.w,
-                              isPlaying: controller.isRoomMusicPlaying,
+                              isPlaying: controller.isRoomMusicPlaying && !isLoading,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 9.5.sp,
@@ -2777,20 +2735,74 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                               ),
                             ),
                             SizedBox(width: 4.w),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                controller.togglePauseRoomMusic();
-                              },
-                              child: Icon(
-                                controller.isRoomMusicPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                size: 13.r,
-                                color: const Color(0xFFFF7A45),
+                            if (isLoading)
+                              SizedBox(
+                                width: 11.r,
+                                height: 11.r,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 1.6,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
+                                ),
+                              )
+                            else
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  controller.togglePauseRoomMusic();
+                                },
+                                child: Icon(
+                                  controller.isRoomMusicPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                  size: 13.r,
+                                  color: const Color(0xFFFF7A45),
+                                ),
                               ),
-                            ),
                           ],
                         ),
+                      ),
+                    );
+                  }
+
+                  // 2. If loading with no track info yet, show compact loading pill
+                  if (isLoading) {
+                    return Container(
+                      height: 22.h,
+                      padding: EdgeInsets.symmetric(horizontal: 7.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF141522).withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
+                          width: 0.8,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 10.r,
+                            height: 10.r,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 1.8,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'Loading...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.5.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }

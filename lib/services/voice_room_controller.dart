@@ -27,17 +27,21 @@ AudioSource buildVoiceRoomAudioSource({
   required String artist,
   required String artworkUrl,
 }) {
+  final cleanArt = artworkUrl.trim();
+  Uri? artUri;
+  if (cleanArt.isNotEmpty && !cleanArt.startsWith('data:')) {
+    artUri = Uri.tryParse(cleanArt);
+  }
+
   return AudioSource.uri(
     uri,
     headers: headers,
     tag: MediaItem(
       id: id.isNotEmpty ? id : 'voice-room-track',
       album: 'KatsKlub Voice Room',
-      title: title.isNotEmpty ? title : 'Unknown Title',
-      artist: artist.isNotEmpty ? artist : 'Unknown Artist',
-      artUri: artworkUrl.isNotEmpty && !artworkUrl.startsWith('data:')
-          ? Uri.tryParse(artworkUrl)
-          : null,
+      title: title.trim().isNotEmpty ? title.trim() : 'Unknown Title',
+      artist: artist.trim().isNotEmpty ? artist.trim() : 'Unknown Artist',
+      artUri: artUri,
     ),
   );
 }
@@ -49,7 +53,7 @@ AudioSource buildVoiceRoomAudioSource({
 Future<T> runMusicStage<T>(
   String stage,
   Future<T> Function() action, {
-  Duration timeout = const Duration(seconds: 20),
+  Duration timeout = const Duration(seconds: 10),
 }) async {
   debugPrint('[VoiceRoomController] stage start: $stage');
   try {
@@ -274,40 +278,76 @@ class VoiceRoomController extends ChangeNotifier {
       final streamUrl = track.streamUrl;
       bool justAudioStarted = false;
 
+      // 1. Primary: Start just_audio with MediaItem tag so system notification & artwork are active
       try {
-        await runMusicStage('just_audio', () async {
-          await _roomMusicPlayer?.setAudioSource(
-            buildVoiceRoomAudioSource(
-              uri: Uri.parse(streamUrl),
-              headers: const {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': '*/*',
-              },
-              id: track.id,
-              title: track.title,
-              artist: track.artist,
-              artworkUrl: track.artworkUrl,
-            ),
-          );
-          await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-          await _roomMusicPlayer?.setLoopMode(LoopMode.off);
-          await _roomMusicPlayer?.play();
-        });
+        await runMusicStage(
+          'just_audio',
+          () async {
+            await _roomMusicPlayer?.setAudioSource(
+              buildVoiceRoomAudioSource(
+                uri: Uri.parse(streamUrl),
+                headers: const {
+                  'User-Agent':
+                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                  'Accept': '*/*',
+                },
+                id: track.id,
+                title: track.title,
+                artist: track.artist,
+                artworkUrl: track.artworkUrl,
+              ),
+            );
+            await _roomMusicPlayer?.setVolume(_roomMusicVolume);
+            await _roomMusicPlayer?.setLoopMode(LoopMode.off);
+            await _roomMusicPlayer?.play();
+          },
+          timeout: const Duration(seconds: 8),
+        );
         justAudioStarted = true;
       } on TimeoutException catch (e) {
-        // Timed out: stop any lost-but-playing local audio so the Zego
-        // fallback below doesn't echo on top of it.
         debugPrint('[VoiceRoomController] playCdnMusic just_audio timed out: $e');
         try {
-          await _roomMusicPlayer!.stop().timeout(const Duration(seconds: 5));
+          await _roomMusicPlayer!.stop().timeout(const Duration(seconds: 3));
         } catch (_) {}
       } catch (e) {
-        debugPrint('[VoiceRoomController] playCdnMusic just_audio error: $e');
+        debugPrint('[VoiceRoomController] playCdnMusic just_audio error (retrying without custom headers): $e');
+        try {
+          await runMusicStage(
+            'just_audio_retry',
+            () async {
+              await _roomMusicPlayer?.setAudioSource(
+                buildVoiceRoomAudioSource(
+                  uri: Uri.parse(streamUrl),
+                  id: track.id,
+                  title: track.title,
+                  artist: track.artist,
+                  artworkUrl: track.artworkUrl,
+                ),
+              );
+              await _roomMusicPlayer?.setVolume(_roomMusicVolume);
+              await _roomMusicPlayer?.setLoopMode(LoopMode.off);
+              await _roomMusicPlayer?.play();
+            },
+            timeout: const Duration(seconds: 8),
+          );
+          justAudioStarted = true;
+        } catch (e2) {
+          debugPrint('[VoiceRoomController] playCdnMusic just_audio retry error: $e2');
+        }
       }
+
       _localPlaybackActive = justAudioStarted;
 
-      // Stream into Zego RTC Aux so participants in room hear it crystal-clear
+      // If local audio started, immediately release the loading flag!
+      // This synchronizes the pill UI with the Android Media notification immediately,
+      // preventing the awkward spinner delay while Zego RTC Aux loads in parallel.
+      if (justAudioStarted) {
+        _isRoomMusicLoading = false;
+        _isRoomMusicPlaying = true;
+        notifyListeners();
+      }
+
+      // 2. Stream into Zego RTC Aux so participants in room hear it crystal-clear
       bool zegoStarted = false;
       try {
         zegoStarted = await runMusicStage(
@@ -317,6 +357,7 @@ class VoiceRoomController extends ChangeNotifier {
             volume: _roomMusicVolume,
             playLocally: !justAudioStarted,
           ),
+          timeout: const Duration(seconds: 10),
         );
       } catch (e) {
         debugPrint('[VoiceRoomController] playCdnMusic zego error: $e');
@@ -327,6 +368,7 @@ class VoiceRoomController extends ChangeNotifier {
           await runMusicStage(
             'zego_unmute_local',
             () => ZegoVoiceService().setMediaPlayerMuteLocal(false),
+            timeout: const Duration(seconds: 3),
           );
         } catch (_) {}
       }
