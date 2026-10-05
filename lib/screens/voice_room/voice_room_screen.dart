@@ -1138,11 +1138,6 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
     VoiceRoomMusicSheet.show(context, controller);
   }
 
-  void _showRoomMusicSheet(BuildContext context, VoiceRoomController controller) {
-    HapticFeedback.lightImpact();
-    VoiceRoomMusicSheet.show(context, controller);
-  }
-
   void _showRoomToolsSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
     showModalBottomSheet(
       context: context,
@@ -2084,69 +2079,6 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   ),
                 ),
 
-                // Floating Room Music Pill (when active)
-                if (controller.isMusicEnabled && controller.roomMusicTitle.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 6.h),
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          VoiceRoomMusicSheet.show(context, controller);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.5.h),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(
-                              color: const Color(0xFFFF7A45).withValues(alpha: 0.4),
-                              width: 0.8,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                controller.isRoomMusicPlaying
-                                    ? Icons.equalizer_rounded
-                                    : Icons.pause_circle_outline_rounded,
-                                color: const Color(0xFFFF7A45),
-                                size: 13.r,
-                              ),
-                              SizedBox(width: 5.w),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: 160.w),
-                                child: Text(
-                                  '${controller.roomMusicTitle} • ${controller.roomMusicArtist.isNotEmpty ? controller.roomMusicArtist : "Music"}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(width: 3.w),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: Colors.white54,
-                                size: 12.r,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
                 SizedBox(height: 4.h),
 
                 // Host Stage Area (Center Top)
@@ -2726,7 +2658,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
               right: 10.w,
               child: Builder(
                 builder: (context) {
-                  final track = controller.roomMusicTrack;
+                  final hasMusic = controller.roomMusicTitle.isNotEmpty;
+                  final musicTitle = controller.roomMusicTitle;
+                  final musicArtwork = controller.roomMusicArtwork;
                   final isLoading = controller.isRoomMusicLoading;
 
                   if (isLoading) {
@@ -2773,11 +2707,11 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                     );
                   }
 
-                  if (track != null) {
+                  if (hasMusic) {
                     return GestureDetector(
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        _showRoomMusicSheet(context, controller);
+                        VoiceRoomMusicSheet.show(context, controller);
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
@@ -2807,9 +2741,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(9.r),
-                              child: track.thumbnail.isNotEmpty
+                              child: musicArtwork.isNotEmpty
                                   ? CachedNetworkImage(
-                                      imageUrl: track.thumbnail,
+                                      imageUrl: musicArtwork,
                                       width: 18.r,
                                       height: 18.r,
                                       fit: BoxFit.cover,
@@ -2835,9 +2769,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                             ),
                             SizedBox(width: 5.w),
                             ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 75.w),
+                              constraints: BoxConstraints(maxWidth: 85.w),
                               child: Text(
-                                track.title,
+                                musicTitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
