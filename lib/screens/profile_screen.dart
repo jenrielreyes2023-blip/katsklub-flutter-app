@@ -223,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (!oldWidget.isTabActive && widget.isTabActive) {
       _effectVersion++;
       _headerEffectActiveNotifier.value =
-          _scrollController.hasClients ? _scrollController.offset < 480 : true;
+          _scrollController.hasClients ? _scrollController.offset < 360 : true;
     } else if (oldWidget.isTabActive && !widget.isTabActive) {
       _headerEffectActiveNotifier.value = false;
     }
@@ -409,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
-    final isEffectActive = widget.isTabActive && _scrollController.offset < 480;
+    final isEffectActive = widget.isTabActive && _scrollController.offset < 360;
     if (_headerEffectActiveNotifier.value != isEffectActive) {
       _headerEffectActiveNotifier.value = isEffectActive;
     }
@@ -441,9 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Stack(
-          children: [
-            RefreshIndicator(
+        child: RefreshIndicator(
           onRefresh: () async {
             await Future.wait([
               _reloadUserProfile(),
@@ -619,6 +617,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ],
                       ),
                     ),
+                    if (_profileUser.profileEffect != null &&
+                        _profileUser.profileEffect!.trim().isNotEmpty &&
+                        _profileUser.profileEffect!.trim() != 'none')
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: RepaintBoundary(
+                            child: ValueListenableBuilder<bool>(
+                              valueListenable: _headerEffectActiveNotifier,
+                              builder: (context, isEffectActive, _) {
+                                return ProfileEffectWidget(
+                                  key: ValueKey(
+                                      'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
+                                  effect: _profileUser.profileEffect!,
+                                  isActive: isEffectActive,
+                                  applyBottomFade: false,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -636,31 +659,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
         ),
-        ),
-        if (_profileUser.profileEffect != null &&
-            _profileUser.profileEffect!.trim().isNotEmpty &&
-            _profileUser.profileEffect!.trim() != 'none')
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              ignoring: true,
-              child: RepaintBoundary(
-                child: ProfileEffectWidget(
-                  key: ValueKey(
-                      'profile_effect_${_profileUser.username}_${_profileUser.profileEffect}_$_effectVersion'),
-                  effect: _profileUser.profileEffect!,
-                  isActive: widget.isTabActive,
-                  applyBottomFade: false,
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     ),
-  ),
-);
+  );
   }
 
   void _goBack() {
