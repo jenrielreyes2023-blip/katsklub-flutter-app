@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/voice_room_controller.dart';
 import '../screens/voice_room/voice_room_screen.dart';
+import '../utils/update_checker.dart';
 
 /// Global floating mini-player overlay for Voice Rooms (PIP)
 class VoiceRoomMiniOverlay extends StatefulWidget {
@@ -17,6 +18,8 @@ class VoiceRoomMiniOverlay extends StatefulWidget {
 class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
   Offset? _position;
   bool _isDragging = false;
+  bool _hasDragged = false;
+  bool _isOpening = false;
   bool _wasMinimized = false;
 
   static const String _powerOffSvg =
@@ -49,6 +52,50 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
     }
   }
 
+  void _maximizeAndOpenRoom() {
+    if (_isOpening) return;
+    _isOpening = true;
+    HapticFeedback.lightImpact();
+
+    final nav = UpdateChecker.navigatorKey.currentState;
+    final controller = VoiceRoomController();
+
+    if (nav != null) {
+      controller.maximize();
+      nav.push(
+        PageRouteBuilder<void>(
+          opaque: true,
+          transitionDuration: const Duration(milliseconds: 250),
+          pageBuilder: (_, animation, __) => FadeTransition(
+            opacity: animation,
+            child: const VoiceRoomScreen(),
+          ),
+        ),
+      ).then((_) {
+        _isOpening = false;
+      });
+    } else {
+      final ctx = UpdateChecker.navigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        controller.maximize();
+        Navigator.of(ctx).push(
+          PageRouteBuilder<void>(
+            opaque: true,
+            transitionDuration: const Duration(milliseconds: 250),
+            pageBuilder: (_, animation, __) => FadeTransition(
+              opacity: animation,
+              child: const VoiceRoomScreen(),
+            ),
+          ),
+        ).then((_) {
+          _isOpening = false;
+        });
+      } else {
+        _isOpening = false;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = VoiceRoomController();
@@ -78,12 +125,17 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
       left: clampedX,
       top: clampedY,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onPanStart: (_) {
           setState(() {
             _isDragging = true;
+            _hasDragged = false;
           });
         },
         onPanUpdate: (details) {
+          if (details.delta.dx.abs() > 0.5 || details.delta.dy.abs() > 0.5) {
+            _hasDragged = true;
+          }
           setState(() {
             final activePos = _position ?? Offset(defaultX, defaultY);
             _position = Offset(
@@ -93,6 +145,15 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
           });
         },
         onPanEnd: (_) {
+          if (!_hasDragged) {
+            // It was a tap that triggered pan
+            setState(() {
+              _isDragging = false;
+            });
+            _maximizeAndOpenRoom();
+            return;
+          }
+
           final midX = screenSize.width / 2;
           final activeX = (_position ?? Offset(defaultX, defaultY)).dx;
           final activeY = (_position ?? Offset(defaultX, defaultY)).dy;
@@ -111,16 +172,7 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
             _isDragging = false;
           });
         },
-        onTap: () {
-          controller.maximize();
-          Navigator.of(context, rootNavigator: true).push(
-            PageRouteBuilder<void>(
-              opaque: true,
-              transitionDuration: const Duration(milliseconds: 200),
-              pageBuilder: (_, __, ___) => const VoiceRoomScreen(),
-            ),
-          );
-        },
+        onTap: _maximizeAndOpenRoom,
         child: Material(
           elevation: 10,
           borderRadius: BorderRadius.circular(20.r),

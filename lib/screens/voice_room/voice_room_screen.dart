@@ -847,35 +847,41 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   }
 
   Widget _buildSeatCluster(VoiceSeat seatA, VoiceSeat seatB) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        VoiceSeatWidget(
-          seat: seatA,
-          isHost: false,
-          onTap: () => _handleSeatTap(seatA),
-        ),
-        Container(
-          height: 46.w,
-          alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: SizedBox(
-            width: 28.w,
-            height: 18.h,
-            child: CustomPaint(
-              painter: SoundWavePainter(
-                color: Colors.white.withValues(alpha: 0.35),
+    return SizedBox(
+      width: 146.w,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          VoiceSeatWidget(
+            key: ValueKey('voice_seat_${seatA.seatIndex}'),
+            seat: seatA,
+            isHost: false,
+            onTap: () => _handleSeatTap(seatA),
+          ),
+          SizedBox(
+            width: 38.w,
+            height: 46.w,
+            child: Center(
+              child: SizedBox(
+                width: 28.w,
+                height: 18.h,
+                child: CustomPaint(
+                  painter: SoundWavePainter(
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        VoiceSeatWidget(
-          seat: seatB,
-          isHost: false,
-          onTap: () => _handleSeatTap(seatB),
-        ),
-      ],
+          VoiceSeatWidget(
+            key: ValueKey('voice_seat_${seatB.seatIndex}'),
+            seat: seatB,
+            isHost: false,
+            onTap: () => _handleSeatTap(seatB),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1618,6 +1624,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                 // Host Stage Area (Center Top)
                 Center(
                   child: VoiceSeatWidget(
+                    key: const ValueKey('voice_seat_host'),
                     seat: hostSeat,
                     isHost: true,
                     isAway: controller.isHostInRoom != true,

@@ -37,11 +37,17 @@ class VoiceSeatWidget extends StatelessWidget {
         ? (hasFrame ? 76.w : 68.w)
         : (hasFrame ? 58.w : 54.w);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    final seatWidth = isHost ? 84.w : 54.w;
+
+    return SizedBox(
+      width: seatWidth,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
           // Avatar or Empty Slot with sound wave ripple (Fixed footprint prevents layout shift)
           SizedBox(
             width: avatarSize,
@@ -250,33 +256,48 @@ class VoiceSeatWidget extends StatelessWidget {
         ),
 
         // User Name or Seat Status (WePlay style)
-        if (isHost && user != null) ...[
-          SizedBox(height: 5.h),
-          Text(
-            (user.roleTitle.isNotEmpty ? user.roleTitle : 'HOST')
-                .toUpperCase()
-                .split('')
-                .join(' '),
-            style: TextStyle(
-              fontSize: 8.5.sp,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2.0,
-              color: const Color(0xFFFFB800),
+        if (isHost) ...[
+          if (user != null) ...[
+            SizedBox(height: 5.h),
+            SizedBox(
+              width: seatWidth,
+              height: 12.h,
+              child: Text(
+                (user.roleTitle.isNotEmpty ? user.roleTitle : 'HOST')
+                    .toUpperCase()
+                    .split('')
+                    .join(' '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 8.5.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2.0,
+                  color: const Color(0xFFFFB800),
+                ),
+              ),
             ),
-          ),
-          SizedBox(height: 1.h),
-          Text(
-            user.fullName.isNotEmpty ? user.fullName : user.username,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'SF Pro Rounded',
-              color: isAway ? Colors.white38 : Colors.white,
+            SizedBox(height: 1.h),
+            SizedBox(
+              width: seatWidth,
+              height: 16.h,
+              child: Text(
+                user.fullName.isNotEmpty ? user.fullName : user.username,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'SF Pro Rounded',
+                  color: isAway ? Colors.white38 : Colors.white,
+                ),
+              ),
             ),
-          ),
+          ] else ...[
+            SizedBox(width: seatWidth, height: 34.h),
+          ],
         ] else if (user != null) ...[
           SizedBox(height: 4.h),
           SizedBox(
@@ -310,11 +331,12 @@ class VoiceSeatWidget extends StatelessWidget {
             ),
           ),
         ] else ...[
-          // Empty seats in WePlay style do not have text underneath to keep UI pristine
-          SizedBox(height: 19.h),
+          // Empty seats in WePlay style do not have text underneath to keep UI pristine (Fixed footprint prevents layout shift)
+          SizedBox(width: 54.w, height: 19.h),
         ],
         ],
       ),
+    ),
     );
   }
 }
