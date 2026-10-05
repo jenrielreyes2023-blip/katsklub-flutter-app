@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:zego_express_engine/zego_express_engine.dart';
 import 'edit_voice_room_screen.dart';
-import '../youtube_search_screen.dart';
 import '../../config/api_config.dart';
 import '../../models/user.dart';
 import '../../models/voice_room.dart';
@@ -21,6 +20,7 @@ import '../../widgets/custom_icons.dart';
 import '../../widgets/gif_picker_modal.dart';
 import '../../widgets/user_avatar_with_frame.dart';
 import '../../widgets/voice_room_gift_sheet.dart';
+import '../../widgets/voice_room_music_sheet.dart';
 import '../../widgets/voice_room_set_pin_sheet.dart';
 import '../../widgets/voice_seat_widget.dart';
 
@@ -1135,278 +1135,12 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
   void _openRoomMusicPicker(VoiceRoomController controller) {
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      YouTubeSearchScreen.route(
-        isVoiceRoomMode: true,
-        initialQuery: 'lofi chill beats',
-        onVideoSelected: (video) {
-          controller.playRoomMusic(video);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: const Color(0xFF1E1F2A),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-                content: Row(
-                  children: [
-                    const Icon(Icons.music_note_rounded, color: Color(0xFFFF7A45)),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'Now playing: ${video.title}',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        },
-      ),
-    );
+    VoiceRoomMusicSheet.show(context, controller);
   }
 
   void _showRoomMusicSheet(BuildContext context, VoiceRoomController controller) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF17181F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) {
-          final track = controller.roomMusicTrack;
-          if (track == null) {
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(24.r),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.music_off_rounded, color: Colors.white38, size: 40.r),
-                      SizedBox(height: 12.h),
-                      const Text(
-                        'No background music currently playing',
-                        style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(height: 16.h),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF7A45),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _openRoomMusicPicker(controller);
-                        },
-                        icon: const Icon(Icons.search_rounded, color: Colors.white),
-                        label: const Text('Pick a Song', style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 20.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36.w,
-                      height: 4.h,
-                      margin: EdgeInsets.only(bottom: 14.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-
-                  // Track Info Row
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10.r),
-                        child: track.thumbnail.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: track.thumbnail,
-                                width: 56.r,
-                                height: 56.r,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Container(
-                                  width: 56.r,
-                                  height: 56.r,
-                                  color: Colors.white10,
-                                  child: const Icon(Icons.music_note, color: Colors.white38),
-                                ),
-                              )
-                            : Container(
-                                width: 56.r,
-                                height: 56.r,
-                                color: Colors.white10,
-                                child: const Icon(Icons.music_note, color: Colors.white38),
-                              ),
-                      ),
-                      SizedBox(width: 14.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              track.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13.5.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 3.h),
-                            Text(
-                              track.author.isNotEmpty ? track.author : 'YouTube Audio',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: const Color(0xFFFF7A45),
-                                fontSize: 11.5.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Volume Slider
-                  Row(
-                    children: [
-                      Icon(Icons.volume_down_rounded, color: Colors.white54, size: 20.r),
-                      Expanded(
-                        child: Slider(
-                          value: controller.roomMusicVolume,
-                          min: 0.0,
-                          max: 1.0,
-                          activeColor: const Color(0xFFFF7A45),
-                          inactiveColor: Colors.white12,
-                          onChanged: (val) {
-                            controller.setRoomMusicVolume(val);
-                            setSheetState(() {});
-                          },
-                        ),
-                      ),
-                      Icon(Icons.volume_up_rounded, color: Colors.white54, size: 20.r),
-                    ],
-                  ),
-
-                  SizedBox(height: 10.h),
-
-                  // Action Buttons Row (Play/Pause, Change, Stop)
-                  Row(
-                    children: [
-                      // Play / Pause Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF7A45),
-                            padding: EdgeInsets.symmetric(vertical: 11.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                          ),
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            controller.togglePauseRoomMusic();
-                            setSheetState(() {});
-                          },
-                          icon: Icon(
-                            controller.isRoomMusicPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 20.r,
-                          ),
-                          label: Text(
-                            controller.isRoomMusicPlaying ? 'Pause' : 'Resume',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-
-                      // Change Song Button
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFFF7A45), width: 1),
-                            padding: EdgeInsets.symmetric(vertical: 11.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _openRoomMusicPicker(controller);
-                          },
-                          icon: Icon(Icons.swap_horiz_rounded, color: const Color(0xFFFF7A45), size: 18.r),
-                          label: Text(
-                            'Change',
-                            style: TextStyle(
-                              color: const Color(0xFFFF7A45),
-                              fontSize: 12.5.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-
-                      // Stop Button
-                      InkWell(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          controller.stopRoomMusic();
-                          Navigator.pop(ctx);
-                        },
-                        borderRadius: BorderRadius.circular(12.r),
-                        child: Container(
-                          padding: EdgeInsets.all(10.r),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                          ),
-                          child: Icon(Icons.stop_rounded, color: Colors.redAccent, size: 20.r),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 8.h),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    HapticFeedback.lightImpact();
+    VoiceRoomMusicSheet.show(context, controller);
   }
 
   void _showRoomToolsSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
@@ -1419,7 +1153,10 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
       builder: (ctx) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final isMusicOn = controller.isMusicEnabled;
-          final playingTrack = controller.roomMusicTrack;
+          final hasPlayingMusic = controller.roomMusicTitle.isNotEmpty;
+          final musicTitle = controller.roomMusicTitle;
+          final musicArtist = controller.roomMusicArtist;
+          final musicArtwork = controller.roomMusicArtwork;
 
           return SafeArea(
             child: Padding(
@@ -1521,9 +1258,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                               SizedBox(height: 2.h),
                               Text(
                                 isMusicOn
-                                    ? (playingTrack != null
-                                        ? 'Now playing: ${playingTrack.title}'
-                                        : 'Enabled: Tap "Add Music" to pick a track')
+                                    ? (hasPlayingMusic
+                                        ? 'Now playing: $musicTitle'
+                                        : 'Enabled: Tap below to browse library')
                                     : 'Enable music playback in the room',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1554,7 +1291,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   // If Music is enabled: Show Now Playing Controls or Shortcut Button to pick
                   if (isMusicOn) ...[
                     SizedBox(height: 8.h),
-                    if (playingTrack != null)
+                    if (hasPlayingMusic)
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                         decoration: BoxDecoration(
@@ -1569,9 +1306,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(6.r),
-                              child: playingTrack.thumbnail.isNotEmpty
+                              child: musicArtwork.isNotEmpty
                                   ? CachedNetworkImage(
-                                      imageUrl: playingTrack.thumbnail,
+                                      imageUrl: musicArtwork,
                                       width: 36.r,
                                       height: 36.r,
                                       fit: BoxFit.cover,
@@ -1589,7 +1326,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    playingTrack.title,
+                                    musicTitle,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -1599,7 +1336,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                     ),
                                   ),
                                   Text(
-                                    controller.isRoomMusicPlaying ? 'Streaming...' : 'Paused',
+                                    controller.isRoomMusicPlaying
+                                        ? (musicArtist.isNotEmpty ? musicArtist : 'Streaming...')
+                                        : 'Paused',
                                     style: TextStyle(
                                       color: controller.isRoomMusicPlaying
                                           ? const Color(0xFF4ADE80)
@@ -1633,7 +1372,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                               ),
                               onPressed: () {
                                 Navigator.pop(ctx);
-                                _showRoomMusicSheet(context, controller);
+                                VoiceRoomMusicSheet.show(context, controller);
                               },
                             ),
                           ],
@@ -1658,10 +1397,10 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.search_rounded, color: const Color(0xFFFF7A45), size: 16.r),
-                              SizedBox(width: 6.w),
+                              Icon(Icons.library_music_rounded, color: const Color(0xFFFF7A45), size: 16.r),
+                              SizedBox(width: 8.w),
                               Text(
-                                'Search & Add Music Now',
+                                'Search & Add Music from Library',
                                 style: TextStyle(
                                   color: const Color(0xFFFF7A45),
                                   fontSize: 12.5.sp,
@@ -2344,6 +2083,69 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                     ],
                   ),
                 ),
+
+                // Floating Room Music Pill (when active)
+                if (controller.isMusicEnabled && controller.roomMusicTitle.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 6.h),
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          VoiceRoomMusicSheet.show(context, controller);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.5.h),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.4),
+                              width: 0.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                controller.isRoomMusicPlaying
+                                    ? Icons.equalizer_rounded
+                                    : Icons.pause_circle_outline_rounded,
+                                color: const Color(0xFFFF7A45),
+                                size: 13.r,
+                              ),
+                              SizedBox(width: 5.w),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: 160.w),
+                                child: Text(
+                                  '${controller.roomMusicTitle} • ${controller.roomMusicArtist.isNotEmpty ? controller.roomMusicArtist : "Music"}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SizedBox(width: 3.w),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.white54,
+                                size: 12.r,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
                 SizedBox(height: 4.h),
 

@@ -17,6 +17,7 @@ class ApiConfig {
       '/api/notifications/unread-count';
   static const String playlistsPath = '/api/playlists';
   static const String musicLibrarySearchPath = '/api/music-library/search';
+  static const String voiceRoomMusicTracksPath = '/api/voice-rooms/music/tracks';
   static const String youtubeBasePath = '/api/youtube';
 
   static String youtubeSearchPath(String query) =>

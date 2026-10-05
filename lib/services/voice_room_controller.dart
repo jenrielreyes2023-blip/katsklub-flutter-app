@@ -11,6 +11,7 @@ import 'feed_service.dart';
 import 'zego_voice_service.dart';
 import 'global_audio_player_service.dart';
 import 'youtube_service.dart';
+import '../models/voice_room_music_track.dart';
 
 /// Global Singleton Controller for active Voice Room state, Socket.io signaling, and UI overlays.
 class VoiceRoomController extends ChangeNotifier {
@@ -62,6 +63,7 @@ class VoiceRoomController extends ChangeNotifier {
   AudioPlayer? _roomMusicPlayer;
   StreamSubscription<PlayerState>? _roomMusicPlayerStateSub;
   YouTubeVideoItem? _roomMusicTrack;
+  VoiceRoomMusicTrack? _roomCdnTrack;
   bool _isRoomMusicPlaying = false;
   bool _isRoomMusicLoading = false;
   double _roomMusicVolume = 0.85;
@@ -78,6 +80,10 @@ class VoiceRoomController extends ChangeNotifier {
   int get giftPlayToken => _giftPlayToken;
   bool get isMusicEnabled => _isMusicEnabled;
   YouTubeVideoItem? get roomMusicTrack => _roomMusicTrack;
+  VoiceRoomMusicTrack? get roomCdnTrack => _roomCdnTrack;
+  String get roomMusicTitle => _roomCdnTrack?.title ?? _roomMusicTrack?.title ?? '';
+  String get roomMusicArtist => _roomCdnTrack?.artist ?? _roomMusicTrack?.author ?? '';
+  String get roomMusicArtwork => _roomCdnTrack?.artworkUrl ?? _roomMusicTrack?.thumbnail ?? '';
   bool get isRoomMusicPlaying => _isRoomMusicPlaying;
   bool get isRoomMusicLoading => _isRoomMusicLoading;
   double get roomMusicVolume => _roomMusicVolume;
@@ -90,8 +96,82 @@ class VoiceRoomController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> playCdnMusic(VoiceRoomMusicTrack track) async {
+    _roomCdnTrack = track;
+    _roomMusicTrack = null;
+    _isMusicEnabled = true;
+    _isRoomMusicLoading = true;
+    _isRoomMusicPlaying = false;
+    notifyListeners();
+
+    try {
+      await _roomMusicPlayerStateSub?.cancel();
+      _roomMusicPlayerStateSub = null;
+      await _roomMusicPlayer?.stop();
+
+      _roomMusicPlayer ??= AudioPlayer(
+        handleInterruptions: false,
+        handleAudioSessionActivation: false,
+      );
+
+      _roomMusicPlayerStateSub = _roomMusicPlayer!.playerStateStream.listen((state) {
+        final playing = state.playing && state.processingState != ProcessingState.completed;
+        if (_isRoomMusicPlaying != playing) {
+          _isRoomMusicPlaying = playing;
+          notifyListeners();
+        }
+      });
+
+      final streamUrl = track.streamUrl;
+      bool justAudioStarted = false;
+
+      try {
+        final audioSource = AudioSource.uri(
+          Uri.parse(streamUrl),
+          headers: const {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+          },
+        );
+        await _roomMusicPlayer?.setAudioSource(audioSource);
+        await _roomMusicPlayer?.setVolume(_roomMusicVolume);
+        await _roomMusicPlayer?.setLoopMode(LoopMode.one);
+        await _roomMusicPlayer?.play();
+        justAudioStarted = true;
+      } catch (e) {
+        debugPrint('[VoiceRoomController] playCdnMusic just_audio error: $e');
+      }
+
+      // Stream into Zego RTC Aux so participants in room hear it crystal-clear
+      final zegoStarted = await ZegoVoiceService().playBackgroundMusic(
+        streamUrl,
+        volume: _roomMusicVolume,
+        playLocally: !justAudioStarted,
+      );
+
+      if (!justAudioStarted && zegoStarted) {
+        await ZegoVoiceService().setMediaPlayerMuteLocal(false);
+      }
+
+      _isRoomMusicLoading = false;
+      _isRoomMusicPlaying = justAudioStarted || zegoStarted;
+
+      // Broadcast chat announcement to the room
+      sendChatMessage('🎵 Playing: ${track.title} by ${track.artist}');
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[VoiceRoomController] playCdnMusic error: $e');
+      _isRoomMusicLoading = false;
+      _isRoomMusicPlaying = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> playRoomMusic(YouTubeVideoItem track) async {
     _roomMusicTrack = track;
+    _roomCdnTrack = null;
     _isMusicEnabled = true;
     _isRoomMusicLoading = true;
     _isRoomMusicPlaying = false;
@@ -188,7 +268,7 @@ class VoiceRoomController extends ChangeNotifier {
   }
 
   Future<void> togglePauseRoomMusic() async {
-    if (_roomMusicTrack == null) return;
+    if (_roomMusicTrack == null && _roomCdnTrack == null) return;
     try {
       if (_isRoomMusicPlaying) {
         await _roomMusicPlayer?.pause();
@@ -213,6 +293,7 @@ class VoiceRoomController extends ChangeNotifier {
       await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
     _roomMusicTrack = null;
+    _roomCdnTrack = null;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
     notifyListeners();
@@ -1459,6 +1540,7 @@ class VoiceRoomController extends ChangeNotifier {
     _activeGiftReceiver = null;
     _isMusicEnabled = false;
     _roomMusicTrack = null;
+    _roomCdnTrack = null;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
 
