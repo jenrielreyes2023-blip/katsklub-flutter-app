@@ -20,7 +20,8 @@ class VoiceRoomMusicSheet extends StatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF14151B),
+      backgroundColor: const Color(0xFF101012),
+      barrierColor: Colors.black54,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
@@ -120,20 +121,25 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1F2A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+        backgroundColor: const Color(0xFF1E1E20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
         content: Row(
           children: [
             Icon(
               isNowFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               color: isNowFav ? Colors.redAccent : Colors.white70,
-              size: 18.r,
+              size: 15.r,
             ),
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
                 isNowFav ? 'Added to Favorites: ${track.title}' : 'Removed from Favorites',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: Colors.white,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -152,16 +158,21 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1F2A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+        backgroundColor: const Color(0xFF1E1E20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
         content: Row(
           children: [
-            const Icon(Icons.playlist_add_check_rounded, color: Color(0xFF4ADE80)),
+            Icon(Icons.playlist_add_check_rounded, color: const Color(0xFF4ADE80), size: 16.r),
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
                 'Added to Queue: ${track.title}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: Colors.white,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -186,16 +197,21 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1F2A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+        backgroundColor: const Color(0xFF1E1E20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
         content: Row(
           children: [
-            const Icon(Icons.music_note_rounded, color: Color(0xFFFF7A45)),
+            Icon(Icons.music_note_rounded, color: const Color(0xFFFF7A45), size: 16.r),
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
                 'Now streaming: ${track.title}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
+                  color: Colors.white,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -215,45 +231,57 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
         final isMusicPlaying = widget.controller.isRoomMusicPlaying;
         final hasActiveMusic = widget.controller.roomMusicTitle.isNotEmpty;
         final queue = widget.controller.musicQueue;
+        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+        final bottomSafe = MediaQuery.of(context).padding.bottom;
 
         return Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          height: MediaQuery.of(context).size.height * 0.58,
+          decoration: BoxDecoration(
+            color: const Color(0xFF101012),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.only(
+            left: 14.w,
+            right: 14.w,
+            bottom: bottomInset > 0 ? bottomInset + 8.h : (bottomSafe > 0 ? bottomSafe : 8.h),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 10.h),
-              // Drag handle
+              SizedBox(height: 8.h),
+              // Drag handle per Muse standard: 36.w x 3.5.h, #38383A
               Center(
                 child: Container(
                   width: 36.w,
-                  height: 4.h,
+                  height: 3.5.h,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: const Color(0xFF38383A),
                     borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 10.h),
 
-              // Header Row
+              // Header Row: Sleek & Compact
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(7.r),
+                    width: 26.r,
+                    height: 26.r,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
                       ),
-                      borderRadius: BorderRadius.circular(10.r),
+                      borderRadius: BorderRadius.circular(7.r),
                     ),
+                    alignment: Alignment.center,
                     child: Icon(
                       Icons.music_note_rounded,
                       color: Colors.white,
-                      size: 18.r,
+                      size: 14.r,
                     ),
                   ),
-                  SizedBox(width: 10.w),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,40 +291,54 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             color: Colors.white,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5.sp,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.1,
                           ),
                         ),
                         Text(
-                          'Browse & play music for everyone in the room',
+                          'Browse & play for everyone in room',
                           style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 11.sp,
+                            fontFamily: 'SF Pro Rounded',
+                            color: Colors.white38,
+                            fontSize: 10.sp,
+                            letterSpacing: -0.1,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.refresh_rounded, color: Colors.white70, size: 20.r),
+                    icon: Icon(Icons.refresh_rounded, color: Colors.white60, size: 17.r),
                     tooltip: 'Refresh library',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16.r,
                     onPressed: () => _loadInitialData(forceRefresh: true),
                   ),
+                  SizedBox(width: 12.w),
                   IconButton(
-                    icon: Icon(Icons.close_rounded, color: Colors.white70, size: 20.r),
+                    icon: Icon(Icons.close_rounded, color: Colors.white60, size: 17.r),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16.r,
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
 
               // 3 Navigation Tabs: [ 🔍 Search ]  [ ❤️ Favorites (N) ]  [ 📋 Queue (N) ]
               Container(
-                padding: EdgeInsets.all(3.r),
+                padding: EdgeInsets.all(2.5.r),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(14.r),
+                  color: const Color(0xFF1E1E20),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: const Color(0xFF2C2C2E),
+                    width: 0.5,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -322,13 +364,20 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                 ),
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: 8.h),
 
               // Tab View Content
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: Color(0xFFFF7A45)),
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF7A45),
+                            strokeWidth: 2,
+                          ),
+                        ),
                       )
                     : IndexedStack(
                         index: _selectedTabIndex,
@@ -342,9 +391,8 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
 
               // Persistent Mini Player Banner (if active)
               if (hasActiveMusic) ...[
-                SizedBox(height: 8.h),
+                SizedBox(height: 6.h),
                 _buildMiniPlayerBanner(isMusicPlaying),
-                SizedBox(height: 10.h),
               ],
             ],
           ),
@@ -368,7 +416,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: EdgeInsets.symmetric(vertical: 8.h),
+          padding: EdgeInsets.symmetric(vertical: 5.5.h),
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
@@ -376,7 +424,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   )
                 : null,
             color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(8.r),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -384,31 +432,34 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               Icon(
                 icon,
                 color: isSelected ? Colors.white : Colors.white60,
-                size: 15.r,
+                size: 13.5.r,
               ),
-              SizedBox(width: 5.w),
+              SizedBox(width: 4.w),
               Text(
                 label,
                 style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: isSelected ? Colors.white : Colors.white60,
-                  fontSize: 12.sp,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 11.sp,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  letterSpacing: -0.1,
                 ),
               ),
               if (badge != null) ...[
                 SizedBox(width: 4.w),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
                     color: isSelected ? Colors.white : const Color(0xFFFF7A45),
-                    borderRadius: BorderRadius.circular(10.r),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
                     badge,
                     style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
                       color: isSelected ? const Color(0xFFFF7A45) : Colors.white,
-                      fontSize: 9.5.sp,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 8.5.sp,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -430,33 +481,42 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Search Field
+        // Search Field - Compact & Sleek
         Container(
+          height: 34.h,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(14.r),
+            color: const Color(0xFF1E1E20),
+            borderRadius: BorderRadius.circular(9.r),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 0.8,
+              color: const Color(0xFF2C2C2E),
+              width: 0.6,
             ),
           ),
           child: TextField(
             controller: _searchController,
             onChanged: (_) => _applyFilter(),
             style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
               color: Colors.white,
-              fontSize: 13.5.sp,
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               hintText: 'Search songs, artists, or keywords...',
               hintStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 color: Colors.white38,
-                fontSize: 13.sp,
+                fontSize: 11.5.sp,
+                letterSpacing: -0.1,
               ),
-              prefixIcon: Icon(Icons.search_rounded, color: Colors.white54, size: 20.r),
+              prefixIcon: Icon(Icons.search_rounded, color: Colors.white38, size: 16.r),
+              prefixIconConstraints: BoxConstraints(minWidth: 32.w),
               suffixIcon: query.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear_rounded, color: Colors.white38, size: 18.r),
+                      icon: Icon(Icons.clear_rounded, color: Colors.white38, size: 14.r),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      splashRadius: 14.r,
                       onPressed: () {
                         _searchController.clear();
                         _applyFilter();
@@ -464,21 +524,22 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                     )
                   : null,
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 7.h),
+              isDense: true,
             ),
           ),
         ),
 
-        SizedBox(height: 10.h),
+        SizedBox(height: 7.h),
 
         // Genre Filter Chips
         if (_genres.isNotEmpty)
           SizedBox(
-            height: 30.h,
+            height: 24.h,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _genres.length,
-              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+              separatorBuilder: (_, __) => SizedBox(width: 6.w),
               itemBuilder: (context, index) {
                 final g = _genres[index];
                 final isSelected = g.toLowerCase() == _selectedGenre.toLowerCase();
@@ -491,28 +552,32 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                     });
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                    duration: const Duration(milliseconds: 160),
+                    padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 2.h),
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? const LinearGradient(
                               colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
                             )
                           : null,
-                      color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20.r),
+                      color: isSelected ? null : const Color(0xFF1E1E20),
+                      borderRadius: BorderRadius.circular(14.r),
                       border: Border.all(
                         color: isSelected
                             ? Colors.transparent
-                            : Colors.white.withValues(alpha: 0.12),
+                            : const Color(0xFF2C2C2E),
+                        width: 0.6,
                       ),
                     ),
+                    alignment: Alignment.center,
                     child: Text(
                       g,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.sp,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontFamily: 'SF Pro Rounded',
+                        color: isSelected ? Colors.white : Colors.white70,
+                        fontSize: 10.sp,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        letterSpacing: -0.1,
                       ),
                     ),
                   ),
@@ -521,7 +586,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             ),
           ),
 
-        SizedBox(height: 10.h),
+        SizedBox(height: 7.h),
 
         // Results or Empty Landing
         Expanded(
@@ -532,27 +597,45 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.search_off_rounded, color: Colors.white24, size: 48.r),
-                          SizedBox(height: 10.h),
+                          Icon(Icons.search_off_rounded, color: Colors.white24, size: 36.r),
+                          SizedBox(height: 6.h),
                           Text(
                             'No songs found matching "${_searchController.text}"',
-                            style: TextStyle(color: Colors.white60, fontSize: 13.sp),
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: Colors.white60,
+                              fontSize: 11.5.sp,
+                            ),
                           ),
-                          SizedBox(height: 8.h),
+                          SizedBox(height: 4.h),
                           TextButton(
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _selectedGenre = 'All');
                               _applyFilter();
                             },
-                            child: const Text('Clear Search', style: TextStyle(color: Color(0xFFFF7A45))),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Clear Search',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: const Color(0xFFFF7A45),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     )
                   : ListView.separated(
+                      padding: EdgeInsets.symmetric(vertical: 2.h),
                       itemCount: _filteredTracks.length,
-                      separatorBuilder: (_, __) => SizedBox(height: 8.h),
+                      separatorBuilder: (_, __) => SizedBox(height: 6.h),
                       itemBuilder: (context, index) {
                         return _buildTrackTile(_filteredTracks[index]);
                       },
@@ -566,78 +649,94 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
   Widget _buildSearchLandingView() {
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 8.w),
+        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 4.w),
         child: Column(
           children: [
             Container(
-              width: 56.r,
-              height: 56.r,
+              width: 40.r,
+              height: 40.r,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFFF7A45).withValues(alpha: 0.2),
-                    const Color(0xFFEC4899).withValues(alpha: 0.2),
+                    const Color(0xFFFF7A45).withValues(alpha: 0.18),
+                    const Color(0xFFEC4899).withValues(alpha: 0.18),
                   ],
                 ),
               ),
               child: Icon(
                 Icons.search_rounded,
                 color: const Color(0xFFFF7A45),
-                size: 28.r,
+                size: 20.r,
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 8.h),
             Text(
               'Search Voice Room Music',
               style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 color: Colors.white,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
               ),
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: 2.h),
             Text(
               'Type a song title, artist, or keyword to find music',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white54,
-                fontSize: 12.sp,
+                fontFamily: 'SF Pro Rounded',
+                color: Colors.white38,
+                fontSize: 10.5.sp,
               ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 12.h),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Popular Keywords',
                 style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
+                  fontFamily: 'SF Pro Rounded',
+                  color: Colors.white60,
+                  fontSize: 10.5.sp,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
                 ),
               ),
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 6.h),
             Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
+              spacing: 6.w,
+              runSpacing: 6.h,
               children: _quickSuggestions.map((tag) {
-                return ActionChip(
-                  label: Text(tag),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11.5.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                  onPressed: () {
+                return InkWell(
+                  onTap: () {
                     HapticFeedback.lightImpact();
                     _searchController.text = tag;
                     _applyFilter();
                   },
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E20),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: const Color(0xFF2C2C2E),
+                        width: 0.6,
+                      ),
+                    ),
+                    child: Text(
+                      tag,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: Colors.white70,
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -654,52 +753,69 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     if (_favoriteTracks.isEmpty) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 60.r,
-                height: 60.r,
+                width: 44.r,
+                height: 44.r,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.redAccent.withValues(alpha: 0.12),
                 ),
-                child: Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 30.r),
+                child: Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 22.r),
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 8.h),
               Text(
                 'No Favorite Songs Yet',
                 style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: Colors.white,
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
                 ),
               ),
-              SizedBox(height: 6.h),
+              SizedBox(height: 3.h),
               Text(
-                'Tap the ❤️ heart icon on any song in Search to save it here for instant access without searching!',
+                'Tap the ❤️ heart on any song to save it here for instant access without searching.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12.sp,
-                  height: 1.35,
+                  fontFamily: 'SF Pro Rounded',
+                  color: Colors.white38,
+                  fontSize: 10.5.sp,
+                  height: 1.25,
                 ),
               ),
-              SizedBox(height: 18.h),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7A45),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                ),
-                onPressed: () {
-                  setState(() => _selectedTabIndex = 0);
-                },
-                icon: const Icon(Icons.search_rounded, color: Colors.white, size: 16),
-                label: const Text(
-                  'Search Songs Now',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              SizedBox(height: 12.h),
+              InkWell(
+                onTap: () => setState(() => _selectedTabIndex = 0),
+                borderRadius: BorderRadius.circular(10.r),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                    ),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_rounded, color: Colors.white, size: 14.r),
+                      SizedBox(width: 5.w),
+                      Text(
+                        'Search Songs Now',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -716,27 +832,31 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             Text(
               '${_favoriteTracks.length} Saved Songs',
               style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Rounded',
+                color: Colors.white60,
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.1,
               ),
             ),
             const Spacer(),
             Text(
               '1-Tap to Play or Queue',
               style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
                 color: const Color(0xFFFF7A45),
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
-        SizedBox(height: 10.h),
+        SizedBox(height: 6.h),
         Expanded(
           child: ListView.separated(
+            padding: EdgeInsets.symmetric(vertical: 2.h),
             itemCount: _favoriteTracks.length,
-            separatorBuilder: (_, __) => SizedBox(height: 8.h),
+            separatorBuilder: (_, __) => SizedBox(height: 6.h),
             itemBuilder: (context, index) {
               return _buildTrackTile(_favoriteTracks[index]);
             },
@@ -750,109 +870,133 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
   // TAB 3: QUEUE TAB
   // ==========================================
   Widget _buildQueueTab(List<VoiceRoomMusicTrack> queue) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Up Next Section Header
-          Row(
-            children: [
-              Text(
-                'UP NEXT (${queue.length})',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Up Next Section Header
+        Row(
+          children: [
+            Text(
+              'UP NEXT (${queue.length})',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: Colors.white60,
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const Spacer(),
+            if (queue.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  widget.controller.clearQueue();
+                },
+                child: Text(
+                  'Clear All',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: const Color(0xFFED4956),
+                    fontSize: 10.5.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              const Spacer(),
-              if (queue.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    widget.controller.clearQueue();
-                  },
-                  child: Text(
-                    'Clear All',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+          ],
+        ),
+
+        SizedBox(height: 6.h),
+
+        if (queue.isEmpty)
+          Expanded(
+            child: Center(
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E20),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: const Color(0xFF2C2C2E),
+                    width: 0.6,
                   ),
                 ),
-            ],
-          ),
-
-          SizedBox(height: 10.h),
-
-          if (queue.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 36.h, horizontal: 20.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.03),
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.queue_music_rounded, color: Colors.white24, size: 30.r),
+                    SizedBox(height: 6.h),
+                    Text(
+                      'Queue is Empty',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: Colors.white,
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 3.h),
+                    Text(
+                      'Tap "+ Queue" on any song to queue it for automatic playback',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: Colors.white38,
+                        fontSize: 10.5.sp,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    InkWell(
+                      onTap: () => setState(() => _selectedTabIndex = 0),
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                          ),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          'Find Songs to Queue',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: Colors.white,
+                            fontSize: 10.5.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  Icon(Icons.queue_music_rounded, color: Colors.white24, size: 44.r),
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Queue is Empty',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Tap "+ Queue" on any song to queue it for automatic playback',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 11.5.sp,
-                    ),
-                  ),
-                  SizedBox(height: 14.h),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7A45),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                    ),
-                    onPressed: () {
-                      setState(() => _selectedTabIndex = 0);
-                    },
-                    child: const Text('Find Songs to Queue', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+            ),
+          )
+        else
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(vertical: 2.h),
               itemCount: queue.length,
-              separatorBuilder: (_, __) => SizedBox(height: 8.h),
+              separatorBuilder: (_, __) => SizedBox(height: 6.h),
               itemBuilder: (context, index) {
                 final track = queue[index];
                 return Container(
-                  padding: EdgeInsets.all(8.r),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(12.r),
+                    color: const Color(0xFF1E1E20),
+                    borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: const Color(0xFF2C2C2E),
+                      width: 0.6,
                     ),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 24.r,
-                        height: 24.r,
+                        width: 20.r,
+                        height: 20.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
@@ -861,30 +1005,31 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         child: Text(
                           '#${index + 1}',
                           style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: const Color(0xFFFF7A45),
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: 7.w),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(6.r),
                         child: track.artworkUrl.isNotEmpty
                             ? CachedNetworkImage(
                                 imageUrl: track.artworkUrl,
-                                width: 38.r,
-                                height: 38.r,
+                                width: 32.r,
+                                height: 32.r,
                                 fit: BoxFit.cover,
                               )
                             : Container(
-                                width: 38.r,
-                                height: 38.r,
+                                width: 32.r,
+                                height: 32.r,
                                 color: Colors.white10,
-                                child: const Icon(Icons.music_note, color: Colors.white38),
+                                child: Icon(Icons.music_note, color: Colors.white38, size: 16.r),
                               ),
                       ),
-                      SizedBox(width: 10.w),
+                      SizedBox(width: 8.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -894,9 +1039,11 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
                                 color: Colors.white,
-                                fontSize: 12.5.sp,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 11.5.sp,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: -0.1,
                               ),
                             ),
                             Text(
@@ -904,25 +1051,33 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white54,
-                                fontSize: 10.5.sp,
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white38,
+                                fontSize: 9.5.sp,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.play_arrow_rounded, color: Color(0xFFFF7A45)),
+                        icon: Icon(Icons.play_arrow_rounded, color: const Color(0xFFFF7A45), size: 20.r),
                         tooltip: 'Play this now',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 14.r,
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           widget.controller.removeFromQueue(index);
                           _playTrack(track);
                         },
                       ),
+                      SizedBox(width: 8.w),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white38, size: 18),
+                        icon: Icon(Icons.close_rounded, color: Colors.white38, size: 15.r),
                         tooltip: 'Remove from queue',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 14.r,
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           widget.controller.removeFromQueue(index);
@@ -933,13 +1088,13 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                 );
               },
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
   // ==========================================
-  // SHARED TRACK CARD TILE
+  // SHARED TRACK CARD TILE (THREADS-STYLE INSET ISLAND)
   // ==========================================
   Widget _buildTrackTile(VoiceRoomMusicTrack track) {
     final currentTitle = widget.controller.roomMusicTitle;
@@ -948,43 +1103,44 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     final isFav = _favoriteTrackIds.contains(track.id);
 
     return Container(
-      padding: EdgeInsets.all(8.r),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: isCurrent
             ? const Color(0xFFFF7A45).withValues(alpha: 0.1)
-            : Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(12.r),
+            : const Color(0xFF1E1E20),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(
           color: isCurrent
-              ? const Color(0xFFFF7A45).withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.06),
+              ? const Color(0xFFFF7A45).withValues(alpha: 0.4)
+              : const Color(0xFF2C2C2E),
+          width: 0.6,
         ),
       ),
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(8.r),
+            borderRadius: BorderRadius.circular(6.r),
             child: track.artworkUrl.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: track.artworkUrl,
-                    width: 44.r,
-                    height: 44.r,
+                    width: 34.r,
+                    height: 34.r,
                     fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => Container(
-                      width: 44.r,
-                      height: 44.r,
+                      width: 34.r,
+                      height: 34.r,
                       color: Colors.white10,
-                      child: const Icon(Icons.music_note, color: Colors.white38),
+                      child: Icon(Icons.music_note, color: Colors.white38, size: 16.r),
                     ),
                   )
                 : Container(
-                    width: 44.r,
-                    height: 44.r,
+                    width: 34.r,
+                    height: 34.r,
                     color: Colors.white10,
-                    child: const Icon(Icons.music_note, color: Colors.white38),
+                    child: Icon(Icons.music_note, color: Colors.white38, size: 16.r),
                   ),
           ),
-          SizedBox(width: 10.w),
+          SizedBox(width: 8.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -994,34 +1150,40 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
                     color: Colors.white,
-                    fontSize: 13.sp,
-                    fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 11.5.sp,
+                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                    letterSpacing: -0.1,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: 1.5.h),
                 Row(
                   children: [
-                    Text(
-                      track.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 11.sp,
+                    Flexible(
+                      child: Text(
+                        track.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Colors.white38,
+                          fontSize: 10.sp,
+                        ),
                       ),
                     ),
                     if (track.genre.isNotEmpty && track.genre != 'General') ...[
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
-                        child: Text('•', style: TextStyle(color: Colors.white24, fontSize: 10.sp)),
+                        child: Text('•', style: TextStyle(color: Colors.white24, fontSize: 9.sp)),
                       ),
                       Text(
                         track.genre,
                         style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
                           color: const Color(0xFFFF7A45),
-                          fontSize: 10.5.sp,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 9.5.sp,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -1037,34 +1199,43 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             icon: Icon(
               isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               color: isFav ? Colors.redAccent : Colors.white38,
-              size: 20.r,
+              size: 16.r,
             ),
             tooltip: isFav ? 'Remove from Favorites' : 'Add to Favorites',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 14.r,
             onPressed: () => _toggleFavorite(track),
           ),
+
+          SizedBox(width: 6.w),
 
           // Add to Queue Button
           InkWell(
             onTap: () => _addToQueue(track),
-            borderRadius: BorderRadius.circular(8.r),
+            borderRadius: BorderRadius.circular(6.r),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.5.h),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(
+                  color: const Color(0xFF2C2C2E),
+                  width: 0.5,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.playlist_add_rounded, color: Colors.white70, size: 14.r),
-                  SizedBox(width: 3.w),
+                  Icon(Icons.playlist_add_rounded, color: Colors.white70, size: 12.r),
+                  SizedBox(width: 2.w),
                   Text(
                     'Queue',
                     style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
                       color: Colors.white70,
-                      fontSize: 10.5.sp,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 9.5.sp,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -1072,14 +1243,14 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             ),
           ),
 
-          SizedBox(width: 6.w),
+          SizedBox(width: 5.w),
 
           // Play Button
           InkWell(
             onTap: isItemLoading ? null : () => _playTrack(track),
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(12.r),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.5.h),
               decoration: BoxDecoration(
                 gradient: isCurrent
                     ? const LinearGradient(
@@ -1088,15 +1259,15 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                     : const LinearGradient(
                         colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
                       ),
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: isItemLoading
                   ? SizedBox(
-                      width: 14.r,
-                      height: 14.r,
+                      width: 12.r,
+                      height: 12.r,
                       child: const CircularProgressIndicator(
                         color: Colors.white,
-                        strokeWidth: 2,
+                        strokeWidth: 1.5,
                       ),
                     )
                   : Row(
@@ -1107,15 +1278,16 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                               ? Icons.equalizer_rounded
                               : Icons.play_arrow_rounded,
                           color: Colors.white,
-                          size: 14.sp,
+                          size: 12.r,
                         ),
-                        SizedBox(width: 3.w),
+                        SizedBox(width: 2.w),
                         Text(
                           isCurrent ? 'Playing' : 'Play',
                           style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
                             color: Colors.white,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -1128,17 +1300,17 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
   }
 
   // ==========================================
-  // PERSISTENT MINI PLAYER BANNER
+  // PERSISTENT MINI PLAYER BANNER (SLEEK)
   // ==========================================
   Widget _buildMiniPlayerBanner(bool isMusicPlaying) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF7A45).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14.r),
+        color: const Color(0xFF1E1E20),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(
-          color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-          width: 1,
+          color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+          width: 0.8,
         ),
       ),
       child: Column(
@@ -1147,48 +1319,51 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
           Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(6.r),
+                borderRadius: BorderRadius.circular(5.r),
                 child: widget.controller.roomMusicArtwork.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: widget.controller.roomMusicArtwork,
-                        width: 36.r,
-                        height: 36.r,
+                        width: 28.r,
+                        height: 28.r,
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => Container(
-                          width: 36.r,
-                          height: 36.r,
+                          width: 28.r,
+                          height: 28.r,
                           color: Colors.white10,
-                          child: const Icon(Icons.music_note, color: Colors.white38),
+                          child: Icon(Icons.music_note, color: Colors.white38, size: 14.r),
                         ),
                       )
                     : Container(
-                        width: 36.r,
-                        height: 36.r,
+                        width: 28.r,
+                        height: 28.r,
                         color: Colors.white10,
-                        child: const Icon(Icons.music_note, color: Colors.white38),
+                        child: Icon(Icons.music_note, color: Colors.white38, size: 14.r),
                       ),
               ),
-              SizedBox(width: 10.w),
+              SizedBox(width: 8.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     MarqueeText(
                       text: widget.controller.roomMusicTitle,
-                      maxWidth: 150.w,
+                      maxWidth: 130.w,
                       isPlaying: isMusicPlaying,
                       style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.white,
-                        fontSize: 12.5.sp,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.1,
                       ),
                     ),
                     Text(
                       isMusicPlaying ? 'Streaming in room...' : 'Paused',
                       style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: isMusicPlaying ? const Color(0xFF4ADE80) : Colors.white38,
-                        fontSize: 10.5.sp,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 9.5.sp,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -1200,23 +1375,34 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                       ? Icons.pause_circle_filled_rounded
                       : Icons.play_circle_filled_rounded,
                   color: const Color(0xFFFF7A45),
-                  size: 28.r,
+                  size: 22.r,
                 ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 14.r,
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   widget.controller.togglePauseRoomMusic();
                 },
               ),
+              SizedBox(width: 8.w),
               IconButton(
-                icon: Icon(Icons.skip_next_rounded, color: Colors.white70, size: 24.r),
+                icon: Icon(Icons.skip_next_rounded, color: Colors.white70, size: 18.r),
                 tooltip: 'Next in queue',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 14.r,
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   widget.controller.skipToNextMusic();
                 },
               ),
+              SizedBox(width: 8.w),
               IconButton(
-                icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 22.r),
+                icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 17.r),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 14.r,
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   widget.controller.stopRoomMusic();
@@ -1224,16 +1410,16 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               ),
             ],
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 2.h),
           Row(
             children: [
-              Icon(Icons.volume_down_rounded, color: Colors.white54, size: 14.r),
+              Icon(Icons.volume_down_rounded, color: Colors.white38, size: 12.r),
               Expanded(
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
-                    trackHeight: 2.0,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                    trackHeight: 1.5,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
                   ),
                   child: Slider(
                     value: widget.controller.roomMusicVolume,
@@ -1247,7 +1433,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   ),
                 ),
               ),
-              Icon(Icons.volume_up_rounded, color: Colors.white54, size: 14.r),
+              Icon(Icons.volume_up_rounded, color: Colors.white38, size: 12.r),
             ],
           ),
         ],
