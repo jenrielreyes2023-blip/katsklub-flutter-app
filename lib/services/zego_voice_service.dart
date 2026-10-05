@@ -213,29 +213,49 @@ class ZegoVoiceService {
   }
 
   /// Starts playing background music streamed into Aux (so other participants in room hear it).
-  Future<void> playBackgroundMusic(String url, {double volume = 0.6}) async {
+  Future<bool> playBackgroundMusic(String url, {double volume = 0.85, bool playLocally = false}) async {
     try {
       await ensureInitialized();
       _mediaPlayer ??= await ZegoExpressEngine.instance.createMediaPlayer();
       if (_mediaPlayer != null) {
         await _mediaPlayer!.enableAux(true);
-        // muteLocal(true) ensures the local user doesn't hear double audio 
-        // since just_audio plays it crystal-clear locally
-        await _mediaPlayer!.muteLocal(true);
+        // muteLocal(!playLocally): if just_audio is playing locally, mute Zego local playback to avoid echo.
+        // If just_audio failed or playLocally is requested, unmute local so user hears audio.
+        await _mediaPlayer!.muteLocal(!playLocally);
         final publishVol = (volume * 100).round().clamp(0, 100);
         await _mediaPlayer!.setPublishVolume(publishVol);
+        if (playLocally) {
+          await _mediaPlayer!.setPlayVolume(publishVol);
+        }
         await _mediaPlayer!.enableRepeat(true);
         await _mediaPlayer!.stop();
-        final res = await _mediaPlayer!.loadResource(url);
+
+        String loadPath = url;
+        if (loadPath.startsWith('file://')) {
+          loadPath = Uri.parse(loadPath).toFilePath();
+        }
+
+        final res = await _mediaPlayer!.loadResource(loadPath);
         if (res.errorCode == 0) {
           await _mediaPlayer!.start();
-          debugPrint('[ZegoVoiceService] Background music Aux started successfully');
+          debugPrint('[ZegoVoiceService] Background music Aux started successfully (playLocally: $playLocally)');
+          return true;
         } else {
           debugPrint('[ZegoVoiceService] MediaPlayer loadResource returned: ${res.errorCode}');
         }
       }
     } catch (e) {
       debugPrint('[ZegoVoiceService] playBackgroundMusic error: $e');
+    }
+    return false;
+  }
+
+  /// Sets whether Zego media player plays locally on the device speaker
+  Future<void> setMediaPlayerMuteLocal(bool mute) async {
+    try {
+      await _mediaPlayer?.muteLocal(mute);
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] setMediaPlayerMuteLocal error: $e');
     }
   }
 
@@ -271,6 +291,7 @@ class ZegoVoiceService {
     try {
       final publishVol = (volume * 100).round().clamp(0, 100);
       await _mediaPlayer?.setPublishVolume(publishVol);
+      await _mediaPlayer?.setPlayVolume(publishVol);
     } catch (e) {
       debugPrint('[ZegoVoiceService] setMusicPublishVolume error: $e');
     }

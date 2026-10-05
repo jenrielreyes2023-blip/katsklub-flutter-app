@@ -60,10 +60,11 @@ class VoiceRoomController extends ChangeNotifier {
   int _giftPlayToken = 0;
   bool _isMusicEnabled = false;
   AudioPlayer? _roomMusicPlayer;
+  StreamSubscription<PlayerState>? _roomMusicPlayerStateSub;
   YouTubeVideoItem? _roomMusicTrack;
   bool _isRoomMusicPlaying = false;
   bool _isRoomMusicLoading = false;
-  double _roomMusicVolume = 0.6;
+  double _roomMusicVolume = 0.85;
 
   VoiceRoom? get currentRoom => _currentRoom;
   User? get currentUser => _currentUser ?? AuthService().currentUser;
@@ -97,12 +98,16 @@ class VoiceRoomController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _roomMusicPlayerStateSub?.cancel();
+      _roomMusicPlayerStateSub = null;
+      await _roomMusicPlayer?.stop();
+
       _roomMusicPlayer ??= AudioPlayer(
         handleInterruptions: false,
         handleAudioSessionActivation: false,
       );
 
-      _roomMusicPlayer!.playerStateStream.listen((state) {
+      _roomMusicPlayerStateSub = _roomMusicPlayer!.playerStateStream.listen((state) {
         final playing = state.playing && state.processingState != ProcessingState.completed;
         if (_isRoomMusicPlaying != playing) {
           _isRoomMusicPlaying = playing;
@@ -111,7 +116,18 @@ class VoiceRoomController extends ChangeNotifier {
       });
 
       final ytService = YouTubeService();
-      final streamUrl = await ytService.getStreamUrl(track.id);
+      // 1. Client-side extraction via youtube_explode_dart (fastest & bypasses VPS IP block)
+      String? streamUrl = await ytService.getAudioStreamUrl(track.id);
+
+      // 2. Fallback to cached audio or download
+      if (streamUrl == null || streamUrl.isEmpty) {
+        streamUrl = await ytService.getCachedOrDownloadAudio(track.id);
+      }
+
+      // 3. Fallback to server stream API
+      if (streamUrl == null || streamUrl.isEmpty) {
+        streamUrl = await ytService.getStreamUrl(track.id);
+      }
 
       if (streamUrl == null || streamUrl.isEmpty) {
         debugPrint('[VoiceRoomController] Could not get audio stream URL for ${track.id}');
@@ -120,35 +136,47 @@ class VoiceRoomController extends ChangeNotifier {
         return;
       }
 
-      // 1. Play locally via just_audio
-      await _roomMusicPlayer?.stop();
-      await _roomMusicPlayer?.setUrl(streamUrl);
-      await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-      await _roomMusicPlayer?.setLoopMode(LoopMode.one);
-      await _roomMusicPlayer?.play();
+      bool justAudioStarted = false;
+      try {
+        if (streamUrl.startsWith('file://')) {
+          final filePath = Uri.parse(streamUrl).toFilePath();
+          await _roomMusicPlayer?.setFilePath(filePath);
+        } else {
+          final audioSource = AudioSource.uri(
+            Uri.parse(streamUrl),
+            headers: const {
+              'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': '*/*',
+            },
+          );
+          await _roomMusicPlayer?.setAudioSource(audioSource);
+        }
+        await _roomMusicPlayer?.setVolume(_roomMusicVolume);
+        await _roomMusicPlayer?.setLoopMode(LoopMode.one);
+        await _roomMusicPlayer?.play();
+        justAudioStarted = true;
+      } catch (e) {
+        debugPrint('[VoiceRoomController] just_audio local playback error: $e');
+      }
 
-      // 2. Stream into Zego RTC Aux
-      await ZegoVoiceService().playBackgroundMusic(streamUrl, volume: _roomMusicVolume);
+      // Stream into Zego RTC Aux so participants in room hear it.
+      // If just_audio failed to play locally, unmute Zego locally so the user definitely hears it.
+      final zegoStarted = await ZegoVoiceService().playBackgroundMusic(
+        streamUrl,
+        volume: _roomMusicVolume,
+        playLocally: !justAudioStarted,
+      );
+
+      if (!justAudioStarted && zegoStarted) {
+        await ZegoVoiceService().setMediaPlayerMuteLocal(false);
+      }
 
       _isRoomMusicLoading = false;
-      _isRoomMusicPlaying = true;
+      _isRoomMusicPlaying = justAudioStarted || zegoStarted;
 
-      // Add system announcement in chat
-      final hostOrUser = currentUser?.username ?? 'Room';
-      _messages.add(
-        VoiceRoomMessage(
-          id: 'music_${DateTime.now().millisecondsSinceEpoch}',
-          message: '🎵 @$hostOrUser started playing: ${track.title}',
-          sender: VoiceRoomUser(
-            id: 0,
-            username: 'System',
-            fullName: 'System',
-            avatarUrl: '',
-          ),
-          createdAt: DateTime.now(),
-          isSystem: true,
-        ),
-      );
+      // Broadcast chat announcement to the room
+      sendChatMessage('🎵 Playing: ${track.title}');
 
       notifyListeners();
     } catch (e) {
@@ -179,6 +207,8 @@ class VoiceRoomController extends ChangeNotifier {
 
   Future<void> stopRoomMusic() async {
     try {
+      await _roomMusicPlayerStateSub?.cancel();
+      _roomMusicPlayerStateSub = null;
       await _roomMusicPlayer?.stop();
       await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
@@ -1408,6 +1438,8 @@ class VoiceRoomController extends ChangeNotifier {
     } catch (_) {}
 
     try {
+      _roomMusicPlayerStateSub?.cancel();
+      _roomMusicPlayerStateSub = null;
       _roomMusicPlayer?.stop();
       _roomMusicPlayer?.dispose();
       _roomMusicPlayer = null;
