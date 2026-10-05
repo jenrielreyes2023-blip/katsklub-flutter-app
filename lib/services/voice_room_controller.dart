@@ -51,6 +51,7 @@ class VoiceRoomController extends ChangeNotifier {
   double _hostSoundLevel = 0.0;
 
   final List<VoiceRoomMessage> _messages = [];
+  final Map<String, DateTime> _recentJoinTimestamps = {};
   VoiceRoomGift? _activePlayingGift;
   VoiceRoomUser? _activeGiftSender;
   VoiceRoomUser? _activeGiftReceiver;
@@ -936,6 +937,24 @@ class VoiceRoomController extends ChangeNotifier {
         if (user.id.toString() == _currentRoom!.host.id.toString()) {
           _currentRoom = _currentRoom!.copyWith(isHostInRoom: true);
         }
+
+        // Never show "joined the room" for the local user themselves (prevents spam on reconnect / minimize)
+        final myId = currentUser?.id?.toString();
+        if (myId != null && user.id.toString() == myId) {
+          notifyListeners();
+          return;
+        }
+
+        // Deduplicate join messages for the same user within 5 minutes
+        final uid = user.id.toString();
+        final now = DateTime.now();
+        final lastJoin = _recentJoinTimestamps[uid];
+        if (lastJoin != null && now.difference(lastJoin).inMinutes < 5) {
+          notifyListeners();
+          return;
+        }
+        _recentJoinTimestamps[uid] = now;
+
         _messages.add(
           VoiceRoomMessage(
             id: 'join-${DateTime.now().millisecondsSinceEpoch}',
@@ -1242,6 +1261,7 @@ class VoiceRoomController extends ChangeNotifier {
     _isHostMuted = false;
     _hostSoundLevel = 0.0;
     _messages.clear();
+    _recentJoinTimestamps.clear();
     _activePlayingGift = null;
 
     notifyListeners();
