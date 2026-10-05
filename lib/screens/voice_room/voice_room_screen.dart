@@ -1934,14 +1934,47 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  UserAvatarWithFrame(
-                                    avatarUrl: msg.sender.avatarUrl,
-                                    avatarFrame: msg.sender.avatarFrame,
-                                    radius: 6.r,
-                                    preserveLayoutFootprint: true,
-                                    initials: msg.sender.fullName.isNotEmpty
-                                        ? msg.sender.fullName[0].toUpperCase()
-                                        : '?',
+                                  ClipOval(
+                                    child: SizedBox(
+                                      width: 14.r,
+                                      height: 14.r,
+                                      child: msg.sender.avatarUrl.trim().isNotEmpty
+                                          ? CachedNetworkImage(
+                                              imageUrl: msg.sender.avatarUrl.trim(),
+                                              fit: BoxFit.cover,
+                                              placeholder: (_, __) => Container(
+                                                color: Colors.white12,
+                                              ),
+                                              errorWidget: (_, __, ___) => Container(
+                                                color: const Color(0xFFFF7A45),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  msg.sender.fullName.isNotEmpty
+                                                      ? msg.sender.fullName[0].toUpperCase()
+                                                      : '?',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 7.5.sp,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Container(
+                                              color: const Color(0xFFFF7A45),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                msg.sender.fullName.isNotEmpty
+                                                    ? msg.sender.fullName[0].toUpperCase()
+                                                    : '?',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 7.5.sp,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
                                   ),
                                   SizedBox(width: 4.5.w),
                                   Flexible(
