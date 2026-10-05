@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/voice_room_controller.dart';
+import '../services/auth_service.dart';
 import '../screens/voice_room/voice_room_screen.dart';
 import '../utils/update_checker.dart';
 
@@ -100,8 +101,19 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
   Widget build(BuildContext context) {
     final controller = VoiceRoomController();
     final room = controller.currentRoom;
+    final authUser = AuthService().currentUser;
 
-    if (!controller.isMinimized || room == null) {
+    if (authUser == null || !controller.isMinimized || room == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Safety check: Never show another user's active room if account switched
+    if (controller.currentUser != null &&
+        authUser.id != null &&
+        controller.currentUser!.id.toString() != authUser.id.toString()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.leaveRoom();
+      });
       return const SizedBox.shrink();
     }
 

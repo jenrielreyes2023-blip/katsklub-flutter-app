@@ -25,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/profile_effect_widget.dart';
 import 'widgets/user_avatar_with_frame.dart';
 import 'widgets/voice_room_mini_overlay.dart';
+import 'services/voice_room_controller.dart';
 
 void _configureImageCache() {
   PaintingBinding.instance.imageCache.maximumSize = 1000;
@@ -144,6 +145,13 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
       }
     } catch (_) {}
 
+    try {
+      final voiceCtrl = VoiceRoomController();
+      if (voiceCtrl.currentRoom != null) {
+        await voiceCtrl.leaveRoom();
+      }
+    } catch (_) {}
+
     await FeedService.ensureRealtimeSync();
     if (!mounted) return;
 
@@ -157,6 +165,9 @@ class _KatsKlubAppState extends State<KatsKlubApp> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('admin_equipped_frame');
+    } catch (_) {}
+    try {
+      await VoiceRoomController().leaveRoom();
     } catch (_) {}
     await widget.authService.logout();
     await ConversationThemeStore.clear();

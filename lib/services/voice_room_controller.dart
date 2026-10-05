@@ -608,7 +608,7 @@ class VoiceRoomController extends ChangeNotifier {
     }
   }
 
-  void _setupSocketListeners() {
+  void _removeSocketListeners() {
     final socket = FeedService.getSocket();
     if (socket == null) return;
 
@@ -627,6 +627,14 @@ class VoiceRoomController extends ChangeNotifier {
     socket.off('voice_room:user_left');
     socket.off('voice_room:info_updated');
     socket.off('voice_room:admins_updated');
+    socket.off('connect');
+  }
+
+  void _setupSocketListeners() {
+    final socket = FeedService.getSocket();
+    if (socket == null) return;
+
+    _removeSocketListeners();
 
     // On socket reconnect: re-emit voice_room:join and refresh room details
     socket.off('connect');
@@ -1229,29 +1237,46 @@ class VoiceRoomController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Leave room completely
+  /// Leave room completely and reset all room state
   Future<void> leaveRoom() async {
-    if (_currentRoom == null) return;
-
-    final socket = FeedService.getSocket();
+    final room = _currentRoom;
     final user = currentUser;
-    if (socket != null && socket.connected && user != null) {
-      socket.emit('voice_room:leave', {
-        'roomId': _currentRoom!.id,
-        'user': {
-          'id': user.id,
-          'username': user.username,
-        },
-      });
+
+    if (room != null) {
+      try {
+        final socket = FeedService.getSocket();
+        if (socket != null && socket.connected && user != null) {
+          socket.emit('voice_room:leave', {
+            'roomId': room.id,
+            'user': {
+              'id': user.id,
+              'username': user.username,
+            },
+          });
+        }
+      } catch (e) {
+        debugPrint('[VoiceRoomController] leaveRoom socket error: $e');
+      }
+
+      try {
+        await ZegoVoiceService().leaveRoom();
+      } catch (e) {
+        debugPrint('[VoiceRoomController] leaveRoom zego error: $e');
+      }
     }
 
-    await ZegoVoiceService().leaveRoom();
+    try {
+      _removeSocketListeners();
+    } catch (_) {}
 
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
-    _soundSubscription?.cancel();
-    ZegoVoiceService().soundLevelsNotifier.removeListener(_onSoundLevelsUpdated);
-    ZegoVoiceService().mySoundLevelNotifier.removeListener(_onMySoundLevelUpdated);
+    try {
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
+      _soundSubscription?.cancel();
+      _soundSubscription = null;
+      ZegoVoiceService().soundLevelsNotifier.removeListener(_onSoundLevelsUpdated);
+      ZegoVoiceService().mySoundLevelNotifier.removeListener(_onMySoundLevelUpdated);
+    } catch (_) {}
 
     _currentRoom = null;
     _currentUser = null;
@@ -1263,6 +1288,8 @@ class VoiceRoomController extends ChangeNotifier {
     _messages.clear();
     _recentJoinTimestamps.clear();
     _activePlayingGift = null;
+    _activeGiftSender = null;
+    _activeGiftReceiver = null;
 
     notifyListeners();
   }

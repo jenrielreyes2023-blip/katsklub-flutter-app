@@ -1,11 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
 import '../models/user.dart';
 import 'push_notification_service.dart';
+import 'voice_room_controller.dart';
 
 class AuthResult {
   const AuthResult({
@@ -922,6 +924,13 @@ class AuthService {
     final savedCookie = _memoryCookie ?? prefs.getString(sessionCookieKey);
     final savedToken = _memoryToken ?? prefs.getString(_authTokenKey);
 
+    // 0. Leave any active voice room and dismiss floating mini player overlay
+    try {
+      await VoiceRoomController().leaveRoom();
+    } catch (e) {
+      debugPrint('[AuthService] logout leaveRoom error: $e');
+    }
+
     // 1. Clear any active notifications from the status bar on logout
     try {
       await PushNotificationService().clearAllNotifications();
@@ -1038,6 +1047,15 @@ class AuthService {
       _memoryToken = token;
     }
     _memoryUser = user;
+
+    // Clear any lingering voice room from a previous user session
+    try {
+      final voiceCtrl = VoiceRoomController();
+      if (voiceCtrl.currentRoom != null &&
+          voiceCtrl.currentUser?.id?.toString() != user.id?.toString()) {
+        await voiceCtrl.leaveRoom();
+      }
+    } catch (_) {}
 
     if (_persistSession) {
       final prefs = await SharedPreferences.getInstance();
