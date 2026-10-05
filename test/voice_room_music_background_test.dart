@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -55,6 +57,31 @@ void main() {
       final item = uriSource.tag as MediaItem;
       expect(item.title, equals('Downloaded'));
       expect(item.artUri, equals(Uri.parse('https://example.com/thumb.jpg')));
+    });
+  });
+
+  group('runMusicStage', () {
+    test('returns the action result on success', () async {
+      final result = await runMusicStage('test', () async => 42);
+      expect(result, equals(42));
+    });
+
+    test('throws TimeoutException instead of hanging forever', () async {
+      await expectLater(
+        runMusicStage(
+          'hang',
+          () => Completer<void>().future,
+          timeout: const Duration(milliseconds: 50),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+
+    test('rethrows action errors', () async {
+      await expectLater(
+        runMusicStage('boom', () => Future<void>.error(StateError('x'))),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../services/auth_service.dart';
-import '../services/voice_room_controller.dart';
 import '../services/youtube_service.dart';
 import 'create_post_screen.dart';
 import 'youtube_player_screen.dart';
@@ -13,25 +12,17 @@ import 'app_shell.dart';
 class YouTubeSearchScreen extends StatefulWidget {
   const YouTubeSearchScreen({
     this.initialQuery,
-    this.onVideoSelected,
-    this.isVoiceRoomMode = false,
     super.key,
   });
 
   final String? initialQuery;
-  final ValueChanged<YouTubeVideoItem>? onVideoSelected;
-  final bool isVoiceRoomMode;
 
   static Route<YouTubeVideoItem?> route({
     String? initialQuery,
-    ValueChanged<YouTubeVideoItem>? onVideoSelected,
-    bool isVoiceRoomMode = false,
   }) {
     return MaterialPageRoute<YouTubeVideoItem?>(
       builder: (_) => YouTubeSearchScreen(
         initialQuery: initialQuery,
-        onVideoSelected: onVideoSelected,
-        isVoiceRoomMode: isVoiceRoomMode,
       ),
     );
   }
@@ -51,28 +42,17 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
   String? _errorMessage;
   String? _currentlyLoadingVideoId;
 
-  // Curated quick search suggestions (adapted if in voice room mode)
-  List<String> get _suggestions => widget.isVoiceRoomMode
-      ? const [
-          'Lofi Beats',
-          'Acoustic Hits',
-          'OPM Chill',
-          'Piano Instrumental',
-          'Anime OST',
-          'Coffee Shop Jazz',
-          'Trending Music',
-          'Karaoke Hits',
-        ]
-      : const [
-          'Trending',
-          'OPM Hits',
-          'Lofi Beats',
-          'Acoustic Covers',
-          'Live Music',
-          'Podcasts',
-          'Flutter Tutorial',
-          'Gaming',
-        ];
+  // Curated quick search suggestions
+  List<String> get _suggestions => const [
+        'Trending',
+        'OPM Hits',
+        'Lofi Beats',
+        'Acoustic Covers',
+        'Live Music',
+        'Podcasts',
+        'Flutter Tutorial',
+        'Gaming',
+      ];
 
   @override
   void initState() {
@@ -120,21 +100,7 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
     }
   }
 
-  void _selectVideoForVoiceRoom(YouTubeVideoItem video) {
-    if (widget.onVideoSelected != null) {
-      widget.onVideoSelected!(video);
-    } else {
-      VoiceRoomController().playRoomMusic(video);
-    }
-    Navigator.of(context).pop(video);
-  }
-
   Future<void> _playVideo(YouTubeVideoItem video) async {
-    if (widget.isVoiceRoomMode || widget.onVideoSelected != null) {
-      _selectVideoForVoiceRoom(video);
-      return;
-    }
-
     setState(() {
       _currentlyLoadingVideoId = video.id;
     });
@@ -213,78 +179,32 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
         foregroundColor: isDark ? Colors.white : const Color(0xFF1C1E21),
         elevation: 0,
         titleSpacing: 0,
-        title: widget.isVoiceRoomMode
-            ? Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
-                      ),
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: const Icon(
-                      Icons.music_note_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Add Room Music',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Rounded',
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1C1E21),
-                          ),
-                        ),
-                        Text(
-                          'Select track to stream in Voice Room',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Rounded',
-                            fontSize: 10.5.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFFF7A45),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            : Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF0000),
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'YouTube Search',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Rounded',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF1C1E21),
-                    ),
-                  ),
-                ],
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF0000),
+                borderRadius: BorderRadius.circular(6.r),
               ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              'YouTube Search',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF1C1E21),
+              ),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -314,9 +234,7 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
                         color: isDark ? Colors.white : const Color(0xFF1C1E21),
                       ),
                       decoration: InputDecoration(
-                        hintText: widget.isVoiceRoomMode
-                            ? 'Search songs, lofi, OPM, anime...'
-                            : 'Search YouTube videos...',
+                        hintText: 'Search YouTube videos...',
                         hintStyle: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           fontSize: 13.sp,
@@ -350,13 +268,8 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
                 SizedBox(width: 8.w),
                 // Search Action Button
                 Container(
-                  decoration: BoxDecoration(
-                    gradient: widget.isVoiceRoomMode
-                        ? const LinearGradient(
-                            colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
-                          )
-                        : null,
-                    color: widget.isVoiceRoomMode ? null : const Color(0xFFFF0000),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF0000),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -368,50 +281,6 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
               ],
             ),
           ),
-
-          // Voice Room Instruction Banner
-          if (widget.isVoiceRoomMode)
-            Container(
-              margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFFF7A45).withValues(alpha: 0.16),
-                    const Color(0xFFEC4899).withValues(alpha: 0.10),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(
-                  color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(5.r),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF7A45),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.queue_music_rounded, color: Colors.white, size: 14),
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      'Tap "Play in Room" on any song to start streaming it as background music.',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Rounded',
-                        fontSize: 11.5.sp,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : const Color(0xFF374151),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Suggestion Chips (Horizontal Carousel)
           SizedBox(
@@ -616,14 +485,8 @@ class _YouTubeSearchScreenState extends State<YouTubeSearchScreen> {
           video: video,
           isLoading: isItemLoading,
           isDark: isDark,
-          isVoiceRoomMode: widget.isVoiceRoomMode,
           onTap: () => _playVideo(video),
-          onVoiceRoomSelect: (widget.isVoiceRoomMode || widget.onVideoSelected != null)
-              ? () => _selectVideoForVoiceRoom(video)
-              : null,
-          onPostToFeed: (widget.onVideoSelected == null && !widget.isVoiceRoomMode)
-              ? () => _postVideoToFeed(video)
-              : null,
+          onPostToFeed: () => _postVideoToFeed(video),
         );
       },
     );
@@ -637,23 +500,19 @@ class _VideoCard extends StatelessWidget {
     required this.isLoading,
     required this.isDark,
     required this.onTap,
-    this.isVoiceRoomMode = false,
-    this.onVoiceRoomSelect,
     this.onPostToFeed,
   });
 
   final YouTubeVideoItem video;
   final bool isLoading;
   final bool isDark;
-  final bool isVoiceRoomMode;
   final VoidCallback onTap;
-  final VoidCallback? onVoiceRoomSelect;
   final VoidCallback? onPostToFeed;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: isLoading ? null : (onVoiceRoomSelect ?? onTap),
+      onTap: isLoading ? null : onTap,
       borderRadius: BorderRadius.circular(14.r),
       child: Container(
         decoration: BoxDecoration(
@@ -667,10 +526,8 @@ class _VideoCard extends StatelessWidget {
             ),
           ],
           border: Border.all(
-            color: isVoiceRoomMode
-                ? const Color(0xFFFF7A45).withValues(alpha: 0.3)
-                : (isDark ? const Color(0xFF3A3B3C) : const Color(0xFFF3F4F6)),
-            width: isVoiceRoomMode ? 1.2 : 1.0,
+            color: isDark ? const Color(0xFF3A3B3C) : const Color(0xFFF3F4F6),
+            width: 1.0,
           ),
         ),
         child: Column(
@@ -754,58 +611,18 @@ class _VideoCard extends StatelessWidget {
                                 ),
                               ),
                             )
-                          : isVoiceRoomMode
-                              ? Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 11.w, vertical: 6.h),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.8),
-                                    borderRadius: BorderRadius.circular(20.r),
-                                    border: Border.all(
-                                      color: const Color(0xFFFF7A45),
-                                      width: 1.2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF7A45)
-                                            .withValues(alpha: 0.4),
-                                        blurRadius: 8,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.music_note_rounded,
-                                        color: Color(0xFFFF7A45),
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 4.w),
-                                      Text(
-                                        'Add to Room',
-                                        style: TextStyle(
-                                          fontFamily: 'SF Pro Rounded',
-                                          color: Colors.white,
-                                          fontSize: 11.5.sp,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : Container(
-                                  padding: EdgeInsets.all(10.r),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.4),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
+                          : Container(
+                              padding: EdgeInsets.all(10.r),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -820,11 +637,11 @@ class _VideoCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 16.r,
-                    backgroundColor: (isVoiceRoomMode ? const Color(0xFFFF7A45) : const Color(0xFFFF0000))
-                        .withValues(alpha: 0.12),
-                    child: Icon(
-                      isVoiceRoomMode ? Icons.music_note_rounded : Icons.play_circle_fill,
-                      color: isVoiceRoomMode ? const Color(0xFFFF7A45) : const Color(0xFFFF0000),
+                    backgroundColor:
+                        const Color(0xFFFF0000).withValues(alpha: 0.12),
+                    child: const Icon(
+                      Icons.play_circle_fill,
+                      color: Color(0xFFFF0000),
                       size: 20,
                     ),
                   ),
@@ -886,52 +703,7 @@ class _VideoCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            if (onVoiceRoomSelect != null) ...[
-                              const Spacer(),
-                              InkWell(
-                                onTap: onVoiceRoomSelect,
-                                borderRadius: BorderRadius.circular(16.r),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 10.w, vertical: 4.5.h),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF7A45)
-                                            .withValues(alpha: 0.35),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.play_arrow_rounded,
-                                        color: Colors.white,
-                                        size: 15.sp,
-                                      ),
-                                      SizedBox(width: 3.w),
-                                      Text(
-                                        'Play in Room',
-                                        style: TextStyle(
-                                          fontFamily: 'SF Pro Rounded',
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                          letterSpacing: 0.2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ] else if (onPostToFeed != null) ...[
+                            if (onPostToFeed != null) ...[
                               const Spacer(),
                               InkWell(
                                 onTap: onPostToFeed,
