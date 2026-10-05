@@ -25,12 +25,14 @@ class VoiceSeatWidget extends StatelessWidget {
     final user = seat.user;
     final currentUser = AuthService().currentUser;
     final isMe = currentUser != null && currentUser.id.toString() == user?.id.toString();
+    // The local user on their own active device is never away/OUT
+    final effectiveAway = isAway && !isMe;
     final effectiveAvatarFrame = (user?.avatarFrame != null && user!.avatarFrame!.isNotEmpty)
         ? user.avatarFrame
         : (isMe ? currentUser.avatarFrame : null);
     final hasFrame = effectiveAvatarFrame != null && effectiveAvatarFrame.isNotEmpty;
 
-    final isSpeaking = (isAway != true) && !seat.isMuted && seat.soundLevel > 6.0;
+    final isSpeaking = (!effectiveAway) && !seat.isMuted && seat.soundLevel > 6.0;
 
     final avatarSize = isHost ? 58.w : 46.w;
     final rippleSize = isHost
@@ -92,7 +94,7 @@ class VoiceSeatWidget extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     Opacity(
-                      opacity: isHost && isAway ? 0.35 : 1.0,
+                      opacity: isHost && effectiveAway ? 0.35 : 1.0,
                       child: UserAvatarWithFrame(
                         avatarUrl: user.avatarUrl,
                         avatarFrame: effectiveAvatarFrame,
@@ -100,13 +102,13 @@ class VoiceSeatWidget extends StatelessWidget {
                         preserveLayoutFootprint: true,
                         border: Border.all(
                           color: isHost
-                              ? (isAway
+                              ? (effectiveAway
                                   ? Colors.white.withValues(alpha: 0.15)
                                   : const Color(0xFFFFB800))
                               : (isSpeaking
                                   ? const Color(0xFF10B981)
                                   : Colors.white.withValues(alpha: 0.2)),
-                          width: isHost ? (isAway ? 1.2 : 2.0) : 1.5,
+                          width: isHost ? (effectiveAway ? 1.2 : 2.0) : 1.5,
                         ),
                         initials: user.fullName.isNotEmpty
                             ? user.fullName[0].toUpperCase()
@@ -115,7 +117,7 @@ class VoiceSeatWidget extends StatelessWidget {
                                 : '?'),
                       ),
                     ),
-                    if (isHost && isAway)
+                    if (isHost && effectiveAway)
                       Container(
                         width: avatarSize,
                         height: avatarSize,
@@ -190,7 +192,7 @@ class VoiceSeatWidget extends StatelessWidget {
                 Positioned(
                   top: -6,
                   child: Opacity(
-                    opacity: isAway ? 0.35 : 1.0,
+                    opacity: effectiveAway ? 0.35 : 1.0,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                       decoration: BoxDecoration(
@@ -291,7 +293,7 @@ class VoiceSeatWidget extends StatelessWidget {
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w800,
                   fontFamily: 'SF Pro Rounded',
-                  color: isAway ? Colors.white38 : Colors.white,
+                  color: effectiveAway ? Colors.white38 : Colors.white,
                 ),
               ),
             ),

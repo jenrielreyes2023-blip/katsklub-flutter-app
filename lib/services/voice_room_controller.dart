@@ -57,7 +57,7 @@ class VoiceRoomController extends ChangeNotifier {
   int _giftPlayToken = 0;
 
   VoiceRoom? get currentRoom => _currentRoom;
-  User? get currentUser => _currentUser;
+  User? get currentUser => _currentUser ?? AuthService().currentUser;
   bool get isMinimized => _isMinimized;
   int? get mySeatIndex => _mySeatIndex;
   bool get isMuted => _isMuted;
@@ -66,10 +66,16 @@ class VoiceRoomController extends ChangeNotifier {
   double get hostSoundLevel => isHost ? (ZegoVoiceService().mySoundLevelNotifier.value) : _hostSoundLevel;
   bool get isHostMuted => isHost ? _isMuted : _isHostMuted;
   int get giftPlayToken => _giftPlayToken;
+
   bool get isHost {
     try {
-      if (_currentRoom == null || _currentUser == null) return false;
-      return _currentRoom!.host.id.toString() == _currentUser!.id.toString();
+      final room = _currentRoom;
+      if (room == null) return false;
+      final user = currentUser;
+      if (user == null) return false;
+      final hostId = room.host.id.toString().trim();
+      final myId = user.id?.toString().trim();
+      return myId != null && myId.isNotEmpty && myId == hostId;
     } catch (_) {
       return false;
     }
@@ -78,10 +84,34 @@ class VoiceRoomController extends ChangeNotifier {
   bool get isHostInRoom {
     try {
       if (_currentRoom == null) return false;
-      if (isHost == true) return true;
+      // If the local user is the host and the room is active in this controller,
+      // the host is ALWAYS in the room (even when minimized or running in background).
+      if (isHost) return true;
       return _currentRoom!.isHostInRoom == true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Timer? _heartbeatTimer;
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      _sendHeartbeat();
+    });
+  }
+
+  void _sendHeartbeat() {
+    if (_currentRoom == null) return;
+    final socket = FeedService.getSocket();
+    final user = currentUser;
+    if (socket != null && socket.connected && user != null) {
+      socket.emit('voice_room:heartbeat', {
+        'roomId': _currentRoom!.id,
+        'userId': user.id,
+        'isHost': isHost,
+      });
     }
   }
   List<VoiceRoomMessage> get messages => List.unmodifiable(_messages);
@@ -514,6 +544,9 @@ class VoiceRoomController extends ChangeNotifier {
     ZegoVoiceService().soundLevelsNotifier.addListener(_onSoundLevelsUpdated);
     ZegoVoiceService().mySoundLevelNotifier.addListener(_onMySoundLevelUpdated);
 
+    // Keep host & room connection alive with periodic heartbeat
+    _startHeartbeat();
+
     notifyListeners();
     return true;
   }
@@ -595,18 +628,21 @@ class VoiceRoomController extends ChangeNotifier {
     socket.off('voice_room:admins_updated');
 
     // On socket reconnect: re-emit voice_room:join and refresh room details
+    socket.off('connect');
     socket.on('connect', (_) {
-      if (_currentRoom != null && _currentUser != null) {
+      final user = currentUser;
+      if (_currentRoom != null && user != null) {
         socket.emit('voice_room:join', {
           'roomId': _currentRoom!.id,
           'user': {
-            'id': _currentUser!.id,
-            'username': _currentUser!.username,
-            'fullName': _currentUser!.fullName ?? _currentUser!.username,
-            'avatarUrl': _currentUser!.avatarUrl ?? '',
-            'avatarFrame': _currentUser!.avatarFrame,
+            'id': user.id,
+            'username': user.username,
+            'fullName': user.fullName ?? user.username,
+            'avatarUrl': user.avatarUrl ?? '',
+            'avatarFrame': user.avatarFrame,
           },
         });
+        _sendHeartbeat();
         unawaited(refreshRoomDetails(_currentRoom!.id));
       }
     });
@@ -625,8 +661,9 @@ class VoiceRoomController extends ChangeNotifier {
 
         // Host never occupies guest seats
         if (isHost) {
+          final myId = currentUser?.id?.toString();
           for (int i = 0; i < syncedSeats.length; i++) {
-            if (syncedSeats[i].user?.id.toString() == _currentUser?.id?.toString()) {
+            if (syncedSeats[i].user?.id.toString() == myId) {
               syncedSeats[i] = syncedSeats[i].copyWith(clearUser: true, user: null);
             }
           }
@@ -646,7 +683,7 @@ class VoiceRoomController extends ChangeNotifier {
           }
         }
 
-        final hostPresent = data['isHostInRoom'] == true;
+        final hostPresent = isHost ? true : (data['isHostInRoom'] == true);
         _currentRoom = _currentRoom!.copyWith(
           seats: syncedSeats,
           isHostInRoom: hostPresent,
@@ -654,8 +691,9 @@ class VoiceRoomController extends ChangeNotifier {
         );
 
         // Sync local mic seat state if guest
-        if (!isHost && _currentUser != null) {
-          final myId = _currentUser!.id.toString();
+        final localUser = currentUser;
+        if (!isHost && localUser != null) {
+          final myId = localUser.id.toString();
           int? mySeat;
           bool myMuted = false;
           for (final s in syncedSeats) {
@@ -689,7 +727,7 @@ class VoiceRoomController extends ChangeNotifier {
       final roomId = data['roomId'];
       if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
-      final isHostIn = data['isHostInRoom'] == true;
+      final isHostIn = isHost ? true : (data['isHostInRoom'] == true);
       _currentRoom = _currentRoom!.copyWith(isHostInRoom: isHostIn);
       notifyListeners();
     });
@@ -823,10 +861,10 @@ class VoiceRoomController extends ChangeNotifier {
       if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
       final count = data['audienceCount'] as int?;
-      final isHostPresent = data['isHostInRoom'] == true;
+      final isHostPresent = isHost ? true : (data['isHostInRoom'] == true);
       _currentRoom = _currentRoom!.copyWith(
         audienceCount: count ?? _currentRoom!.audienceCount,
-        isHostInRoom: data['isHostInRoom'] != null ? isHostPresent : _currentRoom!.isHostInRoom,
+        isHostInRoom: isHost ? true : (data['isHostInRoom'] != null ? isHostPresent : _currentRoom!.isHostInRoom),
       );
       notifyListeners();
     });
@@ -860,7 +898,8 @@ class VoiceRoomController extends ChangeNotifier {
         final receiver = VoiceRoomUser.fromJson(receiverMap);
 
         // If not sent by me, play animation and add to messages (sender already played optimistically)
-        if (_currentUser == null || sender.id.toString() != _currentUser!.id.toString()) {
+        final myId = currentUser?.id?.toString();
+        if (myId == null || sender.id.toString() != myId) {
           _playGiftAnimation(gift, sender, receiver);
           _messages.add(
             VoiceRoomMessage(
@@ -919,7 +958,10 @@ class VoiceRoomController extends ChangeNotifier {
       if (userMap != null) {
         final user = VoiceRoomUser.fromJson(userMap);
         if (user.id.toString() == _currentRoom!.host.id.toString()) {
-          _currentRoom = _currentRoom!.copyWith(isHostInRoom: false);
+          // If the local user is the host, do not mark host as left
+          if (!isHost) {
+            _currentRoom = _currentRoom!.copyWith(isHostInRoom: false);
+          }
         }
         notifyListeners();
       }
@@ -1173,23 +1215,27 @@ class VoiceRoomController extends ChangeNotifier {
     if (_currentRoom == null) return;
 
     final socket = FeedService.getSocket();
-    if (socket != null && socket.connected && _currentUser != null) {
+    final user = currentUser;
+    if (socket != null && socket.connected && user != null) {
       socket.emit('voice_room:leave', {
         'roomId': _currentRoom!.id,
         'user': {
-          'id': _currentUser!.id,
-          'username': _currentUser!.username,
+          'id': user.id,
+          'username': user.username,
         },
       });
     }
 
     await ZegoVoiceService().leaveRoom();
 
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
     _soundSubscription?.cancel();
     ZegoVoiceService().soundLevelsNotifier.removeListener(_onSoundLevelsUpdated);
     ZegoVoiceService().mySoundLevelNotifier.removeListener(_onMySoundLevelUpdated);
 
     _currentRoom = null;
+    _currentUser = null;
     _isMinimized = false;
     _mySeatIndex = null;
     _isMuted = false;

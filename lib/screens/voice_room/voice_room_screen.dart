@@ -967,13 +967,61 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   }
 
   void _handleExit(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
-    final isHost = controller.isHost ||
-        (controller.currentUser != null &&
-            room.host.id.toString() == controller.currentUser!.id.toString());
+    final isHost = controller.isHost;
 
     if (!isHost) {
-      controller.leaveRoom();
-      Navigator.of(context).pop();
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1E2024),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.picture_in_picture_alt_rounded, color: Color(0xFFFF7A45)),
+                  title: const Text('Minimize Room',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Keep listening in background',
+                      style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    controller.minimize();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.exit_to_app_rounded, color: Colors.orangeAccent),
+                  title: const Text('Leave Room',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Disconnect and exit voice room',
+                      style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await controller.leaveRoom();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
       return;
     }
 
@@ -1452,42 +1500,50 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
       soundLevel: controller.hostSoundLevel,
     );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F1015),
-      body: Stack(
-        children: [
-          // Background Gradient & Atmosphere
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.4),
-                radius: 1.2,
-                colors: [
-                  Color(0xFF1E2028),
-                  Color(0xFF14151B),
-                  Color(0xFF0D0E12),
-                ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        controller.minimize();
+        Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F1015),
+        body: Stack(
+          children: [
+            // Background Gradient & Atmosphere
+            Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.4),
+                  radius: 1.2,
+                  colors: [
+                    Color(0xFF1E2028),
+                    Color(0xFF14151B),
+                    Color(0xFF0D0E12),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // WePlay-Style Top Header Bar (Ultra-Compact, Top-Aligned)
-                Padding(
-                  padding: EdgeInsets.only(left: 10.w, right: 10.w, top: 2.h, bottom: 4.h),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Back Arrow (<) at the very top (20.r)
-                      Padding(
-                        padding: EdgeInsets.only(top: 1.h),
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _handleExit(context, room, controller);
-                          },
+            SafeArea(
+              child: Column(
+                children: [
+                  // WePlay-Style Top Header Bar (Ultra-Compact, Top-Aligned)
+                  Padding(
+                    padding: EdgeInsets.only(left: 10.w, right: 10.w, top: 2.h, bottom: 4.h),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Back Arrow (<) at the very top (20.r) - Minimizes room to floating pill
+                        Padding(
+                          padding: EdgeInsets.only(top: 1.h),
+                          child: GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              controller.minimize();
+                              Navigator.of(context).pop();
+                            },
                           child: Container(
                             width: 20.r,
                             height: 20.r,
@@ -2346,8 +2402,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// ECG / Sound Wave waveform painter connecting horizontal voice seat pairs (WePlay style)
