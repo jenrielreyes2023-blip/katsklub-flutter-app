@@ -93,6 +93,8 @@ class VoiceRoomController extends ChangeNotifier {
 
   void addToQueue(VoiceRoomMusicTrack track) {
     _musicQueue.add(track);
+    _roomMusicPlayer?.setLoopMode(LoopMode.off);
+    ZegoVoiceService().enableRepeat(false);
     notifyListeners();
     // If no song is currently playing, start playing it immediately
     if (_roomCdnTrack == null && !_isRoomMusicPlaying) {
@@ -111,6 +113,23 @@ class VoiceRoomController extends ChangeNotifier {
   void clearQueue() {
     _musicQueue.clear();
     notifyListeners();
+  }
+
+  bool _isAdvancingQueue = false;
+
+  /// Triggered automatically when either just_audio or Zego media player completes the track.
+  Future<void> _onTrackCompleted() async {
+    if (_isAdvancingQueue) return;
+    _isAdvancingQueue = true;
+    try {
+      debugPrint('[VoiceRoomController] Track ended. Auto-advancing queue (remaining: ${_musicQueue.length})');
+      await skipToNextMusic();
+    } catch (e) {
+      debugPrint('[VoiceRoomController] _onTrackCompleted error: $e');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 600));
+      _isAdvancingQueue = false;
+    }
   }
 
   Future<void> skipToNextMusic() async {
@@ -157,13 +176,7 @@ class VoiceRoomController extends ChangeNotifier {
 
         // Auto-advance to next track in queue when current track completes
         if (state.processingState == ProcessingState.completed) {
-          if (_musicQueue.isNotEmpty) {
-            final next = _musicQueue.removeAt(0);
-            playCdnMusic(next);
-          } else {
-            _isRoomMusicPlaying = false;
-            notifyListeners();
-          }
+          _onTrackCompleted();
         }
       });
 
@@ -181,7 +194,7 @@ class VoiceRoomController extends ChangeNotifier {
         );
         await _roomMusicPlayer?.setAudioSource(audioSource);
         await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-        await _roomMusicPlayer?.setLoopMode(_musicQueue.isNotEmpty ? LoopMode.off : LoopMode.one);
+        await _roomMusicPlayer?.setLoopMode(LoopMode.off);
         await _roomMusicPlayer?.play();
         justAudioStarted = true;
       } catch (e) {
@@ -238,6 +251,9 @@ class VoiceRoomController extends ChangeNotifier {
           _isRoomMusicPlaying = playing;
           notifyListeners();
         }
+        if (state.processingState == ProcessingState.completed) {
+          _onTrackCompleted();
+        }
       });
 
       final ytService = YouTubeService();
@@ -278,7 +294,7 @@ class VoiceRoomController extends ChangeNotifier {
           await _roomMusicPlayer?.setAudioSource(audioSource);
         }
         await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-        await _roomMusicPlayer?.setLoopMode(LoopMode.one);
+        await _roomMusicPlayer?.setLoopMode(LoopMode.off);
         await _roomMusicPlayer?.play();
         justAudioStarted = true;
       } catch (e) {
@@ -829,6 +845,7 @@ class VoiceRoomController extends ChangeNotifier {
     _soundSubscription?.cancel();
     ZegoVoiceService().soundLevelsNotifier.addListener(_onSoundLevelsUpdated);
     ZegoVoiceService().mySoundLevelNotifier.addListener(_onMySoundLevelUpdated);
+    ZegoVoiceService().onMusicCompleted = _onTrackCompleted;
 
     // Keep host & room connection alive with periodic heartbeat
     _startHeartbeat();
@@ -1561,6 +1578,7 @@ class VoiceRoomController extends ChangeNotifier {
       _soundSubscription = null;
       ZegoVoiceService().soundLevelsNotifier.removeListener(_onSoundLevelsUpdated);
       ZegoVoiceService().mySoundLevelNotifier.removeListener(_onMySoundLevelUpdated);
+      ZegoVoiceService().onMusicCompleted = null;
     } catch (_) {}
 
     try {

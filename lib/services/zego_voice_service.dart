@@ -20,6 +20,9 @@ class ZegoVoiceService {
   bool _isMuted = false;
   ZegoMediaPlayer? _mediaPlayer;
 
+  /// Callback fired when Zego media player completes playback of a track
+  void Function()? onMusicCompleted;
+
   // StreamId -> SoundLevel (0.0 to 100.0)
   final ValueNotifier<Map<String, double>> soundLevelsNotifier =
       ValueNotifier<Map<String, double>>({});
@@ -51,6 +54,14 @@ class ZegoVoiceService {
       ZegoExpressEngine.onRemoteSoundLevelUpdate =
           (Map<String, double> soundLevels) {
         soundLevelsNotifier.value = Map<String, double>.from(soundLevels);
+      };
+
+      ZegoExpressEngine.onMediaPlayerStateUpdate =
+          (ZegoMediaPlayer mediaPlayer, ZegoMediaPlayerState state, int errorCode) {
+        debugPrint('[ZegoVoiceService] onMediaPlayerStateUpdate: state=$state, errorCode=$errorCode');
+        if (state == ZegoMediaPlayerState.PlayEnded) {
+          onMusicCompleted?.call();
+        }
       };
 
       ZegoExpressEngine.onRoomStreamUpdate =
@@ -227,7 +238,7 @@ class ZegoVoiceService {
         if (playLocally) {
           await _mediaPlayer!.setPlayVolume(publishVol);
         }
-        await _mediaPlayer!.enableRepeat(true);
+        await _mediaPlayer!.enableRepeat(false);
         await _mediaPlayer!.stop();
 
         String loadPath = url;
@@ -294,6 +305,15 @@ class ZegoVoiceService {
       await _mediaPlayer?.setPlayVolume(publishVol);
     } catch (e) {
       debugPrint('[ZegoVoiceService] setMusicPublishVolume error: $e');
+    }
+  }
+
+  /// Sets repeat playback for background music.
+  Future<void> enableRepeat(bool enable) async {
+    try {
+      await _mediaPlayer?.enableRepeat(enable);
+    } catch (e) {
+      debugPrint('[ZegoVoiceService] enableRepeat error: $e');
     }
   }
 
