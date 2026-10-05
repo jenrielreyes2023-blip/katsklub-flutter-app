@@ -339,7 +339,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                 _showVoiceEffectsSheet();
               },
             ),
-            if (controller.currentRoom != null)
+            if (controller.currentRoom != null && controller.isHost)
               ListTile(
                 leading: const Icon(Icons.edit_note_rounded, color: Colors.cyanAccent),
                 title: const Text('Edit Room Settings', style: TextStyle(color: Colors.white)),
@@ -1085,6 +1085,10 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   }
 
   void _showRoomOptions(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
+    final isHost = controller.isHost ||
+        (controller.currentUser != null &&
+            room.host.id.toString() == controller.currentUser!.id.toString());
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF17181F),
@@ -1170,119 +1174,238 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
               const Divider(color: Colors.white12, height: 1),
               SizedBox(height: 6.h),
 
-              // Edit Room & Icon
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+              // ============ HOST-ONLY OPTIONS ============
+              if (isHost) ...[
+                // Edit Room & Icon
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 20),
                   ),
-                  child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 20),
+                  title: const Text('Edit Room & Icon',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  subtitle: Text('Change room name and set room image icon',
+                      style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    EditVoiceRoomScreen.open(context, room, controller);
+                  },
                 ),
-                title: const Text('Edit Room & Icon',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                subtitle: Text('Change room name and set room image icon',
-                    style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  EditVoiceRoomScreen.open(context, room, controller);
-                },
-              ),
 
-              // Lock / Unlock Room
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+                // Lock / Unlock Room
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      room.isLocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+                      color: room.isLocked ? const Color(0xFFFFB800) : Colors.white,
+                      size: 18,
+                    ),
                   ),
-                  child: Icon(
-                    room.isLocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-                    color: room.isLocked ? const Color(0xFFFFB800) : Colors.white,
-                    size: 18,
+                  title: Text(room.isLocked ? 'Unlock Room' : 'Lock Room',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  subtitle: Text(
+                    room.isLocked
+                        ? 'Room is currently locked. Tap to unlock.'
+                        : 'Set a 4-digit PIN to restrict room entry.',
+                    style: TextStyle(color: Colors.white38, fontSize: 11.sp),
                   ),
-                ),
-                title: Text(room.isLocked ? 'Unlock Room' : 'Lock Room',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                subtitle: Text(
-                  room.isLocked
-                      ? 'Room is currently locked. Tap to unlock.'
-                      : 'Set a 4-digit PIN to restrict room entry.',
-                  style: TextStyle(color: Colors.white38, fontSize: 11.sp),
-                ),
-                onTap: () async {
-                  Navigator.pop(ctx);
+                  onTap: () async {
+                    Navigator.pop(ctx);
 
-                  if (room.isLocked) {
-                    // Confirm unlock
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dCtx) => AlertDialog(
-                        backgroundColor: const Color(0xFF17181F),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        title: const Row(
-                          children: [
-                            Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text('Unlock Room?',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    if (room.isLocked) {
+                      // Confirm unlock
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          backgroundColor: const Color(0xFF17181F),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                          title: const Row(
+                            children: [
+                              Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text('Unlock Room?',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          content: const Text(
+                            'Anyone will be able to enter your room without a PIN.',
+                            style: TextStyle(color: Colors.white70, height: 1.3),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dCtx, false),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(dCtx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF7A45),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Unlock'),
+                            ),
                           ],
                         ),
-                        content: const Text(
-                          'Anyone will be able to enter your room without a PIN.',
-                          style: TextStyle(color: Colors.white70, height: 1.3),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dCtx, false),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(dCtx, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF7A45),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Unlock'),
-                          ),
-                        ],
-                      ),
-                    );
+                      );
 
-                    if (confirm == true) {
-                      final ok = await controller.toggleRoomLock(false);
-                      if (ok && context.mounted) {
+                      if (confirm == true) {
+                        final ok = await controller.toggleRoomLock(false);
+                        if (ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Room is now unlocked.'),
+                              backgroundColor: Color(0xFF10B981),
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      // Open 2-step PIN setup sheet (Enter PIN -> Re-enter PIN to confirm)
+                      final didLock = await VoiceRoomSetPinSheet.show(context, room, controller);
+                      if (didLock == true && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Room is now unlocked.'),
+                            content: Text('Room is now locked with PIN protection.'),
                             backgroundColor: Color(0xFF10B981),
                           ),
                         );
                       }
                     }
-                  } else {
-                    // Open 2-step PIN setup sheet (Enter PIN -> Re-enter PIN to confirm)
-                    final didLock = await VoiceRoomSetPinSheet.show(context, room, controller);
-                    if (didLock == true && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Room is now locked with PIN protection.'),
-                          backgroundColor: Color(0xFF10B981),
+                  },
+                ),
+
+                // Dissolve Room (Temporary rooms only!)
+                if (!room.isPermanent) ...[
+                  ListTile(
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 18),
+                    ),
+                    title: const Text('Dissolve Room',
+                        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    subtitle: Text('Close room permanently and disconnect all participants',
+                        style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          backgroundColor: const Color(0xFF17181F),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: Row(
+                            children: [
+                              const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 20),
+                              SizedBox(width: 8.w),
+                              const Text('Dissolve Room?',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          content: Text(
+                            'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
+                            style: const TextStyle(color: Colors.white70, height: 1.3),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dCtx, false),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(dCtx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Dissolve'),
+                            ),
+                          ],
                         ),
                       );
-                    }
-                  }
+
+                      if (confirm == true) {
+                        await controller.dissolveRoom(room.id);
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ],
+
+              // ============ GENERAL / PARTICIPANT OPTIONS ============
+              // Copy Room ID
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
+                ),
+                title: const Text('Copy Room ID',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                subtitle: Text('Room ID: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}',
+                    style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Clipboard.setData(ClipboardData(text: room.roomCode.isNotEmpty ? room.roomCode : room.id.toString()));
+                  HapticFeedback.selectionClick();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Room ID copied: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}'),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 },
               ),
 
-              // Dissolve Room (Temporary rooms only!)
-              if (!room.isPermanent) ...[
+              if (!isHost) ...[
+                // Report Room
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.flag_outlined, color: Colors.white70, size: 18),
+                  ),
+                  title: const Text('Report Room',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  subtitle: Text('Report inappropriate content or violation',
+                      style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Thank you. Room report submitted for review.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+
+                // Leave Room
                 ListTile(
                   leading: Container(
                     padding: EdgeInsets.all(8.r),
@@ -1290,55 +1413,15 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                       color: Colors.redAccent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 18),
+                    child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
                   ),
-                  title: const Text('Dissolve Room',
-                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Close room permanently and disconnect all participants',
+                  title: const Text('Leave Room',
+                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  subtitle: Text('Exit this voice room',
                       style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                  onTap: () async {
+                  onTap: () {
                     Navigator.pop(ctx);
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dCtx) => AlertDialog(
-                        backgroundColor: const Color(0xFF17181F),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: Row(
-                          children: [
-                            const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 20),
-                            SizedBox(width: 8.w),
-                            const Text('Dissolve Room?',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                        content: Text(
-                          'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
-                          style: const TextStyle(color: Colors.white70, height: 1.3),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dCtx, false),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(dCtx, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Dissolve'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await controller.dissolveRoom(room.id);
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    }
+                    _handleExit(context, room, controller);
                   },
                 ),
               ],

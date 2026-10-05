@@ -31,6 +31,18 @@ class EditVoiceRoomScreen extends StatefulWidget {
     VoiceRoom room,
     VoiceRoomController controller,
   ) {
+    final isHost = controller.isHost ||
+        (controller.currentUser != null &&
+            room.host.id.toString() == controller.currentUser!.id.toString());
+    if (!isHost) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only the room host can edit room settings'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return Future.value(false);
+    }
     return Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (ctx) => EditVoiceRoomScreen(room: room, controller: controller),
