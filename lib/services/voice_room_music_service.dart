@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/voice_room_music_track.dart';
 
@@ -18,6 +19,8 @@ class VoiceRoomMusicService {
   factory VoiceRoomMusicService() => _instance;
   VoiceRoomMusicService._internal();
   static final VoiceRoomMusicService _instance = VoiceRoomMusicService._internal();
+
+  static const String _favKey = 'voice_room_fav_tracks_v1';
 
   List<VoiceRoomMusicTrack>? _cachedTracks;
   List<String>? _cachedGenres;
@@ -87,5 +90,65 @@ class VoiceRoomMusicService {
       genres: _cachedGenres ?? ['All'],
       tracks: _cachedTracks ?? [],
     );
+  }
+
+  /// Get list of saved favorite tracks from local storage
+  Future<List<VoiceRoomMusicTrack>> getFavoriteTracks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_favKey) ?? [];
+      return list.map((item) {
+        try {
+          return VoiceRoomMusicTrack.fromJson(jsonDecode(item));
+        } catch (_) {
+          return null;
+        }
+      }).whereType<VoiceRoomMusicTrack>().toList();
+    } catch (e) {
+      debugPrint('[VoiceRoomMusicService] getFavoriteTracks error: $e');
+      return [];
+    }
+  }
+
+  /// Get set of favorite track IDs for fast O(1) lookup
+  Future<Set<String>> getFavoriteTrackIds() async {
+    try {
+      final tracks = await getFavoriteTracks();
+      return tracks.map((t) => t.id).toSet();
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Toggle favorite status of a track. Returns true if now favorited, false if removed.
+  Future<bool> toggleFavorite(VoiceRoomMusicTrack track) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_favKey) ?? [];
+
+      final existingIndex = list.indexWhere((item) {
+        try {
+          final map = jsonDecode(item);
+          return map['id'].toString() == track.id;
+        } catch (_) {
+          return false;
+        }
+      });
+
+      bool isNowFav;
+      if (existingIndex >= 0) {
+        list.removeAt(existingIndex);
+        isNowFav = false;
+      } else {
+        list.insert(0, jsonEncode(track.toJson()));
+        isNowFav = true;
+      }
+
+      await prefs.setStringList(_favKey, list);
+      return isNowFav;
+    } catch (e) {
+      debugPrint('[VoiceRoomMusicService] toggleFavorite error: $e');
+      return false;
+    }
   }
 }

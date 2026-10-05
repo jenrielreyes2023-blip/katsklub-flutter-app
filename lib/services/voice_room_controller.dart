@@ -88,6 +88,40 @@ class VoiceRoomController extends ChangeNotifier {
   bool get isRoomMusicLoading => _isRoomMusicLoading;
   double get roomMusicVolume => _roomMusicVolume;
 
+  final List<VoiceRoomMusicTrack> _musicQueue = [];
+  List<VoiceRoomMusicTrack> get musicQueue => List.unmodifiable(_musicQueue);
+
+  void addToQueue(VoiceRoomMusicTrack track) {
+    _musicQueue.add(track);
+    notifyListeners();
+    // If no song is currently playing, start playing it immediately
+    if (_roomCdnTrack == null && !_isRoomMusicPlaying) {
+      final next = _musicQueue.removeAt(0);
+      playCdnMusic(next);
+    }
+  }
+
+  void removeFromQueue(int index) {
+    if (index >= 0 && index < _musicQueue.length) {
+      _musicQueue.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearQueue() {
+    _musicQueue.clear();
+    notifyListeners();
+  }
+
+  Future<void> skipToNextMusic() async {
+    if (_musicQueue.isNotEmpty) {
+      final next = _musicQueue.removeAt(0);
+      await playCdnMusic(next);
+    } else {
+      await stopRoomMusic();
+    }
+  }
+
   void toggleMusicEnabled([bool? enable]) {
     _isMusicEnabled = enable ?? !_isMusicEnabled;
     if (!_isMusicEnabled) {
@@ -120,6 +154,17 @@ class VoiceRoomController extends ChangeNotifier {
           _isRoomMusicPlaying = playing;
           notifyListeners();
         }
+
+        // Auto-advance to next track in queue when current track completes
+        if (state.processingState == ProcessingState.completed) {
+          if (_musicQueue.isNotEmpty) {
+            final next = _musicQueue.removeAt(0);
+            playCdnMusic(next);
+          } else {
+            _isRoomMusicPlaying = false;
+            notifyListeners();
+          }
+        }
       });
 
       final streamUrl = track.streamUrl;
@@ -136,7 +181,7 @@ class VoiceRoomController extends ChangeNotifier {
         );
         await _roomMusicPlayer?.setAudioSource(audioSource);
         await _roomMusicPlayer?.setVolume(_roomMusicVolume);
-        await _roomMusicPlayer?.setLoopMode(LoopMode.one);
+        await _roomMusicPlayer?.setLoopMode(_musicQueue.isNotEmpty ? LoopMode.off : LoopMode.one);
         await _roomMusicPlayer?.play();
         justAudioStarted = true;
       } catch (e) {
@@ -1541,6 +1586,7 @@ class VoiceRoomController extends ChangeNotifier {
     _isMusicEnabled = false;
     _roomMusicTrack = null;
     _roomCdnTrack = null;
+    _musicQueue.clear();
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
 
