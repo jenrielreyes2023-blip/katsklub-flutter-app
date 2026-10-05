@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import '../models/user.dart';
 import '../models/voice_room.dart';
 import '../config/api_config.dart';
@@ -12,6 +13,35 @@ import 'zego_voice_service.dart';
 import 'global_audio_player_service.dart';
 import 'youtube_service.dart';
 import '../models/voice_room_music_track.dart';
+
+/// Builds the local-playback audio source for voice-room music.
+///
+/// The [MediaItem] tag is REQUIRED by just_audio_background: without it no
+/// media notification / foreground service is created and the OS suspends
+/// playback a few minutes after the app goes to background.
+@visibleForTesting
+AudioSource buildVoiceRoomAudioSource({
+  required Uri uri,
+  Map<String, String>? headers,
+  required String id,
+  required String title,
+  required String artist,
+  required String artworkUrl,
+}) {
+  return AudioSource.uri(
+    uri,
+    headers: headers,
+    tag: MediaItem(
+      id: id.isNotEmpty ? id : 'voice-room-track',
+      album: 'KatsKlub Voice Room',
+      title: title.isNotEmpty ? title : 'Unknown Title',
+      artist: artist.isNotEmpty ? artist : 'Unknown Artist',
+      artUri: artworkUrl.isNotEmpty && !artworkUrl.startsWith('data:')
+          ? Uri.tryParse(artworkUrl)
+          : null,
+    ),
+  );
+}
 
 /// Global Singleton Controller for active Voice Room state, Socket.io signaling, and UI overlays.
 class VoiceRoomController extends ChangeNotifier {
@@ -70,6 +100,7 @@ class VoiceRoomController extends ChangeNotifier {
   bool _isRoomMusicPlaying = false;
   bool _isRoomMusicLoading = false;
   double _roomMusicVolume = 0.85;
+  bool _localPlaybackActive = false;
 
   VoiceRoom? get currentRoom => _currentRoom;
   User? get currentUser => _currentUser ?? AuthService().currentUser;
@@ -199,6 +230,18 @@ class VoiceRoomController extends ChangeNotifier {
           notifyListeners();
         }
 
+        // Mirror background-notification transport controls to the Zego Aux
+        // stream so the room hears the same play/pause state as the host.
+        // Only explicit pause (ready) and play are mirrored; transitions
+        // (loading/completed/idle/error) are handled by the play/stop flow.
+        if (_localPlaybackActive && !_isRoomMusicLoading) {
+          if (playing) {
+            ZegoVoiceService().resumeBackgroundMusic();
+          } else if (state.processingState == ProcessingState.ready) {
+            ZegoVoiceService().pauseBackgroundMusic();
+          }
+        }
+
         // Auto-advance to next track in queue when current track completes
         if (state.processingState == ProcessingState.completed) {
           debugPrint('[VoiceRoomController] just_audio ProcessingState.completed fired');
@@ -210,15 +253,20 @@ class VoiceRoomController extends ChangeNotifier {
       bool justAudioStarted = false;
 
       try {
-        final audioSource = AudioSource.uri(
-          Uri.parse(streamUrl),
-          headers: const {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*',
-          },
+        await _roomMusicPlayer?.setAudioSource(
+          buildVoiceRoomAudioSource(
+            uri: Uri.parse(streamUrl),
+            headers: const {
+              'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': '*/*',
+            },
+            id: track.id,
+            title: track.title,
+            artist: track.artist,
+            artworkUrl: track.artworkUrl,
+          ),
         );
-        await _roomMusicPlayer?.setAudioSource(audioSource);
         await _roomMusicPlayer?.setVolume(_roomMusicVolume);
         await _roomMusicPlayer?.setLoopMode(LoopMode.off);
         await _roomMusicPlayer?.play();
@@ -226,6 +274,7 @@ class VoiceRoomController extends ChangeNotifier {
       } catch (e) {
         debugPrint('[VoiceRoomController] playCdnMusic just_audio error: $e');
       }
+      _localPlaybackActive = justAudioStarted;
 
       // Stream into Zego RTC Aux so participants in room hear it crystal-clear
       final zegoStarted = await ZegoVoiceService().playBackgroundMusic(
@@ -299,6 +348,15 @@ class VoiceRoomController extends ChangeNotifier {
           _isRoomMusicPlaying = playing;
           notifyListeners();
         }
+        // Mirror background-notification transport controls to the Zego Aux
+        // stream so the room hears the same play/pause state as the host.
+        if (_localPlaybackActive && !_isRoomMusicLoading) {
+          if (playing) {
+            ZegoVoiceService().resumeBackgroundMusic();
+          } else if (state.processingState == ProcessingState.ready) {
+            ZegoVoiceService().pauseBackgroundMusic();
+          }
+        }
         if (state.processingState == ProcessingState.completed) {
           _onTrackCompleted();
         }
@@ -328,18 +386,30 @@ class VoiceRoomController extends ChangeNotifier {
       bool justAudioStarted = false;
       try {
         if (streamUrl.startsWith('file://')) {
-          final filePath = Uri.parse(streamUrl).toFilePath();
-          await _roomMusicPlayer?.setFilePath(filePath);
-        } else {
-          final audioSource = AudioSource.uri(
-            Uri.parse(streamUrl),
-            headers: const {
-              'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': '*/*',
-            },
+          await _roomMusicPlayer?.setAudioSource(
+            buildVoiceRoomAudioSource(
+              uri: Uri.parse(streamUrl),
+              id: track.id,
+              title: track.title,
+              artist: track.author,
+              artworkUrl: track.thumbnail,
+            ),
           );
-          await _roomMusicPlayer?.setAudioSource(audioSource);
+        } else {
+          await _roomMusicPlayer?.setAudioSource(
+            buildVoiceRoomAudioSource(
+              uri: Uri.parse(streamUrl),
+              headers: const {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': '*/*',
+              },
+              id: track.id,
+              title: track.title,
+              artist: track.author,
+              artworkUrl: track.thumbnail,
+            ),
+          );
         }
         await _roomMusicPlayer?.setVolume(_roomMusicVolume);
         await _roomMusicPlayer?.setLoopMode(LoopMode.off);
@@ -348,6 +418,7 @@ class VoiceRoomController extends ChangeNotifier {
       } catch (e) {
         debugPrint('[VoiceRoomController] just_audio local playback error: $e');
       }
+      _localPlaybackActive = justAudioStarted;
 
       // Stream into Zego RTC Aux so participants in room hear it.
       // If just_audio failed to play locally, unmute Zego locally so the user definitely hears it.
@@ -408,6 +479,7 @@ class VoiceRoomController extends ChangeNotifier {
     _roomMusicTrack = null;
     _roomCdnTrack = null;
     _roomMusicCurrentDuration = null;
+    _localPlaybackActive = false;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
     notifyListeners();
