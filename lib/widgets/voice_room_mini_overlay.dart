@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/voice_room_controller.dart';
 import '../screens/voice_room/voice_room_screen.dart';
 
@@ -13,7 +15,15 @@ class VoiceRoomMiniOverlay extends StatefulWidget {
 }
 
 class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
-  Offset _position = const Offset(16, 120);
+  Offset? _position;
+  bool _isDragging = false;
+  bool _wasMinimized = false;
+
+  static const String _powerOffSvg =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+      '<path d="M12 2V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      '<path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      '</svg>';
 
   @override
   void initState() {
@@ -29,6 +39,12 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
 
   void _onControllerChange() {
     if (mounted) {
+      final isMin = VoiceRoomController().isMinimized;
+      if (isMin && !_wasMinimized) {
+        // Reset position to dock at the side when newly minimized
+        _position = null;
+      }
+      _wasMinimized = isMin;
       setState(() {});
     }
   }
@@ -43,14 +59,56 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
     }
 
     final screenSize = MediaQuery.of(context).size;
+    final pillWidth = 155.w;
+    final defaultX = screenSize.width - pillWidth - 10.w; // Docked at right side edge
+    final defaultY = 130.h;
 
-    return Positioned(
-      left: _position.dx.clamp(10.0, screenSize.width - 230.0),
-      top: _position.dy.clamp(60.0, screenSize.height - 100.0),
+    final currentPos = _position ?? Offset(defaultX, defaultY);
+    final clampedX = currentPos.dx.clamp(8.0, (screenSize.width - pillWidth - 8.0).clamp(8.0, double.infinity));
+    final clampedY = currentPos.dy.clamp(60.0, (screenSize.height - 100.0).clamp(60.0, double.infinity));
+
+    final coverUrl = room.coverUrl.trim().isNotEmpty
+        ? room.coverUrl.trim()
+        : room.host.avatarUrl.trim();
+    final hasImage = coverUrl.isNotEmpty;
+
+    return AnimatedPositioned(
+      duration: _isDragging ? Duration.zero : const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      left: clampedX,
+      top: clampedY,
       child: GestureDetector(
+        onPanStart: (_) {
+          setState(() {
+            _isDragging = true;
+          });
+        },
         onPanUpdate: (details) {
           setState(() {
-            _position += details.delta;
+            final activePos = _position ?? Offset(defaultX, defaultY);
+            _position = Offset(
+              activePos.dx + details.delta.dx,
+              activePos.dy + details.delta.dy,
+            );
+          });
+        },
+        onPanEnd: (_) {
+          final midX = screenSize.width / 2;
+          final activeX = (_position ?? Offset(defaultX, defaultY)).dx;
+          final activeY = (_position ?? Offset(defaultX, defaultY)).dy;
+          // Magnetically snap to the nearest side edge (left or right)
+          final targetX = (activeX + pillWidth / 2 < midX)
+              ? 8.w
+              : (screenSize.width - pillWidth - 8.w);
+          final targetY = activeY.clamp(60.h, screenSize.height - 110.h);
+          setState(() {
+            _isDragging = false;
+            _position = Offset(targetX, targetY);
+          });
+        },
+        onPanCancel: () {
+          setState(() {
+            _isDragging = false;
           });
         },
         onTap: () {
@@ -64,112 +122,96 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
           );
         },
         child: Material(
-          elevation: 12,
-          borderRadius: BorderRadius.circular(28),
+          elevation: 10,
+          borderRadius: BorderRadius.circular(20.r),
           color: Colors.transparent,
           child: Container(
-            width: 220.w,
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            width: pillWidth,
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF26193E), Color(0xFF13111C)],
               ),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(20.r),
               border: Border.all(
                 color: const Color(0xFFFF7A45).withValues(alpha: 0.6),
-                width: 1.5,
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Row(
               children: [
-                // Host avatar or room cover
-                CircleAvatar(
-                  radius: 16.r,
-                  backgroundColor: const Color(0xFFFF7A45),
-                  backgroundImage: room.host.avatarUrl.isNotEmpty
-                      ? CachedNetworkImageProvider(room.host.avatarUrl)
-                      : null,
-                  child: room.host.avatarUrl.isEmpty
-                      ? const Icon(Icons.mic, size: 16, color: Colors.white)
-                      : null,
-                ),
-                SizedBox(width: 8.w),
-
-                // Title
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        room.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            controller.isOnMic ? 'On Mic' : 'Listening',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Mic Mute (if on mic)
-                if (controller.isOnMic)
-                  GestureDetector(
-                    onTap: () => controller.toggleMute(),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Icon(
-                        controller.isMuted
-                            ? Icons.mic_off_rounded
-                            : Icons.mic_rounded,
-                        color: controller.isMuted
-                            ? Colors.redAccent
-                            : Colors.greenAccent,
-                        size: 18.r,
-                      ),
+                // 1. Room Cover / Room Icon
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
+                      width: 1.0,
                     ),
                   ),
+                  child: CircleAvatar(
+                    radius: 12.r,
+                    backgroundColor: const Color(0xFF26193E),
+                    backgroundImage: hasImage
+                        ? CachedNetworkImageProvider(coverUrl)
+                        : null,
+                    child: !hasImage
+                        ? Icon(
+                            Icons.graphic_eq_rounded,
+                            size: 13.r,
+                            color: const Color(0xFFFF7A45),
+                          )
+                        : null,
+                  ),
+                ),
+                SizedBox(width: 6.w),
 
-                // Close / Leave button
+                // 2. Room Title
+                Expanded(
+                  child: Text(
+                    room.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 5.w),
+
+                // 3. Power Off SVG button (Easy leave room)
                 GestureDetector(
-                  onTap: () => controller.leaveRoom(),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: Colors.white54,
-                      size: 18.r,
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    controller.leaveRoom();
+                  },
+                  child: Container(
+                    width: 24.r,
+                    height: 24.r,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF4D4F).withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: SvgPicture.string(
+                      _powerOffSvg,
+                      width: 13.r,
+                      height: 13.r,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFFFF4D4F),
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                 ),
