@@ -65,16 +65,6 @@ class ZegoVoiceService {
         }
       };
 
-      ZegoExpressEngine.onMediaPlayerPlayingProgress =
-          (ZegoMediaPlayer mediaPlayer, int millisecond) {
-        if (_mediaPlayerTotalDurationMs > 0 &&
-            millisecond >= _mediaPlayerTotalDurationMs - 600) {
-          debugPrint(
-              '[ZegoVoiceService] onMediaPlayerPlayingProgress reached end: $millisecond / $_mediaPlayerTotalDurationMs');
-          onMusicCompleted?.call();
-        }
-      };
-
       ZegoExpressEngine.onRoomStreamUpdate =
           (String roomID, ZegoUpdateType updateType, List<ZegoStream> streamList,
               Map<String, dynamic> extendedData) {
@@ -243,12 +233,10 @@ class ZegoVoiceService {
         await _mediaPlayer!.enableAux(true);
         // muteLocal(!playLocally): if just_audio is playing locally, mute Zego local playback to avoid echo.
         // If just_audio failed or playLocally is requested, unmute local so user hears audio.
-        await _mediaPlayer!.muteLocal(!playLocally);
         final publishVol = (volume * 100).round().clamp(0, 100);
         await _mediaPlayer!.setPublishVolume(publishVol);
-        if (playLocally) {
-          await _mediaPlayer!.setPlayVolume(publishVol);
-        }
+        await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
+        await _mediaPlayer!.muteLocal(!playLocally);
         await _mediaPlayer!.stop();
 
         String loadPath = url;
@@ -262,20 +250,20 @@ class ZegoVoiceService {
           // MUST be applied AFTER loadResource has succeeded!
           await _mediaPlayer!.enableRepeat(false);
           await _mediaPlayer!.enableAux(true);
-          await _mediaPlayer!.muteLocal(!playLocally);
-          final publishVol = (volume * 100).round().clamp(0, 100);
           await _mediaPlayer!.setPublishVolume(publishVol);
-          if (playLocally) {
-            await _mediaPlayer!.setPlayVolume(publishVol);
-          }
-          await _mediaPlayer!.setProgressInterval(500);
+          await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
+          await _mediaPlayer!.muteLocal(!playLocally);
+          await _mediaPlayer!.setProgressInterval(1000);
           try {
             _mediaPlayerTotalDurationMs = await _mediaPlayer!.getTotalDuration();
           } catch (_) {
             _mediaPlayerTotalDurationMs = 0;
           }
           await _mediaPlayer!.start();
-          // Reinforce repeat false after start to guarantee single play
+          // Critical: Re-apply muteLocal and setPlayVolume AFTER start() because
+          // start() initializes the native audio device and resets volume/mute in Zego engine!
+          await _mediaPlayer!.muteLocal(!playLocally);
+          await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
           await _mediaPlayer!.enableRepeat(false);
           debugPrint('[ZegoVoiceService] Background music Aux started: $loadPath (duration: $_mediaPlayerTotalDurationMs ms, playLocally: $playLocally)');
           return true;
@@ -293,6 +281,9 @@ class ZegoVoiceService {
   Future<void> setMediaPlayerMuteLocal(bool mute) async {
     try {
       await _mediaPlayer?.muteLocal(mute);
+      if (mute) {
+        await _mediaPlayer?.setPlayVolume(0);
+      }
     } catch (e) {
       debugPrint('[ZegoVoiceService] setMediaPlayerMuteLocal error: $e');
     }

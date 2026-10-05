@@ -173,7 +173,12 @@ class VoiceRoomController extends ChangeNotifier {
   bool _isAdvancingQueue = false;
 
   /// Triggered automatically when either just_audio or Zego media player completes the track.
-  Future<void> _onTrackCompleted() async {
+  Future<void> _onTrackCompleted({bool fromZego = false}) async {
+    // If local playback via just_audio is active, ignore duplicate/premature completion from Zego
+    if (fromZego && _localPlaybackActive) {
+      debugPrint('[VoiceRoomController] Ignoring Zego completion because just_audio is active');
+      return;
+    }
     if (_isAdvancingQueue) return;
     _isAdvancingQueue = true;
     try {
@@ -228,6 +233,7 @@ class VoiceRoomController extends ChangeNotifier {
 
       _roomMusicPlayer ??= AudioPlayer(
         handleInterruptions: false,
+        androidApplyAudioAttributes: false,
         handleAudioSessionActivation: false,
       );
 
@@ -236,16 +242,6 @@ class VoiceRoomController extends ChangeNotifier {
       _roomMusicPlayerDurationSub = _roomMusicPlayer!.durationStream.listen((d) {
         if (d != null && d > Duration.zero) {
           _roomMusicCurrentDuration = d;
-        }
-      });
-
-      _roomMusicPlayerPositionSub = _roomMusicPlayer!.positionStream.listen((pos) {
-        final d = _roomMusicCurrentDuration;
-        if (d != null && d > Duration.zero) {
-          if (pos >= d - const Duration(milliseconds: 600)) {
-            debugPrint('[VoiceRoomController] just_audio position reached end ($pos / $d)');
-            _onTrackCompleted();
-          }
         }
       });
 
@@ -910,7 +906,7 @@ class VoiceRoomController extends ChangeNotifier {
     _soundSubscription?.cancel();
     ZegoVoiceService().soundLevelsNotifier.addListener(_onSoundLevelsUpdated);
     ZegoVoiceService().mySoundLevelNotifier.addListener(_onMySoundLevelUpdated);
-    ZegoVoiceService().onMusicCompleted = _onTrackCompleted;
+    ZegoVoiceService().onMusicCompleted = () => _onTrackCompleted(fromZego: true);
 
     // Keep host & room connection alive with periodic heartbeat
     _startHeartbeat();
