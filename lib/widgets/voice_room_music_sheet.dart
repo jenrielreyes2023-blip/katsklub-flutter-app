@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/voice_room_music_track.dart';
 import '../services/voice_room_controller.dart';
 import '../services/voice_room_music_service.dart';
+import 'marquee_text.dart';
 
 /// Modal bottom sheet for browsing, searching, favoriting, and queueing Bunny CDN music in Voice Rooms.
 class VoiceRoomMusicSheet extends StatefulWidget {
@@ -816,10 +817,10 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              currentTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            MarqueeText(
+                              text: currentTitle,
+                              maxWidth: 165.w,
+                              isPlaying: isPlaying,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 13.5.sp,
@@ -1311,10 +1312,10 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.controller.roomMusicTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    MarqueeText(
+                      text: widget.controller.roomMusicTitle,
+                      maxWidth: 150.w,
+                      isPlaying: isMusicPlaying,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12.5.sp,

@@ -18,6 +18,7 @@ import '../../services/voice_room_controller.dart';
 import '../../services/zego_voice_service.dart';
 import '../../widgets/custom_icons.dart';
 import '../../widgets/gif_picker_modal.dart';
+import '../../widgets/marquee_text.dart';
 import '../../widgets/user_avatar_with_frame.dart';
 import '../../widgets/voice_room_gift_sheet.dart';
 import '../../widgets/voice_room_music_sheet.dart';
@@ -2665,20 +2666,19 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
                   if (isLoading) {
                     return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                      height: 22.h,
+                      padding: EdgeInsets.symmetric(horizontal: 7.w),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF26193E), Color(0xFF161426)],
-                        ),
-                        borderRadius: BorderRadius.circular(16.r),
+                        color: const Color(0xFF141522).withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.8),
-                          width: 1.0,
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
+                          width: 0.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                            blurRadius: 8,
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 4,
                           ),
                         ],
                       ),
@@ -2686,19 +2686,19 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
-                            width: 12.r,
-                            height: 12.r,
+                            width: 10.r,
+                            height: 10.r,
                             child: const CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: 1.8,
                               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A45)),
                             ),
                           ),
-                          SizedBox(width: 6.w),
+                          SizedBox(width: 4.w),
                           Text(
-                            'Loading track...',
+                            'Loading...',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 10.5.sp,
+                              fontSize: 9.5.sp,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -2714,49 +2714,47 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                         VoiceRoomMusicSheet.show(context, controller);
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
+                        height: 22.h,
+                        padding: EdgeInsets.symmetric(horizontal: 6.w),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF26193E), Color(0xFF161426)],
-                          ),
-                          borderRadius: BorderRadius.circular(16.r),
+                          color: const Color(0xFF141522).withValues(alpha: 0.88),
+                          borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.8),
-                            width: 1.0,
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.75),
+                            width: 0.8,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
                             ),
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              blurRadius: 6,
+                              color: Colors.black.withValues(alpha: 0.45),
+                              blurRadius: 4,
                             ),
                           ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(9.r),
+                            ClipOval(
                               child: musicArtwork.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: musicArtwork,
-                                      width: 18.r,
-                                      height: 18.r,
+                                      width: 14.r,
+                                      height: 14.r,
                                       fit: BoxFit.cover,
                                       errorWidget: (_, __, ___) => Container(
-                                        width: 18.r,
-                                        height: 18.r,
+                                        width: 14.r,
+                                        height: 14.r,
                                         color: const Color(0xFFFF7A45),
-                                        child: Icon(Icons.music_note_rounded, size: 11.r, color: Colors.white),
+                                        child: Icon(Icons.music_note_rounded, size: 9.r, color: Colors.white),
                                       ),
                                     )
                                   : Container(
-                                      width: 18.r,
-                                      height: 18.r,
+                                      width: 14.r,
+                                      height: 14.r,
                                       decoration: const BoxDecoration(
                                         shape: BoxShape.circle,
                                         gradient: LinearGradient(
@@ -2764,21 +2762,18 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                         ),
                                       ),
                                       alignment: Alignment.center,
-                                      child: Icon(Icons.music_note_rounded, size: 11.r, color: Colors.white),
+                                      child: Icon(Icons.music_note_rounded, size: 9.r, color: Colors.white),
                                     ),
                             ),
-                            SizedBox(width: 5.w),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 85.w),
-                              child: Text(
-                                musicTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.5.sp,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            SizedBox(width: 4.w),
+                            MarqueeText(
+                              text: musicTitle,
+                              maxWidth: 72.w,
+                              isPlaying: controller.isRoomMusicPlaying,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9.5.sp,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             SizedBox(width: 4.w),
@@ -2788,17 +2783,10 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                 HapticFeedback.lightImpact();
                                 controller.togglePauseRoomMusic();
                               },
-                              child: Container(
-                                padding: EdgeInsets.all(2.r),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  controller.isRoomMusicPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                  size: 13.r,
-                                  color: const Color(0xFFFF7A45),
-                                ),
+                              child: Icon(
+                                controller.isRoomMusicPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                size: 13.r,
+                                color: const Color(0xFFFF7A45),
                               ),
                             ),
                           ],
@@ -2807,29 +2795,27 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                     );
                   }
 
-                  // No track playing yet: Show "Add Music +"
+                  // No track playing yet: Show compact "Add Music +"
                   return GestureDetector(
                     onTap: () => _openRoomMusicPicker(controller),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.5.h),
+                      height: 22.h,
+                      padding: EdgeInsets.symmetric(horizontal: 7.w),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF26193E), Color(0xFF161426)],
-                        ),
-                        borderRadius: BorderRadius.circular(16.r),
+                        color: const Color(0xFF141522).withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.75),
-                          width: 1.0,
+                          color: const Color(0xFFFF7A45).withValues(alpha: 0.7),
+                          width: 0.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: const Color(0xFFFF7A45).withValues(alpha: 0.2),
+                            blurRadius: 4,
                           ),
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 6,
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 4,
                           ),
                         ],
                       ),
@@ -2837,8 +2823,8 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 18.r,
-                            height: 18.r,
+                            width: 14.r,
+                            height: 14.r,
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -2848,24 +2834,24 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                             alignment: Alignment.center,
                             child: Icon(
                               Icons.music_note_rounded,
-                              size: 11.r,
+                              size: 9.r,
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(width: 5.w),
+                          SizedBox(width: 4.w),
                           Text(
                             'Add Music',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11.sp,
+                              fontSize: 9.5.sp,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
+                              letterSpacing: 0.1,
                             ),
                           ),
-                          SizedBox(width: 3.w),
+                          SizedBox(width: 2.w),
                           Icon(
                             Icons.add_rounded,
-                            size: 13.r,
+                            size: 11.r,
                             color: const Color(0xFFFF7A45),
                           ),
                         ],
