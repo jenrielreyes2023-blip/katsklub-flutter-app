@@ -19,6 +19,7 @@ import '../../services/zego_voice_service.dart';
 import '../../widgets/custom_icons.dart';
 import '../../widgets/gif_picker_modal.dart';
 import '../../widgets/marquee_text.dart';
+import '../../widgets/smooth_bottom_sheet.dart';
 import '../../widgets/user_avatar_with_frame.dart';
 import '../../widgets/voice_room_gift_sheet.dart';
 import '../../widgets/voice_room_music_sheet.dart';
@@ -148,100 +149,82 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
       controller.takeSeat(seat.seatIndex);
     } else if (seat.user!.id.toString() == myId?.toString()) {
       // My seat (guests seated in 0..7) -> Options (Leave, Mute)
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: const Color(0xFF1E2024),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (ctx) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  controller.isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                  color: controller.isMuted ? Colors.redAccent : Colors.greenAccent,
-                ),
-                title: Text(
-                  controller.isMuted ? 'Unmute Microphone' : 'Mute Microphone',
-                  style: const TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  controller.toggleMute();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.arrow_downward_rounded, color: Colors.orangeAccent),
-                title: const Text('Leave Microphone', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  controller.leaveSeat();
-                },
-              ),
-            ],
+      KatsBottomSheet.showMenu(
+        context,
+        title: 'Microphone Controls',
+        items: [
+          KatsSheetItem(
+            title: controller.isMuted ? 'Unmute Microphone' : 'Mute Microphone',
+            subtitle: controller.isMuted
+                ? 'Turn on your microphone to speak'
+                : 'Turn off your microphone',
+            icon: controller.isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+            iconColor: controller.isMuted
+                ? const Color(0xFFED4956)
+                : const Color(0xFF22C55E),
+            onTap: () {
+              Navigator.pop(context);
+              controller.toggleMute();
+            },
           ),
-        ),
+          KatsSheetItem(
+            title: 'Leave Microphone',
+            subtitle: 'Return to audience section',
+            icon: Icons.arrow_downward_rounded,
+            isDestructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              controller.leaveSeat();
+            },
+          ),
+        ],
       );
     } else {
       // Occupied by someone else -> Send Gift or Host / Admin options
       final isAdmin = controller.currentRoom?.admins.any((a) => a.id.toString() == myId?.toString()) ?? false;
       if (isHost || isAdmin) {
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: const Color(0xFF1E2024),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (ctx) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.card_giftcard_rounded, color: Colors.pinkAccent),
-                  title: Text('Send Gift to ${seat.user!.fullName}',
-                      style: const TextStyle(color: Colors.white)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    VoiceRoomGiftSheet.show(context,
-                        room: controller.currentRoom!, initialReceiver: seat.user);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    seat.isMuted ? Icons.mic_rounded : Icons.mic_off_rounded,
-                    color: seat.isMuted ? Colors.greenAccent : Colors.redAccent,
-                  ),
-                  title: Text(
-                    seat.isMuted
-                        ? 'Unmute ${seat.user!.fullName}'
-                        : 'Mute ${seat.user!.fullName}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  subtitle: Text(
-                    seat.isMuted
-                        ? 'Allow user to speak on microphone'
-                        : 'Mute this user\'s microphone',
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    controller.muteSeat(seat.seatIndex, !seat.isMuted);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.person_remove_rounded, color: Colors.orangeAccent),
-                  title: Text('Kick ${seat.user!.fullName} from mic',
-                      style: const TextStyle(color: Colors.white)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    controller.kickSeat(seat.seatIndex);
-                  },
-                ),
-              ],
+        KatsBottomSheet.showMenu(
+          context,
+          title: 'Manage ${seat.user!.fullName}',
+          items: [
+            KatsSheetItem(
+              title: 'Send Gift',
+              subtitle: 'Send virtual gifts to speaker',
+              icon: Icons.card_giftcard_rounded,
+              iconColor: const Color(0xFFEC4899),
+              onTap: () {
+                Navigator.pop(context);
+                VoiceRoomGiftSheet.show(context,
+                    room: controller.currentRoom!, initialReceiver: seat.user);
+              },
             ),
-          ),
+            KatsSheetItem(
+              title: seat.isMuted
+                  ? 'Unmute Microphone'
+                  : 'Mute Microphone',
+              subtitle: seat.isMuted
+                  ? 'Allow speaker to unmute & talk'
+                  : 'Mute this speaker\'s microphone',
+              icon: seat.isMuted ? Icons.mic_rounded : Icons.mic_off_rounded,
+              iconColor: seat.isMuted
+                  ? const Color(0xFF22C55E)
+                  : const Color(0xFFED4956),
+              onTap: () {
+                Navigator.pop(context);
+                controller.muteSeat(seat.seatIndex, !seat.isMuted);
+              },
+            ),
+            KatsSheetItem(
+              title: 'Remove from Microphone',
+              subtitle: 'Move user back to audience section',
+              icon: Icons.person_remove_rounded,
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                controller.kickSeat(seat.seatIndex);
+              },
+            ),
+          ],
         );
       } else {
         // Just send gift
@@ -253,111 +236,77 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
   void _showHostSeatModeration(VoiceSeat seat) {
     final controller = VoiceRoomController();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E2024),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 14.h),
-              child: Text(
-                'Seat ${seat.seatIndex + 1} Management',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const Divider(color: Colors.white12, height: 1),
-            ListTile(
-              leading: Icon(
-                seat.isLocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-                color: seat.isLocked ? Colors.greenAccent : Colors.orangeAccent,
-              ),
-              title: Text(
-                seat.isLocked ? 'Unlock Seat ${seat.seatIndex + 1}' : 'Lock Seat ${seat.seatIndex + 1}',
-                style: const TextStyle(color: Colors.white),
-              ),
-              subtitle: Text(
-                seat.isLocked
-                    ? 'Allow audience to take this seat'
-                    : 'Prevent audience from taking this seat',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
-              ),
-              onTap: () {
-                Navigator.pop(ctx);
-                controller.lockSeat(seat.seatIndex, !seat.isLocked);
-              },
-            ),
-          ],
+    KatsBottomSheet.showMenu(
+      context,
+      title: 'Seat ${seat.seatIndex + 1} Management',
+      items: [
+        KatsSheetItem(
+          title: seat.isLocked
+              ? 'Unlock Seat ${seat.seatIndex + 1}'
+              : 'Lock Seat ${seat.seatIndex + 1}',
+          subtitle: seat.isLocked
+              ? 'Allow audience to take this seat'
+              : 'Prevent audience from taking this seat',
+          icon: seat.isLocked
+              ? Icons.lock_open_rounded
+              : Icons.lock_outline_rounded,
+          iconColor: seat.isLocked
+              ? const Color(0xFF22C55E)
+              : const Color(0xFFFFB800),
+          onTap: () {
+            Navigator.pop(context);
+            controller.lockSeat(seat.seatIndex, !seat.isLocked);
+          },
         ),
-      ),
+      ],
     );
   }
 
   void _showHostStageOptions(BuildContext context, VoiceRoomController controller) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E2024),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 14.h),
-              child: Text(
-                'Host Stage Options',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const Divider(color: Colors.white12, height: 1),
-            ListTile(
-              leading: Icon(
-                controller.isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                color: controller.isMuted ? Colors.redAccent : Colors.greenAccent,
-              ),
-              title: Text(
-                controller.isMuted ? 'Unmute Host Microphone' : 'Mute Host Microphone',
-                style: const TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(ctx);
-                controller.toggleMute();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFA78BFA)),
-              title: const Text('Voice Effects', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showVoiceEffectsSheet();
-              },
-            ),
-            if (controller.currentRoom != null && controller.isHost)
-              ListTile(
-                leading: const Icon(Icons.edit_note_rounded, color: Colors.cyanAccent),
-                title: const Text('Edit Room Settings', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  EditVoiceRoomScreen.open(context, controller.currentRoom!, controller);
-                },
-              ),
-          ],
+    KatsBottomSheet.showMenu(
+      context,
+      title: 'Host Stage Options',
+      items: [
+        KatsSheetItem(
+          title: controller.isMuted
+              ? 'Unmute Host Microphone'
+              : 'Mute Host Microphone',
+          subtitle: controller.isMuted
+              ? 'Turn on host mic'
+              : 'Mute host mic',
+          icon: controller.isMuted
+              ? Icons.mic_off_rounded
+              : Icons.mic_rounded,
+          iconColor: controller.isMuted
+              ? const Color(0xFFED4956)
+              : const Color(0xFF22C55E),
+          onTap: () {
+            Navigator.pop(context);
+            controller.toggleMute();
+          },
         ),
-      ),
+        KatsSheetItem(
+          title: 'Voice Effects',
+          subtitle: 'Apply voice changer or audio reverb filter',
+          icon: Icons.auto_awesome_rounded,
+          iconColor: const Color(0xFFA78BFA),
+          onTap: () {
+            Navigator.pop(context);
+            _showVoiceEffectsSheet();
+          },
+        ),
+        if (controller.currentRoom != null && controller.isHost)
+          KatsSheetItem(
+            title: 'Edit Room Settings',
+            subtitle: 'Manage room name, admins, and permissions',
+            icon: Icons.edit_note_rounded,
+            iconColor: const Color(0xFF06B6D4),
+            onTap: () {
+              Navigator.pop(context);
+              EditVoiceRoomScreen.open(context, controller.currentRoom!, controller);
+            },
+          ),
+      ],
     );
   }
 
@@ -430,9 +379,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF16181F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      backgroundColor: const Color(0xFF101012),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (ctx) {
         bool hasText = _chatTextController.text.trim().isNotEmpty;
@@ -504,10 +453,10 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: const Color(0xFF1E1E20),
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: const Color(0xFF2C2C2E),
                           width: 0.8,
                         ),
                       ),
@@ -602,253 +551,305 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
 
   void _showQuickEmojiSheet() {
     final emojis = ['❤️', '🔥', '👏', '😂', '🎉', '✨', '💯', '👍', '😍', '🤩', '🌸', '🍕'];
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E2024),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36.w,
-                  height: 4.h,
-                  margin: EdgeInsets.only(bottom: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
+    KatsBottomSheet.showCustom(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(left: 4.w, bottom: 10.h),
+            child: Text(
+              'Quick Reactions',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: Colors.white,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14.r),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E1E20),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+                child: Center(
+                  child: Wrap(
+                    spacing: 12.w,
+                    runSpacing: 12.h,
+                    children: emojis.map((e) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          VoiceRoomController().sendChatMessage(e);
+                        },
+                        child: Container(
+                          width: 44.r,
+                          height: 44.r,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(22.r),
+                            border: Border.all(
+                              color: const Color(0xFF2C2C2E),
+                              width: 0.5,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            e,
+                            style: TextStyle(fontSize: 22.sp),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
-              Text(
-                'Quick Reactions',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 14.h),
-              Wrap(
-                spacing: 12.w,
-                runSpacing: 12.h,
-                children: emojis.map((e) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      VoiceRoomController().sendChatMessage(e);
-                    },
-                    child: Container(
-                      width: 44.r,
-                      height: 44.r,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(22.r),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        e,
-                        style: TextStyle(fontSize: 22.sp),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   void _showAudienceListSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E2024),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36.w,
-                  height: 4.h,
-                  margin: EdgeInsets.only(bottom: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
+    final speakingSeats = room.seats.where((s) => s.user != null).toList();
+
+    KatsBottomSheet.showCustom(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(left: 4.w, bottom: 10.h),
+            child: Row(
+              children: [
+                const Icon(Icons.people_alt_rounded, color: Color(0xFFFFB800), size: 18),
+                SizedBox(width: 8.w),
+                Text(
+                  'Audience & Participants (${room.participantCount})',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
                   ),
                 ),
-              ),
-              Row(
+              ],
+            ),
+          ),
+
+          // Host Island Card
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14.r),
+            child: Container(
+              padding: EdgeInsets.all(12.r),
+              color: const Color(0xFF1E1E20),
+              child: Row(
                 children: [
-                  const Icon(Icons.people_alt_rounded, color: Color(0xFFFFB800), size: 18),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Audience & Participants (${room.participantCount})',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  UserAvatarWithFrame(
+                    avatarUrl: room.host.avatarUrl,
+                    avatarFrame: room.host.avatarFrame,
+                    radius: 18.r,
+                    preserveLayoutFootprint: true,
+                    initials: room.host.fullName.isNotEmpty
+                        ? room.host.fullName[0].toUpperCase()
+                        : '?',
                   ),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              Container(
-                padding: EdgeInsets.all(10.r),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Row(
-                  children: [
-                    UserAvatarWithFrame(
-                      avatarUrl: room.host.avatarUrl,
-                      avatarFrame: room.host.avatarFrame,
-                      radius: 18.r,
-                      preserveLayoutFootprint: true,
-                      initials: room.host.fullName.isNotEmpty
-                          ? room.host.fullName[0].toUpperCase()
-                          : '?',
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                room.host.fullName.isNotEmpty ? room.host.fullName : room.host.username,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              SizedBox(width: 6.w),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFB800).withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                                child: Text(
-                                  'HOST',
-                                  style: TextStyle(
-                                    color: const Color(0xFFFFB800),
-                                    fontSize: 8.5.sp,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '@${room.host.username}',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (controller.currentUser?.id.toString() != room.host.id.toString())
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          VoiceRoomGiftSheet.show(context, room: room, initialReceiver: room.host);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF7A45), Color(0xFFFF4D4F)],
-                            ),
-                            borderRadius: BorderRadius.circular(14.r),
-                          ),
-                          child: Text(
-                            'Send Gift',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Text(
-                'Seats & Speaking Guests',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 6.h),
-              ...room.seats.where((s) => s.user != null).map((s) => Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4.h),
-                    child: Row(
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        UserAvatarWithFrame(
-                          avatarUrl: s.user!.avatarUrl,
-                          avatarFrame: s.user!.avatarFrame,
-                          radius: 14.r,
-                          preserveLayoutFootprint: true,
-                          initials: s.user!.fullName.isNotEmpty ? s.user!.fullName[0].toUpperCase() : '?',
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                room.host.fullName.isNotEmpty ? room.host.fullName : room.host.username,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: Colors.white,
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFB800).withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                'HOST',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: const Color(0xFFFFB800),
+                                  fontSize: 8.5.sp,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            s.user!.fullName.isNotEmpty ? s.user!.fullName : s.user!.username,
-                            style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.5.h),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                          child: Text(
-                            'Mic ${s.seatIndex + 1}',
-                            style: TextStyle(color: Colors.white60, fontSize: 9.5.sp),
+                        SizedBox(height: 1.h),
+                        Text(
+                          '@${room.host.username}',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: const Color(0xFF8E8E93),
+                            fontSize: 11.sp,
                           ),
                         ),
                       ],
                     ),
-                  )),
-              if (room.seats.where((s) => s.user != null).isEmpty)
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.h),
-                  child: Center(
-                    child: Text(
-                      'No other guests currently on microphone',
-                      style: TextStyle(color: Colors.white38, fontSize: 11.5.sp),
-                    ),
                   ),
-                ),
-            ],
+                  if (controller.currentUser?.id.toString() != room.host.id.toString())
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        VoiceRoomGiftSheet.show(context, room: room, initialReceiver: room.host);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF7A45), Color(0xFFFF4D4F)],
+                          ),
+                          borderRadius: BorderRadius.circular(14.r),
+                        ),
+                        child: Text(
+                          'Send Gift',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: Colors.white,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
+
+          SizedBox(height: 12.h),
+
+          Padding(
+            padding: EdgeInsets.only(left: 4.w, bottom: 6.h),
+            child: Text(
+              'SEATS & SPEAKING GUESTS',
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: const Color(0xFF8E8E93),
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+
+          // Speaking Guests Island Card
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14.r),
+            child: Container(
+              color: const Color(0xFF1E1E20),
+              child: speakingSeats.isNotEmpty
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < speakingSeats.length; i++) ...[
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                            child: Row(
+                              children: [
+                                UserAvatarWithFrame(
+                                  avatarUrl: speakingSeats[i].user!.avatarUrl,
+                                  avatarFrame: speakingSeats[i].user!.avatarFrame,
+                                  radius: 15.r,
+                                  preserveLayoutFootprint: true,
+                                  initials: speakingSeats[i].user!.fullName.isNotEmpty
+                                      ? speakingSeats[i].user!.fullName[0].toUpperCase()
+                                      : '?',
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: Text(
+                                    speakingSeats[i].user!.fullName.isNotEmpty
+                                        ? speakingSeats[i].user!.fullName
+                                        : speakingSeats[i].user!.username,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: Colors.white,
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(4.r),
+                                    border: Border.all(
+                                      color: const Color(0xFF2C2C2E),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Mic ${speakingSeats[i].seatIndex + 1}',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF8E8E93),
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (i != speakingSeats.length - 1)
+                            Padding(
+                              padding: EdgeInsets.only(left: 14.w),
+                              child: const Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Color(0xFF2C2C2E),
+                              ),
+                            ),
+                        ],
+                      ],
+                    )
+                  : Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 14.w),
+                      child: Center(
+                        child: Text(
+                          'No other guests currently on microphone',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: const Color(0xFF8E8E93),
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -893,64 +894,70 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   }
 
   void _showVoiceEffectsSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF18191C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CustomIcons.sparkles(color: const Color(0xFFA78BFA), size: 18),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Voice Effects & Audio Filter',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
+    KatsBottomSheet.showCustom(
+      context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(left: 4.w, bottom: 10.h),
+            child: Row(
+              children: [
+                CustomIcons.sparkles(color: const Color(0xFFA78BFA), size: 18),
+                SizedBox(width: 8.w),
+                Text(
+                  'Voice Effects & Audio Filter',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
                   ),
-                ],
-              ),
-              SizedBox(height: 14.h),
-              Wrap(
-                spacing: 8.w,
-                runSpacing: 8.h,
-                children: [
-                  _effectChip('Normal Voice', () {
-                    ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.None);
-                    ZegoVoiceService().setReverb(ZegoReverbPreset.None);
-                    Navigator.pop(ctx);
-                  }),
-                  _effectChip('Chipmunk', () {
-                    ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.MenToChild);
-                    Navigator.pop(ctx);
-                  }),
-                  _effectChip('Robot', () {
-                    ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.OptimusPrime);
-                    Navigator.pop(ctx);
-                  }),
-                  _effectChip('Concert Hall', () {
-                    ZegoVoiceService().setReverb(ZegoReverbPreset.ConcertHall);
-                    Navigator.pop(ctx);
-                  }),
-                  _effectChip('KTV Karaoke', () {
-                    ZegoVoiceService().setReverb(ZegoReverbPreset.KTV);
-                    Navigator.pop(ctx);
-                  }),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14.r),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E1E20),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+                child: Wrap(
+                  spacing: 8.w,
+                  runSpacing: 8.h,
+                  children: [
+                    _effectChip('Normal Voice', () {
+                      ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.None);
+                      ZegoVoiceService().setReverb(ZegoReverbPreset.None);
+                      Navigator.pop(context);
+                    }),
+                    _effectChip('Chipmunk', () {
+                      ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.MenToChild);
+                      Navigator.pop(context);
+                    }),
+                    _effectChip('Robot', () {
+                      ZegoVoiceService().setVoiceChanger(ZegoVoiceChangerPreset.OptimusPrime);
+                      Navigator.pop(context);
+                    }),
+                    _effectChip('Concert Hall', () {
+                      ZegoVoiceService().setReverb(ZegoReverbPreset.ConcertHall);
+                      Navigator.pop(context);
+                    }),
+                    _effectChip('KTV Karaoke', () {
+                      ZegoVoiceService().setReverb(ZegoReverbPreset.KTV);
+                      Navigator.pop(context);
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -962,12 +969,20 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: const Color(0xFF2C2C2E),
+            width: 0.8,
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
+            color: Colors.white,
+            fontSize: 12.5.sp,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -977,165 +992,144 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
     final isHost = controller.isHost;
 
     if (!isHost) {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: const Color(0xFF1E2024),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (ctx) => SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36.w,
-                  height: 4.h,
-                  margin: EdgeInsets.only(bottom: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.picture_in_picture_alt_rounded, color: Color(0xFFFF7A45)),
-                  title: const Text('Minimize Room',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Keep listening in background',
-                      style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    controller.minimize();
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.exit_to_app_rounded, color: Colors.orangeAccent),
-                  title: const Text('Leave Room',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Disconnect and exit voice room',
-                      style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await controller.leaveRoom();
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
-            ),
+      KatsBottomSheet.showMenu(
+        context,
+        title: 'Exit Voice Room',
+        items: [
+          KatsSheetItem(
+            title: 'Minimize Room',
+            subtitle: 'Keep listening in background',
+            icon: Icons.picture_in_picture_alt_rounded,
+            iconColor: const Color(0xFFFF7A45),
+            onTap: () {
+              Navigator.pop(context);
+              controller.minimize();
+              Navigator.of(context).pop();
+            },
           ),
-        ),
+          KatsSheetItem(
+            title: 'Leave Room',
+            subtitle: 'Disconnect and exit voice room',
+            icon: Icons.exit_to_app_rounded,
+            isDestructive: true,
+            onTap: () async {
+              Navigator.pop(context);
+              await controller.leaveRoom();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+        ],
       );
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E2024),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    final groups = <KatsSheetGroup>[
+      KatsSheetGroup(
+        title: 'ROOM OPTIONS',
+        items: [
+          KatsSheetItem(
+            title: 'Minimize Room',
+            subtitle: 'Keep room playing in background',
+            icon: Icons.picture_in_picture_alt_rounded,
+            iconColor: const Color(0xFFFF7A45),
+            onTap: () {
+              Navigator.pop(context);
+              controller.minimize();
+              Navigator.of(context).pop();
+            },
+          ),
+          KatsSheetItem(
+            title: 'Leave Room',
+            subtitle: 'Leave without closing room for others',
+            icon: Icons.exit_to_app_rounded,
+            isDestructive: true,
+            onTap: () async {
+              Navigator.pop(context);
+              await controller.leaveRoom();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+        ],
       ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 8.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36.w,
-                height: 4.h,
-                margin: EdgeInsets.only(bottom: 12.h),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.picture_in_picture_alt_rounded, color: Color(0xFFFF7A45)),
-                title: const Text('Minimize Room',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                subtitle: const Text('Keep room playing in background',
-                    style: TextStyle(color: Colors.white54, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  controller.minimize();
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.exit_to_app_rounded, color: Colors.orangeAccent),
-                title: const Text('Leave Room',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                subtitle: const Text('Leave without closing room for others',
-                    style: TextStyle(color: Colors.white54, fontSize: 12)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await controller.leaveRoom();
+      if (!room.isPermanent)
+        KatsSheetGroup(
+          title: 'HOST DISSOLVE',
+          items: [
+            KatsSheetItem(
+              title: 'Dissolve Room',
+              subtitle: 'End party and disconnect all members',
+              icon: Icons.delete_sweep_rounded,
+              isDestructive: true,
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (dCtx) => AlertDialog(
+                    backgroundColor: const Color(0xFF101012),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                      side: const BorderSide(color: Color(0xFF2C2C2E)),
+                    ),
+                    title: Row(
+                      children: [
+                        const Icon(Icons.delete_sweep_rounded, color: Color(0xFFED4956), size: 20),
+                        SizedBox(width: 8.w),
+                        const Text(
+                          'Dissolve Room?',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Rounded',
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: Text(
+                      'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
+                      style: const TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: Color(0xFF8E8E93),
+                        height: 1.3,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dCtx, false),
+                        child: const Text('Cancel', style: TextStyle(color: Color(0xFF8E8E93))),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(dCtx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFED4956),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                        ),
+                        child: const Text('Dissolve'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  await controller.dissolveRoom(room.id);
                   if (context.mounted) {
                     Navigator.of(context).pop();
                   }
-                },
-              ),
-              if (!room.isPermanent) ...[
-                ListTile(
-                  leading: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
-                  title: const Text('Dissolve Room',
-                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700)),
-                  subtitle: const Text('End party and disconnect all members',
-                      style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dCtx) => AlertDialog(
-                        backgroundColor: const Color(0xFF1E2024),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: Row(
-                          children: [
-                            const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 20),
-                            SizedBox(width: 8.w),
-                            const Text('Dissolve Room?',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                        content: Text(
-                          'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
-                          style: const TextStyle(color: Colors.white70, height: 1.3),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dCtx, false),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(dCtx, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Dissolve'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await controller.dissolveRoom(room.id);
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    }
-                  },
-                ),
-              ],
-            ],
-          ),
+                }
+              },
+            ),
+          ],
         ),
-      ),
+    ];
+
+    KatsBottomSheet.showGroupedMenu(
+      context,
+      title: 'Exit Voice Room',
+      groups: groups,
     );
   }
 
@@ -1145,13 +1139,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   }
 
   void _showRoomToolsSheet(BuildContext context, VoiceRoom room, VoiceRoomController controller) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF17181F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
+    KatsBottomSheet.showCustom(
+      context,
+      child: StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final isMusicOn = controller.isMusicEnabled;
           final hasPlayingMusic = controller.roomMusicTitle.isNotEmpty;
@@ -1159,300 +1149,303 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
           final musicArtist = controller.roomMusicArtist;
           final musicArtwork = controller.roomMusicArtwork;
 
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36.w,
-                      height: 4.h,
-                      margin: EdgeInsets.only(bottom: 14.h),
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: 4.w, bottom: 10.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(7.r),
                       decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
+                        color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Icon(
+                        Icons.grid_view_rounded,
+                        color: const Color(0xFFFF7A45),
+                        size: 18.r,
                       ),
                     ),
-                  ),
-                  Row(
+                    SizedBox(width: 10.w),
+                    Text(
+                      'Room Tools & Applications',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 1. Background Music Toggle Card
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14.r),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  color: const Color(0xFF1E1E20),
+                  child: Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7.r),
+                        width: 40.r,
+                        height: 40.r,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: Icon(
-                          Icons.grid_view_rounded,
-                          color: const Color(0xFFFF7A45),
-                          size: 18.r,
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Text(
-                        'Room Tools & Applications',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 14.h),
-                  const Divider(color: Colors.white12, height: 1),
-                  SizedBox(height: 12.h),
-
-                  // 1. Background Music Toggle Card
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(14.r),
-                      border: Border.all(
-                        color: isMusicOn
-                            ? const Color(0xFFFF7A45).withValues(alpha: 0.35)
-                            : Colors.white.withValues(alpha: 0.08),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40.r,
-                          height: 40.r,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
-                                blurRadius: 8,
-                              ),
-                            ],
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
                           ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.music_note_rounded,
-                            color: Colors.white,
-                            size: 20.r,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Background Music',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13.5.sp,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                isMusicOn
-                                    ? (hasPlayingMusic
-                                        ? 'Now playing: $musicTitle'
-                                        : 'Enabled: Tap below to browse library')
-                                    : 'Enable music playback in the room',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isMusicOn ? const Color(0xFFFFB800) : Colors.white38,
-                                  fontSize: 11.sp,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Switch.adaptive(
-                          value: isMusicOn,
-                          activeThumbColor: const Color(0xFFFF7A45),
-                          activeTrackColor: const Color(0xFFFF7A45).withValues(alpha: 0.45),
-                          onChanged: (val) {
-                            HapticFeedback.lightImpact();
-                            controller.toggleMusicEnabled(val);
-                            setSheetState(() {});
-                            setState(() {});
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // If Music is enabled: Show Now Playing Controls or Shortcut Button to pick
-                  if (isMusicOn) ...[
-                    SizedBox(height: 8.h),
-                    if (hasPlayingMusic)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.25),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6.r),
-                              child: musicArtwork.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: musicArtwork,
-                                      width: 36.r,
-                                      height: 36.r,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      width: 36.r,
-                                      height: 36.r,
-                                      color: Colors.white10,
-                                      child: const Icon(Icons.music_note, color: Colors.white54),
-                                    ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    musicTitle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    controller.isRoomMusicPlaying
-                                        ? (musicArtist.isNotEmpty ? musicArtist : 'Streaming...')
-                                        : 'Paused',
-                                    style: TextStyle(
-                                      color: controller.isRoomMusicPlaying
-                                          ? const Color(0xFF4ADE80)
-                                          : Colors.white38,
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                controller.isRoomMusicPlaying
-                                    ? Icons.pause_circle_filled_rounded
-                                    : Icons.play_circle_filled_rounded,
-                                color: const Color(0xFFFF7A45),
-                                size: 28.r,
-                              ),
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                controller.togglePauseRoomMusic();
-                                setSheetState(() {});
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.tune_rounded,
-                                color: Colors.white70,
-                                size: 20.r,
-                              ),
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                VoiceRoomMusicSheet.show(context, controller);
-                              },
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                              blurRadius: 8,
                             ),
                           ],
                         ),
-                      )
-                    else
-                      GestureDetector(
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          color: Colors.white,
+                          size: 20.r,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Background Music',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: Colors.white,
+                                fontSize: 13.5.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              isMusicOn
+                                  ? (hasPlayingMusic
+                                      ? 'Now playing: $musicTitle'
+                                      : 'Enabled: Tap below to browse library')
+                                  : 'Enable music playback in the room',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Rounded',
+                                color: isMusicOn ? const Color(0xFFFFB800) : const Color(0xFF8E8E93),
+                                fontSize: 11.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Switch.adaptive(
+                        value: isMusicOn,
+                        activeThumbColor: const Color(0xFFFF7A45),
+                        activeTrackColor: const Color(0xFFFF7A45).withValues(alpha: 0.45),
+                        onChanged: (val) {
+                          HapticFeedback.lightImpact();
+                          controller.toggleMusicEnabled(val);
+                          setSheetState(() {});
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // If Music is enabled: Show Now Playing Controls or Shortcut Button to pick
+              if (isMusicOn) ...[
+                SizedBox(height: 10.h),
+                if (hasPlayingMusic)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                      color: const Color(0xFF1E1E20),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8.r),
+                            child: musicArtwork.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: musicArtwork,
+                                    width: 38.r,
+                                    height: 38.r,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 38.r,
+                                    height: 38.r,
+                                    color: Colors.white10,
+                                    child: const Icon(Icons.music_note, color: Colors.white54),
+                                  ),
+                          ),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  musicTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: Colors.white,
+                                    fontSize: 12.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  controller.isRoomMusicPlaying
+                                      ? (musicArtist.isNotEmpty ? musicArtist : 'Streaming...')
+                                      : 'Paused',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: controller.isRoomMusicPlaying
+                                        ? const Color(0xFF4ADE80)
+                                        : const Color(0xFF8E8E93),
+                                    fontSize: 10.5.sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              controller.isRoomMusicPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_filled_rounded,
+                              color: const Color(0xFFFF7A45),
+                              size: 28.r,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              controller.togglePauseRoomMusic();
+                              setSheetState(() {});
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.tune_rounded,
+                              color: Colors.white70,
+                              size: 20.r,
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              VoiceRoomMusicSheet.show(context, controller);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14.r),
+                    child: Material(
+                      color: const Color(0xFF1E1E20),
+                      child: InkWell(
                         onTap: () {
-                          Navigator.pop(ctx);
+                          Navigator.pop(context);
                           _openRoomMusicPicker(controller);
                         },
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF7A45).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
-                              color: const Color(0xFFFF7A45).withValues(alpha: 0.3),
+                              color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
                               width: 0.8,
                             ),
+                            borderRadius: BorderRadius.circular(14.r),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.library_music_rounded, color: const Color(0xFFFF7A45), size: 16.r),
+                              Icon(Icons.library_music_rounded, color: const Color(0xFFFF7A45), size: 18.r),
                               SizedBox(width: 8.w),
                               Text(
                                 'Search & Add Music from Library',
                                 style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
                                   color: const Color(0xFFFF7A45),
-                                  fontSize: 12.5.sp,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                  ],
+                    ),
+                  ),
+              ],
 
-                  SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
 
-                  // 2. Sound Effects / Voice FX Shortcut Tile
-                  ListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
-                    leading: Container(
-                      padding: EdgeInsets.all(8.r),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFA78BFA).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      child: CustomIcons.sparkles(
-                        color: const Color(0xFFA78BFA),
-                        size: 18.r,
-                      ),
-                    ),
-                    title: Text(
-                      'Voice Changer & Effects',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13.sp,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Apply sound filters or voice pitch changer',
-                      style: TextStyle(color: Colors.white38, fontSize: 10.5.sp),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 20),
+              // 2. Sound Effects / Voice FX Shortcut Card
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14.r),
+                child: Material(
+                  color: const Color(0xFF1E1E20),
+                  child: InkWell(
                     onTap: () {
-                      Navigator.pop(ctx);
+                      Navigator.pop(context);
                       _showVoiceEffectsSheet();
                     },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Voice Changer & Effects',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: Colors.white,
+                                    fontSize: 13.5.sp,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  'Apply sound filters or voice pitch changer',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    color: const Color(0xFF8E8E93),
+                                    fontSize: 11.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CustomIcons.sparkles(
+                            color: const Color(0xFFA78BFA),
+                            size: 18.5.r,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-
-                  SizedBox(height: 10.h),
-                ],
+                ),
               ),
-            ),
+            ],
           );
         },
       ),
@@ -1464,346 +1457,290 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
         (controller.currentUser != null &&
             room.host.id.toString() == controller.currentUser!.id.toString());
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF17181F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36.w,
-                  height: 4.h,
-                  margin: EdgeInsets.only(bottom: 14.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
+    final headerWidget = Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  room.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
                   ),
                 ),
+                SizedBox(height: 2.h),
+                Text(
+                  room.isPermanent ? 'Permanent Room' : '24-Hour Temporary Room',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: room.isPermanent ? const Color(0xFFFFB800) : const Color(0xFF8E8E93),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (room.isLocked)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(color: const Color(0xFF2C2C2E), width: 0.5),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_rounded, color: Colors.white70, size: 10),
+                  SizedBox(width: 4.w),
+                  Text(
+                    'Locked',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: Colors.white70,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+
+    final groups = <KatsSheetGroup>[];
+
+    if (isHost) {
+      groups.add(
+        KatsSheetGroup(
+          title: 'HOST CONTROLS',
+          items: [
+            KatsSheetItem(
+              title: 'Edit Room & Icon',
+              subtitle: 'Change room name and set room image icon',
+              icon: Icons.edit_note_rounded,
+              onTap: () {
+                Navigator.pop(context);
+                EditVoiceRoomScreen.open(context, room, controller);
+              },
+            ),
+            KatsSheetItem(
+              title: room.isLocked ? 'Unlock Room' : 'Lock Room',
+              subtitle: room.isLocked
+                  ? 'Room is currently locked. Tap to unlock.'
+                  : 'Set a 4-digit PIN to restrict room entry.',
+              icon: room.isLocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+              iconColor: room.isLocked ? const Color(0xFFFFB800) : null,
+              onTap: () async {
+                Navigator.pop(context);
+                if (room.isLocked) {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (dCtx) => AlertDialog(
+                      backgroundColor: const Color(0xFF101012),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        side: const BorderSide(color: Color(0xFF2C2C2E)),
+                      ),
+                      title: const Row(
                         children: [
+                          Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
                           Text(
-                            room.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            'Unlock Room?',
                             style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
                               color: Colors.white,
-                              fontSize: 15.sp,
                               fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            room.isPermanent ? 'Permanent Room' : '24-Hour Temporary Room',
-                            style: TextStyle(
-                              color: room.isPermanent ? const Color(0xFFFFB800) : Colors.white38,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    if (room.isLocked)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.lock_rounded, color: Colors.white70, size: 10),
-                            SizedBox(width: 4.w),
-                            Text(
-                              'Locked',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
+                      content: const Text(
+                        'Anyone will be able to enter your room without a PIN.',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Color(0xFF8E8E93),
+                          height: 1.3,
                         ),
                       ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 10.h),
-              const Divider(color: Colors.white12, height: 1),
-              SizedBox(height: 6.h),
-
-              // ============ HOST-ONLY OPTIONS ============
-              if (isHost) ...[
-                // Edit Room & Icon
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 20),
-                  ),
-                  title: const Text('Edit Room & Icon',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                  subtitle: Text('Change room name and set room image icon',
-                      style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    EditVoiceRoomScreen.open(context, room, controller);
-                  },
-                ),
-
-                // Lock / Unlock Room
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      room.isLocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-                      color: room.isLocked ? const Color(0xFFFFB800) : Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  title: Text(room.isLocked ? 'Unlock Room' : 'Lock Room',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                  subtitle: Text(
-                    room.isLocked
-                        ? 'Room is currently locked. Tap to unlock.'
-                        : 'Set a 4-digit PIN to restrict room entry.',
-                    style: TextStyle(color: Colors.white38, fontSize: 11.sp),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-
-                    if (room.isLocked) {
-                      // Confirm unlock
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (dCtx) => AlertDialog(
-                          backgroundColor: const Color(0xFF17181F),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                          ),
-                          title: const Row(
-                            children: [
-                              Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
-                              SizedBox(width: 8),
-                              Text('Unlock Room?',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          content: const Text(
-                            'Anyone will be able to enter your room without a PIN.',
-                            style: TextStyle(color: Colors.white70, height: 1.3),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dCtx, false),
-                              child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(dCtx, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF7A45),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: const Text('Unlock'),
-                            ),
-                          ],
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx, false),
+                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF8E8E93))),
                         ),
-                      );
-
-                      if (confirm == true) {
-                        final ok = await controller.toggleRoomLock(false);
-                        if (ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Room is now unlocked.'),
-                              backgroundColor: Color(0xFF10B981),
-                            ),
-                          );
-                        }
-                      }
-                    } else {
-                      // Open 2-step PIN setup sheet (Enter PIN -> Re-enter PIN to confirm)
-                      final didLock = await VoiceRoomSetPinSheet.show(context, room, controller);
-                      if (didLock == true && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Room is now locked with PIN protection.'),
-                            backgroundColor: Color(0xFF10B981),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(dCtx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF7A45),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
                           ),
-                        );
-                      }
-                    }
-                  },
-                ),
-
-                // Dissolve Room (Temporary rooms only!)
-                if (!room.isPermanent) ...[
-                  ListTile(
-                    leading: Container(
-                      padding: EdgeInsets.all(8.r),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 18),
-                    ),
-                    title: const Text('Dissolve Room',
-                        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700, fontSize: 13.5)),
-                    subtitle: Text('Close room permanently and disconnect all participants',
-                        style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                    onTap: () async {
-                      Navigator.pop(ctx);
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (dCtx) => AlertDialog(
-                          backgroundColor: const Color(0xFF17181F),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          title: Row(
-                            children: [
-                              const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 20),
-                              SizedBox(width: 8.w),
-                              const Text('Dissolve Room?',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          content: Text(
-                            'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
-                            style: const TextStyle(color: Colors.white70, height: 1.3),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dCtx, false),
-                              child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(dCtx, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: const Text('Dissolve'),
-                            ),
-                          ],
+                          child: const Text('Unlock'),
                         ),
-                      );
-
-                      if (confirm == true) {
-                        await controller.dissolveRoom(room.id);
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      }
-                    },
-                  ),
-                ],
-              ],
-
-              // ============ GENERAL / PARTICIPANT OPTIONS ============
-              // Copy Room ID
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
-                ),
-                title: const Text('Copy Room ID',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                subtitle: Text('Room ID: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}',
-                    style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Clipboard.setData(ClipboardData(text: room.roomCode.isNotEmpty ? room.roomCode : room.id.toString()));
-                  HapticFeedback.selectionClick();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Room ID copied: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}'),
-                      duration: const Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
+                      ],
                     ),
                   );
-                },
-              ),
 
-              if (!isHost) ...[
-                // Report Room
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.flag_outlined, color: Colors.white70, size: 18),
-                  ),
-                  title: const Text('Report Room',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                  subtitle: Text('Report inappropriate content or violation',
-                      style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                  onTap: () {
-                    Navigator.pop(ctx);
+                  if (confirm == true) {
+                    final ok = await controller.toggleRoomLock(false);
+                    if (ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Room is now unlocked.'),
+                          backgroundColor: Color(0xFF10B981),
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  final didLock = await VoiceRoomSetPinSheet.show(context, room, controller);
+                  if (didLock == true && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Thank you. Room report submitted for review.'),
-                        behavior: SnackBarBehavior.floating,
+                        content: Text('Room is now locked with PIN protection.'),
+                        backgroundColor: Color(0xFF10B981),
                       ),
                     );
-                  },
-                ),
-
-                // Leave Room
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
+                  }
+                }
+              },
+            ),
+            if (!room.isPermanent)
+              KatsSheetItem(
+                title: 'Dissolve Room',
+                subtitle: 'Close room permanently and disconnect all participants',
+                icon: Icons.delete_sweep_rounded,
+                isDestructive: true,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (dCtx) => AlertDialog(
+                      backgroundColor: const Color(0xFF101012),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        side: const BorderSide(color: Color(0xFF2C2C2E)),
+                      ),
+                      title: Row(
+                        children: [
+                          const Icon(Icons.delete_sweep_rounded, color: Color(0xFFED4956), size: 20),
+                          SizedBox(width: 8.w),
+                          const Text(
+                            'Dissolve Room?',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: Text(
+                        'Are you sure you want to dissolve "${room.title}"?\n\nAll participants will be disconnected and the room will be closed permanently.',
+                        style: const TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: Color(0xFF8E8E93),
+                          height: 1.3,
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx, false),
+                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF8E8E93))),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(dCtx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFED4956),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                          ),
+                          child: const Text('Dissolve'),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-                  ),
-                  title: const Text('Leave Room',
-                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 13.5)),
-                  subtitle: Text('Exit this voice room',
-                      style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _handleExit(context, room, controller);
-                  },
-                ),
-              ],
-            ],
-          ),
+                  );
+
+                  if (confirm == true) {
+                    await controller.dissolveRoom(room.id);
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  }
+                },
+              ),
+          ],
         ),
+      );
+    }
+
+    groups.add(
+      KatsSheetGroup(
+        title: isHost ? 'ROOM DETAILS' : 'ROOM ACTIONS',
+        items: [
+          KatsSheetItem(
+            title: 'Copy Room ID',
+            subtitle: 'Room ID: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}',
+            icon: Icons.copy_rounded,
+            onTap: () {
+              Navigator.pop(context);
+              Clipboard.setData(ClipboardData(text: room.roomCode.isNotEmpty ? room.roomCode : room.id.toString()));
+              HapticFeedback.selectionClick();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Room ID copied: ${room.roomCode.isNotEmpty ? room.roomCode : room.id}'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+          if (!isHost) ...[
+            KatsSheetItem(
+              title: 'Report Room',
+              subtitle: 'Report inappropriate content or violation',
+              icon: Icons.flag_outlined,
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Thank you. Room report submitted for review.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+            KatsSheetItem(
+              title: 'Leave Room',
+              subtitle: 'Exit this voice room',
+              icon: Icons.logout_rounded,
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                _handleExit(context, room, controller);
+              },
+            ),
+          ],
+        ],
       ),
+    );
+
+    KatsBottomSheet.showGroupedMenu(
+      context,
+      header: headerWidget,
+      groups: groups,
     );
   }
 

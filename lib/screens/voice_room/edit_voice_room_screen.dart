@@ -347,9 +347,9 @@ class _EditVoiceRoomScreenState extends State<EditVoiceRoomScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF14151C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      backgroundColor: const Color(0xFF101012),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (ctx) => _AddAdminSheet(
         roomId: widget.room.id,
@@ -1347,12 +1347,12 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
           // Drag Handle
           Center(
             child: Container(
-              margin: EdgeInsets.symmetric(vertical: 10.h),
+              margin: EdgeInsets.only(top: 8.h, bottom: 10.h),
               width: 36.w,
-              height: 4.h,
+              height: 3.5.h,
               decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
+                color: const Color(0xFF38383A),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
           ),
@@ -1368,20 +1368,27 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
                     Text(
                       'Add Room Admin',
                       style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
                         color: Colors.white,
-                        fontSize: 16.sp,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
                       ),
                     ),
+                    SizedBox(height: 1.h),
                     Text(
                       'Search by username, user ID, or pick from friends',
-                      style: TextStyle(color: Colors.white38, fontSize: 11.sp),
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Rounded',
+                        color: const Color(0xFF8E8E93),
+                        fontSize: 11.sp,
+                      ),
                     ),
                   ],
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF8E8E93), size: 20),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -1392,19 +1399,24 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
           Container(
             margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1F28),
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF1E1E20),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: const Color(0xFF2C2C2E), width: 0.8),
             ),
             child: TabBar(
               controller: _tabController,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
                 color: const Color(0xFFFF7A45),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10.r),
               ),
               labelColor: Colors.white,
-              unselectedLabelColor: Colors.white54,
-              labelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+              unselectedLabelColor: const Color(0xFF8E8E93),
+              labelStyle: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+              ),
               tabs: const [
                 Tab(text: 'Friendlist / Following'),
                 Tab(text: 'Search / User ID'),
@@ -1443,12 +1455,20 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
             SizedBox(height: 8.h),
             Text(
               'No followed friends found',
-              style: TextStyle(color: Colors.white54, fontSize: 13.sp),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: const Color(0xFF8E8E93),
+                fontSize: 13.sp,
+              ),
             ),
             SizedBox(height: 4.h),
             Text(
               'Use the Search tab to find users by username or User ID.',
-              style: TextStyle(color: Colors.white30, fontSize: 11.sp),
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: Colors.white30,
+                fontSize: 11.sp,
+              ),
             ),
           ],
         ),
@@ -1458,7 +1478,7 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
     return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       itemCount: _followingUsers.length,
-      separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 12),
+      separatorBuilder: (_, __) => const Divider(color: Color(0xFF2C2C2E), height: 12, thickness: 0.5),
       itemBuilder: (ctx, i) => _buildUserRow(_followingUsers[i]),
     );
   }
@@ -1470,14 +1490,21 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: TextField(
             controller: _searchController,
-            style: TextStyle(color: Colors.white, fontSize: 13.5.sp),
+            style: TextStyle(
+              fontFamily: 'SF Pro Rounded',
+              color: Colors.white,
+              fontSize: 13.5.sp,
+            ),
             decoration: InputDecoration(
               hintText: 'Search by username or user ID...',
-              hintStyle: const TextStyle(color: Colors.white24),
-              prefixIcon: const Icon(Icons.search_rounded, color: Colors.white38, size: 20),
+              hintStyle: const TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: Color(0xFF8E8E93),
+              ),
+              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF8E8E93), size: 20),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, color: Colors.white38, size: 18),
+                      icon: const Icon(Icons.clear_rounded, color: Color(0xFF8E8E93), size: 18),
                       onPressed: () {
                         _searchController.clear();
                         _onSearchChanged('');
@@ -1485,11 +1512,19 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
                     )
                   : null,
               filled: true,
-              fillColor: const Color(0xFF1E1F28),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+              fillColor: const Color(0xFF1E1E20),
+              contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: Color(0xFF2C2C2E), width: 0.8),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: Color(0xFF2C2C2E), width: 0.8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: Color(0xFFFF7A45), width: 1.0),
               ),
             ),
             onChanged: _onSearchChanged,
@@ -1507,13 +1542,17 @@ class _AddAdminSheetState extends State<_AddAdminSheet> with SingleTickerProvide
                         _searchController.text.trim().isEmpty
                             ? 'Type a username or numeric ID above'
                             : 'No matching users found',
-                        style: TextStyle(color: Colors.white30, fontSize: 12.sp),
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: const Color(0xFF8E8E93),
+                          fontSize: 12.sp,
+                        ),
                       ),
                     )
                   : ListView.separated(
                       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                       itemCount: _searchResults.length,
-                      separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 12),
+                      separatorBuilder: (_, __) => const Divider(color: Color(0xFF2C2C2E), height: 12, thickness: 0.5),
                       itemBuilder: (ctx, i) => _buildUserRow(_searchResults[i]),
                     ),
         ),

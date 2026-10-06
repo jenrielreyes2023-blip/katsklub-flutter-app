@@ -62,6 +62,7 @@ class KatsSheetItem {
     this.isDestructive = false,
     this.trailing,
     this.showIconOnRight = true,
+    this.iconColor,
   });
 
   final String title;
@@ -71,16 +72,29 @@ class KatsSheetItem {
   final bool isDestructive;
   final Widget? trailing;
   final bool showIconOnRight;
+  final Color? iconColor;
+}
+
+/// Represents an island card group in a Threads-style inset grouped bottom sheet.
+class KatsSheetGroup {
+  const KatsSheetGroup({
+    this.title,
+    required this.items,
+  });
+
+  final String? title;
+  final List<KatsSheetItem> items;
 }
 
 /// Centralized Bottom Sheet modal manager for the KatsKlub app.
-/// Ensures 100% uniform design, typography (12.sp bold), compact spacing, and ScreenUtil responsiveness.
+/// Ensures 100% uniform design, typography (SF Pro Rounded w500 13.5.sp), compact spacing, and ScreenUtil responsiveness.
 class KatsBottomSheet {
-  /// Shows a standardized action menu modal (e.g. Plus [+] Create Menu, More options).
-  static Future<T?> showMenu<T>(
+  /// Shows a Threads-style Inset Grouped Island Cards modal with one or more groups.
+  static Future<T?> showGroupedMenu<T>(
     BuildContext context, {
-    required List<KatsSheetItem> items,
+    required List<KatsSheetGroup> groups,
     String? title,
+    Widget? header,
     bool iconOnRight = true,
     Color barrierColor = const Color(0x8A000000),
   }) {
@@ -102,66 +116,119 @@ class KatsBottomSheet {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 14.h + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Standard Drag Handle Pill
-              Container(
-                width: 36.w,
-                height: 3.5.h,
-                margin: EdgeInsets.only(bottom: 10.h),
-                decoration: BoxDecoration(
-                  color: dragHandleColor,
-                  borderRadius: BorderRadius.circular(999.r),
-                ),
-              ),
-
-              if (title != null && title.isNotEmpty) ...[
-                Padding(
-                  padding: EdgeInsets.only(bottom: 10.h),
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Rounded',
-                      fontSize: 13.5.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Standard Drag Handle Pill
+                Center(
+                  child: Container(
+                    width: 36.w,
+                    height: 3.5.h,
+                    margin: EdgeInsets.only(bottom: 10.h),
+                    decoration: BoxDecoration(
+                      color: dragHandleColor,
+                      borderRadius: BorderRadius.circular(999.r),
                     ),
                   ),
                 ),
-              ],
 
-              // Standard Rounded Island Card Wrapper
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14.r),
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(color: cardBg),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 0; i < items.length; i++) ...[
-                        _KatsSheetMenuItemWidget(
-                          item: items[i],
-                          iconOnRight: iconOnRight,
+                if (header != null) ...[
+                  header,
+                  SizedBox(height: 10.h),
+                ] else if (title != null && title.isNotEmpty) ...[
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 10.h),
+                    child: Center(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
                         ),
-                        if (i != items.length - 1)
-                          Padding(
-                            padding: EdgeInsets.only(left: 14.w),
-                            child: const Divider(
-                              height: 1,
-                              thickness: 0.5,
-                              color: dividerColor,
-                            ),
-                          ),
-                      ],
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+
+                for (var g = 0; g < groups.length; g++) ...[
+                  if (groups[g].title != null && groups[g].title!.isNotEmpty) ...[
+                    Padding(
+                      padding: EdgeInsets.only(
+                        left: 4.w,
+                        bottom: 6.h,
+                        top: g > 0 ? 4.h : 0,
+                      ),
+                      child: Text(
+                        groups[g].title!,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF8E8E93),
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14.r),
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(color: cardBg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var i = 0; i < groups[g].items.length; i++) ...[
+                            _KatsSheetMenuItemWidget(
+                              item: groups[g].items[i],
+                              iconOnRight: iconOnRight,
+                            ),
+                            if (i != groups[g].items.length - 1)
+                              Padding(
+                                padding: EdgeInsets.only(left: 14.w),
+                                child: const Divider(
+                                  height: 1,
+                                  thickness: 0.5,
+                                  color: dividerColor,
+                                ),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (g != groups.length - 1) SizedBox(height: 10.h),
+                ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// Shows a standardized action menu modal (e.g. Plus [+] Create Menu, More options).
+  static Future<T?> showMenu<T>(
+    BuildContext context, {
+    required List<KatsSheetItem> items,
+    String? title,
+    Widget? header,
+    bool iconOnRight = true,
+    Color barrierColor = const Color(0x8A000000),
+  }) {
+    return showGroupedMenu<T>(
+      context,
+      groups: [KatsSheetGroup(items: items)],
+      title: title,
+      header: header,
+      iconOnRight: iconOnRight,
+      barrierColor: barrierColor,
     );
   }
 
@@ -206,7 +273,7 @@ class _KatsSheetMenuItemWidget extends StatelessWidget {
 
     final iconWidget = Icon(
       item.icon,
-      color: itemFg,
+      color: item.iconColor ?? (item.isDestructive ? const Color(0xFFED4956) : Colors.white70),
       size: 18.5.r,
     );
 

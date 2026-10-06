@@ -110,29 +110,29 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
       padding: EdgeInsets.only(
         left: 16.w,
         right: 16.w,
-        top: 14.h,
+        top: 8.h,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF18191C),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101012),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag handle
+          // Standard Drag Handle Pill
           Center(
             child: Container(
               width: 36.w,
-              height: 4.h,
+              height: 3.5.h,
+              margin: EdgeInsets.only(bottom: 10.h),
               decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
+                color: const Color(0xFF38383A),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
           ),
-          SizedBox(height: 12.h),
 
           // Header & Balance
           Row(
@@ -207,13 +207,13 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFFFF7A45).withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.05),
+                          : const Color(0xFF1E1E20),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFFFF7A45)
-                            : Colors.white.withValues(alpha: 0.1),
-                        width: isSelected ? 1.5 : 1.0,
+                            : const Color(0xFF2C2C2E),
+                        width: isSelected ? 1.5 : 0.8,
                       ),
                     ),
                     child: Row(
@@ -283,13 +283,13 @@ class _VoiceRoomGiftSheetState extends State<VoiceRoomGiftSheet> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFFFF7A45).withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.04),
+                          : const Color(0xFF1E1E20),
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFFFF7A45)
-                            : Colors.white.withValues(alpha: 0.07),
-                        width: isSelected ? 1.8 : 1.0,
+                            : const Color(0xFF2C2C2E),
+                        width: isSelected ? 1.8 : 0.8,
                       ),
                       boxShadow: isSelected
                           ? [

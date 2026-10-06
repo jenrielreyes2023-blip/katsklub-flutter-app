@@ -20,9 +20,9 @@ class VoiceRoomSetPinSheet extends StatefulWidget {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF14151B),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      backgroundColor: const Color(0xFF101012),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (ctx) => VoiceRoomSetPinSheet(room: room, controller: controller),
     );
@@ -137,7 +137,7 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
-          top: 10.h,
+          top: 8.h,
           left: 20.w,
           right: 20.w,
           bottom: 16.h,
@@ -145,39 +145,41 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
+            // Standard Drag Handle Pill
             Center(
               child: Container(
                 width: 36.w,
-                height: 4.h,
+                height: 3.5.h,
+                margin: EdgeInsets.only(bottom: 10.h),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+                  color: const Color(0xFF38383A),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
             ),
-            SizedBox(height: 12.h),
 
             // Top Header: Step Indicator & Close Button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.5.h),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(999),
+                    color: const Color(0xFF1E1E20),
+                    borderRadius: BorderRadius.circular(999.r),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: const Color(0xFF2C2C2E),
                       width: 0.8,
                     ),
                   ),
                   child: Text(
                     _step == 1 ? 'Step 1 of 2' : 'Step 2 of 2',
                     style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
                       color: Colors.white70,
                       fontSize: 10.5.sp,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ),
@@ -193,21 +195,21 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
 
             SizedBox(height: 14.h),
 
-            // Lock Icon
+            // Lock Icon Island
             Container(
               padding: EdgeInsets.all(12.r),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: const Color(0xFF1E1E20),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: const Color(0xFF2C2C2E),
                   width: 1,
                 ),
               ),
               child: const Icon(
                 Icons.lock_outline_rounded,
                 color: Colors.white,
-                size: 26,
+                size: 24,
               ),
             ),
 
@@ -220,6 +222,7 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                 _step == 1 ? 'Set Room PIN' : 'Confirm Room PIN',
                 key: ValueKey<int>(_step),
                 style: TextStyle(
+                  fontFamily: 'SF Pro Rounded',
                   color: Colors.white,
                   fontSize: 16.5.sp,
                   fontWeight: FontWeight.w700,
@@ -240,7 +243,8 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                 key: ValueKey<String>('$_step-sub'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white54,
+                  fontFamily: 'SF Pro Rounded',
+                  color: const Color(0xFF8E8E93),
                   fontSize: 11.5.sp,
                 ),
               ),
@@ -262,17 +266,17 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                   margin: EdgeInsets.symmetric(horizontal: 6.w),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F1015),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFF1E1E20),
+                    borderRadius: BorderRadius.circular(14.r),
                     border: Border.all(
                       color: hasError
-                          ? Colors.redAccent
+                          ? const Color(0xFFED4956)
                           : (isCurrent
                               ? Colors.white
                               : (isFilled
-                                  ? Colors.white.withValues(alpha: 0.4)
-                                  : Colors.white.withValues(alpha: 0.08))),
-                      width: isCurrent || hasError ? 1.4 : 1.0,
+                                  ? Colors.white54
+                                  : const Color(0xFF2C2C2E))),
+                      width: isCurrent || hasError ? 1.4 : 0.8,
                     ),
                   ),
                   child: isFilled
@@ -316,7 +320,8 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                         Text(
                           'Locking room...',
                           style: TextStyle(
-                            color: Colors.white54,
+                            fontFamily: 'SF Pro Rounded',
+                            color: const Color(0xFF8E8E93),
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
                           ),
@@ -327,7 +332,8 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                       ? Text(
                           _errorMessage!,
                           style: TextStyle(
-                            color: Colors.redAccent,
+                            fontFamily: 'SF Pro Rounded',
+                            color: const Color(0xFFED4956),
                             fontSize: 11.5.sp,
                             fontWeight: FontWeight.w600,
                           ),
@@ -338,7 +344,8 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
                               child: Text(
                                 'Change initial PIN',
                                 style: TextStyle(
-                                  color: Colors.white60,
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: Colors.white70,
                                   fontSize: 11.sp,
                                   fontWeight: FontWeight.w600,
                                   decoration: TextDecoration.underline,
@@ -397,7 +404,7 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(14.r),
             ),
             child: Icon(
               Icons.backspace_outlined,
@@ -418,19 +425,20 @@ class _VoiceRoomSetPinSheetState extends State<VoiceRoomSetPinSheet> {
         height: 50.h,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFF0F1015),
-          borderRadius: BorderRadius.circular(14),
+          color: const Color(0xFF1E1E20),
+          borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.07),
-            width: 1,
+            color: const Color(0xFF2C2C2E),
+            width: 0.8,
           ),
         ),
         child: Text(
           digit,
           style: TextStyle(
+            fontFamily: 'SF Pro Rounded',
             color: Colors.white,
             fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
