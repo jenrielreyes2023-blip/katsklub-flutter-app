@@ -190,14 +190,14 @@ class VoiceSeatWidget extends StatelessWidget {
                   ),
                 ),
 
-              // Host Crown Badge (Vector SVG instead of emoji)
+              // Host Crown Badge (Vector SVG without redundant 'HOST' text)
               if (isHost)
                 Positioned(
                   top: -6,
                   child: Opacity(
                     opacity: effectiveAway ? 0.35 : 1.0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFFFB800), Color(0xFFFF7A00)],
@@ -210,22 +210,7 @@ class VoiceSeatWidget extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CustomIcons.crown(color: Colors.black, size: 9),
-                          const SizedBox(width: 2.5),
-                          const Text(
-                            'HOST',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.black,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: CustomIcons.crown(color: Colors.black, size: 10),
                     ),
                   ),
                 ),
@@ -263,27 +248,7 @@ class VoiceSeatWidget extends StatelessWidget {
         // User Name or Seat Status (WePlay style)
         if (isHost) ...[
           if (user != null) ...[
-            SizedBox(height: 5.h),
-            SizedBox(
-              width: seatWidth,
-              height: 12.h,
-              child: Text(
-                (user.roleTitle.isNotEmpty ? user.roleTitle : 'HOST')
-                    .toUpperCase()
-                    .split('')
-                    .join(' '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 8.5.sp,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2.0,
-                  color: const Color(0xFFFFB800),
-                ),
-              ),
-            ),
-            SizedBox(height: 1.h),
+            SizedBox(height: 4.h),
             SizedBox(
               width: seatWidth,
               height: 16.h,
@@ -301,7 +266,7 @@ class VoiceSeatWidget extends StatelessWidget {
               ),
             ),
           ] else ...[
-            SizedBox(width: seatWidth, height: 34.h),
+            SizedBox(width: seatWidth, height: 20.h),
           ],
         ] else if (user != null) ...[
           SizedBox(height: 4.h),
