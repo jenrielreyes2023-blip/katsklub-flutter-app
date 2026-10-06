@@ -74,6 +74,10 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+        <service
+            android:name=".VoiceRoomService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
         <receiver
             android:name=".KatsPushReceiver"
             android:exported="true"

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
@@ -46,13 +45,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _disableDebugPaintOverlays();
   if (!kIsWeb) {
-    try {
-      await JustAudioBackground.init(
-        androidNotificationChannelId: 'com.katsklub.app.channel.audio',
-        androidNotificationChannelName: 'KatsKlub Audio Playback',
-        androidNotificationOngoing: true,
-      );
-    } catch (_) {}
     try {
       await Firebase.initializeApp();
     } catch (_) {}

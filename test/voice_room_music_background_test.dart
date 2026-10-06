@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:katsklub_flutter/services/voice_room_controller.dart';
 import 'package:katsklub_flutter/services/global_audio_player_service.dart';
 
 void main() {
   group('buildVoiceRoomAudioSource', () {
-    test('tags the source with a MediaItem so background playback keeps its foreground service', () {
+    test('builds UriAudioSource without MediaItem so media notification is not created', () {
       final source = buildVoiceRoomAudioSource(
         uri: Uri.parse('https://cdn.example.com/song.mp3'),
         headers: const {'User-Agent': 'test'},
@@ -19,32 +18,13 @@ void main() {
       );
 
       expect(source, isA<UriAudioSource>());
-      final tag = (source as UriAudioSource).tag;
-      expect(tag, isA<MediaItem>());
-      final item = tag as MediaItem;
-      expect(item.id, equals('track-1'));
-      expect(item.title, equals('Test Song'));
-      expect(item.artist, equals('Test Artist'));
-      expect(item.artUri, equals(Uri.parse('https://example.com/art.jpg')));
+      final uriSource = source as UriAudioSource;
+      expect(uriSource.uri, equals(Uri.parse('https://cdn.example.com/song.mp3')));
+      expect(uriSource.headers, equals(const {'User-Agent': 'test'}));
+      expect(uriSource.tag, isNull);
     });
 
-    test('falls back to default title/artist and null art for empty metadata', () {
-      final source = buildVoiceRoomAudioSource(
-        uri: Uri.parse('https://cdn.example.com/song.mp3'),
-        id: '',
-        title: '',
-        artist: '',
-        artworkUrl: '',
-      );
-
-      final item = (source as UriAudioSource).tag as MediaItem;
-      expect(item.id, equals('voice-room-track'));
-      expect(item.title, equals('Unknown Title'));
-      expect(item.artist, equals('Unknown Artist'));
-      expect(item.artUri, isNull);
-    });
-
-    test('supports file URIs for downloaded tracks', () {
+    test('supports file URIs for downloaded tracks without MediaItem tag', () {
       final source = buildVoiceRoomAudioSource(
         uri: Uri.parse('file:///data/song.mp3'),
         id: 'dl-1',
@@ -53,11 +33,10 @@ void main() {
         artworkUrl: 'https://example.com/thumb.jpg',
       );
 
+      expect(source, isA<UriAudioSource>());
       final uriSource = source as UriAudioSource;
       expect(uriSource.uri.scheme, equals('file'));
-      final item = uriSource.tag as MediaItem;
-      expect(item.title, equals('Downloaded'));
-      expect(item.artUri, equals(Uri.parse('https://example.com/thumb.jpg')));
+      expect(uriSource.tag, isNull);
     });
   });
 

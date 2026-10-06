@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import '../models/user.dart';
 import '../models/voice_room.dart';
 import '../config/api_config.dart';
@@ -11,13 +10,10 @@ import 'auth_service.dart';
 import 'feed_service.dart';
 import 'zego_voice_service.dart';
 import 'global_audio_player_service.dart';
+import 'voice_room_foreground_service.dart';
 import '../models/voice_room_music_track.dart';
 
 /// Builds the local-playback audio source for voice-room music.
-///
-/// The [MediaItem] tag is REQUIRED by just_audio_background: without it no
-/// media notification / foreground service is created and the OS suspends
-/// playback a few minutes after the app goes to background.
 @visibleForTesting
 AudioSource buildVoiceRoomAudioSource({
   required Uri uri,
@@ -27,22 +23,9 @@ AudioSource buildVoiceRoomAudioSource({
   required String artist,
   required String artworkUrl,
 }) {
-  final cleanArt = artworkUrl.trim();
-  Uri? artUri;
-  if (cleanArt.isNotEmpty && !cleanArt.startsWith('data:')) {
-    artUri = Uri.tryParse(cleanArt);
-  }
-
   return AudioSource.uri(
     uri,
     headers: headers,
-    tag: MediaItem(
-      id: id.isNotEmpty ? id : 'voice-room-track',
-      album: 'KatsKlub Voice Room',
-      title: title.trim().isNotEmpty ? title.trim() : 'Unknown Title',
-      artist: artist.trim().isNotEmpty ? artist.trim() : 'Unknown Artist',
-      artUri: artUri,
-    ),
   );
 }
 
@@ -87,7 +70,7 @@ class VoiceRoomController extends ChangeNotifier {
 
   static void silenceExternalAudio() {
     try {
-      GlobalAudioPlayerService.instance?.setPlaying(false);
+      GlobalAudioPlayerService.instance.setPlaying(false);
     } catch (_) {}
     for (final hook in List<VoidCallback>.from(_silenceAudioHooks)) {
       try {
@@ -115,8 +98,8 @@ class VoiceRoomController extends ChangeNotifier {
   bool _isMusicEnabled = false;
   StreamSubscription<PlayerState>? _roomMusicPlayerStateSub;
   StreamSubscription<Duration?>? _roomMusicPlayerDurationSub;
-  Duration? _roomMusicCurrentDuration;
   VoiceRoomMusicTrack? _roomCdnTrack;
+  Duration? _roomMusicCurrentDuration;
   bool _isRoomMusicPlaying = false;
   bool _isRoomMusicLoading = false;
   double _roomMusicVolume = 0.85;
@@ -134,6 +117,7 @@ class VoiceRoomController extends ChangeNotifier {
   int get giftPlayToken => _giftPlayToken;
   bool get isMusicEnabled => _isMusicEnabled;
   VoiceRoomMusicTrack? get roomCdnTrack => _roomCdnTrack;
+  Duration? get roomMusicCurrentDuration => _roomMusicCurrentDuration;
   String get roomMusicTitle => _roomCdnTrack?.title ?? '';
   String get roomMusicArtist => _roomCdnTrack?.artist ?? '';
   String get roomMusicArtwork => _roomCdnTrack?.artworkUrl ?? '';
@@ -256,7 +240,7 @@ class VoiceRoomController extends ChangeNotifier {
       bool localStarted = false;
 
       // 1. Primary: Start just_audio via GlobalAudioPlayerService
-      // This maintains the persistent Android foreground service & MediaSession notification
+      // VoiceRoomForegroundService maintains the persistent Android foreground service
       try {
         await globalAudio.playVoiceRoomTrack(
           id: track.id,
@@ -825,6 +809,12 @@ class VoiceRoomController extends ChangeNotifier {
 
     // Keep host & room connection alive with periodic heartbeat
     _startHeartbeat();
+
+    // Start quiet foreground service to keep voice room connection & audio alive in background
+    unawaited(VoiceRoomForegroundService.start(
+      title: 'Katsklub',
+      text: 'Nasa voice room ka',
+    ));
 
     notifyListeners();
     return true;
@@ -1565,6 +1555,9 @@ class VoiceRoomController extends ChangeNotifier {
       await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
       await ZegoVoiceService().stopBackgroundMusic();
     } catch (_) {}
+
+    // Stop voice room foreground service
+    unawaited(VoiceRoomForegroundService.stop());
 
     _currentRoom = null;
     _currentUser = null;

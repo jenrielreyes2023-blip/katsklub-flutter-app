@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:video_player/video_player.dart';
 
 class GlobalAudioQueueItem {
@@ -186,16 +185,6 @@ class GlobalAudioPlayerService extends ChangeNotifier {
           .map(
             (item) => AudioSource.uri(
               Uri.parse(item.src),
-              tag: MediaItem(
-                id: item.id,
-                album: item.artist.isNotEmpty ? item.artist : 'KatsKlub',
-                title: item.title.isNotEmpty ? item.title : 'Unknown Title',
-                artist: item.artist.isNotEmpty ? item.artist : 'Unknown Artist',
-                artUri: item.artworkUrl.isNotEmpty &&
-                        !item.artworkUrl.startsWith('data:')
-                    ? Uri.parse(item.artworkUrl)
-                    : null,
-              ),
             ),
           )
           .toList(growable: false),
@@ -330,9 +319,9 @@ class GlobalAudioPlayerService extends ChangeNotifier {
 
   /// Dedicated playback method for KatsKlub Voice Room CDN tracks.
   ///
-  /// Reuses the singleton [AudioPlayer] configured with just_audio_background
-  /// so that the host device maintains an active Android MediaSession foreground
-  /// notification without conflicting with multiple player instances.
+  /// Reuses the singleton [AudioPlayer] for local room music monitoring.
+  /// The VoiceRoomForegroundService keeps the Android process alive quietly
+  /// in the background without media session controls.
   Future<void> playVoiceRoomTrack({
     required String id,
     required String title,
@@ -369,21 +358,8 @@ class GlobalAudioPlayerService extends ChangeNotifier {
     _processingState = ProcessingState.loading;
     notifyListeners();
 
-    final cleanArt = artworkUrl.trim();
-    Uri? artUri;
-    if (cleanArt.isNotEmpty && !cleanArt.startsWith('data:')) {
-      artUri = Uri.tryParse(cleanArt);
-    }
-
     final source = AudioSource.uri(
       Uri.parse(streamUrl),
-      tag: MediaItem(
-        id: id.isNotEmpty ? id : 'voice-room-track',
-        album: 'KatsKlub Voice Room',
-        title: title.trim().isNotEmpty ? title.trim() : 'Unknown Track',
-        artist: artist.trim().isNotEmpty ? artist.trim() : 'KatsKlub Voice Room',
-        artUri: artUri,
-      ),
     );
 
     try {

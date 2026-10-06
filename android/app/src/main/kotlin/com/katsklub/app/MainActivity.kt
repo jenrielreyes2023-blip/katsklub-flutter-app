@@ -14,6 +14,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 private const val KATS_NOTIFICATION_TAP_CHANNEL = "com.katsklub.app/notification_taps"
+private const val KATS_VOICE_ROOM_SERVICE_CHANNEL = "com.katsklub.app/voice_room_service"
 
 class MainActivity : AudioServiceActivity() {
     private var notificationTapChannel: MethodChannel? = null
@@ -58,6 +59,25 @@ class MainActivity : AudioServiceActivity() {
                     }
                     else -> result.notImplemented()
                 }
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            KATS_VOICE_ROOM_SERVICE_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "start" -> {
+                    val title = call.argument<String>("title")
+                    val text = call.argument<String>("text")
+                    VoiceRoomService.start(applicationContext, title, text)
+                    result.success(true)
+                }
+                "stop" -> {
+                    VoiceRoomService.stop(applicationContext)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
             }
         }
     }
