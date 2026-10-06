@@ -117,6 +117,23 @@ class CustomIcons {
     return _svgIcon(_micOffSvg, color: color, size: size);
   }
 
+  /// Category icon used by the Party Rooms lobby (filter chips + room cards).
+  static Widget roomCategory(String category, {Color color = Colors.white, double size = 13}) {
+    switch (category.toLowerCase()) {
+      case 'chill':
+        return CustomIcons.coffeeCup(color: color, size: size);
+      case 'gaming':
+        return CustomIcons.gamepad(color: color, size: size);
+      case 'music':
+        return CustomIcons.musicNote(color: color, size: size);
+      case 'chat':
+      case 'kwentuhan':
+        return CustomIcons.chatBubble(color: color, size: size);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   static const String _crownSvg =
       '<svg viewBox="0 0 24 24" fill="#292D32" xmlns="http://www.w3.org/2000/svg"><path d="M5 19h14a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm-1.8-6.6l2.3-6.9a1 1 0 011.8-.1l2.8 4.2 3.1-6.1a1 1 0 011.8 0l3.1 6.1 2.8-4.2a1 1 0 011.8.1l2.3 6.9c.3.9-.4 1.7-1.3 1.7H4.5c-.9 0-1.6-.8-1.3-1.7z"/></svg>';
 
