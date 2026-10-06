@@ -65,12 +65,11 @@ String? presenceLabel(PresenceState? state) {
   final last = state.lastSeenAt;
   if (last == null) return null;
   final diff = DateTime.now().difference(last.toLocal());
-  if (diff.inMinutes < 1) return 'Active now';
-  if (diff.inHours < 1) return 'Active ${diff.inMinutes}m ago';
-  if (diff.inDays < 1) return 'Active ${diff.inHours}h ago';
+  if (diff.isNegative) return null;
+  if (diff.inMinutes < 1) return 'Active just now';
+  if (diff.inMinutes < 60) return 'Active ${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return 'Active ${diff.inHours}h ago';
   if (diff.inDays == 1) return 'Active yesterday';
   if (diff.inDays < 7) return 'Active ${diff.inDays}d ago';
-  final weeks = (diff.inDays / 7).floor();
-  if (weeks < 5) return 'Active ${weeks}w ago';
-  return 'Active a while ago';
+  return null;
 }

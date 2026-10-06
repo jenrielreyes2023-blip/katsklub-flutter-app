@@ -170,7 +170,7 @@ class PresenceService {
     if (userId.isEmpty) return null;
     final isOnline = map['isOnline'] == true;
     DateTime? lastSeenAt;
-    final raw = map['lastSeenAt']?.toString();
+    final raw = map['lastSeenAt']?.toString() ?? map['lastSeen']?.toString();
     if (raw != null && raw.isNotEmpty) {
       lastSeenAt = DateTime.tryParse(raw);
     }
