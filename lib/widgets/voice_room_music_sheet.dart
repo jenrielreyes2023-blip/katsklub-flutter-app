@@ -69,8 +69,21 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     super.dispose();
   }
 
-  Future<void> _loadInitialData({bool forceRefresh = false}) async {
-    setState(() => _isLoading = true);
+  Future<void> _loadInitialData({bool forceRefresh = true}) async {
+    // 1. Instant render if cached tracks exist so user has zero lag
+    if (_musicService.hasCachedTracks) {
+      final cached = _musicService.cachedResult;
+      if (cached != null) {
+        _allTracks = cached.tracks;
+        _genres = cached.genres;
+        _applyFilter();
+        setState(() => _isLoading = false);
+      }
+    } else {
+      setState(() => _isLoading = true);
+    }
+
+    // 2. Auto-sync immediately from Bunny CDN every time the sheet opens
     await Future.wait([
       _loadTracks(forceRefresh: forceRefresh),
       _loadFavorites(),

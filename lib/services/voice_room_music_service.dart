@@ -25,6 +25,14 @@ class VoiceRoomMusicService {
   List<VoiceRoomMusicTrack>? _cachedTracks;
   List<String>? _cachedGenres;
 
+  bool get hasCachedTracks => _cachedTracks != null && _cachedTracks!.isNotEmpty;
+  VoiceRoomMusicResult? get cachedResult => _cachedTracks != null
+      ? VoiceRoomMusicResult(
+          genres: _cachedGenres ?? ['All'],
+          tracks: _cachedTracks!,
+        )
+      : null;
+
   Future<VoiceRoomMusicResult> getTracks({
     String? query,
     String? genre,
