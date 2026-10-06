@@ -883,20 +883,51 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
   // TAB 3: QUEUE TAB
   // ==========================================
   Widget _buildQueueTab(List<VoiceRoomMusicTrack> queue) {
+    final currentTrackId = widget.controller.roomCdnTrack?.id;
+    final isPlaying = widget.controller.isRoomMusicPlaying;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Up Next Section Header
+        // Playlist Queue Header with Loop Badge
         Row(
           children: [
             Text(
-              'UP NEXT (${queue.length})',
+              'PLAYLIST QUEUE (${queue.length})',
               style: TextStyle(
                 fontFamily: 'SF Pro Rounded',
-                color: Colors.white60,
-                fontSize: 10.5.sp,
+                color: Colors.white,
+                fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3,
+              ),
+            ),
+            SizedBox(width: 6.w),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4ADE80).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(
+                  color: const Color(0xFF4ADE80).withValues(alpha: 0.3),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.repeat_rounded, color: const Color(0xFF4ADE80), size: 10.r),
+                  SizedBox(width: 3.w),
+                  Text(
+                    'Auto-loops to start',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      color: const Color(0xFF4ADE80),
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             const Spacer(),
@@ -951,7 +982,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                     ),
                     SizedBox(height: 3.h),
                     Text(
-                      'Tap "+ Queue" on any song to queue it for automatic playback',
+                      'Tap "+ Queue" on any song to add it. Songs stay in queue and loop automatically.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'SF Pro Rounded',
@@ -995,14 +1026,20 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               separatorBuilder: (_, __) => SizedBox(height: 6.h),
               itemBuilder: (context, index) {
                 final track = queue[index];
+                final isThisPlaying = track.id == currentTrackId;
+
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E20),
+                    color: isThisPlaying
+                        ? const Color(0xFFFF7A45).withValues(alpha: 0.12)
+                        : const Color(0xFF1E1E20),
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(
-                      color: const Color(0xFF2C2C2E),
-                      width: 0.6,
+                      color: isThisPlaying
+                          ? const Color(0xFFFF7A45).withValues(alpha: 0.5)
+                          : const Color(0xFF2C2C2E),
+                      width: isThisPlaying ? 0.9 : 0.6,
                     ),
                   ),
                   child: Row(
@@ -1012,18 +1049,33 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         height: 20.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                          gradient: isThisPlaying
+                              ? const LinearGradient(
+                                  colors: [Color(0xFFFF7A45), Color(0xFFEC4899)],
+                                )
+                              : null,
+                          color: isThisPlaying
+                              ? null
+                              : const Color(0xFFFF7A45).withValues(alpha: 0.15),
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          '#${index + 1}',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Rounded',
-                            color: const Color(0xFFFF7A45),
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: isThisPlaying
+                            ? Icon(
+                                isPlaying
+                                    ? Icons.equalizer_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 11.r,
+                              )
+                            : Text(
+                                '#${index + 1}',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Rounded',
+                                  color: const Color(0xFFFF7A45),
+                                  fontSize: 9.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                       SizedBox(width: 7.w),
                       ClipRRect(
@@ -1047,17 +1099,43 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              track.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Rounded',
-                                color: Colors.white,
-                                fontSize: 11.5.sp,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: -0.1,
-                              ),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    track.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: Colors.white,
+                                      fontSize: 11.5.sp,
+                                      fontWeight: isThisPlaying ? FontWeight.w600 : FontWeight.w500,
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                if (isThisPlaying) ...[
+                                  SizedBox(width: 5.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF7A45).withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Text(
+                                      isPlaying ? 'PLAYING' : 'PAUSED',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Rounded',
+                                        color: const Color(0xFFFF7A45),
+                                        fontSize: 8.sp,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
                               track.artist,
@@ -1073,15 +1151,28 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.play_arrow_rounded, color: const Color(0xFFFF7A45), size: 20.r),
-                        tooltip: 'Play this now',
+                        icon: Icon(
+                          isThisPlaying
+                              ? (isPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_filled_rounded)
+                              : Icons.play_arrow_rounded,
+                          color: const Color(0xFFFF7A45),
+                          size: 20.r,
+                        ),
+                        tooltip: isThisPlaying
+                            ? (isPlaying ? 'Pause' : 'Resume')
+                            : 'Play this now',
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         splashRadius: 14.r,
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          widget.controller.removeFromQueue(index);
-                          _playTrack(track);
+                          if (isThisPlaying) {
+                            widget.controller.togglePauseRoomMusic();
+                          } else {
+                            widget.controller.playQueueIndex(index);
+                          }
                         },
                       ),
                       SizedBox(width: 8.w),
@@ -1383,6 +1474,18 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                 ),
               ),
               IconButton(
+                icon: Icon(Icons.skip_previous_rounded, color: Colors.white70, size: 18.r),
+                tooltip: 'Previous in queue',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 14.r,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  widget.controller.skipToPreviousMusic();
+                },
+              ),
+              SizedBox(width: 4.w),
+              IconButton(
                 icon: Icon(
                   isMusicPlaying
                       ? Icons.pause_circle_filled_rounded
@@ -1398,7 +1501,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   widget.controller.togglePauseRoomMusic();
                 },
               ),
-              SizedBox(width: 8.w),
+              SizedBox(width: 4.w),
               IconButton(
                 icon: Icon(Icons.skip_next_rounded, color: Colors.white70, size: 18.r),
                 tooltip: 'Next in queue',
@@ -1410,7 +1513,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   widget.controller.skipToNextMusic();
                 },
               ),
-              SizedBox(width: 8.w),
+              SizedBox(width: 6.w),
               IconButton(
                 icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 17.r),
                 padding: EdgeInsets.zero,

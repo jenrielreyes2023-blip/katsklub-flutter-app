@@ -138,28 +138,56 @@ class VoiceRoomController extends ChangeNotifier {
 
   final List<VoiceRoomMusicTrack> _musicQueue = [];
   List<VoiceRoomMusicTrack> get musicQueue => List.unmodifiable(_musicQueue);
+  int _currentQueueIndex = -1;
+  int get currentQueueIndex => _currentQueueIndex;
 
   void addToQueue(VoiceRoomMusicTrack track) {
-    _musicQueue.add(track);
+    final existingIndex = _musicQueue.indexWhere((t) => t.id == track.id);
+    if (existingIndex == -1) {
+      _musicQueue.add(track);
+    }
     ZegoVoiceService().enableRepeat(false);
     notifyListeners();
-    // If no song is currently playing, start playing it immediately
+
+    // If no song is currently playing, start playing immediately
     if (_roomCdnTrack == null && !_isRoomMusicPlaying) {
-      final next = _musicQueue.removeAt(0);
-      playCdnMusic(next);
+      _currentQueueIndex = existingIndex != -1 ? existingIndex : _musicQueue.length - 1;
+      playCdnMusic(_musicQueue[_currentQueueIndex]);
     }
   }
 
   void removeFromQueue(int index) {
     if (index >= 0 && index < _musicQueue.length) {
+      final wasPlayingThis = index == _currentQueueIndex;
       _musicQueue.removeAt(index);
+      if (_musicQueue.isEmpty) {
+        _currentQueueIndex = -1;
+        stopRoomMusic();
+      } else {
+        if (index < _currentQueueIndex) {
+          _currentQueueIndex--;
+        } else if (_currentQueueIndex >= _musicQueue.length) {
+          _currentQueueIndex = 0;
+        }
+        if (wasPlayingThis) {
+          playCdnMusic(_musicQueue[_currentQueueIndex]);
+        }
+      }
       notifyListeners();
     }
   }
 
   void clearQueue() {
     _musicQueue.clear();
+    _currentQueueIndex = -1;
     notifyListeners();
+  }
+
+  Future<void> playQueueIndex(int index) async {
+    if (index >= 0 && index < _musicQueue.length) {
+      _currentQueueIndex = index;
+      await playCdnMusic(_musicQueue[index]);
+    }
   }
 
   bool _isAdvancingQueue = false;
@@ -174,7 +202,7 @@ class VoiceRoomController extends ChangeNotifier {
     if (_isAdvancingQueue) return;
     _isAdvancingQueue = true;
     try {
-      debugPrint('[VoiceRoomController] Track ended. Auto-advancing queue (remaining: ${_musicQueue.length})');
+      debugPrint('[VoiceRoomController] Track ended. Auto-advancing queue (total in queue: ${_musicQueue.length}, current index: $_currentQueueIndex)');
       await skipToNextMusic();
     } catch (e) {
       debugPrint('[VoiceRoomController] _onTrackCompleted error: $e');
@@ -185,12 +213,37 @@ class VoiceRoomController extends ChangeNotifier {
   }
 
   Future<void> skipToNextMusic() async {
-    if (_musicQueue.isNotEmpty) {
-      final next = _musicQueue.removeAt(0);
-      await playCdnMusic(next);
-    } else {
+    if (_musicQueue.isEmpty) {
       await stopRoomMusic();
+      return;
     }
+
+    // Advance to next track, or loop back to index 0 if at the end of the queue
+    if (_currentQueueIndex >= 0 && _currentQueueIndex + 1 < _musicQueue.length) {
+      _currentQueueIndex++;
+    } else {
+      // Loop back to the beginning of the queue
+      _currentQueueIndex = 0;
+    }
+
+    final next = _musicQueue[_currentQueueIndex];
+    debugPrint('[VoiceRoomController] Auto-loop queue -> playing index $_currentQueueIndex: ${next.title}');
+    await playCdnMusic(next);
+  }
+
+  Future<void> skipToPreviousMusic() async {
+    if (_musicQueue.isEmpty) return;
+
+    if (_currentQueueIndex > 0) {
+      _currentQueueIndex--;
+    } else {
+      // Loop to end of queue
+      _currentQueueIndex = _musicQueue.length - 1;
+    }
+
+    final prev = _musicQueue[_currentQueueIndex];
+    debugPrint('[VoiceRoomController] Previous track -> playing index $_currentQueueIndex: ${prev.title}');
+    await playCdnMusic(prev);
   }
 
   void toggleMusicEnabled([bool? enable]) {
@@ -203,6 +256,14 @@ class VoiceRoomController extends ChangeNotifier {
 
   Future<void> playCdnMusic(VoiceRoomMusicTrack track) async {
     _roomCdnTrack = track;
+    // Keep queue in sync with currently playing track
+    final qIdx = _musicQueue.indexWhere((t) => t.id == track.id);
+    if (qIdx != -1) {
+      _currentQueueIndex = qIdx;
+    } else {
+      _musicQueue.add(track);
+      _currentQueueIndex = _musicQueue.length - 1;
+    }
     _isMusicEnabled = true;
     _isRoomMusicLoading = false;
     _isRoomMusicPlaying = true;
@@ -1591,6 +1652,7 @@ class VoiceRoomController extends ChangeNotifier {
     _isMusicEnabled = false;
     _roomCdnTrack = null;
     _musicQueue.clear();
+    _currentQueueIndex = -1;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
 
