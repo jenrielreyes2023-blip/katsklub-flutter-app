@@ -28,15 +28,16 @@ class VoiceRoomService : Service() {
             title: String? = null,
             text: String? = null
         ) {
-            val defaultText = if (!roomId.isNullOrBlank()) {
+            val defaultTitle = if (!roomId.isNullOrBlank()) {
                 "In a voiceroom. ID: $roomId"
             } else {
                 "In a voiceroom."
             }
+            val defaultText = "Tap to return"
             val intent = Intent(context, VoiceRoomService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_ROOM_ID, roomId)
-                putExtra(EXTRA_TITLE, title ?: "Katsklub")
+                putExtra(EXTRA_TITLE, title ?: defaultTitle)
                 putExtra(EXTRA_TEXT, text ?: defaultText)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -69,12 +70,13 @@ class VoiceRoomService : Service() {
         }
 
         val roomId = intent?.getStringExtra(EXTRA_ROOM_ID)?.ifBlank { null }
-        val title = intent?.getStringExtra(EXTRA_TITLE)?.ifBlank { null } ?: "Katsklub"
-        val defaultText = if (!roomId.isNullOrBlank()) {
+        val defaultTitle = if (!roomId.isNullOrBlank()) {
             "In a voiceroom. ID: $roomId"
         } else {
             "In a voiceroom."
         }
+        val defaultText = "Tap to return"
+        val title = intent?.getStringExtra(EXTRA_TITLE)?.ifBlank { null } ?: defaultTitle
         val text = intent?.getStringExtra(EXTRA_TEXT)?.ifBlank { null } ?: defaultText
 
         createNotificationChannel()
@@ -94,12 +96,7 @@ class VoiceRoomService : Service() {
             pendingIntentFlags(mutable = false)
         )
 
-        val smallIconRes = try {
-            val id = resources.getIdentifier("ic_notification", "drawable", packageName)
-            if (id != 0) id else applicationInfo.icon
-        } catch (e: Exception) {
-            applicationInfo.icon
-        }
+        val smallIconRes = R.drawable.ic_notification
 
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
@@ -115,7 +112,8 @@ class VoiceRoomService : Service() {
             .setOngoing(true)
             .setAutoCancel(false)
             .setContentIntent(pendingIntent)
-            .setShowWhen(false)
+            .setShowWhen(true)
+            .setWhen(System.currentTimeMillis())
 
         @Suppress("DEPRECATION")
         builder.setPriority(Notification.PRIORITY_HIGH)

@@ -695,8 +695,8 @@ class VoiceRoomController extends ChangeNotifier {
       _isMinimized = false;
       unawaited(VoiceRoomForegroundService.start(
         roomId: room.id.toString(),
-        title: 'Katsklub',
-        text: 'In a voiceroom. ID: ${room.id}',
+        title: 'In a voiceroom. ID: ${room.id}',
+        text: 'Tap to return',
       ));
       notifyListeners();
       return true;
@@ -829,8 +829,8 @@ class VoiceRoomController extends ChangeNotifier {
     // Start ongoing foreground service to keep voice room connection & audio alive in background
     unawaited(VoiceRoomForegroundService.start(
       roomId: room.id.toString(),
-      title: 'Katsklub',
-      text: 'In a voiceroom. ID: ${room.id}',
+      title: 'In a voiceroom. ID: ${room.id}',
+      text: 'Tap to return',
     ));
 
     notifyListeners();
