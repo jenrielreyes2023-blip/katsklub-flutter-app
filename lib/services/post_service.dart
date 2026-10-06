@@ -94,7 +94,9 @@ class CreatePostRequest {
     this.albumTitle,
     this.isDiscussion = false,
     this.discussionTitle,
+    this.discussionAbout,
     this.discussionCoverDataUrl,
+    this.discussionCoverSource,
     this.isReel = false,
     this.reelImage,
     this.reelImages = const <SelectedPostImage>[],
@@ -124,7 +126,9 @@ class CreatePostRequest {
   final String? albumTitle;
   final bool isDiscussion;
   final String? discussionTitle;
+  final String? discussionAbout;
   final String? discussionCoverDataUrl;
+  final String? discussionCoverSource;
   final bool isReel;
   final SelectedPostImage? reelImage;
   final List<SelectedPostImage> reelImages;
@@ -283,6 +287,8 @@ class PostService {
     final hasImages = readyImages.isNotEmpty;
     final albumTitle = request.albumTitle?.trim() ?? '';
     final discussionTitle = request.discussionTitle?.trim() ?? '';
+    final discussionAbout = request.discussionAbout?.trim() ?? '';
+    final discussionCoverSource = request.discussionCoverSource?.trim() ?? '';
     final hasVideo = request.videoDataUrl?.trim().isNotEmpty == true;
     final musicTitle = request.musicTitle?.trim() ?? '';
     final musicArtist = request.musicArtist?.trim() ?? '';
@@ -400,8 +406,12 @@ class PostService {
       if (request.isDiscussion) 'isDiscussion': true,
       if (request.isDiscussion && discussionTitle.isNotEmpty)
         'discussionTitle': discussionTitle,
+      if (request.isDiscussion && discussionAbout.isNotEmpty)
+        'discussionAbout': discussionAbout,
       if (request.discussionCoverDataUrl?.trim().isNotEmpty == true)
         'discussionCoverDataUrl': request.discussionCoverDataUrl!.trim(),
+      if (request.isDiscussion && discussionCoverSource.isNotEmpty)
+        'discussionCoverSource': discussionCoverSource,
       if (request.isPoll) 'isPoll': true,
       if (request.isPoll) 'pollQuestion': pollQuestion,
       if (request.isPoll) 'pollOptions': pollOptions,
@@ -477,7 +487,9 @@ class PostService {
         'videoSize=${((request.videoDataUrl?.length ?? 0) * 0.75).round()}; '
         'hasAlbumTitle=${albumTitle.isNotEmpty}; '
         'hasDiscussionTitle=${discussionTitle.isNotEmpty}; '
+        'hasDiscussionAbout=${discussionAbout.isNotEmpty}; '
         'hasDiscussionCover=$hasDiscussionCover; '
+        'hasDiscussionCoverSource=${discussionCoverSource.isNotEmpty}; '
         'visibility=${payload['visibility'] ?? 'n/a'}',
       );
 

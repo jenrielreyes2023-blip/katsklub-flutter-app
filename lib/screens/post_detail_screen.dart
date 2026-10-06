@@ -1318,6 +1318,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ),
                                   ),
                                 ],
+                                if (post.isDiscussion &&
+                                    post.discussionAbout.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Text(
+                                      post.discussionAbout.trim(),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 if (post.cleanText.isNotEmpty &&
                                     !(post.isPoll &&
                                         post.cleanText ==
@@ -1412,6 +1428,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           _PostDetailVideoPreview(post: post),
                                         ],
                                       ],
+                                    ),
+                                  ),
+                                ],
+                                if (post.isDiscussion &&
+                                    post.discussionCoverUrl.trim().isNotEmpty &&
+                                    post.discussionCoverSource
+                                        .trim()
+                                        .isNotEmpty) ...[
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 6, 16, 0),
+                                    child: Text(
+                                      '📷 ${post.discussionCoverSource.trim()}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
                                   ),
                                 ],

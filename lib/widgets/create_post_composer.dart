@@ -50,6 +50,8 @@ class CreatePostComposer extends StatefulWidget {
 class _CreatePostComposerState extends State<CreatePostComposer> {
   final _controller = TextEditingController();
   final _titleController = TextEditingController();
+  final _discussionAboutController = TextEditingController();
+  final _discussionCoverSourceController = TextEditingController();
   final _canPostNotifier = ValueNotifier<bool>(false);
   final _postService = PostService();
 
@@ -119,6 +121,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
     _titleController.removeListener(_syncCanPostState);
     _controller.dispose();
     _titleController.dispose();
+    _discussionAboutController.dispose();
+    _discussionCoverSourceController.dispose();
     _canPostNotifier.dispose();
     super.dispose();
   }
@@ -524,10 +528,16 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
         albumTitle: _mode == _CreateMode.album ? 'Carousel' : null,
         isDiscussion: _mode == _CreateMode.discussion,
         discussionTitle: _mode == _CreateMode.discussion ? title : null,
+        discussionAbout: _mode == _CreateMode.discussion
+            ? _discussionAboutController.text.trim()
+            : null,
         discussionCoverDataUrl:
             _mode == _CreateMode.discussion && _discussionCover?.isReady == true
                 ? _discussionCover!.dataUrl
                 : null,
+        discussionCoverSource: _mode == _CreateMode.discussion
+            ? _discussionCoverSourceController.text.trim()
+            : null,
         isPoll: _mode == _CreateMode.poll,
         pollQuestion: _mode == _CreateMode.poll ? text : null,
         pollOptions:
@@ -650,6 +660,8 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
       _controller.clear();
       setState(() {
         _titleController.clear();
+        _discussionAboutController.clear();
+        _discussionCoverSourceController.clear();
         _images = [];
         _pollOptions = ['', ''];
         _pollDurationHours = 24;
@@ -1146,6 +1158,32 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                                     contentPadding: EdgeInsets.symmetric(vertical: 4.h),
                                   ),
                                 ),
+                                TextField(
+                                  controller: _discussionAboutController,
+                                  enabled: !_isPosting,
+                                  maxLength: 300,
+                                  maxLines: 2,
+                                  minLines: 1,
+                                  cursorColor: const Color(0xFFFF7A45),
+                                  inputFormatters: [EmojiPresentationFormatter()],
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 14.sp,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'About this discussion (optional)...',
+                                    hintStyle: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF9CA3AF),
+                                      fontSize: 14.sp,
+                                    ),
+                                    counterText: '',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                                  ),
+                                ),
                                 SizedBox(height: 4.h),
                               ],
                               if (_mode != _CreateMode.poll)
@@ -1236,8 +1274,34 @@ class _CreatePostComposerState extends State<CreatePostComposer> {
                                   image: _discussionCover!,
                                   onRemove: _isPosting ? null : () {
                                     setState(() => _discussionCover = null);
+                                    _discussionCoverSourceController.clear();
                                     _syncCanPostState();
                                   },
+                                ),
+                                SizedBox(height: 4.h),
+                                TextField(
+                                  controller: _discussionCoverSourceController,
+                                  enabled: !_isPosting,
+                                  maxLength: 200,
+                                  cursorColor: const Color(0xFFFF7A45),
+                                  inputFormatters: [EmojiPresentationFormatter()],
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Rounded',
+                                    fontSize: 13.sp,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Cover image source (optional)...',
+                                    hintStyle: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFF9CA3AF),
+                                      fontSize: 13.sp,
+                                    ),
+                                    counterText: '',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                                  ),
                                 ),
                               ],
                               if (_mode == _CreateMode.post && _images.isNotEmpty) ...[

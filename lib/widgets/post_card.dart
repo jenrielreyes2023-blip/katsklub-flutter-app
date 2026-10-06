@@ -1248,6 +1248,24 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                     ],
+                    if (_post.isDiscussion &&
+                        _post.discussionAbout.trim().isNotEmpty) ...[
+                      SizedBox(height: 6.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Text(
+                          _post.discussionAbout.trim(),
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                            fontSize: 13.5.sp,
+                            fontWeight: FontWeight.w400,
+                            height: 1.35,
+                            color: isPostCardDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF65676B),
+                          ),
+                        ),
+                      ),
+                    ],
                     if (showPostText && _post.cleanText.isNotEmpty) ...[
                       SizedBox(height: 12.h),
                       isGhost
@@ -1381,6 +1399,21 @@ class _PostCardState extends State<PostCard> {
                                  VideoPreviewCard(post: _post),
                              ],
                           ],
+                        ),
+                      ),
+                    ],
+                    if (_post.isDiscussion &&
+                        _post.discussionCoverUrl.trim().isNotEmpty &&
+                        _post.discussionCoverSource.trim().isNotEmpty) ...[
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(16.w, 6.h, 16.w, 0),
+                        child: Text(
+                          '📷 ${_post.discussionCoverSource.trim()}',
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                            fontSize: 11.5.sp,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                     ],

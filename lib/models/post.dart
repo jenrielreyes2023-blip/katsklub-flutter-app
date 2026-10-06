@@ -209,7 +209,9 @@ class Post {
     this.selectedOptionIndex,
     required this.albumTitle,
     required this.discussionTitle,
+    required this.discussionAbout,
     required this.discussionCoverUrl,
+    required this.discussionCoverSource,
     required this.videoUrl,
     required this.videoPosterUrl,
     required this.videoTitle,
@@ -277,7 +279,9 @@ class Post {
   final bool isPoll;
   final String albumTitle;
   final String discussionTitle;
+  final String discussionAbout;
   final String discussionCoverUrl;
+  final String discussionCoverSource;
   final String videoUrl;
   final String videoPosterUrl;
   final String videoTitle;
@@ -390,8 +394,14 @@ class Post {
       discussionTitle:
           _readString(json['discussionTitle'] ?? json['discussion_title']) ??
               '',
+      discussionAbout:
+          _readString(json['discussionAbout'] ?? json['discussion_about']) ??
+              '',
       discussionCoverUrl: _readString(
               json['discussionCoverUrl'] ?? json['discussion_cover_url']) ??
+          '',
+      discussionCoverSource: _readString(
+              json['discussionCoverSource'] ?? json['discussion_cover_source']) ??
           '',
       videoUrl: _readString(json['videoUrl'] ?? json['video_url']) ?? '',
       videoPosterUrl:
@@ -548,7 +558,9 @@ class Post {
       feeling: feeling ?? this.feeling,
       albumTitle: albumTitle,
       discussionTitle: discussionTitle,
+      discussionAbout: discussionAbout,
       discussionCoverUrl: discussionCoverUrl,
+      discussionCoverSource: discussionCoverSource,
       videoUrl: videoUrl,
       videoPosterUrl: videoPosterUrl,
       videoTitle: videoTitle,
@@ -711,7 +723,9 @@ class Post {
       'isPoll': isPoll,
       'albumTitle': albumTitle,
       'discussionTitle': discussionTitle,
+      'discussionAbout': discussionAbout,
       'discussionCoverUrl': discussionCoverUrl,
+      'discussionCoverSource': discussionCoverSource,
       'videoUrl': videoUrl,
       'videoPosterUrl': videoPosterUrl,
       'videoTitle': videoTitle,
