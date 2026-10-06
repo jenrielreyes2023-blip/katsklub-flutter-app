@@ -753,6 +753,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               child: RefreshIndicator(
                 onRefresh: _loadThreads,
                 child: ListView(
+                cacheExtent: 500,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
                   Padding(
@@ -1390,29 +1391,35 @@ class _MessagesScreenState extends State<MessagesScreen>
               itemBuilder: (context, index) {
                 final user = _searchedUsers[index];
                 final resolvedAvatar = ApiConfig.assetUrl(user.avatarUrl ?? '');
-                return InkWell(
-                  onTap: () => _startChatWithUser(user),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: const Color(0xFFE5E7EB),
-                          backgroundImage: resolvedAvatar.isNotEmpty
-                              ? NetworkImage(resolvedAvatar)
-                              : null,
-                          child: resolvedAvatar.isEmpty
-                              ? Text(
-                                  user.initials,
-                                  style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF4B5563),
-                                  ),
-                                )
-                              : null,
-                        ),
+                return RepaintBoundary(
+                  key: ValueKey('search_user_${user.id}'),
+                  child: InkWell(
+                    onTap: () => _startChatWithUser(user),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: const Color(0xFFE5E7EB),
+                            backgroundImage: resolvedAvatar.isNotEmpty
+                                ? CachedNetworkImageProvider(
+                                    resolvedAvatar,
+                                    maxWidth: 100,
+                                    maxHeight: 100,
+                                  )
+                                : null,
+                            child: resolvedAvatar.isEmpty
+                                ? Text(
+                                    user.initials,
+                                    style: TextStyle(fontFamily: 'SF Pro Rounded',
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF4B5563),
+                                    ),
+                                  )
+                                : null,
+                          ),
                         SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -1584,47 +1591,52 @@ class _MessagesScreenState extends State<MessagesScreen>
     final bubbleBorder = isDark ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFE5E7EB);
     final plusBadgeBorder = isDark ? const Color(0xFF18181B) : Colors.white;
 
-    return SizedBox(
-      width: 80,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 84,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomCenter,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (hasStories) {
-                      _openUserStories(_currentUser?.username ?? '');
-                    } else if (!hasNote) {
-                      _openOwnNoteActionsSheet(ownNote);
-                    }
-                  },
-                  child: hasStories
-                      ? Container(
-                          width: 74,
-                          height: 74,
-                          padding: const EdgeInsets.all(2.5),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
-                            ),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(1.5),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF18181B) : Colors.white,
+    return RepaintBoundary(
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 84,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (hasStories) {
+                        _openUserStories(_currentUser?.username ?? '');
+                      } else if (!hasNote) {
+                        _openOwnNoteActionsSheet(ownNote);
+                      }
+                    },
+                    child: hasStories
+                        ? Container(
+                            width: 74,
+                            height: 74,
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                              ),
                             ),
-                            child: CircleAvatar(
-                              radius: 31,
-                              backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-                              backgroundImage: resolvedAvatar.isNotEmpty
-                                  ? NetworkImage(resolvedAvatar) as ImageProvider
-                                  : null,
+                            child: Container(
+                              padding: const EdgeInsets.all(1.5),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF18181B) : Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircleAvatar(
+                                radius: 31,
+                                backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+                                backgroundImage: resolvedAvatar.isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        resolvedAvatar,
+                                        maxWidth: 150,
+                                        maxHeight: 150,
+                                      )
+                                    : null,
                               child: resolvedAvatar.isEmpty
                                   ? Text(
                                       _currentUser?.displayName.isNotEmpty == true
@@ -1754,68 +1766,77 @@ class _MessagesScreenState extends State<MessagesScreen>
     final bubbleBorder = isDark ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFE5E7EB);
     final nameTextColor = isDark ? const Color(0xFFE4E6EB) : const Color(0xFF111827);
 
-    return SizedBox(
-      width: 80,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 84,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomCenter,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (hasStories) {
-                      _openUserStories(note.username);
-                    }
-                  },
-                  child: hasStories
-                      ? Container(
-                          width: 74,
-                          height: 74,
-                          padding: const EdgeInsets.all(2.5),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFFF97316), Color(0xFFEC4899)],
-                            ),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(1.5),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF18181B) : Colors.white,
+    return RepaintBoundary(
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 84,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (hasStories) {
+                        _openUserStories(note.username);
+                      }
+                    },
+                    child: hasStories
+                        ? Container(
+                            width: 74,
+                            height: 74,
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFF97316), Color(0xFFEC4899)],
+                              ),
                             ),
+                            child: Container(
+                              padding: const EdgeInsets.all(1.5),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF18181B) : Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircleAvatar(
+                                radius: 31,
+                                backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
+                                backgroundImage: resolvedAvatar.isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        resolvedAvatar,
+                                        maxWidth: 150,
+                                        maxHeight: 150,
+                                      )
+                                    : null,
+                                child: resolvedAvatar.isEmpty
+                                    ? Text(
+                                        note.initials,
+                                        style: TextStyle(fontFamily: 'SF Pro Rounded',
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: 74,
+                            height: 74,
+                            alignment: Alignment.center,
                             child: CircleAvatar(
-                              radius: 31,
+                              radius: 34,
                               backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
                               backgroundImage: resolvedAvatar.isNotEmpty
-                                  ? NetworkImage(resolvedAvatar) as ImageProvider
-                                  : null,
-                              child: resolvedAvatar.isEmpty
-                                  ? Text(
-                                      note.initials,
-                                      style: TextStyle(fontFamily: 'SF Pro Rounded',
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w800,
-                                        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
-                                      ),
+                                  ? CachedNetworkImageProvider(
+                                      resolvedAvatar,
+                                      maxWidth: 150,
+                                      maxHeight: 150,
                                     )
                                   : null,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          width: 74,
-                          height: 74,
-                          alignment: Alignment.center,
-                          child: CircleAvatar(
-                            radius: 34,
-                            backgroundColor: isDark ? const Color(0xFF2D2E30) : const Color(0xFFE5E7EB),
-                            backgroundImage: resolvedAvatar.isNotEmpty
-                                ? NetworkImage(resolvedAvatar) as ImageProvider
-                                : null,
                             child: resolvedAvatar.isEmpty
                                 ? Text(
                                     note.initials,
@@ -2630,15 +2651,17 @@ class _MessagesScreenState extends State<MessagesScreen>
                 _loadOlderMessages();
               });
             }
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+            return const RepaintBoundary(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -2646,40 +2669,44 @@ class _MessagesScreenState extends State<MessagesScreen>
           }
 
           if (message.id == -999 && t != null) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 6, bottom: 8),
-              child: _TypingRow(otherUser: t.otherUser),
+            return RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 8),
+                child: _TypingRow(otherUser: t.otherUser),
+              ),
             );
           }
 
           if (message.attachments.any((a) => a.url.startsWith('wallpaper|')) ||
               message.body.contains('Changed the chat wallpaper')) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.wallpaper_rounded, size: 14, color: Color(0xFF3B82F6)),
-                      SizedBox(width: 6),
-                      Text(
-                        message.sentByMe
-                            ? 'You changed the chat wallpaper'
-                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat wallpaper',
-                        style: TextStyle(fontFamily: 'SF Pro Rounded',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+            return RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.wallpaper_rounded, size: 14, color: Color(0xFF3B82F6)),
+                        SizedBox(width: 6),
+                        Text(
+                          message.sentByMe
+                              ? 'You changed the chat wallpaper'
+                              : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} changed the chat wallpaper',
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2695,31 +2722,33 @@ class _MessagesScreenState extends State<MessagesScreen>
                     : null
                 : null;
             final displayName = themeName != null && themeName.isNotEmpty ? ' to $themeName' : '';
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: Color(0xFFFF7A59)),
-                      SizedBox(width: 6),
-                      Text(
-                        message.sentByMe
-                            ? 'You equipped the chat bubble skin$displayName'
-                            : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} equipped the chat bubble skin$displayName',
-                        style: TextStyle(fontFamily: 'SF Pro Rounded',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+            return RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: Color(0xFFFF7A59)),
+                        SizedBox(width: 6),
+                        Text(
+                          message.sentByMe
+                              ? 'You equipped the chat bubble skin$displayName'
+                              : '${message.sender.displayName ?? message.sender.username ?? 'Someone'} equipped the chat bubble skin$displayName',
+                          style: TextStyle(fontFamily: 'SF Pro Rounded',
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2759,12 +2788,18 @@ class _MessagesScreenState extends State<MessagesScreen>
           );
 
           if (isKatswipeBot) {
-            return bubble;
+            return RepaintBoundary(
+              key: ValueKey('msg_bubble_${message.id}'),
+              child: bubble,
+            );
           }
 
-          return _SwipeToReply(
-            onSwipeReply: () => _startReplyTo(message),
-            child: bubble,
+          return RepaintBoundary(
+            key: ValueKey('msg_bubble_${message.id}'),
+            child: _SwipeToReply(
+              onSwipeReply: () => _startReplyTo(message),
+              child: bubble,
+            ),
           );
         }
         return Text(chatMessage.text);
@@ -2782,7 +2817,9 @@ class _MessagesScreenState extends State<MessagesScreen>
       return Stack(
         children: [
           Positioned.fill(
-            child: _buildWallpaperWidget(_chatWallpaperPath!),
+            child: RepaintBoundary(
+              child: _buildWallpaperWidget(_chatWallpaperPath!),
+            ),
           ),
           Positioned.fill(
             child: Container(
@@ -6686,12 +6723,14 @@ class _SmallUserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return UserAvatarWithFrame(
-      avatarUrl: avatarUrl ?? '',
-      initials: initials,
-      radius: 11,
-      isAdmin: false,
-      avatarFrame: avatarFrame,
+    return RepaintBoundary(
+      child: UserAvatarWithFrame(
+        avatarUrl: avatarUrl ?? '',
+        initials: initials,
+        radius: 11,
+        isAdmin: false,
+        avatarFrame: avatarFrame,
+      ),
     );
   }
 }
@@ -6849,14 +6888,16 @@ class _MessagesThreadList extends StatelessWidget {
             final isTyping = typingThreadIds.contains(thread.id);
             final timeLabel = _formatRelativeTime(thread.lastMessage?.createdAt);
 
-            return InkWell(
-              onTap: () => onOpenThread(thread),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    _MessagesThreadAvatar(thread: thread),
+            return RepaintBoundary(
+              key: ValueKey('thread_tile_${thread.id}'),
+              child: InkWell(
+                onTap: () => onOpenThread(thread),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      _MessagesThreadAvatar(thread: thread),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -6976,9 +7017,11 @@ class _MessagesThreadAvatar extends StatelessWidget {
       avatarFrame: thread.otherUser.avatarFrame,
     );
 
-    return PresenceAvatarDot(
-      userId: thread.otherUser.id,
-      child: avatar,
+    return RepaintBoundary(
+      child: PresenceAvatarDot(
+        userId: thread.otherUser.id,
+        child: avatar,
+      ),
     );
   }
 }
@@ -8358,17 +8401,19 @@ class _MessagesRequestList extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
             final thread = threads[index];
-            return InkWell(
-              onTap: () => onOpen(thread),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        _MessagesThreadAvatar(thread: thread),
+            return RepaintBoundary(
+              key: ValueKey('req_thread_${thread.id}'),
+              child: InkWell(
+                onTap: () => onOpen(thread),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          _MessagesThreadAvatar(thread: thread),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

@@ -97,9 +97,8 @@ class UserAvatarWithFrame extends StatelessWidget {
       final lowerUrl = cleanUrl.toLowerCase();
       final isAnim = lowerUrl.endsWith('.gif') ||
           lowerUrl.contains('.gif') ||
-          lowerUrl.endsWith('.webp') ||
-          lowerUrl.contains('.webp');
-      final cachePx = (innerRadius * 3.0).round().clamp(72, 250);
+          lowerUrl.contains('animated');
+      final cachePx = (innerRadius * 3.0).round().clamp(48, 250);
       avatarChild = CachedNetworkImage(
         imageUrl: ApiConfig.assetUrl(cleanUrl),
         memCacheWidth: isAnim ? null : cachePx,
@@ -130,177 +129,200 @@ class UserAvatarWithFrame extends StatelessWidget {
       );
     }
 
+    final String? explicitFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath);
+
+    if (!isCurrentUser || explicitFrame != null) {
+      return _buildFrameContent(
+        context: context,
+        avatarChild: avatarChild,
+        rawFrame: explicitFrame,
+        size: size,
+        hasStoryRing: hasStoryRing,
+      );
+    }
+
     return ValueListenableBuilder<String>(
       valueListenable: equippedAdminFrameNotifier,
       builder: (context, globalEquippedFrame, _) {
         final cleanGlobal = globalEquippedFrame.trim();
-        final String? explicitFrame = (avatarFrame?.trim().isNotEmpty == true ? avatarFrame : framePath);
-        final String? rawFrame = explicitFrame ??
-            (isCurrentUser && cleanGlobal.isNotEmpty && cleanGlobal != 'none' ? cleanGlobal : null);
-        final cleanRaw = (rawFrame == 'none' || rawFrame == null) ? null : rawFrame.trim();
-        final effectiveFrame = cleanRaw != null ? ApiConfig.frameUrl(cleanRaw) : null;
-        final hasFrame = effectiveFrame != null && effectiveFrame.isNotEmpty;
-        final pathLower = (effectiveFrame ?? '').toLowerCase();
+        final rawFrame = (cleanGlobal.isNotEmpty && cleanGlobal != 'none') ? cleanGlobal : null;
+        return _buildFrameContent(
+          context: context,
+          avatarChild: avatarChild,
+          rawFrame: rawFrame,
+          size: size,
+          hasStoryRing: hasStoryRing,
+        );
+      },
+    );
+  }
 
-        final isRemote = pathLower.startsWith('http://') || pathLower.startsWith('https://');
-        final isLottie = pathLower.endsWith('.json') || pathLower.contains('.json?');
-        final isSvga = pathLower.endsWith('.svga') || pathLower.contains('.svga?');
-        final isWingFrame = pathLower.contains('wing_frame');
-        final isTestFrame = pathLower.contains('test_frame');
-        final isNeonFrame = pathLower.contains('neon.json') ||
-            pathLower.contains('neon_frame') ||
-            pathLower.contains('/neon');
-        final isSpringFrame = pathLower.contains('spring_blossom_frame');
-        final isBeachFrame =
-            pathLower.contains('beach-frame') || pathLower.contains('beach_frame');
-        final isKawaiiFrame =
-            pathLower.contains('kawaii2') || pathLower.contains('kawaii');
-        final isOrnaFrame =
-            pathLower.contains('orna');
-        final isPurpleFrame =
-            pathLower.contains('purpleav') || pathLower.contains('purple_av');
-        final isHeartFrame =
-            pathLower.contains('heart');
-        final isPotionFrame =
-            pathLower.contains('potion') || pathLower.contains('magical_potion');
+  Widget _buildFrameContent({
+    required BuildContext context,
+    required Widget avatarChild,
+    required String? rawFrame,
+    required double size,
+    required bool hasStoryRing,
+  }) {
+    final cleanRaw = (rawFrame == 'none' || rawFrame == null) ? null : rawFrame.trim();
+    final effectiveFrame = cleanRaw != null ? ApiConfig.frameUrl(cleanRaw) : null;
+    final hasFrame = effectiveFrame != null && effectiveFrame.isNotEmpty;
+    final pathLower = (effectiveFrame ?? '').toLowerCase();
 
-        final double frameSize;
-        if (isWingFrame) {
-          frameSize = size * 1.85;
-        } else if (isTestFrame) {
-          frameSize = size * 1.48;
-        } else if (isNeonFrame) {
-          frameSize = size * 1.70;
-        } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame) {
-          frameSize = size * 1.50;
-        } else if (isPotionFrame) {
-          frameSize = size * 1.42;
-        } else if (isHeartFrame) {
-          frameSize = size * 1.46;
-        } else if (isSpringFrame) {
-          frameSize = size * 1.35;
-        } else if (isPurpleFrame) {
-          frameSize = size * 1.38;
-        } else if (isSvga) {
-          // Default optimal scale for remote/local SVGA avatar frames
-          frameSize = size * 1.50;
-        } else {
-          frameSize = size * 1.30;
-        }
+    final isRemote = pathLower.startsWith('http://') || pathLower.startsWith('https://');
+    final isLottie = pathLower.endsWith('.json') || pathLower.contains('.json?');
+    final isSvga = pathLower.endsWith('.svga') || pathLower.contains('.svga?');
+    final isWingFrame = pathLower.contains('wing_frame');
+    final isTestFrame = pathLower.contains('test_frame');
+    final isNeonFrame = pathLower.contains('neon.json') ||
+        pathLower.contains('neon_frame') ||
+        pathLower.contains('/neon');
+    final isSpringFrame = pathLower.contains('spring_blossom_frame');
+    final isBeachFrame =
+        pathLower.contains('beach-frame') || pathLower.contains('beach_frame');
+    final isKawaiiFrame =
+        pathLower.contains('kawaii2') || pathLower.contains('kawaii');
+    final isOrnaFrame =
+        pathLower.contains('orna');
+    final isPurpleFrame =
+        pathLower.contains('purpleav') || pathLower.contains('purple_av');
+    final isHeartFrame =
+        pathLower.contains('heart');
+    final isPotionFrame =
+        pathLower.contains('potion') || pathLower.contains('magical_potion');
 
-        final double xOffset = isBeachFrame ? (10.0 / 480.0) * frameSize : 0.0;
-        final double yOffset = isBeachFrame ? (12.5 / 480.0) * frameSize : 0.0;
+    final double frameSize;
+    if (isWingFrame) {
+      frameSize = size * 1.85;
+    } else if (isTestFrame) {
+      frameSize = size * 1.48;
+    } else if (isNeonFrame) {
+      frameSize = size * 1.70;
+    } else if (isBeachFrame || isKawaiiFrame || isOrnaFrame) {
+      frameSize = size * 1.50;
+    } else if (isPotionFrame) {
+      frameSize = size * 1.42;
+    } else if (isHeartFrame) {
+      frameSize = size * 1.46;
+    } else if (isSpringFrame) {
+      frameSize = size * 1.35;
+    } else if (isPurpleFrame) {
+      frameSize = size * 1.38;
+    } else if (isSvga) {
+      frameSize = size * 1.50;
+    } else {
+      frameSize = size * 1.30;
+    }
 
-        final double effectiveWidth = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
-        final double effectiveHeight = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
+    final double xOffset = isBeachFrame ? (10.0 / 480.0) * frameSize : 0.0;
+    final double yOffset = isBeachFrame ? (12.5 / 480.0) * frameSize : 0.0;
 
-        Widget effectiveAvatar = avatarChild;
-        if (hasStoryRing) {
-          effectiveAvatar = Container(
-            width: size,
-            height: size,
-            padding: EdgeInsets.all(2.0.r),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: storyRingGradient,
-            ),
-            child: Container(
-              padding: EdgeInsets.all(1.5.r),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                shape: BoxShape.circle,
-              ),
-              child: ClipOval(
-                child: avatarChild,
-              ),
-            ),
-          );
-        } else if (border != null) {
-          effectiveAvatar = Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: border,
-            ),
-            alignment: Alignment.center,
-            child: ClipOval(
-              child: avatarChild,
-            ),
-          );
-        }
+    final double effectiveWidth = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
+    final double effectiveHeight = (hasFrame && !preserveLayoutFootprint) ? frameSize : size;
 
-        final widgetStack = RepaintBoundary(
-          child: SizedBox(
-            width: effectiveWidth,
-            height: effectiveHeight,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-            children: [
-              // Layer 1 (Bottom): The CircleAvatar / Story Ring displaying the user photo
-              effectiveAvatar,
-
-              // Layer 2 (Top): The frame image, Lottie, or SVGA overlay wrapped in IgnorePointer and RepaintBoundary
-              if (hasFrame)
-                Positioned(
-                  left: (effectiveWidth - frameSize) / 2 + xOffset,
-                  top: (effectiveHeight - frameSize) / 2 + yOffset,
-                  width: frameSize,
-                  height: frameSize,
-                  child: IgnorePointer(
-                    child: RepaintBoundary(
-                      child: isLottie
-                          ? _LottieFrameOverlay(
-                              framePath: effectiveFrame,
-                              frameSize: frameSize,
-                            )
-                          : isSvga
-                              ? _SvgaFrameOverlay(
-                                  framePath: effectiveFrame,
-                                  frameSize: frameSize,
-                                )
-                              : isRemote
-                                  ? CachedNetworkImage(
-                                      imageUrl: effectiveFrame,
-                                      width: frameSize,
-                                      height: frameSize,
-                                      memCacheWidth: (frameSize * 2.5).round().clamp(100, 320),
-                                      memCacheHeight: (frameSize * 2.5).round().clamp(100, 320),
-                                      maxWidthDiskCache: 400,
-                                      maxHeightDiskCache: 400,
-                                      fit: BoxFit.contain,
-                                      errorWidget: (context, error, stackTrace) =>
-                                          const SizedBox.shrink(),
-                                    )
-                                  : Image.asset(
-                                      effectiveFrame,
-                                      width: frameSize,
-                                      height: frameSize,
-                                      cacheWidth: (frameSize * 2.5).round().clamp(100, 320),
-                                      cacheHeight: (frameSize * 2.5).round().clamp(100, 320),
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const SizedBox.shrink(),
-                                    ),
-                    ),
-                  ),
-                ),
-            ],
+    Widget effectiveAvatar = avatarChild;
+    if (hasStoryRing) {
+      effectiveAvatar = Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(2.0.r),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: storyRingGradient,
+        ),
+        child: Container(
+          padding: EdgeInsets.all(1.5.r),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            shape: BoxShape.circle,
+          ),
+          child: ClipOval(
+            child: avatarChild,
           ),
         ),
       );
+    } else if (border != null) {
+      effectiveAvatar = Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: border,
+        ),
+        alignment: Alignment.center,
+        child: ClipOval(
+          child: avatarChild,
+        ),
+      );
+    }
 
-        if (onTap != null) {
-          return GestureDetector(
-            onTap: onTap,
-            child: widgetStack,
-          );
-        }
-
-        return widgetStack;
-      },
+    final widgetStack = RepaintBoundary(
+      child: SizedBox(
+        width: effectiveWidth,
+        height: effectiveHeight,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            effectiveAvatar,
+            if (hasFrame)
+              Positioned(
+                left: (effectiveWidth - frameSize) / 2 + xOffset,
+                top: (effectiveHeight - frameSize) / 2 + yOffset,
+                width: frameSize,
+                height: frameSize,
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: isLottie
+                        ? _LottieFrameOverlay(
+                            framePath: effectiveFrame,
+                            frameSize: frameSize,
+                          )
+                        : isSvga
+                            ? _SvgaFrameOverlay(
+                                framePath: effectiveFrame,
+                                frameSize: frameSize,
+                              )
+                            : isRemote
+                                ? CachedNetworkImage(
+                                    imageUrl: effectiveFrame,
+                                    width: frameSize,
+                                    height: frameSize,
+                                    memCacheWidth: (frameSize * 2.5).round().clamp(100, 320),
+                                    memCacheHeight: (frameSize * 2.5).round().clamp(100, 320),
+                                    maxWidthDiskCache: 400,
+                                    maxHeightDiskCache: 400,
+                                    fit: BoxFit.contain,
+                                    errorWidget: (context, error, stackTrace) =>
+                                        const SizedBox.shrink(),
+                                  )
+                                : Image.asset(
+                                    effectiveFrame,
+                                    width: frameSize,
+                                    height: frameSize,
+                                    cacheWidth: (frameSize * 2.5).round().clamp(100, 320),
+                                    cacheHeight: (frameSize * 2.5).round().clamp(100, 320),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const SizedBox.shrink(),
+                                  ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: widgetStack,
+      );
+    }
+
+    return widgetStack;
+  }
   }
 }
 
