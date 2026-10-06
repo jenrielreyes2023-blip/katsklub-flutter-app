@@ -58,6 +58,17 @@ class VoiceRoomController extends ChangeNotifier {
   /// Optional hooks to silence other audio sources (profile music, media players, etc.)
   static final List<VoidCallback> _silenceAudioHooks = [];
 
+  /// Callback registered by the active UI overlay to restore VoiceRoomScreen
+  static VoidCallback? onOpenActiveRoom;
+
+  /// Restores active room to full screen
+  static void openActiveRoom() {
+    final controller = VoiceRoomController();
+    if (controller.currentRoom == null) return;
+    controller.maximize();
+    onOpenActiveRoom?.call();
+  }
+
   static void addSilenceAudioHook(VoidCallback hook) {
     if (!_silenceAudioHooks.contains(hook)) {
       _silenceAudioHooks.add(hook);
@@ -682,6 +693,11 @@ class VoiceRoomController extends ChangeNotifier {
     // If already in the same room, just un-minimize
     if (_currentRoom?.id == room.id) {
       _isMinimized = false;
+      unawaited(VoiceRoomForegroundService.start(
+        roomId: room.id.toString(),
+        title: 'Katsklub',
+        text: 'In a voiceroom. ID: ${room.id}',
+      ));
       notifyListeners();
       return true;
     }
@@ -810,10 +826,11 @@ class VoiceRoomController extends ChangeNotifier {
     // Keep host & room connection alive with periodic heartbeat
     _startHeartbeat();
 
-    // Start quiet foreground service to keep voice room connection & audio alive in background
+    // Start ongoing foreground service to keep voice room connection & audio alive in background
     unawaited(VoiceRoomForegroundService.start(
+      roomId: room.id.toString(),
       title: 'Katsklub',
-      text: 'Nasa voice room ka',
+      text: 'In a voiceroom. ID: ${room.id}',
     ));
 
     notifyListeners();

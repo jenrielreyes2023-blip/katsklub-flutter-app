@@ -32,11 +32,15 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
   @override
   void initState() {
     super.initState();
+    VoiceRoomController.onOpenActiveRoom = _maximizeAndOpenRoom;
     VoiceRoomController().addListener(_onControllerChange);
   }
 
   @override
   void dispose() {
+    if (VoiceRoomController.onOpenActiveRoom == _maximizeAndOpenRoom) {
+      VoiceRoomController.onOpenActiveRoom = null;
+    }
     VoiceRoomController().removeListener(_onControllerChange);
     super.dispose();
   }
@@ -55,14 +59,17 @@ class _VoiceRoomMiniOverlayState extends State<VoiceRoomMiniOverlay> {
 
   void _maximizeAndOpenRoom() {
     if (_isOpening) return;
+    final controller = VoiceRoomController();
+    controller.maximize();
+    if (VoiceRoomScreen.isScreenOpen) {
+      return;
+    }
     _isOpening = true;
     HapticFeedback.lightImpact();
 
     final nav = UpdateChecker.navigatorKey.currentState;
-    final controller = VoiceRoomController();
 
     if (nav != null) {
-      controller.maximize();
       nav.push(
         PageRouteBuilder<void>(
           opaque: true,

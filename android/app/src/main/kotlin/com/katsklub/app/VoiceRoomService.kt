@@ -14,18 +14,30 @@ import android.os.IBinder
 class VoiceRoomService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "katsklub_voice_room_channel"
+        const val CHANNEL_ID = "katsklub_voice_room_channel_v2"
         const val NOTIFICATION_ID = 8801
         const val ACTION_START = "com.katsklub.app.ACTION_START_VOICE_ROOM"
         const val ACTION_STOP = "com.katsklub.app.ACTION_STOP_VOICE_ROOM"
+        const val EXTRA_ROOM_ID = "extra_room_id"
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_TEXT = "extra_text"
 
-        fun start(context: Context, title: String? = null, text: String? = null) {
+        fun start(
+            context: Context,
+            roomId: String? = null,
+            title: String? = null,
+            text: String? = null
+        ) {
+            val defaultText = if (!roomId.isNullOrBlank()) {
+                "In a voiceroom. ID: $roomId"
+            } else {
+                "In a voiceroom."
+            }
             val intent = Intent(context, VoiceRoomService::class.java).apply {
                 action = ACTION_START
+                putExtra(EXTRA_ROOM_ID, roomId)
                 putExtra(EXTRA_TITLE, title ?: "Katsklub")
-                putExtra(EXTRA_TEXT, text ?: "Nasa voice room ka")
+                putExtra(EXTRA_TEXT, text ?: defaultText)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -56,13 +68,24 @@ class VoiceRoomService : Service() {
             return START_NOT_STICKY
         }
 
+        val roomId = intent?.getStringExtra(EXTRA_ROOM_ID)?.ifBlank { null }
         val title = intent?.getStringExtra(EXTRA_TITLE)?.ifBlank { null } ?: "Katsklub"
-        val text = intent?.getStringExtra(EXTRA_TEXT)?.ifBlank { null } ?: "Nasa voice room ka"
+        val defaultText = if (!roomId.isNullOrBlank()) {
+            "In a voiceroom. ID: $roomId"
+        } else {
+            "In a voiceroom."
+        }
+        val text = intent?.getStringExtra(EXTRA_TEXT)?.ifBlank { null } ?: defaultText
 
         createNotificationChannel()
 
         val notificationIntent = Intent(this, MainActivity::class.java).apply {
             this.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("type", "voice_room")
+            if (!roomId.isNullOrBlank()) {
+                putExtra("roomId", roomId)
+            }
+            putExtra("clickTime", System.currentTimeMillis().toString())
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -94,10 +117,8 @@ class VoiceRoomService : Service() {
             .setContentIntent(pendingIntent)
             .setShowWhen(false)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            @Suppress("DEPRECATION")
-            builder.setPriority(Notification.PRIORITY_LOW)
-        }
+        @Suppress("DEPRECATION")
+        builder.setPriority(Notification.PRIORITY_HIGH)
 
         val notification = builder.build()
 
@@ -129,14 +150,19 @@ class VoiceRoomService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            try {
+                // Delete legacy low-importance channel if it existed
+                notificationManager.deleteNotificationChannel("katsklub_voice_room_channel")
+            } catch (_: Exception) {}
+
             val existing = notificationManager.getNotificationChannel(CHANNEL_ID)
             if (existing == null) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
                     "Voice Room",
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "Voice room background connection"
+                    description = "Voice room background connection and audio"
                     setShowBadge(false)
                     enableLights(false)
                     enableVibration(false)

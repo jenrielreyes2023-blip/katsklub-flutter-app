@@ -29,6 +29,9 @@ import '../../widgets/voice_seat_widget.dart';
 class VoiceRoomScreen extends StatefulWidget {
   const VoiceRoomScreen({super.key});
 
+  /// Tracks whether the full-screen VoiceRoomScreen is currently mounted
+  static bool isScreenOpen = false;
+
   static Future<void> open(BuildContext context, VoiceRoom room, User user) async {
     final controller = VoiceRoomController();
     await controller.enterRoom(room, user);
@@ -64,12 +67,14 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
   @override
   void initState() {
     super.initState();
+    VoiceRoomScreen.isScreenOpen = true;
     _svgaController = SVGAAnimationController(vsync: this);
     VoiceRoomController().addListener(_handleControllerUpdate);
   }
 
   @override
   void dispose() {
+    VoiceRoomScreen.isScreenOpen = false;
     VoiceRoomController().removeListener(_handleControllerUpdate);
     _svgaController?.dispose();
     _chatTextController.dispose();

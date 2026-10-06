@@ -24,6 +24,7 @@ import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import '../services/push_notification_service.dart';
 import '../services/trtc_call_service.dart';
+import '../services/voice_room_controller.dart';
 import '../widgets/in_app_notification_banner.dart';
 import '../services/daily_rewards_service.dart';
 import '../widgets/daily_rewards_overlay.dart';
@@ -177,6 +178,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
 
     switch (type) {
+      case 'voice_room':
+      case 'voiceroom':
+        VoiceRoomController.openActiveRoom();
+        return;
+
       case 'call_action':
       case 'call':
       case 'call_invite':

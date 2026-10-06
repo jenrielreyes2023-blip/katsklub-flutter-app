@@ -68,9 +68,10 @@ class MainActivity : AudioServiceActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
+                    val roomId = call.argument<String>("roomId")
                     val title = call.argument<String>("title")
                     val text = call.argument<String>("text")
-                    VoiceRoomService.start(applicationContext, title, text)
+                    VoiceRoomService.start(applicationContext, roomId, title, text)
                     result.success(true)
                 }
                 "stop" -> {
@@ -163,6 +164,7 @@ class MainActivity : AudioServiceActivity() {
         copyExtra("postId")
         copyExtra("commentId")
         copyExtra("username")
+        copyExtra("roomId")
         copyExtra(KATS_EXTRA_THREAD_ID, "threadId")
         copyExtra(EXTRA_CALL_ACTION, "callAction")
         copyExtra(EXTRA_CALL_ID, "callId")
