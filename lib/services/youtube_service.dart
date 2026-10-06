@@ -77,6 +77,7 @@ class YouTubeService {
   /// Searches for YouTube videos matching the specified [query].
   ///
   /// Calls `GET /api/youtube/search?q=<query>` and parses the response list.
+  /// Falls back to client-side extraction via youtube_explode_dart if the backend fails.
   Future<List<YouTubeVideoItem>> searchVideos(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return const [];
@@ -88,16 +89,17 @@ class YouTubeService {
         headers: {
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic> && decoded['results'] is List) {
           final list = decoded['results'] as List;
-          return list
+          final items = list
               .whereType<Map<String, dynamic>>()
               .map(YouTubeVideoItem.fromJson)
               .toList();
+          if (items.isNotEmpty) return items;
         }
       } else {
         developer.log(
@@ -114,7 +116,47 @@ class YouTubeService {
       );
     }
 
-    return const [];
+    // High-resilience fallback: perform direct search on device if backend fails
+    return _searchVideosClientSide(trimmed);
+  }
+
+  Future<List<YouTubeVideoItem>> _searchVideosClientSide(String query) async {
+    final yt = yte.YoutubeExplode();
+    try {
+      final searchResults = await yt.search.search(query);
+      final items = <YouTubeVideoItem>[];
+      for (final v in searchResults.take(30)) {
+        final d = v.duration;
+        final durationStr = d != null
+            ? '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}'
+            : '';
+        final thumb = v.thumbnails.highResUrl.isNotEmpty
+            ? v.thumbnails.highResUrl
+            : (v.thumbnails.standardResUrl.isNotEmpty
+                ? v.thumbnails.standardResUrl
+                : v.thumbnails.lowResUrl);
+        final views = '${v.engagement.viewCount} views';
+        items.add(
+          YouTubeVideoItem(
+            id: v.id.value,
+            title: v.title,
+            duration: durationStr,
+            thumbnail: thumb,
+            author: v.author,
+            viewCount: views,
+          ),
+        );
+      }
+      return items;
+    } catch (e) {
+      developer.log(
+        'Client-side YouTube search fallback failed: $e',
+        name: 'YouTubeService',
+      );
+      return const [];
+    } finally {
+      yt.close();
+    }
   }
 
   /// Retrieves the direct Google CDN playable streaming URL for [videoId].
