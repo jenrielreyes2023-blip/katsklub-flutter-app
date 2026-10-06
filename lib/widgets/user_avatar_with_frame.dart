@@ -323,7 +323,6 @@ class UserAvatarWithFrame extends StatelessWidget {
 
     return widgetStack;
   }
-  }
 }
 
 class _LottieFrameOverlay extends StatefulWidget {

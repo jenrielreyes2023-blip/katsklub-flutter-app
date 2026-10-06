@@ -1452,8 +1452,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              );
+            },
             ),
           ),
       ],
@@ -1751,8 +1752,9 @@ class _MessagesScreenState extends State<MessagesScreen>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildOtherNoteItem(UserNote note) {
     final resolvedAvatar = ApiConfig.assetUrl(note.avatarUrl);
@@ -1901,8 +1903,9 @@ class _MessagesScreenState extends State<MessagesScreen>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _openOwnNoteActionsSheet(UserNote? ownNote) {
     if (ownNote == null) {
@@ -6981,8 +6984,9 @@ class _MessagesThreadList extends StatelessWidget {
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          );
+        },
         ),
       );
   }
@@ -8494,8 +8498,9 @@ class _MessagesRequestList extends StatelessWidget {
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          );
+        },
         ),
       );
   }
