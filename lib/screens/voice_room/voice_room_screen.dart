@@ -1230,11 +1230,17 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                             ),
                             SizedBox(height: 2.h),
                             Text(
-                              isMusicOn
-                                  ? (hasPlayingMusic
-                                      ? 'Now playing: $musicTitle'
-                                      : 'Enabled: Tap below to browse library')
-                                  : 'Enable music playback in the room',
+                              controller.isHost
+                                  ? (isMusicOn
+                                      ? (hasPlayingMusic
+                                          ? 'Now playing: $musicTitle'
+                                          : 'Enabled: Tap below to browse library')
+                                      : 'Enable music playback in the room')
+                                  : (isMusicOn
+                                      ? (hasPlayingMusic
+                                          ? 'Now playing: $musicTitle'
+                                          : 'Music active (controlled by host)')
+                                      : 'Disabled by room owner'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1247,17 +1253,39 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                         ),
                       ),
                       SizedBox(width: 8.w),
-                      Switch.adaptive(
-                        value: isMusicOn,
-                        activeThumbColor: const Color(0xFFFF7A45),
-                        activeTrackColor: const Color(0xFFFF7A45).withValues(alpha: 0.45),
-                        onChanged: (val) {
-                          HapticFeedback.lightImpact();
-                          controller.toggleMusicEnabled(val);
-                          setSheetState(() {});
-                          setState(() {});
-                        },
-                      ),
+                      if (controller.isHost)
+                        Switch.adaptive(
+                          value: isMusicOn,
+                          activeThumbColor: const Color(0xFFFF7A45),
+                          activeTrackColor: const Color(0xFFFF7A45).withValues(alpha: 0.45),
+                          onChanged: (val) {
+                            HapticFeedback.lightImpact();
+                            controller.toggleMusicEnabled(val);
+                            setSheetState(() {});
+                            setState(() {});
+                          },
+                        )
+                      else
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: isMusicOn ? const Color(0xFF4ADE80).withValues(alpha: 0.15) : Colors.white10,
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(
+                              color: isMusicOn ? const Color(0xFF4ADE80).withValues(alpha: 0.3) : Colors.white12,
+                              width: 0.6,
+                            ),
+                          ),
+                          child: Text(
+                            isMusicOn ? 'ACTIVE' : 'HOST ONLY',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Rounded',
+                              color: isMusicOn ? const Color(0xFF4ADE80) : Colors.white38,
+                              fontSize: 9.5.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -1323,20 +1351,21 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(
-                              controller.isRoomMusicPlaying
-                                  ? Icons.pause_circle_filled_rounded
-                                  : Icons.play_circle_filled_rounded,
-                              color: const Color(0xFFFF7A45),
-                              size: 28.r,
+                          if (controller.isHost)
+                            IconButton(
+                              icon: Icon(
+                                controller.isRoomMusicPlaying
+                                    ? Icons.pause_circle_filled_rounded
+                                    : Icons.play_circle_filled_rounded,
+                                color: const Color(0xFFFF7A45),
+                                size: 28.r,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                controller.togglePauseRoomMusic();
+                                setSheetState(() {});
+                              },
                             ),
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              controller.togglePauseRoomMusic();
-                              setSheetState(() {});
-                            },
-                          ),
                           IconButton(
                             icon: Icon(
                               Icons.tune_rounded,

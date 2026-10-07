@@ -142,51 +142,46 @@ class VoiceRoomController extends ChangeNotifier {
   int get currentQueueIndex => _currentQueueIndex;
 
   void addToQueue(VoiceRoomMusicTrack track) {
-    final existingIndex = _musicQueue.indexWhere((t) => t.id == track.id);
-    if (existingIndex == -1) {
-      _musicQueue.add(track);
-    }
-    ZegoVoiceService().enableRepeat(false);
-    notifyListeners();
-
-    // If no song is currently playing, start playing immediately
-    if (_roomCdnTrack == null && !_isRoomMusicPlaying) {
-      _currentQueueIndex = existingIndex != -1 ? existingIndex : _musicQueue.length - 1;
-      playCdnMusic(_musicQueue[_currentQueueIndex]);
+    if (_currentRoom == null) return;
+    final socket = FeedService.getSocket();
+    if (socket != null && socket.connected) {
+      socket.emit('voice_room:music_queue_add', {
+        'roomId': _currentRoom!.id,
+        'track': track.toJson(),
+      });
     }
   }
 
   void removeFromQueue(int index) {
+    if (_currentRoom == null) return;
     if (index >= 0 && index < _musicQueue.length) {
-      final wasPlayingThis = index == _currentQueueIndex;
-      _musicQueue.removeAt(index);
-      if (_musicQueue.isEmpty) {
-        _currentQueueIndex = -1;
-        stopRoomMusic();
-      } else {
-        if (index < _currentQueueIndex) {
-          _currentQueueIndex--;
-        } else if (_currentQueueIndex >= _musicQueue.length) {
-          _currentQueueIndex = 0;
-        }
-        if (wasPlayingThis) {
-          playCdnMusic(_musicQueue[_currentQueueIndex]);
-        }
+      final track = _musicQueue[index];
+      final socket = FeedService.getSocket();
+      if (socket != null && socket.connected) {
+        socket.emit('voice_room:music_queue_remove', {
+          'roomId': _currentRoom!.id,
+          'trackId': track.id,
+          'index': index,
+        });
       }
-      notifyListeners();
     }
   }
 
   void clearQueue() {
-    _musicQueue.clear();
-    _currentQueueIndex = -1;
-    notifyListeners();
+    if (!isHost || _currentRoom == null) return;
+    final socket = FeedService.getSocket();
+    if (socket != null && socket.connected) {
+      socket.emit('voice_room:music_queue_clear', {
+        'roomId': _currentRoom!.id,
+      });
+    }
   }
 
   Future<void> playQueueIndex(int index) async {
+    if (!isHost || _currentRoom == null) return;
     if (index >= 0 && index < _musicQueue.length) {
       _currentQueueIndex = index;
-      await playCdnMusic(_musicQueue[index]);
+      await playCdnMusic(_musicQueue[index], queueIndex: index);
     }
   }
 
@@ -194,7 +189,7 @@ class VoiceRoomController extends ChangeNotifier {
 
   /// Triggered automatically when either just_audio or Zego media player completes the track.
   Future<void> _onTrackCompleted({bool fromZego = false}) async {
-    // If local playback via just_audio is active, ignore duplicate/premature completion from Zego
+    if (!isHost) return;
     if (fromZego && _localPlaybackActive) {
       debugPrint('[VoiceRoomController] Ignoring Zego completion because just_audio is active');
       return;
@@ -202,7 +197,7 @@ class VoiceRoomController extends ChangeNotifier {
     if (_isAdvancingQueue) return;
     _isAdvancingQueue = true;
     try {
-      debugPrint('[VoiceRoomController] Track ended. Auto-advancing queue (total in queue: ${_musicQueue.length}, current index: $_currentQueueIndex)');
+      debugPrint('[VoiceRoomController] Host auto-advancing queue (total in queue: ${_musicQueue.length}, current index: $_currentQueueIndex)');
       await skipToNextMusic();
     } catch (e) {
       debugPrint('[VoiceRoomController] _onTrackCompleted error: $e');
@@ -213,51 +208,62 @@ class VoiceRoomController extends ChangeNotifier {
   }
 
   Future<void> skipToNextMusic() async {
+    if (!isHost) return;
     if (_musicQueue.isEmpty) {
       await stopRoomMusic();
       return;
     }
 
-    // Advance to next track, or loop back to index 0 if at the end of the queue
     if (_currentQueueIndex >= 0 && _currentQueueIndex + 1 < _musicQueue.length) {
       _currentQueueIndex++;
     } else {
-      // Loop back to the beginning of the queue
       _currentQueueIndex = 0;
     }
 
     final next = _musicQueue[_currentQueueIndex];
-    debugPrint('[VoiceRoomController] Auto-loop queue -> playing index $_currentQueueIndex: ${next.title}');
-    await playCdnMusic(next);
+    debugPrint('[VoiceRoomController] Host auto-loop queue -> playing index $_currentQueueIndex: ${next.title}');
+    await playCdnMusic(next, queueIndex: _currentQueueIndex);
   }
 
   Future<void> skipToPreviousMusic() async {
+    if (!isHost) return;
     if (_musicQueue.isEmpty) return;
 
     if (_currentQueueIndex > 0) {
       _currentQueueIndex--;
     } else {
-      // Loop to end of queue
       _currentQueueIndex = _musicQueue.length - 1;
     }
 
     final prev = _musicQueue[_currentQueueIndex];
-    debugPrint('[VoiceRoomController] Previous track -> playing index $_currentQueueIndex: ${prev.title}');
-    await playCdnMusic(prev);
+    debugPrint('[VoiceRoomController] Host previous track -> playing index $_currentQueueIndex: ${prev.title}');
+    await playCdnMusic(prev, queueIndex: _currentQueueIndex);
   }
 
   void toggleMusicEnabled([bool? enable]) {
-    _isMusicEnabled = enable ?? !_isMusicEnabled;
-    if (!_isMusicEnabled) {
-      stopRoomMusic();
+    if (!isHost || _currentRoom == null) return;
+    final target = enable ?? !_isMusicEnabled;
+    if (!target) {
+      unawaited(_stopLocalMusicInternal());
     }
-    notifyListeners();
+    final socket = FeedService.getSocket();
+    if (socket != null && socket.connected) {
+      socket.emit('voice_room:music_toggle', {
+        'roomId': _currentRoom!.id,
+        'isEnabled': target,
+      });
+    }
   }
 
-  Future<void> playCdnMusic(VoiceRoomMusicTrack track) async {
+  Future<void> playCdnMusic(VoiceRoomMusicTrack track, {int? queueIndex}) async {
+    // SINGLE SOURCE OF TRUTH: Only host plays audio & streams via Zego Aux
+    if (!isHost) {
+      addToQueue(track);
+      return;
+    }
+
     _roomCdnTrack = track;
-    // Keep queue in sync with currently playing track
-    final qIdx = _musicQueue.indexWhere((t) => t.id == track.id);
+    final qIdx = queueIndex ?? _musicQueue.indexWhere((t) => t.id == track.id);
     if (qIdx != -1) {
       _currentQueueIndex = qIdx;
     } else {
@@ -303,7 +309,7 @@ class VoiceRoomController extends ChangeNotifier {
 
         // Auto-advance to next track in queue when current track completes
         if (state.processingState == ProcessingState.completed) {
-          debugPrint('[VoiceRoomController] just_audio ProcessingState.completed fired');
+          debugPrint('[VoiceRoomController] just_audio ProcessingState.completed fired on host');
           _onTrackCompleted();
         }
       });
@@ -311,8 +317,7 @@ class VoiceRoomController extends ChangeNotifier {
       final streamUrl = track.streamUrl;
       bool localStarted = false;
 
-      // 1. Primary: Start just_audio via GlobalAudioPlayerService
-      // VoiceRoomForegroundService maintains the persistent Android foreground service
+      // 1. Primary: Host plays locally via GlobalAudioPlayerService
       try {
         await globalAudio.playVoiceRoomTrack(
           id: track.id,
@@ -337,15 +342,20 @@ class VoiceRoomController extends ChangeNotifier {
         await ZegoVoiceService().playBackgroundMusic(
           streamUrl,
           volume: _roomMusicVolume,
-          playLocally: false, // Never play locally on Zego; host hears via GlobalAudioPlayerService
+          playLocally: false,
         );
       } catch (e) {
         debugPrint('[VoiceRoomController] playCdnMusic zego error: $e');
       }
 
-      if (_isRoomMusicPlaying) {
-        // Broadcast chat announcement to the room
-        sendChatMessage('🎵 Playing: ${track.title} by ${track.artist}');
+      // 3. Emit track change to socket (Single Source of Truth)
+      final socket = FeedService.getSocket();
+      if (socket != null && socket.connected && _currentRoom != null) {
+        socket.emit('voice_room:music_play', {
+          'roomId': _currentRoom!.id,
+          'track': track.toJson(),
+          'queueIndex': _currentQueueIndex,
+        });
       }
     } catch (e) {
       debugPrint('[VoiceRoomController] playCdnMusic error: $e');
@@ -357,10 +367,12 @@ class VoiceRoomController extends ChangeNotifier {
   }
 
   Future<void> togglePauseRoomMusic() async {
+    if (!isHost) return;
     if (_roomCdnTrack == null) return;
     try {
       final globalAudio = GlobalAudioPlayerService.instance;
-      if (_isRoomMusicPlaying) {
+      final targetPlaying = !_isRoomMusicPlaying;
+      if (!targetPlaying) {
         await globalAudio.setPlaying(false);
         await ZegoVoiceService().pauseBackgroundMusic();
         _isRoomMusicPlaying = false;
@@ -370,26 +382,49 @@ class VoiceRoomController extends ChangeNotifier {
         _isRoomMusicPlaying = true;
       }
       notifyListeners();
+
+      final socket = FeedService.getSocket();
+      if (socket != null && socket.connected && _currentRoom != null) {
+        socket.emit('voice_room:music_pause', {
+          'roomId': _currentRoom!.id,
+          'isPlaying': _isRoomMusicPlaying,
+        });
+      }
     } catch (e) {
       debugPrint('[VoiceRoomController] togglePauseRoomMusic error: $e');
     }
   }
 
-  Future<void> stopRoomMusic() async {
+  Future<void> _stopLocalMusicInternal() async {
     try {
       await _roomMusicPlayerStateSub?.cancel();
       _roomMusicPlayerStateSub = null;
       await _roomMusicPlayerDurationSub?.cancel();
       _roomMusicPlayerDurationSub = null;
+      _localPlaybackActive = false;
+      _isRoomMusicPlaying = false;
+      _isRoomMusicLoading = false;
       await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
       await ZegoVoiceService().stopBackgroundMusic();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[VoiceRoomController] _stopLocalMusicInternal error: $e');
+    }
+  }
+
+  Future<void> stopRoomMusic() async {
+    if (!isHost) return;
+    await _stopLocalMusicInternal();
     _roomCdnTrack = null;
-    _roomMusicCurrentDuration = null;
-    _localPlaybackActive = false;
-    _isRoomMusicPlaying = false;
-    _isRoomMusicLoading = false;
+    _currentQueueIndex = -1;
     notifyListeners();
+
+    final socket = FeedService.getSocket();
+    if (socket != null && socket.connected && _currentRoom != null) {
+      socket.emit('voice_room:music_pause', {
+        'roomId': _currentRoom!.id,
+        'isPlaying': false,
+      });
+    }
   }
 
   Future<void> setRoomMusicVolume(double volume) async {
@@ -973,6 +1008,8 @@ class VoiceRoomController extends ChangeNotifier {
     socket.off('voice_room:user_left');
     socket.off('voice_room:info_updated');
     socket.off('voice_room:admins_updated');
+    socket.off('voice_room:music_updated');
+    socket.off('voice_room:music_host_transferred');
     socket.off('connect');
   }
 
@@ -1074,6 +1111,11 @@ class VoiceRoomController extends ChangeNotifier {
 
         notifyListeners();
       }
+
+      // Sync room music state snapshot
+      if (data['musicState'] != null) {
+        _handleRoomMusicUpdated(data['musicState']);
+      }
     });
 
     // Real-time host presence changes (entered, left, disconnected)
@@ -1106,6 +1148,22 @@ class VoiceRoomController extends ChangeNotifier {
         hasPin: data['hasPin'] != null ? hasPin : _currentRoom!.hasPin,
       );
       notifyListeners();
+    });
+
+    // Real-time shared room music updates (play, pause, queue add/remove, track advance, stop)
+    socket.on('voice_room:music_updated', (data) {
+      if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+      _handleRoomMusicUpdated(data);
+    });
+
+    // Room DJ/Host ownership transfer
+    socket.on('voice_room:music_host_transferred', (data) {
+      if (data is! Map || _currentRoom == null) return;
+      final roomId = data['roomId'];
+      if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+      _handleRoomMusicUpdated(data);
     });
 
     socket.on('voice_room:host_mute_changed', (data) {
@@ -1655,6 +1713,75 @@ class VoiceRoomController extends ChangeNotifier {
     _currentQueueIndex = -1;
     _isRoomMusicPlaying = false;
     _isRoomMusicLoading = false;
+
+    notifyListeners();
+  }
+
+  /// Handles incoming shared room music state updates from Socket.io
+  void _handleRoomMusicUpdated(dynamic rawData) {
+    if (rawData is! Map || _currentRoom == null) return;
+    final data = Map<String, dynamic>.from(rawData);
+
+    final isEnabled = data['isEnabled'] == true;
+    final isPlaying = data['isPlaying'] == true;
+    final currentQueueIndex = (data['currentQueueIndex'] as num?)?.toInt() ?? -1;
+
+    VoiceRoomMusicTrack? track;
+    final rawTrack = data['currentTrack'];
+    if (rawTrack is Map) {
+      try {
+        track = VoiceRoomMusicTrack.fromJson(Map<String, dynamic>.from(rawTrack));
+      } catch (_) {}
+    }
+
+    final newQueue = <VoiceRoomMusicTrack>[];
+    final rawQueue = data['queue'];
+    if (rawQueue is List) {
+      for (final item in rawQueue) {
+        if (item is Map) {
+          try {
+            newQueue.add(VoiceRoomMusicTrack.fromJson(Map<String, dynamic>.from(item)));
+          } catch (_) {}
+        }
+      }
+    }
+
+    _isMusicEnabled = isEnabled;
+    _roomCdnTrack = track;
+    _currentQueueIndex = currentQueueIndex;
+    _musicQueue.clear();
+    _musicQueue.addAll(newQueue);
+
+    // If music was disabled, stopped, or host left:
+    if (!_isMusicEnabled || (!isPlaying && track == null)) {
+      _isRoomMusicPlaying = false;
+      if (_localPlaybackActive) {
+        unawaited(_stopLocalMusicInternal());
+      }
+      notifyListeners();
+      return;
+    }
+
+    _isRoomMusicPlaying = isPlaying;
+
+    // SINGLE SOURCE OF TRUTH (Requirement 2):
+    // Only the host device plays audio and controls playback.
+    if (isHost) {
+      // 1. Auto-start playback when the queue transitions from empty to non-empty
+      // or if music is enabled and no track is currently playing.
+      if (_isMusicEnabled && _roomCdnTrack == null && _musicQueue.isNotEmpty) {
+        debugPrint('[VoiceRoomController] Host auto-starting playback for newly queued song: ${_musicQueue.first.title}');
+        final firstTrack = _musicQueue.first;
+        unawaited(playCdnMusic(firstTrack, queueIndex: 0));
+        return;
+      }
+    } else {
+      // Guest devices NEVER stream into Zego Aux or just_audio.
+      // Guests hear the music via Zego RTC room audio stream published by the host.
+      if (_localPlaybackActive) {
+        unawaited(_stopLocalMusicInternal());
+      }
+    }
 
     notifyListeners();
   }

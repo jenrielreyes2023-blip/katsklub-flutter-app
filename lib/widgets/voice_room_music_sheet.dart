@@ -179,7 +179,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Added to Queue: ${track.title}',
+                'Added to Room Queue: ${track.title}',
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: Colors.white,
@@ -199,10 +199,14 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
 
   Future<void> _playTrack(VoiceRoomMusicTrack track) async {
     HapticFeedback.lightImpact();
+    // Non-hosts cannot control master playback; adding to shared room queue instead
+    if (!widget.controller.isHost) {
+      _addToQueue(track);
+      return;
+    }
+
     setState(() => _loadingTrackId = track.id);
-
     await widget.controller.playCdnMusic(track);
-
     if (!mounted) return;
     setState(() => _loadingTrackId = null);
 
@@ -218,7 +222,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Now streaming: ${track.title}',
+                'Now streaming in room: ${track.title}',
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: Colors.white,
@@ -931,7 +935,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               ),
             ),
             const Spacer(),
-            if (queue.isNotEmpty)
+            if (queue.isNotEmpty && widget.controller.isHost)
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -1137,56 +1141,77 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                                 ],
                               ],
                             ),
-                            Text(
-                              track.artist,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Rounded',
-                                color: Colors.white38,
-                                fontSize: 9.5.sp,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    track.artist,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: Colors.white38,
+                                      fontSize: 9.5.sp,
+                                    ),
+                                  ),
+                                ),
+                                if (track.addedByUsername != null && track.addedByUsername!.isNotEmpty)
+                                  Text(
+                                    'by @${track.addedByUsername}',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Rounded',
+                                      color: const Color(0xFFFF7A45).withValues(alpha: 0.8),
+                                      fontSize: 9.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          isThisPlaying
-                              ? (isPlaying
-                                  ? Icons.pause_circle_filled_rounded
-                                  : Icons.play_circle_filled_rounded)
-                              : Icons.play_arrow_rounded,
-                          color: const Color(0xFFFF7A45),
-                          size: 20.r,
+                      if (widget.controller.isHost)
+                        IconButton(
+                          icon: Icon(
+                            isThisPlaying
+                                ? (isPlaying
+                                    ? Icons.pause_circle_filled_rounded
+                                    : Icons.play_circle_filled_rounded)
+                                : Icons.play_arrow_rounded,
+                            color: const Color(0xFFFF7A45),
+                            size: 20.r,
+                          ),
+                          tooltip: isThisPlaying
+                              ? (isPlaying ? 'Pause' : 'Resume')
+                              : 'Play this now',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          splashRadius: 14.r,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            if (isThisPlaying) {
+                              widget.controller.togglePauseRoomMusic();
+                            } else {
+                              widget.controller.playQueueIndex(index);
+                            }
+                          },
                         ),
-                        tooltip: isThisPlaying
-                            ? (isPlaying ? 'Pause' : 'Resume')
-                            : 'Play this now',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        splashRadius: 14.r,
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          if (isThisPlaying) {
-                            widget.controller.togglePauseRoomMusic();
-                          } else {
-                            widget.controller.playQueueIndex(index);
-                          }
-                        },
-                      ),
-                      SizedBox(width: 8.w),
-                      IconButton(
-                        icon: Icon(Icons.close_rounded, color: Colors.white38, size: 15.r),
-                        tooltip: 'Remove from queue',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        splashRadius: 14.r,
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          widget.controller.removeFromQueue(index);
-                        },
-                      ),
+                      if (widget.controller.isHost ||
+                          (track.addedByUserId != null &&
+                              track.addedByUserId.toString() == widget.controller.currentUser?.id?.toString())) ...[
+                        SizedBox(width: 8.w),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: Colors.white38, size: 15.r),
+                          tooltip: 'Remove from queue',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          splashRadius: 14.r,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            widget.controller.removeFromQueue(index);
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 );
@@ -1386,7 +1411,9 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         ),
                         SizedBox(width: 2.w),
                         Text(
-                          isCurrent ? 'Playing' : 'Play',
+                          isCurrent
+                              ? 'Playing'
+                              : (widget.controller.isHost ? 'Play' : 'Queue'),
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             color: Colors.white,
@@ -1473,85 +1500,117 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.skip_previous_rounded, color: Colors.white70, size: 18.r),
-                tooltip: 'Previous in queue',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                splashRadius: 14.r,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  widget.controller.skipToPreviousMusic();
-                },
-              ),
-              SizedBox(width: 4.w),
-              IconButton(
-                icon: Icon(
-                  isMusicPlaying
-                      ? Icons.pause_circle_filled_rounded
-                      : Icons.play_circle_filled_rounded,
-                  color: const Color(0xFFFF7A45),
-                  size: 22.r,
+              if (widget.controller.isHost) ...[
+                IconButton(
+                  icon: Icon(Icons.skip_previous_rounded, color: Colors.white70, size: 18.r),
+                  tooltip: 'Previous in queue',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 14.r,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.controller.skipToPreviousMusic();
+                  },
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                splashRadius: 14.r,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  widget.controller.togglePauseRoomMusic();
-                },
-              ),
-              SizedBox(width: 4.w),
-              IconButton(
-                icon: Icon(Icons.skip_next_rounded, color: Colors.white70, size: 18.r),
-                tooltip: 'Next in queue',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                splashRadius: 14.r,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  widget.controller.skipToNextMusic();
-                },
-              ),
-              SizedBox(width: 6.w),
-              IconButton(
-                icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 17.r),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                splashRadius: 14.r,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  widget.controller.stopRoomMusic();
-                },
-              ),
+                SizedBox(width: 4.w),
+                IconButton(
+                  icon: Icon(
+                    isMusicPlaying
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.play_circle_filled_rounded,
+                    color: const Color(0xFFFF7A45),
+                    size: 22.r,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 14.r,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.controller.togglePauseRoomMusic();
+                  },
+                ),
+                SizedBox(width: 4.w),
+                IconButton(
+                  icon: Icon(Icons.skip_next_rounded, color: Colors.white70, size: 18.r),
+                  tooltip: 'Next in queue',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 14.r,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.controller.skipToNextMusic();
+                  },
+                ),
+                SizedBox(width: 6.w),
+                IconButton(
+                  icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 17.r),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 14.r,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.controller.stopRoomMusic();
+                  },
+                ),
+              ] else ...[
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.5.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF7A45).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: const Color(0xFFFF7A45).withValues(alpha: 0.35),
+                      width: 0.6,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.equalizer_rounded, color: const Color(0xFFFF7A45), size: 12.r),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'DJ: Host Playing',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Rounded',
+                          color: const Color(0xFFFF7A45),
+                          fontSize: 9.5.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
-          SizedBox(height: 2.h),
-          Row(
-            children: [
-              Icon(Icons.volume_down_rounded, color: Colors.white38, size: 12.r),
-              Expanded(
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 1.5,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
-                  ),
-                  child: Slider(
-                    value: widget.controller.roomMusicVolume,
-                    min: 0.0,
-                    max: 1.0,
-                    activeColor: const Color(0xFFFF7A45),
-                    inactiveColor: Colors.white12,
-                    onChanged: (val) {
-                      widget.controller.setRoomMusicVolume(val);
-                    },
+          if (widget.controller.isHost) ...[
+            SizedBox(height: 2.h),
+            Row(
+              children: [
+                Icon(Icons.volume_down_rounded, color: Colors.white38, size: 12.r),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 1.5,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+                    ),
+                    child: Slider(
+                      value: widget.controller.roomMusicVolume,
+                      min: 0.0,
+                      max: 1.0,
+                      activeColor: const Color(0xFFFF7A45),
+                      inactiveColor: Colors.white12,
+                      onChanged: (val) {
+                        widget.controller.setRoomMusicVolume(val);
+                      },
+                    ),
                   ),
                 ),
-              ),
-              Icon(Icons.volume_up_rounded, color: Colors.white38, size: 12.r),
-            ],
-          ),
+                Icon(Icons.volume_up_rounded, color: Colors.white38, size: 12.r),
+              ],
+            ),
+          ],
         ],
       ),
     );

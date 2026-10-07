@@ -8,6 +8,8 @@ class VoiceRoomMusicTrack {
   final String duration;
   final int durationSeconds;
   final String streamUrl;
+  final int? addedByUserId;
+  final String? addedByUsername;
 
   const VoiceRoomMusicTrack({
     required this.id,
@@ -18,6 +20,8 @@ class VoiceRoomMusicTrack {
     required this.duration,
     this.durationSeconds = 0,
     required this.streamUrl,
+    this.addedByUserId,
+    this.addedByUsername,
   });
 
   factory VoiceRoomMusicTrack.fromJson(Map<String, dynamic> json) {
@@ -30,6 +34,8 @@ class VoiceRoomMusicTrack {
       duration: (json['duration'] ?? '3:00').toString(),
       durationSeconds: (json['durationSeconds'] as num?)?.toInt() ?? 0,
       streamUrl: (json['streamUrl'] ?? '').toString(),
+      addedByUserId: (json['addedByUserId'] as num?)?.toInt(),
+      addedByUsername: json['addedByUsername']?.toString(),
     );
   }
 
@@ -43,6 +49,8 @@ class VoiceRoomMusicTrack {
       'duration': duration,
       'durationSeconds': durationSeconds,
       'streamUrl': streamUrl,
+      if (addedByUserId != null) 'addedByUserId': addedByUserId,
+      if (addedByUsername != null) 'addedByUsername': addedByUsername,
     };
   }
 }
