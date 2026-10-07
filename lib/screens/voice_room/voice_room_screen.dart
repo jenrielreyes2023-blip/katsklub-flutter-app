@@ -2624,7 +2624,7 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
           ),
 
           // Floating "Add Music / Now Playing" Overlay Pill (Top Right, directly below more options [...])
-          if (controller.isMusicEnabled)
+          if (controller.isMusicEnabled || controller.roomMusicTitle.isNotEmpty)
             Positioned(
               top: MediaQuery.of(context).padding.top + 34.h,
               right: 10.w,

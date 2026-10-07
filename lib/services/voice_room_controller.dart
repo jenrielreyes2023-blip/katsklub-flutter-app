@@ -347,21 +347,29 @@ class VoiceRoomController extends ChangeNotifier {
       notifyListeners();
 
       // Emit track change to socket
-      final socket = FeedService.getSocket();
       final user = currentUser;
-      if (socket != null && socket.connected && _currentRoom != null) {
-        debugPrint('[VoiceRoomController] ▶️ Emitting voice_room:music_play: roomId=${_currentRoom!.id}, track=${track.title}, queueIndex=$_currentQueueIndex, userId=${user?.id}');
-        socket.emit('voice_room:music_play', {
-          'roomId': _currentRoom!.id,
-          'track': track.toJson(),
-          'queueIndex': _currentQueueIndex,
-          'userId': user?.id,
-          'user': {
-            'id': user?.id,
-            'username': user?.username,
-            'fullName': user?.fullName ?? user?.username,
-          },
-        });
+      void emitPlay(dynamic s) {
+        if (s != null && s.connected == true && _currentRoom != null) {
+          debugPrint('[VoiceRoomController] ▶️ Emitting voice_room:music_play: roomId=${_currentRoom!.id}, track=${track.title}, queueIndex=$_currentQueueIndex, userId=${user?.id}');
+          s.emit('voice_room:music_play', {
+            'roomId': _currentRoom!.id,
+            'track': track.toJson(),
+            'queueIndex': _currentQueueIndex,
+            'userId': user?.id,
+            'user': {
+              'id': user?.id,
+              'username': user?.username,
+              'fullName': user?.fullName ?? user?.username,
+            },
+          });
+        }
+      }
+
+      final socket = FeedService.getSocket();
+      if (socket != null && socket.connected) {
+        emitPlay(socket);
+      } else {
+        FeedService.onSocketReady((s) => emitPlay(s));
       }
     } catch (e) {
       debugPrint('[VoiceRoomController] playCdnMusic error: $e');
@@ -811,6 +819,10 @@ class VoiceRoomController extends ChangeNotifier {
               }
             }
           }
+          // Sync music state from HTTP snapshot if available
+          if (data['room'] is Map && data['room']['musicState'] != null) {
+            _handleRoomMusicUpdated(data['room']['musicState']);
+          }
           notifyListeners();
         }
       }
@@ -922,6 +934,7 @@ class VoiceRoomController extends ChangeNotifier {
       sendJoin(socket);
     } else {
       FeedService.onSocketReady((s) {
+        _setupSocketListeners();
         if (_currentRoom?.id == room.id) {
           sendJoin(s);
         }
@@ -1079,7 +1092,14 @@ class VoiceRoomController extends ChangeNotifier {
 
   void _setupSocketListeners() {
     final socket = FeedService.getSocket();
-    if (socket == null) return;
+    if (socket == null) {
+      FeedService.onSocketReady((_) {
+        if (_currentRoom != null) {
+          _setupSocketListeners();
+        }
+      });
+      return;
+    }
 
     _removeSocketListeners();
 
@@ -1788,6 +1808,9 @@ class VoiceRoomController extends ChangeNotifier {
     if (rawData is! Map || _currentRoom == null) return;
     final data = Map<String, dynamic>.from(rawData);
 
+    final roomId = data['roomId'];
+    if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
+
     final isEnabled = data['isEnabled'] == true;
     final isPlaying = data['isPlaying'] == true;
     final currentQueueIndex = (data['currentQueueIndex'] as num?)?.toInt() ?? -1;
@@ -1797,6 +1820,13 @@ class VoiceRoomController extends ChangeNotifier {
     if (rawTrack is Map) {
       try {
         track = VoiceRoomMusicTrack.fromJson(Map<String, dynamic>.from(rawTrack));
+      } catch (_) {}
+    } else if (rawTrack is String && rawTrack.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawTrack);
+        if (decoded is Map) {
+          track = VoiceRoomMusicTrack.fromJson(Map<String, dynamic>.from(decoded));
+        }
       } catch (_) {}
     }
 
@@ -1814,7 +1844,17 @@ class VoiceRoomController extends ChangeNotifier {
       }
     }
 
-    _isMusicEnabled = isEnabled;
+    // Defensive fallback: if currentTrack wasn't set but queue is present, take active index or first
+    if (track == null && newQueue.isNotEmpty) {
+      if (currentQueueIndex >= 0 && currentQueueIndex < newQueue.length) {
+        track = newQueue[currentQueueIndex];
+      } else {
+        track = newQueue.first;
+      }
+    }
+
+    final effectiveEnabled = isEnabled || track != null || newQueue.isNotEmpty;
+    _isMusicEnabled = effectiveEnabled;
     // Protect currently playing track on host so interim queue adds cannot wipe active playback
     if (track != null || !isHost || !_localPlaybackActive) {
       _roomCdnTrack = track;
@@ -1822,6 +1862,8 @@ class VoiceRoomController extends ChangeNotifier {
     _currentQueueIndex = currentQueueIndex;
     _musicQueue.clear();
     _musicQueue.addAll(newQueue);
+
+    debugPrint('[VoiceRoomController] 🎵 _handleRoomMusicUpdated: roomId=${_currentRoom?.id}, enabled=$_isMusicEnabled, playing=$isPlaying, track=${_roomCdnTrack?.title}, queueLen=${_musicQueue.length}, isHost=$isHost');
 
     // SINGLE SOURCE OF TRUTH (Requirement 2):
     // If local user is the host and no song is actively playing,
