@@ -24,6 +24,20 @@ class ZegoVoiceService {
   /// Callback fired when Zego media player completes playback of a track
   void Function()? onMusicCompleted;
 
+  /// Observable media player state (NoPlay, Playing, Pausing, PlayEnded)
+  final ValueNotifier<ZegoMediaPlayerState> mediaPlayerStateNotifier =
+      ValueNotifier<ZegoMediaPlayerState>(ZegoMediaPlayerState.NoPlay);
+
+  /// Observable media player playback progress
+  final ValueNotifier<Duration> mediaPlayerProgressNotifier =
+      ValueNotifier<Duration>(Duration.zero);
+
+  /// Observable media player total track duration
+  final ValueNotifier<Duration> mediaPlayerDurationNotifier =
+      ValueNotifier<Duration>(Duration.zero);
+
+  int _lastLoggedProgressSec = -1;
+
   // StreamId -> SoundLevel (0.0 to 100.0)
   final ValueNotifier<Map<String, double>> soundLevelsNotifier =
       ValueNotifier<Map<String, double>>({});
@@ -57,12 +71,39 @@ class ZegoVoiceService {
         soundLevelsNotifier.value = Map<String, double>.from(soundLevels);
       };
 
+      // Diagnostic 4: State listener logging all transitions
       ZegoExpressEngine.onMediaPlayerStateUpdate =
           (ZegoMediaPlayer mediaPlayer, ZegoMediaPlayerState state, int errorCode) {
-        debugPrint('[ZegoVoiceService] onMediaPlayerStateUpdate: state=$state, errorCode=$errorCode');
+        debugPrint('[ZegoVoiceService] [STATE-UPDATE] onMediaPlayerStateUpdate: state=$state, errorCode=$errorCode');
+        mediaPlayerStateNotifier.value = state;
         if (state == ZegoMediaPlayerState.PlayEnded) {
+          debugPrint('[ZegoVoiceService] [STATE-UPDATE] Track reached PlayEnded. Firing onMusicCompleted');
           onMusicCompleted?.call();
         }
+      };
+
+      // Diagnostic 4: Network buffering event listener
+      ZegoExpressEngine.onMediaPlayerNetworkEvent =
+          (ZegoMediaPlayer mediaPlayer, ZegoMediaPlayerNetworkEvent networkEvent) {
+        debugPrint('[ZegoVoiceService] [NETWORK-EVENT] onMediaPlayerNetworkEvent: $networkEvent (buffering: ${networkEvent == ZegoMediaPlayerNetworkEvent.BufferBegin})');
+      };
+
+      // Diagnostic 4: Playback progress listener (logs every 5 seconds)
+      ZegoExpressEngine.onMediaPlayerPlayingProgress =
+          (ZegoMediaPlayer mediaPlayer, int millisecond) {
+        final progress = Duration(milliseconds: millisecond);
+        mediaPlayerProgressNotifier.value = progress;
+        final sec = progress.inSeconds;
+        if (sec % 5 == 0 && sec != _lastLoggedProgressSec) {
+          _lastLoggedProgressSec = sec;
+          debugPrint('[ZegoVoiceService] [PROGRESS] Active playback progress: ${sec}s / ${(_mediaPlayerTotalDurationMs / 1000).toStringAsFixed(0)}s');
+        }
+      };
+
+      // Diagnostic 4: First frame event listener
+      ZegoExpressEngine.onMediaPlayerFirstFrameEvent =
+          (ZegoMediaPlayer mediaPlayer, ZegoMediaPlayerFirstFrameEvent event) {
+        debugPrint('[ZegoVoiceService] [FIRST-FRAME] onMediaPlayerFirstFrameEvent: $event (audio frame received/decoded)');
       };
 
       ZegoExpressEngine.onRoomStreamUpdate =
@@ -224,57 +265,168 @@ class ZegoVoiceService {
     }
   }
 
-  /// Starts playing background music streamed into Aux (so other participants in room hear it).
-  Future<bool> playBackgroundMusic(String url, {double volume = 0.85, bool playLocally = false}) async {
+  /// Starts playing background music streamed into Aux (so participants in room hear it)
+  /// and played locally so the host monitors the audio directly.
+  Future<bool> playBackgroundMusic(
+    String url, {
+    double volume = 0.85,
+    bool playLocally = true,
+  }) async {
     try {
       await ensureInitialized();
-      _mediaPlayer ??= await ZegoExpressEngine.instance.createMediaPlayer();
-      if (_mediaPlayer != null) {
-        await _mediaPlayer!.enableAux(true);
-        // muteLocal(!playLocally): if just_audio is playing locally, mute Zego local playback to avoid echo.
-        // If just_audio failed or playLocally is requested, unmute local so user hears audio.
-        final publishVol = (volume * 100).round().clamp(0, 100);
-        await _mediaPlayer!.setPublishVolume(publishVol);
-        await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
-        await _mediaPlayer!.muteLocal(!playLocally);
-        await _mediaPlayer!.stop();
 
-        String loadPath = url;
-        if (loadPath.startsWith('file://')) {
-          loadPath = Uri.parse(loadPath).toFilePath();
-        }
+      // Diagnostic 2: Ensure ZegoMediaPlayer instance exists and log creation
+      if (_mediaPlayer == null) {
+        _mediaPlayer = await ZegoExpressEngine.instance.createMediaPlayer();
+        debugPrint('[ZegoVoiceService] createMediaPlayer() invoked -> ${_mediaPlayer != null ? "SUCCESS (index=${_mediaPlayer!.getIndex()})" : "FAILED (null)"}');
+      }
+      if (_mediaPlayer == null) {
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC-ERROR] Engine failed to create ZegoMediaPlayer instance!');
+        return false;
+      }
 
-        final res = await _mediaPlayer!.loadResource(loadPath);
-        if (res.errorCode == 0) {
-          // In ZegoExpressEngine, properties like enableRepeat, enableAux, and volume
-          // MUST be applied AFTER loadResource has succeeded!
-          await _mediaPlayer!.enableRepeat(false);
-          await _mediaPlayer!.enableAux(true);
-          await _mediaPlayer!.setPublishVolume(publishVol);
-          await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
-          await _mediaPlayer!.muteLocal(!playLocally);
-          await _mediaPlayer!.setProgressInterval(1000);
-          try {
-            _mediaPlayerTotalDurationMs = await _mediaPlayer!.getTotalDuration();
-          } catch (_) {
-            _mediaPlayerTotalDurationMs = 0;
+      final player = _mediaPlayer!;
+
+      // Diagnostic 1: URL inspection & signed Bunny CDN signature verification
+      String loadPath = url.trim();
+      if (loadPath.startsWith('file://')) {
+        loadPath = Uri.parse(loadPath).toFilePath();
+      }
+
+      debugPrint('================================================================');
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] playBackgroundMusic: URL verification');
+      debugPrint('[ZegoVoiceService] Load URL: $loadPath');
+
+      final parsedUri = Uri.tryParse(loadPath);
+      if (parsedUri != null) {
+        final token = parsedUri.queryParameters['token'];
+        final expires = parsedUri.queryParameters['expires'];
+        final isBunny = parsedUri.host.contains('b-cdn.net');
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] Host: ${parsedUri.host}, Path: ${parsedUri.path}');
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] Is Bunny CDN: $isBunny, Has Token: ${token != null}, Expires: $expires');
+
+        if (expires != null) {
+          final expInt = int.tryParse(expires);
+          if (expInt != null) {
+            final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            final remainingSec = expInt - nowSec;
+            if (remainingSec <= 0) {
+              debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ⚠️ WARNING: Bunny CDN URL signature is EXPIRED! (${remainingSec.abs()}s ago). HTTP 403 will occur.');
+            } else {
+              debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ✅ Signed Bunny URL signature is VALID (remaining: ${remainingSec}s / ${(remainingSec / 60).toStringAsFixed(1)} mins)');
+            }
           }
-          await _mediaPlayer!.start();
-          // Critical: Re-apply muteLocal and setPlayVolume AFTER start() because
-          // start() initializes the native audio device and resets volume/mute in Zego engine!
-          await _mediaPlayer!.muteLocal(!playLocally);
-          await _mediaPlayer!.setPlayVolume(playLocally ? publishVol : 0);
-          await _mediaPlayer!.enableRepeat(false);
-          debugPrint('[ZegoVoiceService] Background music Aux started: $loadPath (duration: $_mediaPlayerTotalDurationMs ms, playLocally: $playLocally)');
-          return true;
-        } else {
-          debugPrint('[ZegoVoiceService] MediaPlayer loadResource returned: ${res.errorCode}');
         }
       }
+
+      // Diagnostic 2: Verify active RTC stream publishing
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 2] Stream publishing status: isPublishing=$_isPublishing, streamId=$_myStreamId');
+      if (!_isPublishing) {
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 2] ⚠️ WARNING: Host is NOT currently publishing an RTC stream. enableAux mixes audio into the published stream — remote guests will not hear audio until a stream is published!');
+      }
+
+      // Halt any active playback before calling loadResource (required by Zego SDK)
+      await player.stop();
+
+      // Diagnostic 1: Call loadResource and thoroughly log the return result
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] Calling player.loadResource($loadPath)...');
+      final res = await player.loadResource(loadPath);
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] loadResource result: errorCode=${res.errorCode}');
+
+      if (res.errorCode != 0) {
+        final errorMsg = _getZegoMediaPlayerErrorMessage(res.errorCode);
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ❌ ERROR: loadResource FAILED with code ${res.errorCode}: $errorMsg');
+        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] Audio path failed. Playback will NOT start. UI must reflect failure.');
+        debugPrint('================================================================');
+        return false;
+      }
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ✅ loadResource SUCCEEDED (errorCode=0)');
+
+      // Diagnostic 3: Prepare volumes and Aux mixing before start()
+      // Publish volume is clamped to at least 1 so it is NEVER 0
+      final publishVol = (volume * 100).round().clamp(1, 100);
+      final playVol = playLocally ? publishVol : 0;
+
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3] Configuring audio pipeline before start():');
+      debugPrint('[ZegoVoiceService] - Calling enableAux(true)');
+      debugPrint('[ZegoVoiceService] - Calling setPublishVolume($publishVol) (aux volume for room guests)');
+      debugPrint('[ZegoVoiceService] - Calling setPlayVolume($playVol) (speaker volume for host)');
+      debugPrint('[ZegoVoiceService] - Calling muteLocal(${!playLocally})');
+
+      await player.enableRepeat(false);
+      await player.enableAux(true);
+      await player.setPublishVolume(publishVol);
+      await player.setPlayVolume(playVol);
+      await player.muteLocal(!playLocally);
+      await player.setProgressInterval(1000);
+
+      try {
+        _mediaPlayerTotalDurationMs = await player.getTotalDuration();
+        mediaPlayerDurationNotifier.value = Duration(milliseconds: _mediaPlayerTotalDurationMs);
+      } catch (_) {
+        _mediaPlayerTotalDurationMs = 0;
+      }
+
+      // Diagnostic 3: Call start() AFTER loadResource succeeds
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3] Calling player.start()...');
+      await player.start();
+
+      // Re-apply aux and volumes after start() because native audio device init can reset routing
+      await player.enableAux(true);
+      await player.setPublishVolume(publishVol);
+      await player.setPlayVolume(playVol);
+      await player.muteLocal(!playLocally);
+
+      final verifiedState = await player.getCurrentState();
+      final verifiedPublishVol = await player.getPublishVolume();
+      final verifiedPlayVol = await player.getPlayVolume();
+
+      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3 & 4] Playback pipeline initialized:');
+      debugPrint('[ZegoVoiceService] - Current State: $verifiedState');
+      debugPrint('[ZegoVoiceService] - Verified Publish Volume: $verifiedPublishVol (Aux to guests)');
+      debugPrint('[ZegoVoiceService] - Verified Play Volume: $verifiedPlayVol (Local to host)');
+      debugPrint('[ZegoVoiceService] - Total Duration: ${_mediaPlayerTotalDurationMs}ms');
+      debugPrint('[ZegoVoiceService] - Play Locally: $playLocally');
+      debugPrint('================================================================');
+
+      mediaPlayerStateNotifier.value = verifiedState;
+      return verifiedState == ZegoMediaPlayerState.Playing;
     } catch (e) {
-      debugPrint('[ZegoVoiceService] playBackgroundMusic error: $e');
+      debugPrint('[ZegoVoiceService] playBackgroundMusic exception: $e');
+      return false;
     }
-    return false;
+  }
+
+  /// Maps known Zego MediaPlayer error codes to human-readable explanations
+  String _getZegoMediaPlayerErrorMessage(int code) {
+    switch (code) {
+      case 1008001:
+        return 'No MediaPlayer instance (MediaPlayerNoInstance)';
+      case 1008003:
+        return 'No file path provided (MediaPlayerNoFilePath)';
+      case 1008004:
+        return 'File path exceeds 1024 bytes (MediaPlayerFilePathTooLong)';
+      case 1008005:
+        return 'Unsupported audio format (MediaPlayerFileFormatError)';
+      case 1008006:
+        return 'File path does not exist / 403 Forbidden / 404 Not Found (MediaPlayerFilePathNotExists)';
+      case 1008007:
+        return 'Audio decoding failed (MediaPlayerFileDecodeError)';
+      case 1008008:
+        return 'No supported audio stream in media (MediaPlayerFileNoSupportedStream)';
+      case 1008009:
+        return 'Media file expired (MediaPlayerFileExpired)';
+      case 1008010:
+        return 'Demux error resolving audio stream (MediaPlayerDemuxError)';
+      case 1008013:
+        return 'User cancelled (MediaPlayerUserCancel)';
+      case 1008014:
+        return 'Player already started, call stop first (MediaPlayerAlreadyStart)';
+      case 1008015:
+        return 'Permission denied reading resource (MediaPlayerPermissionDenied)';
+      default:
+        return 'Unknown Zego error code $code';
+    }
   }
 
   /// Sets whether Zego media player plays locally on the device speaker
@@ -284,6 +436,7 @@ class ZegoVoiceService {
       if (mute) {
         await _mediaPlayer?.setPlayVolume(0);
       }
+      debugPrint('[ZegoVoiceService] setMediaPlayerMuteLocal: mute=$mute');
     } catch (e) {
       debugPrint('[ZegoVoiceService] setMediaPlayerMuteLocal error: $e');
     }
@@ -293,6 +446,8 @@ class ZegoVoiceService {
   Future<void> pauseBackgroundMusic() async {
     try {
       await _mediaPlayer?.pause();
+      mediaPlayerStateNotifier.value = ZegoMediaPlayerState.Pausing;
+      debugPrint('[ZegoVoiceService] pauseBackgroundMusic called');
     } catch (e) {
       debugPrint('[ZegoVoiceService] pauseBackgroundMusic error: $e');
     }
@@ -302,6 +457,8 @@ class ZegoVoiceService {
   Future<void> resumeBackgroundMusic() async {
     try {
       await _mediaPlayer?.resume();
+      mediaPlayerStateNotifier.value = ZegoMediaPlayerState.Playing;
+      debugPrint('[ZegoVoiceService] resumeBackgroundMusic called');
     } catch (e) {
       debugPrint('[ZegoVoiceService] resumeBackgroundMusic error: $e');
     }
@@ -311,6 +468,9 @@ class ZegoVoiceService {
   Future<void> stopBackgroundMusic() async {
     try {
       await _mediaPlayer?.stop();
+      mediaPlayerStateNotifier.value = ZegoMediaPlayerState.NoPlay;
+      mediaPlayerProgressNotifier.value = Duration.zero;
+      debugPrint('[ZegoVoiceService] stopBackgroundMusic called');
     } catch (e) {
       debugPrint('[ZegoVoiceService] stopBackgroundMusic error: $e');
     }
@@ -322,6 +482,7 @@ class ZegoVoiceService {
       final publishVol = (volume * 100).round().clamp(0, 100);
       await _mediaPlayer?.setPublishVolume(publishVol);
       await _mediaPlayer?.setPlayVolume(publishVol);
+      debugPrint('[ZegoVoiceService] setMusicPublishVolume: publish=$publishVol, play=$publishVol');
     } catch (e) {
       debugPrint('[ZegoVoiceService] setMusicPublishVolume error: $e');
     }

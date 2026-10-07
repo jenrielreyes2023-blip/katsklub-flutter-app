@@ -8,6 +8,7 @@ import '../models/voice_room.dart';
 import '../config/api_config.dart';
 import 'auth_service.dart';
 import 'feed_service.dart';
+import 'package:zego_express_engine/zego_express_engine.dart';
 import 'zego_voice_service.dart';
 import 'global_audio_player_service.dart';
 import 'voice_room_foreground_service.dart';
@@ -187,13 +188,9 @@ class VoiceRoomController extends ChangeNotifier {
 
   bool _isAdvancingQueue = false;
 
-  /// Triggered automatically when either just_audio or Zego media player completes the track.
+  /// Triggered automatically when Zego media player completes the track.
   Future<void> _onTrackCompleted({bool fromZego = false}) async {
     if (!isHost) return;
-    if (fromZego && _localPlaybackActive) {
-      debugPrint('[VoiceRoomController] Ignoring Zego completion because just_audio is active');
-      return;
-    }
     if (_isAdvancingQueue) return;
     _isAdvancingQueue = true;
     try {
@@ -271,84 +268,38 @@ class VoiceRoomController extends ChangeNotifier {
       _currentQueueIndex = _musicQueue.length - 1;
     }
     _isMusicEnabled = true;
-    _isRoomMusicLoading = false;
-    _isRoomMusicPlaying = true;
+    _isRoomMusicLoading = true;
+    _isRoomMusicPlaying = false; // Do not show playing until audio path confirms success!
     notifyListeners();
 
     try {
-      await _roomMusicPlayerStateSub?.cancel();
-      _roomMusicPlayerStateSub = null;
-      await _roomMusicPlayerDurationSub?.cancel();
-      _roomMusicPlayerDurationSub = null;
-
-      final globalAudio = GlobalAudioPlayerService.instance;
-      _roomMusicCurrentDuration = null;
-
-      _roomMusicPlayerDurationSub = globalAudio.durationStream.listen((d) {
-        if (d != null && d > Duration.zero) {
-          _roomMusicCurrentDuration = d;
-        }
-      });
-
-      _roomMusicPlayerStateSub = globalAudio.playerStateStream.listen((state) {
-        final playing = state.playing && state.processingState != ProcessingState.completed;
-        if (_isRoomMusicPlaying != playing) {
-          _isRoomMusicPlaying = playing;
-          notifyListeners();
-        }
-
-        // Mirror background-notification transport controls to the Zego Aux
-        // stream so the room hears the same play/pause state as the host.
-        if (globalAudio.isVoiceRoomMode) {
-          if (playing) {
-            ZegoVoiceService().resumeBackgroundMusic();
-          } else if (state.processingState == ProcessingState.ready) {
-            ZegoVoiceService().pauseBackgroundMusic();
-          }
-        }
-
-        // Auto-advance to next track in queue when current track completes
-        if (state.processingState == ProcessingState.completed) {
-          debugPrint('[VoiceRoomController] just_audio ProcessingState.completed fired on host');
-          _onTrackCompleted();
-        }
-      });
-
       final streamUrl = track.streamUrl;
-      bool localStarted = false;
+      debugPrint('[VoiceRoomController] Starting playback for track: "${track.title}" by "${track.artist}"');
+      debugPrint('[VoiceRoomController] Stream URL: $streamUrl');
 
-      // 1. Primary: Host plays locally via GlobalAudioPlayerService
-      try {
-        await globalAudio.playVoiceRoomTrack(
-          id: track.id,
-          title: track.title,
-          artist: track.artist,
-          artworkUrl: track.artworkUrl,
-          streamUrl: streamUrl,
-          volume: _roomMusicVolume,
-        );
-        localStarted = true;
-      } catch (e) {
-        debugPrint('[VoiceRoomController] playCdnMusic globalAudio error: $e');
+      // Primary Audio Path: Stream into Zego RTC Aux for guests AND monitor locally for host!
+      final zegoSuccess = await ZegoVoiceService().playBackgroundMusic(
+        streamUrl,
+        volume: _roomMusicVolume,
+        playLocally: true, // Crucial: Host hears music directly via ZegoMediaPlayer
+      );
+
+      if (!zegoSuccess) {
+        debugPrint('[VoiceRoomController] ❌ ZegoVoiceService failed to play track. Aborting.');
+        _localPlaybackActive = false;
+        _isRoomMusicPlaying = false;
+        _isRoomMusicLoading = false;
+        notifyListeners();
+        return;
       }
 
-      _localPlaybackActive = localStarted;
-      _isRoomMusicPlaying = localStarted;
+      _localPlaybackActive = true;
+      _isRoomMusicPlaying = true;
       _isRoomMusicLoading = false;
+      _roomMusicCurrentDuration = ZegoVoiceService().mediaPlayerDurationNotifier.value;
       notifyListeners();
 
-      // 2. Stream into Zego RTC Aux so participants in room hear it crystal-clear
-      try {
-        await ZegoVoiceService().playBackgroundMusic(
-          streamUrl,
-          volume: _roomMusicVolume,
-          playLocally: false,
-        );
-      } catch (e) {
-        debugPrint('[VoiceRoomController] playCdnMusic zego error: $e');
-      }
-
-      // 3. Emit track change to socket (Single Source of Truth)
+      // Emit track change to socket (Single Source of Truth)
       final socket = FeedService.getSocket();
       if (socket != null && socket.connected && _currentRoom != null) {
         socket.emit('voice_room:music_play', {
@@ -370,14 +321,11 @@ class VoiceRoomController extends ChangeNotifier {
     if (!isHost) return;
     if (_roomCdnTrack == null) return;
     try {
-      final globalAudio = GlobalAudioPlayerService.instance;
       final targetPlaying = !_isRoomMusicPlaying;
       if (!targetPlaying) {
-        await globalAudio.setPlaying(false);
         await ZegoVoiceService().pauseBackgroundMusic();
         _isRoomMusicPlaying = false;
       } else {
-        await globalAudio.setPlaying(true);
         await ZegoVoiceService().resumeBackgroundMusic();
         _isRoomMusicPlaying = true;
       }
@@ -404,8 +352,8 @@ class VoiceRoomController extends ChangeNotifier {
       _localPlaybackActive = false;
       _isRoomMusicPlaying = false;
       _isRoomMusicLoading = false;
-      await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
       await ZegoVoiceService().stopBackgroundMusic();
+      await GlobalAudioPlayerService.instance.stopVoiceRoomMusic();
     } catch (e) {
       debugPrint('[VoiceRoomController] _stopLocalMusicInternal error: $e');
     }
@@ -918,6 +866,8 @@ class VoiceRoomController extends ChangeNotifier {
     ZegoVoiceService().soundLevelsNotifier.addListener(_onSoundLevelsUpdated);
     ZegoVoiceService().mySoundLevelNotifier.addListener(_onMySoundLevelUpdated);
     ZegoVoiceService().onMusicCompleted = () => _onTrackCompleted(fromZego: true);
+    ZegoVoiceService().mediaPlayerStateNotifier.addListener(_onZegoMediaPlayerStateChanged);
+    ZegoVoiceService().mediaPlayerDurationNotifier.addListener(_onZegoMediaPlayerDurationChanged);
 
     // Keep host & room connection alive with periodic heartbeat
     _startHeartbeat();
@@ -987,6 +937,21 @@ class VoiceRoomController extends ChangeNotifier {
       _currentRoom!.seats[_mySeatIndex!].soundLevel = lvl;
       notifyListeners();
     }
+  }
+
+  void _onZegoMediaPlayerStateChanged() {
+    if (!isHost) return;
+    final state = ZegoVoiceService().mediaPlayerStateNotifier.value;
+    final isPlaying = state == ZegoMediaPlayerState.Playing;
+    if (_isRoomMusicPlaying != isPlaying && state != ZegoMediaPlayerState.NoPlay) {
+      _isRoomMusicPlaying = isPlaying;
+      notifyListeners();
+    }
+  }
+
+  void _onZegoMediaPlayerDurationChanged() {
+    _roomMusicCurrentDuration = ZegoVoiceService().mediaPlayerDurationNotifier.value;
+    notifyListeners();
   }
 
   void _removeSocketListeners() {
@@ -1680,6 +1645,8 @@ class VoiceRoomController extends ChangeNotifier {
       _soundSubscription = null;
       ZegoVoiceService().soundLevelsNotifier.removeListener(_onSoundLevelsUpdated);
       ZegoVoiceService().mySoundLevelNotifier.removeListener(_onMySoundLevelUpdated);
+      ZegoVoiceService().mediaPlayerStateNotifier.removeListener(_onZegoMediaPlayerStateChanged);
+      ZegoVoiceService().mediaPlayerDurationNotifier.removeListener(_onZegoMediaPlayerDurationChanged);
       ZegoVoiceService().onMusicCompleted = null;
     } catch (_) {}
 

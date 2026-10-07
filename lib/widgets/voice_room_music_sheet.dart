@@ -211,33 +211,63 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     setState(() => _loadingTrackId = null);
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1E20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-        content: Row(
-          children: [
-            Icon(Icons.music_note_rounded, color: const Color(0xFFFF7A45), size: 16.r),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                'Now streaming in room: ${track.title}',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Rounded',
-                  color: Colors.white,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w500,
+    if (widget.controller.isRoomMusicPlaying) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF1E1E20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+          content: Row(
+            children: [
+              Icon(Icons.music_note_rounded, color: const Color(0xFFFF7A45), size: 16.r),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Now streaming in room: ${track.title}',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
+          duration: const Duration(seconds: 3),
         ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF2A1515),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+          content: Row(
+            children: [
+              Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 16.r),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Failed to play audio resource: ${track.title}',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Rounded',
+                    color: Colors.white,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
