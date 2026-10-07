@@ -163,9 +163,12 @@ class _LoginScreenState extends State<LoginScreen> {
     GoogleSignInAccount? account;
     try {
       // Force a fresh picker each time so the user can switch accounts.
-      await _googleSignIn.signOut();
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
       account = await _googleSignIn.signIn();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[LoginScreen] ❌ GoogleSignIn.signIn exception: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
