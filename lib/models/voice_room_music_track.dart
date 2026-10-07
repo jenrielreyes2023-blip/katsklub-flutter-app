@@ -25,6 +25,22 @@ class VoiceRoomMusicTrack {
   });
 
   factory VoiceRoomMusicTrack.fromJson(Map<String, dynamic> json) {
+    int? parsedUserId;
+    final rawUserId = json['addedByUserId'];
+    if (rawUserId is num) {
+      parsedUserId = rawUserId.toInt();
+    } else if (rawUserId is String) {
+      parsedUserId = int.tryParse(rawUserId);
+    }
+
+    int parsedDurationSeconds = 0;
+    final rawDurationSeconds = json['durationSeconds'];
+    if (rawDurationSeconds is num) {
+      parsedDurationSeconds = rawDurationSeconds.toInt();
+    } else if (rawDurationSeconds is String) {
+      parsedDurationSeconds = int.tryParse(rawDurationSeconds) ?? 0;
+    }
+
     return VoiceRoomMusicTrack(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? 'Unknown Track').toString(),
@@ -32,9 +48,9 @@ class VoiceRoomMusicTrack {
       genre: (json['genre'] ?? 'General').toString(),
       artworkUrl: (json['artworkUrl'] ?? '').toString(),
       duration: (json['duration'] ?? '3:00').toString(),
-      durationSeconds: (json['durationSeconds'] as num?)?.toInt() ?? 0,
+      durationSeconds: parsedDurationSeconds,
       streamUrl: (json['streamUrl'] ?? '').toString(),
-      addedByUserId: (json['addedByUserId'] as num?)?.toInt(),
+      addedByUserId: parsedUserId,
       addedByUsername: json['addedByUsername']?.toString(),
     );
   }

@@ -1260,6 +1260,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
     final isCurrent = currentTitle == track.title;
     final isItemLoading = _loadingTrackId == track.id;
     final isFav = _favoriteTrackIds.contains(track.id);
+    final isInQueue = widget.controller.musicQueue.any((t) => t.id == track.id);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
@@ -1371,30 +1372,38 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
 
           // Add to Queue Button
           InkWell(
-            onTap: () => _addToQueue(track),
+            onTap: isInQueue ? null : () => _addToQueue(track),
             borderRadius: BorderRadius.circular(6.r),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.5.h),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: isInQueue
+                    ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(6.r),
                 border: Border.all(
-                  color: const Color(0xFF2C2C2E),
+                  color: isInQueue
+                      ? const Color(0xFF4ADE80).withValues(alpha: 0.4)
+                      : const Color(0xFF2C2C2E),
                   width: 0.5,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.playlist_add_rounded, color: Colors.white70, size: 12.r),
+                  Icon(
+                    isInQueue ? Icons.check_circle_rounded : Icons.playlist_add_rounded,
+                    color: isInQueue ? const Color(0xFF4ADE80) : Colors.white70,
+                    size: 12.r,
+                  ),
                   SizedBox(width: 2.w),
                   Text(
-                    '+ Queue',
+                    isInQueue ? 'Queued' : '+ Queue',
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
-                      color: Colors.white70,
+                      color: isInQueue ? const Color(0xFF4ADE80) : Colors.white70,
                       fontSize: 9.5.sp,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],

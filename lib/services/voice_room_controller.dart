@@ -329,11 +329,19 @@ class VoiceRoomController extends ChangeNotifier {
 
       // Emit track change to socket (Single Source of Truth)
       final socket = FeedService.getSocket();
+      final user = currentUser;
       if (socket != null && socket.connected && _currentRoom != null) {
+        debugPrint('[VoiceRoomController] ▶️ Emitting voice_room:music_play: roomId=${_currentRoom!.id}, track=${track.title}, queueIndex=$_currentQueueIndex, userId=${user?.id}');
         socket.emit('voice_room:music_play', {
           'roomId': _currentRoom!.id,
           'track': track.toJson(),
           'queueIndex': _currentQueueIndex,
+          'userId': user?.id,
+          'user': {
+            'id': user?.id,
+            'username': user?.username,
+            'fullName': user?.fullName ?? user?.username,
+          },
         });
       }
     } catch (e) {
@@ -1748,13 +1756,18 @@ class VoiceRoomController extends ChangeNotifier {
         if (item is Map) {
           try {
             newQueue.add(VoiceRoomMusicTrack.fromJson(Map<String, dynamic>.from(item)));
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('[VoiceRoomController] ⚠️ Error parsing queued track: $e');
+          }
         }
       }
     }
 
     _isMusicEnabled = isEnabled;
-    _roomCdnTrack = track;
+    // Protect currently playing track on host so interim queue adds cannot wipe active playback
+    if (track != null || !isHost || !_localPlaybackActive) {
+      _roomCdnTrack = track;
+    }
     _currentQueueIndex = currentQueueIndex;
     _musicQueue.clear();
     _musicQueue.addAll(newQueue);
@@ -1771,12 +1784,16 @@ class VoiceRoomController extends ChangeNotifier {
 
     // If music was disabled, stopped, or host left:
     if (!_isMusicEnabled || (!isPlaying && track == null)) {
-      _isRoomMusicPlaying = false;
-      if (_localPlaybackActive) {
-        unawaited(_stopLocalMusicInternal());
+      if (isHost && _localPlaybackActive && _isMusicEnabled) {
+        debugPrint('[VoiceRoomController] Host is locally playing, keeping active stream');
+      } else {
+        _isRoomMusicPlaying = false;
+        if (_localPlaybackActive) {
+          unawaited(_stopLocalMusicInternal());
+        }
+        notifyListeners();
+        return;
       }
-      notifyListeners();
-      return;
     }
 
     _isRoomMusicPlaying = isPlaying;
