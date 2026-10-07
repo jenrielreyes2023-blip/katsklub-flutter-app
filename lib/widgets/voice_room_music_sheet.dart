@@ -200,11 +200,10 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
   Future<void> _playTrack(VoiceRoomMusicTrack track) async {
     HapticFeedback.lightImpact();
     final isHost = widget.controller.isHost;
-    final canControl = widget.controller.canControlCurrentTrack;
-    final isPlaying = widget.controller.isRoomMusicPlaying;
 
-    // If another song is actively playing and user is not host or current DJ, queue it
-    if (!isHost && !canControl && isPlaying) {
+    // If not host, always add to queue.
+    // The host device is the single source of truth for Zego Aux playback and will auto-start if idle.
+    if (!isHost) {
       _addToQueue(track);
       return;
     }

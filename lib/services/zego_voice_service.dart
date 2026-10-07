@@ -177,19 +177,17 @@ class ZegoVoiceService {
 
     // Check microphone permission
     final status = await Permission.microphone.request();
-    if (!status.isGranted) {
-      return false;
-    }
+    final micGranted = status.isGranted;
 
     try {
       _myStreamId = 'stream_${_currentRoomId}_user_${userId}_seat_$seatIndex';
       await ZegoExpressEngine.instance.startPublishingStream(_myStreamId!);
-      await ZegoExpressEngine.instance.muteMicrophone(_isMuted);
+      await ZegoExpressEngine.instance.muteMicrophone(!micGranted || _isMuted);
       _isPublishing = true;
-      if (_isMuted) {
+      if (_isMuted || !micGranted) {
         mySoundLevelNotifier.value = 0.0;
       }
-      debugPrint('[ZegoVoiceService] Started publishing stream: $_myStreamId (muted: $_isMuted)');
+      debugPrint('[ZegoVoiceService] Started publishing stream: $_myStreamId (micGranted: $micGranted, muted: $_isMuted)');
       return true;
     } catch (e) {
       debugPrint('[ZegoVoiceService] startSpeaking error: $e');
@@ -322,7 +320,15 @@ class ZegoVoiceService {
       // Diagnostic 2: Verify active RTC stream publishing
       debugPrint('[ZegoVoiceService] [DIAGNOSTIC 2] Stream publishing status: isPublishing=$_isPublishing, streamId=$_myStreamId');
       if (!_isPublishing) {
-        debugPrint('[ZegoVoiceService] [DIAGNOSTIC 2] ⚠️ WARNING: Host is NOT currently publishing an RTC stream. enableAux mixes audio into the published stream — remote guests will not hear audio until a stream is published!');
+        if (_currentRoomId != null) {
+          final streamId = _myStreamId ?? 'stream_${_currentRoomId}_host_stream';
+          _myStreamId = streamId;
+          debugPrint('[ZegoVoiceService] Auto-starting stream publishing ($streamId) so Aux audio can reach room guests!');
+          await ZegoExpressEngine.instance.startPublishingStream(streamId);
+          _isPublishing = true;
+        } else {
+          debugPrint('[ZegoVoiceService] [DIAGNOSTIC 2] ⚠️ WARNING: Host is NOT currently publishing an RTC stream. enableAux mixes audio into the published stream — remote guests will not hear audio until a stream is published!');
+        }
       }
 
       // Halt any active playback before calling loadResource (required by Zego SDK)
@@ -342,16 +348,17 @@ class ZegoVoiceService {
       }
       debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ✅ loadResource SUCCEEDED (errorCode=0)');
 
-      // Clean voice channel: Guests stream music directly via CDN;
-      // host plays locally on device speaker without bleeding into RTC voice channel
-      final playVol = playLocally ? (volume * 100).round().clamp(1, 100) : 0;
+      // Enable Aux so Zego Express Engine mixes media player audio into the host's published RTC stream!
+      // This allows all room guests, audience members, and seated users to hear the music loud and clear!
+      final publishVol = (volume * 100).round().clamp(1, 100);
+      final playVol = playLocally ? publishVol : 0;
 
       debugPrint('[ZegoVoiceService] Configuring audio pipeline before start():');
-      debugPrint('[ZegoVoiceService] - Host plays locally (volume: $playVol), Aux disabled to keep voice channel pure');
+      debugPrint('[ZegoVoiceService] - Host plays locally (volume: $playVol), Aux ENABLED with publishVolume: $publishVol to room guests');
 
       await player.enableRepeat(false);
-      await player.enableAux(false);
-      await player.setPublishVolume(0);
+      await player.enableAux(true);
+      await player.setPublishVolume(publishVol);
       await player.setPlayVolume(playVol);
       await player.muteLocal(!playLocally);
       await player.setProgressInterval(1000);
@@ -364,12 +371,12 @@ class ZegoVoiceService {
       }
 
       // Diagnostic 3: Call start() AFTER loadResource succeeds
-      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3] Calling player.start()...');
+      debugPrint('[ZegoVoiceService] Calling player.start()...');
       await player.start();
 
-      // Re-apply volumes after start() because native audio device init can reset routing
-      await player.enableAux(false);
-      await player.setPublishVolume(0);
+      // Re-apply aux and volumes after start() because native audio device init can reset routing
+      await player.enableAux(true);
+      await player.setPublishVolume(publishVol);
       await player.setPlayVolume(playVol);
       await player.muteLocal(!playLocally);
 
