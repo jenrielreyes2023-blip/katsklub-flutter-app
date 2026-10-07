@@ -2624,15 +2624,25 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
           ),
 
           // Floating "Add Music / Now Playing" Overlay Pill (Top Right, directly below more options [...])
-          if (controller.isMusicEnabled || controller.roomMusicTitle.isNotEmpty)
+          if (controller.isMusicEnabled || controller.roomMusicTitle.isNotEmpty || controller.musicQueue.isNotEmpty)
             Positioned(
               top: MediaQuery.of(context).padding.top + 34.h,
               right: 10.w,
               child: Builder(
                 builder: (context) {
-                  final hasMusic = controller.roomMusicTitle.isNotEmpty;
-                  final musicTitle = controller.roomMusicTitle;
-                  final musicArtwork = controller.roomMusicArtwork;
+                  final effectiveTrack = controller.roomCdnTrack ??
+                      (controller.musicQueue.isNotEmpty
+                          ? (controller.currentQueueIndex >= 0 && controller.currentQueueIndex < controller.musicQueue.length
+                              ? controller.musicQueue[controller.currentQueueIndex]
+                              : controller.musicQueue.first)
+                          : null);
+                  final musicTitle = controller.roomMusicTitle.isNotEmpty
+                      ? controller.roomMusicTitle
+                      : (effectiveTrack?.title ?? '');
+                  final musicArtwork = controller.roomMusicArtwork.isNotEmpty
+                      ? controller.roomMusicArtwork
+                      : (effectiveTrack?.artworkUrl ?? '');
+                  final hasMusic = musicTitle.isNotEmpty;
                   final isLoading = controller.isRoomMusicLoading;
 
                   // 1. If we have track info (loading or playing), show artwork + title + state

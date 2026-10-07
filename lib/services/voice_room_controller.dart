@@ -131,9 +131,44 @@ class VoiceRoomController extends ChangeNotifier {
   bool get isMusicEnabled => _isMusicEnabled;
   VoiceRoomMusicTrack? get roomCdnTrack => _roomCdnTrack;
   Duration? get roomMusicCurrentDuration => _roomMusicCurrentDuration;
-  String get roomMusicTitle => _roomCdnTrack?.title ?? '';
-  String get roomMusicArtist => _roomCdnTrack?.artist ?? '';
-  String get roomMusicArtwork => _roomCdnTrack?.artworkUrl ?? '';
+  String get roomMusicTitle {
+    if (_roomCdnTrack != null && _roomCdnTrack!.title.trim().isNotEmpty) {
+      return _roomCdnTrack!.title.trim();
+    }
+    if (_musicQueue.isNotEmpty) {
+      final idx = (_currentQueueIndex >= 0 && _currentQueueIndex < _musicQueue.length)
+          ? _currentQueueIndex
+          : 0;
+      return _musicQueue[idx].title.trim();
+    }
+    return '';
+  }
+
+  String get roomMusicArtist {
+    if (_roomCdnTrack != null && _roomCdnTrack!.artist.trim().isNotEmpty) {
+      return _roomCdnTrack!.artist.trim();
+    }
+    if (_musicQueue.isNotEmpty) {
+      final idx = (_currentQueueIndex >= 0 && _currentQueueIndex < _musicQueue.length)
+          ? _currentQueueIndex
+          : 0;
+      return _musicQueue[idx].artist.trim();
+    }
+    return '';
+  }
+
+  String get roomMusicArtwork {
+    if (_roomCdnTrack != null && _roomCdnTrack!.artworkUrl.trim().isNotEmpty) {
+      return _roomCdnTrack!.artworkUrl.trim();
+    }
+    if (_musicQueue.isNotEmpty) {
+      final idx = (_currentQueueIndex >= 0 && _currentQueueIndex < _musicQueue.length)
+          ? _currentQueueIndex
+          : 0;
+      return _musicQueue[idx].artworkUrl.trim();
+    }
+    return '';
+  }
   bool get isRoomMusicPlaying => _isRoomMusicPlaying;
   bool get isRoomMusicLoading => _isRoomMusicLoading;
   double get roomMusicVolume => _roomMusicVolume;
@@ -925,8 +960,10 @@ class VoiceRoomController extends ChangeNotifier {
     // Setup Socket.io listeners
     _setupSocketListeners();
 
-    // Fetch latest fresh room details (seats, presence, admins) in background
-    unawaited(refreshRoomDetails(room.id));
+    // Fetch latest fresh room details (seats, presence, admins, musicState) before screen mounts
+    try {
+      await refreshRoomDetails(room.id);
+    } catch (_) {}
 
     // Emit join
     void sendJoin(dynamic s) {
@@ -1885,8 +1922,9 @@ class VoiceRoomController extends ChangeNotifier {
       _roomCdnTrack = track;
     } else if (_currentQueueIndex >= 0 && _currentQueueIndex < _musicQueue.length) {
       _roomCdnTrack = _musicQueue[_currentQueueIndex];
-    } else if (!_localPlaybackActive && _musicQueue.isNotEmpty) {
+    } else if (_musicQueue.isNotEmpty) {
       _roomCdnTrack = _musicQueue.first;
+      if (_currentQueueIndex < 0) _currentQueueIndex = 0;
     }
 
     debugPrint('[VoiceRoomController] 🎵 _handleRoomMusicUpdated: roomId=${_currentRoom?.id}, enabled=$_isMusicEnabled, playing=$isPlaying, track=${_roomCdnTrack?.title}, queueLen=${_musicQueue.length}, isHost=$isHost, localActive=$_localPlaybackActive');
