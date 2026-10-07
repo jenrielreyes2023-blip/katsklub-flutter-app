@@ -342,20 +342,16 @@ class ZegoVoiceService {
       }
       debugPrint('[ZegoVoiceService] [DIAGNOSTIC 1] ✅ loadResource SUCCEEDED (errorCode=0)');
 
-      // Diagnostic 3: Prepare volumes and Aux mixing before start()
-      // Publish volume is clamped to at least 1 so it is NEVER 0
-      final publishVol = (volume * 100).round().clamp(1, 100);
-      final playVol = playLocally ? publishVol : 0;
+      // Clean voice channel: Guests stream music directly via CDN;
+      // host plays locally on device speaker without bleeding into RTC voice channel
+      final playVol = playLocally ? (volume * 100).round().clamp(1, 100) : 0;
 
-      debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3] Configuring audio pipeline before start():');
-      debugPrint('[ZegoVoiceService] - Calling enableAux(true)');
-      debugPrint('[ZegoVoiceService] - Calling setPublishVolume($publishVol) (aux volume for room guests)');
-      debugPrint('[ZegoVoiceService] - Calling setPlayVolume($playVol) (speaker volume for host)');
-      debugPrint('[ZegoVoiceService] - Calling muteLocal(${!playLocally})');
+      debugPrint('[ZegoVoiceService] Configuring audio pipeline before start():');
+      debugPrint('[ZegoVoiceService] - Host plays locally (volume: $playVol), Aux disabled to keep voice channel pure');
 
       await player.enableRepeat(false);
-      await player.enableAux(true);
-      await player.setPublishVolume(publishVol);
+      await player.enableAux(false);
+      await player.setPublishVolume(0);
       await player.setPlayVolume(playVol);
       await player.muteLocal(!playLocally);
       await player.setProgressInterval(1000);
@@ -371,9 +367,9 @@ class ZegoVoiceService {
       debugPrint('[ZegoVoiceService] [DIAGNOSTIC 3] Calling player.start()...');
       await player.start();
 
-      // Re-apply aux and volumes after start() because native audio device init can reset routing
-      await player.enableAux(true);
-      await player.setPublishVolume(publishVol);
+      // Re-apply volumes after start() because native audio device init can reset routing
+      await player.enableAux(false);
+      await player.setPublishVolume(0);
       await player.setPlayVolume(playVol);
       await player.muteLocal(!playLocally);
 

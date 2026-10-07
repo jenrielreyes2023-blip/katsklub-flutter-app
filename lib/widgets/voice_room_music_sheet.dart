@@ -199,8 +199,12 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
 
   Future<void> _playTrack(VoiceRoomMusicTrack track) async {
     HapticFeedback.lightImpact();
-    // Non-hosts cannot control master playback; adding to shared room queue instead
-    if (!widget.controller.isHost) {
+    final isHost = widget.controller.isHost;
+    final canControl = widget.controller.canControlCurrentTrack;
+    final isPlaying = widget.controller.isRoomMusicPlaying;
+
+    // If another song is actively playing and user is not host or current DJ, queue it
+    if (!isHost && !canControl && isPlaying) {
       _addToQueue(track);
       return;
     }
@@ -1061,6 +1065,11 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               itemBuilder: (context, index) {
                 final track = queue[index];
                 final isThisPlaying = track.id == currentTrackId;
+                final isMyTrack = track.addedByUserId != null &&
+                    track.addedByUserId.toString() == widget.controller.currentUser?.id?.toString();
+                final canControlThis = widget.controller.isHost ||
+                    isMyTrack ||
+                    (isThisPlaying && widget.controller.canControlCurrentTrack);
 
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
@@ -1200,7 +1209,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                           ],
                         ),
                       ),
-                      if (widget.controller.isHost)
+                      if (canControlThis)
                         IconButton(
                           icon: Icon(
                             isThisPlaying
@@ -1452,7 +1461,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         Text(
                           isCurrent
                               ? 'Playing'
-                              : (widget.controller.isHost ? 'Play' : '+ Queue'),
+                              : (widget.controller.isHost || !widget.controller.isRoomMusicPlaying ? 'Play' : '+ Queue'),
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             color: Colors.white,
@@ -1539,7 +1548,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   ],
                 ),
               ),
-              if (widget.controller.isHost) ...[
+              if (widget.controller.canControlCurrentTrack) ...[
                 IconButton(
                   icon: Icon(Icons.skip_previous_rounded, color: Colors.white70, size: 18.r),
                   tooltip: 'Previous in queue',
@@ -1583,6 +1592,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                 SizedBox(width: 6.w),
                 IconButton(
                   icon: Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 17.r),
+                  tooltip: 'Stop music',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   splashRadius: 14.r,
@@ -1608,7 +1618,9 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                       Icon(Icons.equalizer_rounded, color: const Color(0xFFFF7A45), size: 12.r),
                       SizedBox(width: 4.w),
                       Text(
-                        'DJ: Host Playing',
+                        widget.controller.roomCdnTrack?.addedByUsername != null
+                            ? 'DJ: @${widget.controller.roomCdnTrack!.addedByUsername}'
+                            : (widget.controller.isHost ? 'DJ: Host' : 'Playing in Room'),
                         style: TextStyle(
                           fontFamily: 'SF Pro Rounded',
                           color: const Color(0xFFFF7A45),
@@ -1622,34 +1634,33 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
               ],
             ],
           ),
-          if (widget.controller.isHost) ...[
-            SizedBox(height: 2.h),
-            Row(
-              children: [
-                Icon(Icons.volume_down_rounded, color: Colors.white38, size: 12.r),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 1.5,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
-                    ),
-                    child: Slider(
-                      value: widget.controller.roomMusicVolume,
-                      min: 0.0,
-                      max: 1.0,
-                      activeColor: const Color(0xFFFF7A45),
-                      inactiveColor: Colors.white12,
-                      onChanged: (val) {
-                        widget.controller.setRoomMusicVolume(val);
-                      },
-                    ),
+          // Volume slider: Visible to EVERYONE (Host and all Guests)
+          SizedBox(height: 2.h),
+          Row(
+            children: [
+              Icon(Icons.volume_down_rounded, color: Colors.white38, size: 12.r),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 1.5,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+                  ),
+                  child: Slider(
+                    value: widget.controller.roomMusicVolume,
+                    min: 0.0,
+                    max: 1.0,
+                    activeColor: const Color(0xFFFF7A45),
+                    inactiveColor: Colors.white12,
+                    onChanged: (val) {
+                      widget.controller.setRoomMusicVolume(val);
+                    },
                   ),
                 ),
-                Icon(Icons.volume_up_rounded, color: Colors.white38, size: 12.r),
-              ],
-            ),
-          ],
+              ),
+              Icon(Icons.volume_up_rounded, color: Colors.white38, size: 12.r),
+            ],
+          ),
         ],
       ),
     );
