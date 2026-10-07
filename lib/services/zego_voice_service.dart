@@ -55,11 +55,25 @@ class ZegoVoiceService {
     try {
       final profile = ZegoEngineProfile(
         appID,
-        ZegoScenario.StandardVoiceCall,
+        ZegoScenario.HighQualityChatroom,
         appSign: appSign,
       );
 
       await ZegoExpressEngine.createEngineWithProfile(profile);
+
+      // High-Fidelity HD Stereo Audio Configuration (192 kbps, Full-band 48kHz Stereo)
+      await ZegoExpressEngine.instance.setAudioConfig(
+        ZegoAudioConfig.preset(ZegoAudioConfigPreset.HighQualityStereo),
+      );
+      await ZegoExpressEngine.instance.setAudioCaptureStereoMode(
+        ZegoAudioCaptureStereoMode.Always,
+      );
+      await ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
+
+      // Tune acoustic processing to preserve pristine music frequencies and dynamic range
+      await ZegoExpressEngine.instance.setAECMode(ZegoAECMode.Soft);
+      await ZegoExpressEngine.instance.setANSMode(ZegoANSMode.Soft);
+      await ZegoExpressEngine.instance.enableAGC(true);
 
       // Register callbacks
       ZegoExpressEngine.onCapturedSoundLevelUpdate = (double soundLevel) {
@@ -111,8 +125,9 @@ class ZegoVoiceService {
               Map<String, dynamic> extendedData) {
         for (final stream in streamList) {
           if (updateType == ZegoUpdateType.Add) {
-            // Automatically play remote audio stream
+            // Automatically play remote audio stream through HD loudspeaker
             ZegoExpressEngine.instance.startPlayingStream(stream.streamID);
+            ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
           } else if (updateType == ZegoUpdateType.Delete) {
             ZegoExpressEngine.instance.stopPlayingStream(stream.streamID);
           }
@@ -152,6 +167,8 @@ class ZegoVoiceService {
 
       if (result.errorCode == 0) {
         _currentRoomId = roomId;
+        // Ensure playback routes to device loudspeaker (not call receiver)
+        await ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
         // Start sound level monitoring every 200ms
         await ZegoExpressEngine.instance.startSoundLevelMonitor(
           config: ZegoSoundLevelConfig(200, false),
@@ -180,6 +197,15 @@ class ZegoVoiceService {
     final micGranted = status.isGranted;
 
     try {
+      // Re-assert High-Fidelity 192kbps Stereo encoding before stream publishing begins
+      await ZegoExpressEngine.instance.setAudioConfig(
+        ZegoAudioConfig.preset(ZegoAudioConfigPreset.HighQualityStereo),
+      );
+      await ZegoExpressEngine.instance.setAudioCaptureStereoMode(
+        ZegoAudioCaptureStereoMode.Always,
+      );
+      await ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
+
       _myStreamId = 'stream_${_currentRoomId}_user_${userId}_seat_$seatIndex';
       await ZegoExpressEngine.instance.startPublishingStream(_myStreamId!);
       await ZegoExpressEngine.instance.muteMicrophone(!micGranted || _isMuted);
@@ -324,6 +350,13 @@ class ZegoVoiceService {
           final streamId = _myStreamId ?? 'stream_${_currentRoomId}_host_stream';
           _myStreamId = streamId;
           debugPrint('[ZegoVoiceService] Auto-starting stream publishing ($streamId) so Aux audio can reach room guests!');
+          await ZegoExpressEngine.instance.setAudioConfig(
+            ZegoAudioConfig.preset(ZegoAudioConfigPreset.HighQualityStereo),
+          );
+          await ZegoExpressEngine.instance.setAudioCaptureStereoMode(
+            ZegoAudioCaptureStereoMode.Always,
+          );
+          await ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
           await ZegoExpressEngine.instance.startPublishingStream(streamId);
           _isPublishing = true;
         } else {
@@ -355,6 +388,17 @@ class ZegoVoiceService {
 
       debugPrint('[ZegoVoiceService] Configuring audio pipeline before start():');
       debugPrint('[ZegoVoiceService] - Host plays locally (volume: $playVol), Aux ENABLED with publishVolume: $publishVol to room guests');
+
+      // Enforce pristine 192kbps HD Stereo, loudspeaker routing and gentle acoustic filters
+      await ZegoExpressEngine.instance.setAudioConfig(
+        ZegoAudioConfig.preset(ZegoAudioConfigPreset.HighQualityStereo),
+      );
+      await ZegoExpressEngine.instance.setAudioCaptureStereoMode(
+        ZegoAudioCaptureStereoMode.Always,
+      );
+      await ZegoExpressEngine.instance.setAudioRouteToSpeaker(true);
+      await ZegoExpressEngine.instance.setAECMode(ZegoAECMode.Soft);
+      await ZegoExpressEngine.instance.setANSMode(ZegoANSMode.Soft);
 
       await player.enableRepeat(false);
       await player.enableAux(true);
