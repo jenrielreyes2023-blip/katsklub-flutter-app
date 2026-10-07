@@ -145,10 +145,29 @@ class VoiceRoomController extends ChangeNotifier {
   void addToQueue(VoiceRoomMusicTrack track) {
     if (_currentRoom == null) return;
     final socket = FeedService.getSocket();
+    final user = currentUser;
+    final payload = {
+      'roomId': _currentRoom!.id,
+      'track': track.toJson(),
+      'userId': user?.id,
+      'user': {
+        'id': user?.id,
+        'username': user?.username,
+        'fullName': user?.fullName ?? user?.username,
+        'avatarUrl': user?.avatarUrl ?? '',
+      },
+    };
+
     if (socket != null && socket.connected) {
-      socket.emit('voice_room:music_queue_add', {
-        'roomId': _currentRoom!.id,
-        'track': track.toJson(),
+      debugPrint('[VoiceRoomController] 🎵 Emitting voice_room:music_queue_add: roomId=${_currentRoom!.id}, track=${track.title}, userId=${user?.id}');
+      socket.emit('voice_room:music_queue_add', payload);
+    } else {
+      debugPrint('[VoiceRoomController] ⚠️ Socket not yet connected for addToQueue. Hooking onSocketReady...');
+      FeedService.onSocketReady((s) {
+        if (s.connected && _currentRoom != null) {
+          debugPrint('[VoiceRoomController] Socket ready -> emitting queued voice_room:music_queue_add: track=${track.title}');
+          s.emit('voice_room:music_queue_add', payload);
+        }
       });
     }
   }
@@ -158,12 +177,21 @@ class VoiceRoomController extends ChangeNotifier {
     if (index >= 0 && index < _musicQueue.length) {
       final track = _musicQueue[index];
       final socket = FeedService.getSocket();
+      final user = currentUser;
+      final payload = {
+        'roomId': _currentRoom!.id,
+        'trackId': track.id,
+        'index': index,
+        'userId': user?.id,
+        'user': {
+          'id': user?.id,
+          'username': user?.username,
+        },
+      };
+
       if (socket != null && socket.connected) {
-        socket.emit('voice_room:music_queue_remove', {
-          'roomId': _currentRoom!.id,
-          'trackId': track.id,
-          'index': index,
-        });
+        debugPrint('[VoiceRoomController] 🗑️ Emitting voice_room:music_queue_remove: roomId=${_currentRoom!.id}, trackId=${track.id}, index=$index, userId=${user?.id}');
+        socket.emit('voice_room:music_queue_remove', payload);
       }
     }
   }
@@ -815,9 +843,10 @@ class VoiceRoomController extends ChangeNotifier {
     unawaited(refreshRoomDetails(room.id));
 
     // Emit join
-    final socket = FeedService.getSocket();
-    if (socket != null && socket.connected) {
-      socket.emit('voice_room:join', {
+    void sendJoin(dynamic s) {
+      if (s == null || s.connected != true) return;
+      debugPrint('[VoiceRoomController] 🚪 Emitting voice_room:join: roomId=${room.id}, userId=${user.id}');
+      s.emit('voice_room:join', {
         'roomId': room.id,
         'user': {
           'id': user.id,
@@ -826,6 +855,17 @@ class VoiceRoomController extends ChangeNotifier {
           'avatarUrl': user.avatarUrl ?? '',
           'avatarFrame': user.avatarFrame,
         },
+      });
+    }
+
+    final socket = FeedService.getSocket();
+    if (socket != null && socket.connected) {
+      sendJoin(socket);
+    } else {
+      FeedService.onSocketReady((s) {
+        if (_currentRoom?.id == room.id) {
+          sendJoin(s);
+        }
       });
     }
 
@@ -1719,6 +1759,16 @@ class VoiceRoomController extends ChangeNotifier {
     _musicQueue.clear();
     _musicQueue.addAll(newQueue);
 
+    // SINGLE SOURCE OF TRUTH (Requirement 2):
+    // If local user is the host and no song is actively playing,
+    // but the queue has tracks (e.g. queue went from empty to non-empty from a guest add):
+    if (isHost && _isMusicEnabled && _roomCdnTrack == null && _musicQueue.isNotEmpty) {
+      debugPrint('[VoiceRoomController] Host auto-starting playback for newly queued song: ${_musicQueue.first.title}');
+      final firstTrack = _musicQueue.first;
+      unawaited(playCdnMusic(firstTrack, queueIndex: 0));
+      return;
+    }
+
     // If music was disabled, stopped, or host left:
     if (!_isMusicEnabled || (!isPlaying && track == null)) {
       _isRoomMusicPlaying = false;
@@ -1731,18 +1781,7 @@ class VoiceRoomController extends ChangeNotifier {
 
     _isRoomMusicPlaying = isPlaying;
 
-    // SINGLE SOURCE OF TRUTH (Requirement 2):
-    // Only the host device plays audio and controls playback.
-    if (isHost) {
-      // 1. Auto-start playback when the queue transitions from empty to non-empty
-      // or if music is enabled and no track is currently playing.
-      if (_isMusicEnabled && _roomCdnTrack == null && _musicQueue.isNotEmpty) {
-        debugPrint('[VoiceRoomController] Host auto-starting playback for newly queued song: ${_musicQueue.first.title}');
-        final firstTrack = _musicQueue.first;
-        unawaited(playCdnMusic(firstTrack, queueIndex: 0));
-        return;
-      }
-    } else {
+    if (!isHost) {
       // Guest devices NEVER stream into Zego Aux or just_audio.
       // Guests hear the music via Zego RTC room audio stream published by the host.
       if (_localPlaybackActive) {

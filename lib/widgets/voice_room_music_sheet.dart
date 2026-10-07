@@ -1389,7 +1389,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                   Icon(Icons.playlist_add_rounded, color: Colors.white70, size: 12.r),
                   SizedBox(width: 2.w),
                   Text(
-                    'Queue',
+                    '+ Queue',
                     style: TextStyle(
                       fontFamily: 'SF Pro Rounded',
                       color: Colors.white70,
@@ -1443,7 +1443,7 @@ class _VoiceRoomMusicSheetState extends State<VoiceRoomMusicSheet> {
                         Text(
                           isCurrent
                               ? 'Playing'
-                              : (widget.controller.isHost ? 'Play' : 'Queue'),
+                              : (widget.controller.isHost ? 'Play' : '+ Queue'),
                           style: TextStyle(
                             fontFamily: 'SF Pro Rounded',
                             color: Colors.white,
