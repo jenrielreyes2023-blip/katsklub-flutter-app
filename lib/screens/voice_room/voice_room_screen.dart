@@ -2134,12 +2134,17 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                           final isNotice = msg.message.startsWith('Notice:') || msg.sender.username == 'Notice';
                           final isRegulations = msg.message.contains('strictly forbidden') || msg.message.contains('Regulations');
                           final isHq = msg.message.contains('high quality mode');
+                          final isMusic = msg.message.contains('🎵') || msg.message.toLowerCase().contains('queued');
 
                           Color accentColor = const Color(0xFFFFB800);
                           String badgePrefix = 'System: ';
                           String contentText = msg.message;
 
-                          if (isNotice) {
+                          if (isMusic) {
+                            accentColor = const Color(0xFFFF7A45);
+                            badgePrefix = '';
+                            contentText = msg.message;
+                          } else if (isNotice) {
                             accentColor = const Color(0xFFFF7A45);
                             badgePrefix = 'Notice: ';
                             contentText = msg.message.replaceFirst(RegExp(r'^Notice:\s*'), '');
@@ -2182,7 +2187,26 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen>
                                       ),
                                     ],
                                   )
-                                : RichText(
+                                : isMusic
+                                    ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.queue_music_rounded, color: accentColor, size: 14.r),
+                                          SizedBox(width: 5.w),
+                                          Flexible(
+                                            child: Text(
+                                              msg.message,
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(alpha: 0.95),
+                                                fontSize: 11.5.sp,
+                                                fontWeight: FontWeight.w500,
+                                                fontFamily: 'SF Pro Rounded',
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : RichText(
                                     text: TextSpan(
                                       children: [
                                         TextSpan(

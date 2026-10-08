@@ -357,11 +357,13 @@ class VoiceRoomMessage {
   });
 
   factory VoiceRoomMessage.fromJson(Map<String, dynamic> json) {
+    final rawMessage = json['message'] ?? json['content'] ?? json['text'] ?? '';
+    final rawSender = json['sender'] ?? json['user'];
     return VoiceRoomMessage(
       id: json['id']?.toString() ?? '',
-      message: json['message']?.toString() ?? '',
-      sender: json['sender'] != null
-          ? VoiceRoomUser.fromJson(Map<String, dynamic>.from(json['sender']))
+      message: rawMessage.toString(),
+      sender: rawSender != null
+          ? VoiceRoomUser.fromJson(Map<String, dynamic>.from(rawSender))
           : VoiceRoomUser(id: 0, username: 'System', fullName: 'System', avatarUrl: ''),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()

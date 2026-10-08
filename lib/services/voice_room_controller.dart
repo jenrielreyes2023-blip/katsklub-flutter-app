@@ -1879,6 +1879,7 @@ class VoiceRoomController extends ChangeNotifier {
     final roomId = data['roomId'];
     if (roomId != null && roomId.toString() != _currentRoom!.id.toString()) return;
 
+    final action = data['action']?.toString();
     final isEnabled = data['isEnabled'] == true;
     final isPlaying = data['isPlaying'] == true;
     final currentQueueIndex = (data['currentQueueIndex'] as num?)?.toInt() ?? -1;
@@ -1914,27 +1915,57 @@ class VoiceRoomController extends ChangeNotifier {
 
     _musicQueue.clear();
     _musicQueue.addAll(newQueue);
-    _currentQueueIndex = currentQueueIndex;
     _isMusicEnabled = isEnabled || track != null || _musicQueue.isNotEmpty;
+
+    final isQueueAdd = action == 'queue_add';
+
+    // ----------------------------------------------------
+    // PRESERVE CURRENT PLAYBACK ON QUEUE ADD
+    // ----------------------------------------------------
+    // If local host is ALREADY actively playing a song, and this update is merely a queue addition,
+    // NEVER disrupt, pause, or switch the currently playing track!
+    if (isHost && _localPlaybackActive && _isRoomMusicPlaying && isQueueAdd) {
+      debugPrint('[VoiceRoomController] 🎵 Queue updated (+1 track) while playing. Active playback preserved.');
+      if (_currentPlayingTrackId != null) {
+        final idx = _musicQueue.indexWhere((t) => t.id == _currentPlayingTrackId);
+        if (idx != -1) {
+          _currentQueueIndex = idx;
+        }
+      }
+      notifyListeners();
+      return;
+    }
 
     // Track resolution:
     if (track != null) {
       _roomCdnTrack = track;
-    } else if (_currentQueueIndex >= 0 && _currentQueueIndex < _musicQueue.length) {
-      _roomCdnTrack = _musicQueue[_currentQueueIndex];
+    } else if (currentQueueIndex >= 0 && currentQueueIndex < _musicQueue.length) {
+      _roomCdnTrack = _musicQueue[currentQueueIndex];
+    } else if (_currentPlayingTrackId != null && _musicQueue.any((t) => t.id == _currentPlayingTrackId)) {
+      _roomCdnTrack = _musicQueue.firstWhere((t) => t.id == _currentPlayingTrackId);
     } else if (_musicQueue.isNotEmpty) {
       _roomCdnTrack = _musicQueue.first;
-      if (_currentQueueIndex < 0) _currentQueueIndex = 0;
     }
 
-    debugPrint('[VoiceRoomController] 🎵 _handleRoomMusicUpdated: roomId=${_currentRoom?.id}, enabled=$_isMusicEnabled, playing=$isPlaying, track=${_roomCdnTrack?.title}, queueLen=${_musicQueue.length}, isHost=$isHost, localActive=$_localPlaybackActive');
+    if (_currentPlayingTrackId != null) {
+      final activeIdx = _musicQueue.indexWhere((t) => t.id == _currentPlayingTrackId);
+      if (activeIdx != -1) {
+        _currentQueueIndex = activeIdx;
+      } else {
+        _currentQueueIndex = currentQueueIndex;
+      }
+    } else {
+      _currentQueueIndex = currentQueueIndex;
+    }
+
+    debugPrint('[VoiceRoomController] 🎵 _handleRoomMusicUpdated: roomId=${_currentRoom?.id}, action=$action, enabled=$_isMusicEnabled, playing=$isPlaying, track=${_roomCdnTrack?.title}, queueLen=${_musicQueue.length}, isHost=$isHost, localActive=$_localPlaybackActive');
 
     // ==========================================
     // HOST PLAYBACK PIPELINE (Single Source of Truth)
     // ==========================================
     if (isHost) {
-      // 1. If music is disabled, or no songs left and not playing:
-      if (!_isMusicEnabled || (!isPlaying && _roomCdnTrack == null && _musicQueue.isEmpty)) {
+      // 1. If music is disabled, stopped, or cleared:
+      if (!_isMusicEnabled || (!isPlaying && _roomCdnTrack == null && _musicQueue.isEmpty) || action == 'queue_clear' || action == 'stop' || action == 'disable') {
         if (_localPlaybackActive) {
           unawaited(_stopLocalMusicInternal());
         }
@@ -1957,15 +1988,15 @@ class VoiceRoomController extends ChangeNotifier {
       // 3. If nothing is actively playing, but queue has songs and music is enabled:
       // Auto-start playback of the first song in queue!
       if (!_localPlaybackActive && _musicQueue.isNotEmpty && _isMusicEnabled) {
-        final firstTrack = _musicQueue.first;
+        final firstTrack = _roomCdnTrack ?? _musicQueue.first;
         debugPrint('[VoiceRoomController] Host auto-starting playback for newly queued song: "${firstTrack.title}"');
         _currentPlayingTrackId = firstTrack.id;
         unawaited(playCdnMusic(firstTrack, queueIndex: 0));
         return;
       }
 
-      // 4. If music was paused via socket:
-      if (!isPlaying && _localPlaybackActive) {
+      // 4. If music was explicitly paused via socket (and NOT a queue_add event):
+      if (!isPlaying && _localPlaybackActive && !isQueueAdd) {
         debugPrint('[VoiceRoomController] Host pausing Zego Aux playback');
         unawaited(ZegoVoiceService().pauseBackgroundMusic());
         _isRoomMusicPlaying = false;
