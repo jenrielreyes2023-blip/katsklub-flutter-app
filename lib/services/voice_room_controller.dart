@@ -12,6 +12,7 @@ import 'package:zego_express_engine/zego_express_engine.dart';
 import 'zego_voice_service.dart';
 import 'global_audio_player_service.dart';
 import 'voice_room_foreground_service.dart';
+import 'voice_room_music_service.dart';
 import '../models/voice_room_music_track.dart';
 
 /// Builds the local-playback audio source for voice-room music.
@@ -180,6 +181,7 @@ class VoiceRoomController extends ChangeNotifier {
 
   void addToQueue(VoiceRoomMusicTrack track) {
     if (_currentRoom == null) return;
+    unawaited(VoiceRoomMusicService().addRecentTrack(track));
     final socket = FeedService.getSocket();
     final user = currentUser;
     final payload = {
@@ -345,6 +347,7 @@ class VoiceRoomController extends ChangeNotifier {
 
     _roomCdnTrack = track;
     _currentPlayingTrackId = track.id;
+    unawaited(VoiceRoomMusicService().addRecentTrack(track));
     final qIdx = queueIndex ?? _musicQueue.indexWhere((t) => t.id == track.id);
     if (qIdx != -1) {
       _currentQueueIndex = qIdx;

@@ -159,4 +159,54 @@ class VoiceRoomMusicService {
       return false;
     }
   }
+
+  static const String _recentKey = 'voice_room_recent_tracks_v1';
+
+  /// Get list of recently queued/played tracks from local storage
+  Future<List<VoiceRoomMusicTrack>> getRecentTracks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_recentKey) ?? [];
+      return list.map((item) {
+        try {
+          return VoiceRoomMusicTrack.fromJson(jsonDecode(item));
+        } catch (_) {
+          return null;
+        }
+      }).whereType<VoiceRoomMusicTrack>().toList();
+    } catch (e) {
+      debugPrint('[VoiceRoomMusicService] getRecentTracks error: $e');
+      return [];
+    }
+  }
+
+  /// Add track to recent list (keeps top 25 deduplicated)
+  Future<void> addRecentTrack(VoiceRoomMusicTrack track) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_recentKey) ?? [];
+      list.removeWhere((item) {
+        try {
+          final map = jsonDecode(item);
+          return map['id']?.toString() == track.id;
+        } catch (_) {
+          return false;
+        }
+      });
+      list.insert(0, jsonEncode(track.toJson()));
+      if (list.length > 25) {
+        list.removeRange(25, list.length);
+      }
+      await prefs.setStringList(_recentKey, list);
+    } catch (e) {
+      debugPrint('[VoiceRoomMusicService] addRecentTrack error: $e');
+    }
+  }
+
+  /// Returns Top 20 Trending Tracks (Voice Room favorites & popular curated anthems)
+  Future<List<VoiceRoomMusicTrack>> getTrendingTracks() async {
+    final res = await getTracks();
+    if (res.tracks.isEmpty) return [];
+    return res.tracks.take(20).toList();
+  }
 }
