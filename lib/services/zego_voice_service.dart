@@ -9,9 +9,9 @@ class ZegoVoiceService {
   ZegoVoiceService._internal();
   static final ZegoVoiceService _instance = ZegoVoiceService._internal();
 
-  static const int appID = 741492118;
+  static const int appID = 53611306;
   static const String appSign =
-      '9523bf62f17e975eec86f300be82541f3b95e255f876af6a3c16543590196088';
+      '8c2b5d3c1a9bdb17fe6532518f1d00b084fd274ad6b069d6e15f4c4a33061b91';
 
   bool _isInitialized = false;
   String? _currentRoomId;
