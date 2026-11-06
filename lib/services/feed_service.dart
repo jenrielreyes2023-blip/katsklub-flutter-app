@@ -1261,7 +1261,7 @@ class FeedService {
     final cleanOffset = offset < 0 ? 0 : offset;
     final cleanLimit = limit < 1 ? 10 : limit;
     final data = await _getJson(
-      ApiConfig.uri('/api/posts?offset=$cleanOffset&limit=$cleanLimit'),
+      ApiConfig.uri('/api/posts?feed=home&offset=$cleanOffset&limit=$cleanLimit'),
       _authHeaders(token),
     );
     final posts = _readPosts(data);
@@ -2903,7 +2903,7 @@ class FeedService {
 
     // ── Step 1: fetch posts first so the feed can render immediately ──
     final feedData =
-        await _getJson(ApiConfig.uri('/api/posts'), headers);
+        await _getJson(ApiConfig.uri('/api/posts?feed=home'), headers);
 
     final posts = _readPosts(feedData);
     final offset = _readInt(feedData['postsOffset'] ?? feedData['offset']);
