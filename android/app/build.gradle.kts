@@ -8,7 +8,8 @@ plugins {
 
 android {
     namespace = "com.katsklub.app"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned above Flutter's default: permission_handler_android requires compileSdk 37+.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
