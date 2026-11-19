@@ -90,6 +90,28 @@ const List<ThemeProductData> themeProducts = [
     previewAvatarColor: Color(0xFFFEF3C7),
     previewInitialColor: Color(0xFFB45309),
   ),
+  ThemeProductData(
+    type: ThemeProductType.bobaBubble,
+    title: 'Chat Bubble - Boba Milk Tea Skin',
+    description:
+        'Sweeten your direct messages with creamy milk-tea bubbles, cute boba pearls, and an adorable milk-tea cup ornament.',
+    successMessage:
+        'The Boba Milk Tea Chat Bubble Skin is now active on your account! Your direct messages will feature the cute boba chat bubbles.',
+    previewLabel: 'you',
+    previewInitial: 'Y',
+    assetPath: 'assets/chatbubble/boba_bubble.png',
+    previewGradient: [
+      Color(0xFFFFF7ED),
+      Color(0xFFFFEEDD),
+      Color(0xFFFED7AA),
+      Colors.white,
+    ],
+    badgeText: 'CUTE',
+    badgeGradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
+    buttonGradient: [Color(0xFFEC4899), Color(0xFFBE185D)],
+    previewAvatarColor: Color(0xFFFFEEDD),
+    previewInitialColor: Color(0xFF9A3412),
+  ),
 ];
 
 class ShopScreen extends StatefulWidget {
@@ -759,7 +781,8 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isBubbleProduct(dynamic item) {
     final type = item is ThemeProductData ? item.type : item as ThemeProductType;
     return type == ThemeProductType.bubbleDream ||
-        type == ThemeProductType.sagittariusBubble;
+        type == ThemeProductType.sagittariusBubble ||
+        type == ThemeProductType.bobaBubble;
   }
 
   bool _isApplied(dynamic item) {
@@ -1360,12 +1383,31 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildChatPreviewCard(ThemeProductData selected) {
     final isSagittarius = selected.type == ThemeProductType.sagittariusBubble;
+    final isBoba = selected.type == ThemeProductType.bobaBubble;
 
-    final bgColor = isSagittarius ? const Color(0xFF161128) : const Color(0xFFF5F3FF);
-    final headerBg = isSagittarius ? const Color(0xFF211938) : Colors.white.withOpacity(0.95);
-    final headerTextColor = isSagittarius ? Colors.white : const Color(0xFF111827);
-    final headerBorderColor = isSagittarius ? const Color(0xFF322554) : Colors.grey.shade100;
-    final accentColor = isSagittarius ? const Color(0xFFF59E0B) : const Color(0xFF8B5CF6);
+    final bgColor = isSagittarius
+        ? const Color(0xFF161128)
+        : isBoba
+            ? const Color(0xFFFFF7ED)
+            : const Color(0xFFF5F3FF);
+    final headerBg = isSagittarius
+        ? const Color(0xFF211938)
+        : Colors.white.withOpacity(0.95);
+    final headerTextColor = isSagittarius
+        ? Colors.white
+        : isBoba
+            ? const Color(0xFF5B3A29)
+            : const Color(0xFF111827);
+    final headerBorderColor = isSagittarius
+        ? const Color(0xFF322554)
+        : isBoba
+            ? const Color(0xFFFED7AA)
+            : Colors.grey.shade100;
+    final accentColor = isSagittarius
+        ? const Color(0xFFF59E0B)
+        : isBoba
+            ? const Color(0xFFEC4899)
+            : const Color(0xFF8B5CF6);
 
     return Container(
       width: double.infinity,
@@ -1393,13 +1435,21 @@ class _ShopScreenState extends State<ShopScreen> {
               children: [
                 CircleAvatar(
                   radius: 14,
-                  backgroundColor: isSagittarius ? const Color(0xFFFEF3C7) : Colors.purple.shade100,
+                  backgroundColor: isSagittarius
+                      ? const Color(0xFFFEF3C7)
+                      : isBoba
+                          ? const Color(0xFFFFEEDD)
+                          : Colors.purple.shade100,
                   child: Text(
                     'G',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isSagittarius ? const Color(0xFFB45309) : Colors.purple,
+                      color: isSagittarius
+                          ? const Color(0xFFB45309)
+                          : isBoba
+                              ? const Color(0xFF9A3412)
+                              : Colors.purple,
                     ),
                   ),
                 ),
@@ -1416,7 +1466,11 @@ class _ShopScreenState extends State<ShopScreen> {
                 Icon(
                   Icons.more_horiz,
                   size: 18,
-                  color: isSagittarius ? Colors.white54 : Colors.grey,
+                  color: isSagittarius
+                      ? Colors.white54
+                      : isBoba
+                          ? const Color(0xFFC7A17A)
+                          : Colors.grey,
                 ),
               ],
             ),
@@ -1438,7 +1492,9 @@ class _ShopScreenState extends State<ShopScreen> {
                         border: Border.all(
                           color: isSagittarius
                               ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
-                              : Colors.purple.shade50,
+                              : isBoba
+                                  ? const Color(0xFFF472B6).withValues(alpha: 0.4)
+                                  : Colors.purple.shade50,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -1451,9 +1507,15 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: Text(
                         isSagittarius
                             ? 'Sagittarius Celestial Theme equipped! 🏹✨'
-                            : 'Hi! How is the new chat bubble theme? 💬',
+                            : isBoba
+                                ? 'Boba Milk Tea Theme equipped! 🧋✨'
+                                : 'Hi! How is the new chat bubble theme? 💬',
                         style: TextStyle(
-                          color: isSagittarius ? const Color(0xFFFDE68A) : const Color(0xFF4C1D95),
+                          color: isSagittarius
+                              ? const Color(0xFFFDE68A)
+                              : isBoba
+                                  ? const Color(0xFF5B3A29)
+                                  : const Color(0xFF4C1D95),
                           fontSize: 12,
                         ),
                       ),
@@ -1510,7 +1572,55 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                             ],
                           )
-                        : Container(
+                        : isBoba
+                            ? Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    decoration: const BoxDecoration(
+                                      image: DecorationImage(
+                                        image: AssetImage('assets/chatbubble/boba_bubble.png'),
+                                        centerSlice: Rect.fromLTRB(35, 25, 225, 55),
+                                        fit: BoxFit.fill,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Extra pearls please! 🧋💖',
+                                      style: TextStyle(
+                                        color: Color(0xFF5B3A29),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: -14,
+                                    right: -12,
+                                    child: IgnorePointer(
+                                      child: Image.asset(
+                                        'assets/chatbubble/boba_top_right.png',
+                                        width: 36,
+                                        height: 36,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: -10,
+                                    left: -10,
+                                    child: IgnorePointer(
+                                      child: Image.asset(
+                                        'assets/chatbubble/boba_bottom_left.png',
+                                        width: 28,
+                                        height: 28,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
@@ -1543,14 +1653,22 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: isSagittarius ? const Color(0xFF211938) : Colors.white,
+            color: isSagittarius
+                ? const Color(0xFF211938)
+                : isBoba
+                    ? const Color(0xFFFFEEDD)
+                    : Colors.white,
             child: Row(
               children: [
                 Expanded(
                   child: Container(
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isSagittarius ? const Color(0xFF161128) : Colors.grey.shade100,
+                      color: isSagittarius
+                          ? const Color(0xFF161128)
+                          : isBoba
+                              ? Colors.white
+                              : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1558,7 +1676,11 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Text(
                       'Type a message...',
                       style: TextStyle(
-                        color: isSagittarius ? Colors.white38 : Colors.grey.shade400,
+                        color: isSagittarius
+                            ? Colors.white38
+                            : isBoba
+                                ? const Color(0xFFC7A17A)
+                                : Colors.grey.shade400,
                         fontSize: 11,
                       ),
                     ),

@@ -5763,7 +5763,11 @@ class _MessageBubble extends StatelessWidget {
 
     final isSagittarius = senderBubbleSkin == 'sagittarius' ||
         (sentByMe && theme.id == 'sagittarius');
-    final useCustomAsset = isSagittarius && !imageOnly;
+    final isBoba =
+        senderBubbleSkin == 'boba' || (sentByMe && theme.id == 'boba');
+    final useCustomAsset = (isSagittarius || isBoba) && !imageOnly;
+    final customAssetTextColor =
+        isBoba ? const Color(0xFF5B3A29) : const Color(0xFF381E00);
 
     final bubbleDecoration = BoxDecoration(
       color: useCustomAsset
@@ -5779,9 +5783,11 @@ class _MessageBubble extends StatelessWidget {
               colors: theme.ownBubbleGradient!,
             ),
       image: useCustomAsset
-          ? const DecorationImage(
-              image: AssetImage('assets/chatbubble/sagittarius_bubble.png'),
-              centerSlice: Rect.fromLTRB(35, 25, 225, 55),
+          ? DecorationImage(
+              image: AssetImage(isBoba
+                  ? 'assets/chatbubble/boba_bubble.png'
+                  : 'assets/chatbubble/sagittarius_bubble.png'),
+              centerSlice: const Rect.fromLTRB(35, 25, 225, 55),
               fit: BoxFit.fill,
             )
           : null,
@@ -5834,7 +5840,7 @@ class _MessageBubble extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'SF Pro Rounded',
                   color: useCustomAsset
-                      ? const Color(0xFF381E00)
+                      ? customAssetTextColor
                       : (sentByMe ? theme.ownBubbleText : theme.otherBubbleText),
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
@@ -5848,7 +5854,7 @@ class _MessageBubble extends StatelessWidget {
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 final checkColor = useCustomAsset
-                    ? const Color(0xFF381E00).withValues(alpha: seenByOther ? 0.9 : 0.55)
+                    ? customAssetTextColor.withValues(alpha: seenByOther ? 0.9 : 0.55)
                     : (seenByOther ? Colors.white : Colors.white70);
 
                 return Row(
@@ -5862,10 +5868,10 @@ class _MessageBubble extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                         color: sentByMe
                             ? (useCustomAsset
-                                ? const Color(0xFF381E00).withValues(alpha: 0.65)
+                                ? customAssetTextColor.withValues(alpha: 0.65)
                                 : Colors.white.withValues(alpha: 0.7))
                             : (useCustomAsset
-                                ? const Color(0xFF381E00).withValues(alpha: 0.65)
+                                ? customAssetTextColor.withValues(alpha: 0.65)
                                 : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF))),
                       ),
                     ),
@@ -5898,7 +5904,9 @@ class _MessageBubble extends StatelessWidget {
               right: -12,
               child: IgnorePointer(
                 child: Image.asset(
-                  'assets/chatbubble/sagittarius_top_right.webp',
+                  isBoba
+                      ? 'assets/chatbubble/boba_top_right.png'
+                      : 'assets/chatbubble/sagittarius_top_right.webp',
                   width: 38,
                   height: 38,
                   fit: BoxFit.contain,
@@ -5910,7 +5918,9 @@ class _MessageBubble extends StatelessWidget {
               left: -10,
               child: IgnorePointer(
                 child: Image.asset(
-                  'assets/chatbubble/sagittarius_bottom_left.webp',
+                  isBoba
+                      ? 'assets/chatbubble/boba_bottom_left.png'
+                      : 'assets/chatbubble/sagittarius_bottom_left.webp',
                   width: 30,
                   height: 30,
                   fit: BoxFit.contain,
@@ -5923,7 +5933,9 @@ class _MessageBubble extends StatelessWidget {
               left: -12,
               child: IgnorePointer(
                 child: Image.asset(
-                  'assets/chatbubble/sagittarius_top_left.webp',
+                  isBoba
+                      ? 'assets/chatbubble/boba_top_left.png'
+                      : 'assets/chatbubble/sagittarius_top_left.webp',
                   width: 38,
                   height: 38,
                   fit: BoxFit.contain,
@@ -5935,7 +5947,9 @@ class _MessageBubble extends StatelessWidget {
               right: -10,
               child: IgnorePointer(
                 child: Image.asset(
-                  'assets/chatbubble/sagittarius_bottom_right.webp',
+                  isBoba
+                      ? 'assets/chatbubble/boba_bottom_right.png'
+                      : 'assets/chatbubble/sagittarius_bottom_right.webp',
                   width: 30,
                   height: 30,
                   fit: BoxFit.contain,

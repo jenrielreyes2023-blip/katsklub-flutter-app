@@ -88,6 +88,19 @@ class ConversationTheme {
     isCustomAsset: true,
   );
 
+  static const ConversationTheme boba = ConversationTheme(
+    id: 'boba',
+    label: 'Boba Milk Tea',
+    background: Color(0xFFFFFBF2),
+    ownBubble: Color(0xFFF3C6D3),
+    ownBubbleText: Color(0xFF5B3A29),
+    otherBubble: Color(0xFFFFEEDD),
+    otherBubbleText: Color(0xFF5B3A29),
+    accent: Color(0xFFEC4899),
+    ownBubbleGradient: [Color(0xFFFBCFE8), Color(0xFFFED7AA)],
+    isCustomAsset: true,
+  );
+
   static const ConversationTheme emerald = ConversationTheme(
     id: 'emerald',
     label: 'Emerald',
@@ -198,6 +211,19 @@ class ConversationTheme {
           ownBubbleGradient: [Color(0xFFFDE047), Color(0xFFF59E0B)],
           isCustomAsset: true,
         );
+      case 'boba':
+        return const ConversationTheme(
+          id: 'boba',
+          label: 'Boba Milk Tea',
+          background: Color(0xFF1F1410),
+          ownBubble: Color(0xFFF3C6D3),
+          ownBubbleText: Color(0xFF5B3A29),
+          otherBubble: Color(0xFF2D2119),
+          otherBubbleText: Color(0xFFFFF7ED),
+          accent: Color(0xFFEC4899),
+          ownBubbleGradient: [Color(0xFFFBCFE8), Color(0xFFFED7AA)],
+          isCustomAsset: true,
+        );
       case 'emerald':
         return const ConversationTheme(
           id: 'emerald',
@@ -257,6 +283,7 @@ class ConversationTheme {
     sunset,
     bubbleDream,
     sagittarius,
+    boba,
     emerald,
     crimson,
     cyberpunk,
