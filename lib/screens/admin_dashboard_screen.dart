@@ -3316,7 +3316,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         .where((t) =>
             t.type != ThemeProductType.bubbleDream &&
             t.type != ThemeProductType.sagittariusBubble &&
-            t.type != ThemeProductType.bobaBubble)
+            t.type != ThemeProductType.bobaBubble &&
+            t.type != ThemeProductType.cyberpunkBubble)
         .toList();
     final total = postcardThemes.length;
 
@@ -3468,7 +3469,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         .where((t) =>
             t.type != ThemeProductType.bubbleDream &&
             t.type != ThemeProductType.sagittariusBubble &&
-            t.type != ThemeProductType.bobaBubble)
+            t.type != ThemeProductType.bobaBubble &&
+            t.type != ThemeProductType.cyberpunkBubble)
         .toList();
     final activePostcardsCount = postcardThemes
         .where((t) => (_enabledThemes[_themeKeyForPublic(t.type, t)] ?? true))
@@ -4200,7 +4202,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         .where((t) =>
             t.type != ThemeProductType.bubbleDream &&
             t.type != ThemeProductType.sagittariusBubble &&
-            t.type != ThemeProductType.bobaBubble)
+            t.type != ThemeProductType.bobaBubble &&
+            t.type != ThemeProductType.cyberpunkBubble)
         .toList();
 
     if (postcardThemes.isEmpty) {

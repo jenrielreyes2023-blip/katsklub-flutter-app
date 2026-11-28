@@ -19,6 +19,7 @@ import 'wallet_screen.dart';
 export '../models/theme_product.dart';
 import '../models/theme_product.dart';
 import '../config/postcard_nameplates_data.dart';
+import '../widgets/cyberpunk_bubble.dart';
 
 const List<ThemeProductData> themeProducts = [
   ThemeProductData(
@@ -111,6 +112,28 @@ const List<ThemeProductData> themeProducts = [
     buttonGradient: [Color(0xFFEC4899), Color(0xFFBE185D)],
     previewAvatarColor: Color(0xFFFFEEDD),
     previewInitialColor: Color(0xFF9A3412),
+  ),
+  ThemeProductData(
+    type: ThemeProductType.cyberpunkBubble,
+    title: 'Chat Bubble - Cyberpunk Neon Holo Skin',
+    description:
+        'Futuristic animated chat bubble featuring pulsing neon cyan & laser magenta borders, holographic scanlines, and high-tech cyber HUD ornaments.',
+    successMessage:
+        'The Cyberpunk Neon Holo Chat Bubble Skin is now active on your account! Your direct messages will feature the animated cyberpunk skin.',
+    previewLabel: 'you',
+    previewInitial: 'Y',
+    assetPath: '',
+    previewGradient: [
+      Color(0xFF00F0FF),
+      Color(0xFF7928CA),
+      Color(0xFFFF007F),
+      Color(0xFF00F0FF),
+    ],
+    badgeText: 'ANIMATED 🔥',
+    badgeGradient: [Color(0xFF00F0FF), Color(0xFFFF007F)],
+    buttonGradient: [Color(0xFF00F0FF), Color(0xFF7928CA)],
+    previewAvatarColor: Color(0xFF090D1A),
+    previewInitialColor: Color(0xFF00F0FF),
   ),
 ];
 
@@ -782,7 +805,8 @@ class _ShopScreenState extends State<ShopScreen> {
     final type = item is ThemeProductData ? item.type : item as ThemeProductType;
     return type == ThemeProductType.bubbleDream ||
         type == ThemeProductType.sagittariusBubble ||
-        type == ThemeProductType.bobaBubble;
+        type == ThemeProductType.bobaBubble ||
+        type == ThemeProductType.cyberpunkBubble;
   }
 
   bool _isApplied(dynamic item) {
@@ -1384,30 +1408,39 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildChatPreviewCard(ThemeProductData selected) {
     final isSagittarius = selected.type == ThemeProductType.sagittariusBubble;
     final isBoba = selected.type == ThemeProductType.bobaBubble;
+    final isCyberpunk = selected.type == ThemeProductType.cyberpunkBubble;
 
     final bgColor = isSagittarius
         ? const Color(0xFF161128)
         : isBoba
             ? const Color(0xFFFFF7ED)
-            : const Color(0xFFF5F3FF);
+            : isCyberpunk
+                ? const Color(0xFF070A14)
+                : const Color(0xFFF5F3FF);
     final headerBg = isSagittarius
         ? const Color(0xFF211938)
-        : Colors.white.withOpacity(0.95);
-    final headerTextColor = isSagittarius
+        : isCyberpunk
+            ? const Color(0xFF0C101F)
+            : Colors.white.withOpacity(0.95);
+    final headerTextColor = isSagittarius || isCyberpunk
         ? Colors.white
         : isBoba
             ? const Color(0xFF5B3A29)
             : const Color(0xFF111827);
     final headerBorderColor = isSagittarius
         ? const Color(0xFF322554)
-        : isBoba
-            ? const Color(0xFFFED7AA)
-            : Colors.grey.shade100;
+        : isCyberpunk
+            ? const Color(0xFF00F0FF).withValues(alpha: 0.3)
+            : isBoba
+                ? const Color(0xFFFED7AA)
+                : Colors.grey.shade100;
     final accentColor = isSagittarius
         ? const Color(0xFFF59E0B)
         : isBoba
             ? const Color(0xFFEC4899)
-            : const Color(0xFF8B5CF6);
+            : isCyberpunk
+                ? const Color(0xFF00F0FF)
+                : const Color(0xFF8B5CF6);
 
     return Container(
       width: double.infinity,
@@ -1439,7 +1472,9 @@ class _ShopScreenState extends State<ShopScreen> {
                       ? const Color(0xFFFEF3C7)
                       : isBoba
                           ? const Color(0xFFFFEEDD)
-                          : Colors.purple.shade100,
+                          : isCyberpunk
+                              ? const Color(0xFF00F0FF).withValues(alpha: 0.2)
+                              : Colors.purple.shade100,
                   child: Text(
                     'G',
                     style: TextStyle(
@@ -1449,7 +1484,9 @@ class _ShopScreenState extends State<ShopScreen> {
                           ? const Color(0xFFB45309)
                           : isBoba
                               ? const Color(0xFF9A3412)
-                              : Colors.purple,
+                              : isCyberpunk
+                                  ? const Color(0xFF00F0FF)
+                                  : Colors.purple,
                     ),
                   ),
                 ),
@@ -1466,7 +1503,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 Icon(
                   Icons.more_horiz,
                   size: 18,
-                  color: isSagittarius
+                  color: isSagittarius || isCyberpunk
                       ? Colors.white54
                       : isBoba
                           ? const Color(0xFFC7A17A)
@@ -1487,14 +1524,20 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSagittarius ? const Color(0xFF261D3D) : Colors.white,
+                        color: isSagittarius
+                            ? const Color(0xFF261D3D)
+                            : isCyberpunk
+                                ? const Color(0xFF131A2E)
+                                : Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: isSagittarius
                               ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
                               : isBoba
                                   ? const Color(0xFFF472B6).withValues(alpha: 0.4)
-                                  : Colors.purple.shade50,
+                                  : isCyberpunk
+                                      ? const Color(0xFF00F0FF).withValues(alpha: 0.35)
+                                      : Colors.purple.shade50,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -1509,13 +1552,17 @@ class _ShopScreenState extends State<ShopScreen> {
                             ? 'Sagittarius Celestial Theme equipped! 🏹✨'
                             : isBoba
                                 ? 'Boba Milk Tea Theme equipped! 🧋✨'
-                                : 'Hi! How is the new chat bubble theme? 💬',
+                                : isCyberpunk
+                                    ? 'SYS // Holo link established ⚡'
+                                    : 'Hi! How is the new chat bubble theme? 💬',
                         style: TextStyle(
                           color: isSagittarius
                               ? const Color(0xFFFDE68A)
                               : isBoba
                                   ? const Color(0xFF5B3A29)
-                                  : const Color(0xFF4C1D95),
+                                  : isCyberpunk
+                                      ? const Color(0xFF00F0FF)
+                                      : const Color(0xFF4C1D95),
                           fontSize: 12,
                         ),
                       ),
@@ -1620,7 +1667,19 @@ class _ShopScreenState extends State<ShopScreen> {
                                   ),
                                 ],
                               )
-                            : Container(
+                            : isCyberpunk
+                                ? const CyberpunkBubble(
+                                    sentByMe: true,
+                                    child: Text(
+                                      'CYBER-NET CONNECTED // ⚡ Neon ready!',
+                                      style: TextStyle(
+                                        color: Color(0xFFF0FDFA),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
@@ -1657,7 +1716,9 @@ class _ShopScreenState extends State<ShopScreen> {
                 ? const Color(0xFF211938)
                 : isBoba
                     ? const Color(0xFFFFEEDD)
-                    : Colors.white,
+                    : isCyberpunk
+                        ? const Color(0xFF0C101F)
+                        : Colors.white,
             child: Row(
               children: [
                 Expanded(
@@ -1668,8 +1729,13 @@ class _ShopScreenState extends State<ShopScreen> {
                           ? const Color(0xFF161128)
                           : isBoba
                               ? Colors.white
-                              : Colors.grey.shade100,
+                              : isCyberpunk
+                                  ? const Color(0xFF070A14)
+                                  : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
+                      border: isCyberpunk
+                          ? Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.35))
+                          : null,
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     alignment: Alignment.centerLeft,
@@ -1680,7 +1746,9 @@ class _ShopScreenState extends State<ShopScreen> {
                             ? Colors.white38
                             : isBoba
                                 ? const Color(0xFFC7A17A)
-                                : Colors.grey.shade400,
+                                : isCyberpunk
+                                    ? const Color(0xFF00F0FF).withValues(alpha: 0.5)
+                                    : Colors.grey.shade400,
                         fontSize: 11,
                       ),
                     ),

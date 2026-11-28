@@ -42,6 +42,7 @@ import '../services/trtc_call_service.dart';
 import '../widgets/smooth_bottom_sheet.dart';
 import 'package:syncfusion_flutter_chat/chat.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/cyberpunk_bubble.dart';
 
 enum _MessagesPageState { general, groups, requests, archived }
 
@@ -5765,9 +5766,14 @@ class _MessageBubble extends StatelessWidget {
         (sentByMe && theme.id == 'sagittarius');
     final isBoba =
         senderBubbleSkin == 'boba' || (sentByMe && theme.id == 'boba');
+    final isCyberpunk = senderBubbleSkin == 'cyberpunk' ||
+        senderBubbleSkin == 'cyberpunk_bubble' ||
+        (sentByMe && (theme.id == 'cyberpunk' || theme.id == 'cyberpunk_bubble'));
+    final isCyberpunkCustom = isCyberpunk && !imageOnly;
     final useCustomAsset = (isSagittarius || isBoba) && !imageOnly;
-    final customAssetTextColor =
-        isBoba ? const Color(0xFF5B3A29) : const Color(0xFF381E00);
+    final customAssetTextColor = isCyberpunkCustom
+        ? const Color(0xFFF0FDFA)
+        : (isBoba ? const Color(0xFF5B3A29) : const Color(0xFF381E00));
 
     final bubbleDecoration = BoxDecoration(
       color: useCustomAsset
@@ -5795,102 +5801,119 @@ class _MessageBubble extends StatelessWidget {
       borderRadius: useCustomAsset ? null : borderRadius,
     );
 
-    final bubble = Container(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.72,
-      ),
-      padding: imageOnly
-          ? const EdgeInsets.all(4)
-          : (useCustomAsset
-              ? const EdgeInsets.symmetric(horizontal: 16, vertical: 11)
-              : const EdgeInsets.symmetric(horizontal: 13, vertical: 9)),
-      decoration: bubbleDecoration,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            sentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          if (message.replyTo != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _QuotedReplyChip(
-                reply: message.replyTo!,
-                sentByMe: sentByMe,
-                theme: theme,
-              ),
-            ),
-          if (attachments.isNotEmpty)
-            _MessageAttachmentsView(
-              attachments: attachments,
+    final bubbleContent = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          sentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        if (message.replyTo != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: _QuotedReplyChip(
+              reply: message.replyTo!,
               sentByMe: sentByMe,
               theme: theme,
             ),
-          if (attachments.isNotEmpty && body.isNotEmpty)
-            SizedBox(height: 7),
-          if (body.isNotEmpty) ...[
-            if (body.startsWith('📞'))
-              _CallLogChip(
-                body: body,
-                sentByMe: sentByMe,
-                theme: theme,
-              )
-            else
-              LinkifiedText(
-                text: body,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Rounded',
-                  color: useCustomAsset
-                      ? customAssetTextColor
-                      : (sentByMe ? theme.ownBubbleText : theme.otherBubbleText),
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w500,
-                  height: 1.33,
-                ),
+          ),
+        if (attachments.isNotEmpty)
+          _MessageAttachmentsView(
+            attachments: attachments,
+            sentByMe: sentByMe,
+            theme: theme,
+          ),
+        if (attachments.isNotEmpty && body.isNotEmpty)
+          const SizedBox(height: 7),
+        if (body.isNotEmpty) ...[
+          if (body.startsWith('📞'))
+            _CallLogChip(
+              body: body,
+              sentByMe: sentByMe,
+              theme: theme,
+            )
+          else
+            LinkifiedText(
+              text: body,
+              style: TextStyle(
+                fontFamily: 'SF Pro Rounded',
+                color: isCyberpunkCustom
+                    ? const Color(0xFFF0FDFA)
+                    : (useCustomAsset
+                        ? customAssetTextColor
+                        : (sentByMe ? theme.ownBubbleText : theme.otherBubbleText)),
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                height: 1.33,
               ),
-          ],
-          if (_createdAt != null) ...[
-            const SizedBox(height: 3),
-            Builder(
-              builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final checkColor = useCustomAsset
-                    ? customAssetTextColor.withValues(alpha: seenByOther ? 0.9 : 0.55)
-                    : (seenByOther ? Colors.white : Colors.white70);
-
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Rounded',
-                        fontSize: 8.5.sp,
-                        fontWeight: FontWeight.w400,
-                        color: sentByMe
-                            ? (useCustomAsset
-                                ? customAssetTextColor.withValues(alpha: 0.65)
-                                : Colors.white.withValues(alpha: 0.7))
-                            : (useCustomAsset
-                                ? customAssetTextColor.withValues(alpha: 0.65)
-                                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF))),
-                      ),
-                    ),
-                    if (sentByMe) ...[
-                      const SizedBox(width: 3),
-                      Icon(
-                        seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
-                        size: 11,
-                        color: checkColor,
-                      ),
-                    ],
-                  ],
-                );
-              },
             ),
-          ],
         ],
-      ),
+        if (_createdAt != null) ...[
+          const SizedBox(height: 3),
+          Builder(
+            builder: (context) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final checkColor = isCyberpunkCustom
+                  ? const Color(0xFF00F0FF)
+                  : (useCustomAsset
+                      ? customAssetTextColor.withValues(alpha: seenByOther ? 0.9 : 0.55)
+                      : (seenByOther ? Colors.white : Colors.white70));
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${_formatBubbleTime(_createdAt!)}${message.isEdited ? " (edited)" : ""}',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Rounded',
+                      fontSize: 8.5.sp,
+                      fontWeight: FontWeight.w400,
+                      color: isCyberpunkCustom
+                          ? const Color(0xFF00F0FF).withValues(alpha: 0.75)
+                          : (sentByMe
+                              ? (useCustomAsset
+                                  ? customAssetTextColor.withValues(alpha: 0.65)
+                                  : Colors.white.withValues(alpha: 0.7))
+                              : (useCustomAsset
+                                  ? customAssetTextColor.withValues(alpha: 0.65)
+                                  : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)))),
+                    ),
+                  ),
+                  if (sentByMe) ...[
+                    const SizedBox(width: 3),
+                    Icon(
+                      seenByOther ? Icons.done_all_rounded : Icons.done_rounded,
+                      size: 11,
+                      color: checkColor,
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ],
     );
+
+    final bubble = isCyberpunkCustom
+        ? CyberpunkBubble(
+            sentByMe: sentByMe,
+            borderRadius: borderRadius,
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.72,
+            ),
+            child: bubbleContent,
+          )
+        : Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.72,
+            ),
+            padding: imageOnly
+                ? const EdgeInsets.all(4)
+                : (useCustomAsset
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 11)
+                    : const EdgeInsets.symmetric(horizontal: 13, vertical: 9)),
+            decoration: bubbleDecoration,
+            child: bubbleContent,
+          );
 
     Widget decoratedBubble = bubble;
     if (useCustomAsset) {

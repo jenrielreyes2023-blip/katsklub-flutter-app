@@ -26,6 +26,7 @@ enum ThemeProductType {
   bubbleDream,
   sagittariusBubble,
   bobaBubble,
+  cyberpunkBubble,
 }
 
 class ThemeProductData {
@@ -122,6 +123,8 @@ class ThemeProductData {
         return 'sagittarius';
       case ThemeProductType.bobaBubble:
         return 'boba';
+      case ThemeProductType.cyberpunkBubble:
+        return 'cyberpunk';
     }
   }
 }
